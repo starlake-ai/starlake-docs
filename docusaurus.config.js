@@ -12,8 +12,7 @@ const config = {
 
   // Set the production url of your site here
   url: 'https://starlake.ai',
-  // baseUrl: process.env.BASE_URL || '/',
-  baseUrl: '/',
+  baseUrl: process.env.BASE_URL || '/',
 
   organizationName: 'starlake-ai', // Usually your GitHub org/user name.
   projectName: 'starlake', // Usually your repo name.
