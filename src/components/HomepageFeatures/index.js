@@ -370,7 +370,7 @@ function CodeEditor() {
             style={{
               marginTop: 15
             }}
-            value={`--DuckDB\n${data.transpiledQuery}`}
+            value={`-- DuckDB\n${data.transpiledQuery}`}
             extensions={[sql(config)]}
             width='100%'
             height='300px'
