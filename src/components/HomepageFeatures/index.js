@@ -8,12 +8,11 @@ import { transpileQuery } from "./fetches";
 
 const CopyIcon = require('@site/static/img/copy-icon.svg').default
 const SuccessIcon = require('@site/static/img/success-icon.svg').default
-const ArrowsIcon = require('@site/static/img/arrows-tab.svg').default
 
 const WAREHOUSE_OPTIONS = [
   { id: 1, label: "DATABRICKS", text: 'DATABRICKS' },
   { id: 2, label: "SNOWFLAKE", text: 'SNOWFLAKE' },
-  { id: 3, label: "GOOGLE_BIGQUERY", text: "BIGQUERY" },
+  { id: 3, label: "GOOGLE_BIG_QUERY", text: "BIGQUERY" },
   { id: 4, label: "AMAZON_REDSHIFT", text: 'REDSHIFT' },
 ]
 const FeatureList = [
@@ -60,7 +59,7 @@ const SplitSectionList = [
   {
     title: (
       <>
-        From any source <br />to any sink
+        Effortlessly test <br />your data pipelines
       </>
     ),
     isBackgroundColored: 'yes',
@@ -68,15 +67,16 @@ const SplitSectionList = [
     alignImg: 'right',
     description: (
       <p className='split-description'>
-        Extract, Load and Transform your data
-        with advanced  validation, anonymization and transformation capabilities.
+        How about executing all your SQL queries on DuckDB using your native Data Warehouse SQL dialect ? <br />This is a must have for testing your queries locally or migrate your existing ones
 
       </p>
     ),
     linkText: 'Discover',
-    linkURL: 'docs/next/intro',
+    linkURL: 'docs/next/guides/unit-tests/concepts',
     LinkSvg: require('@site/static/img/eye.svg').default,
-    Component: <CodeEditor EyeIcon={require('@site/static/img/eye.svg').default} />
+    Component: <CodeEditor EyeIcon={require('@site/static/img/eye.svg').default} />,
+    paddingTop: 100,
+    sectionHref: 'sql-transpiler'
   },
   {
     title: (
@@ -260,7 +260,7 @@ function Feature({ Svg, title, description }) {
   );
 }
 
-function CodeEditor({ EyeIcon }) {
+function CodeEditor() {
   const [isCopied, setIsCopied] = useState(false);
   const QUERY_PREFIX = '-- Paste your statement below\n'
   const customSpec = StandardSQL.dialect;
@@ -344,23 +344,22 @@ function CodeEditor({ EyeIcon }) {
           prefix='test'
           onChange={(val) => setData(prev => ({ ...prev, query: val }))}
         />
+        <button
 
+          disabled={data.isLoading}
+          style={{
+            opacity: data.isLoading ? 0.5 : 1,
+            position: "absolute",
+
+          }}
+          onClick={() => {
+            setData(prev => ({ ...prev, isLoading: !prev.isLoading }))
+            handleTranspileFetch()
+          }}
+          className='codemirror-btn'>
+          {"Transpile"}
+        </button>
       </div>
-      <button
-        disabled={data.isLoading}
-        style={{
-          opacity: data.isLoading ? 0.5 : 1
-        }}
-        onClick={() => {
-          setData(prev => ({ ...prev, isLoading: !prev.isLoading }))
-          handleTranspileFetch()
-        }}
-        className='codemirror-btn'>
-        {"Transpile to DUCKDB"}
-      </button>
-
-
-
       {data.showSecondEditor && (
         <div style={{ position: 'relative' }}>
           <div className={`codemirror-wrapper-loading ${data.isLoading ? "active" : ""}`}>
@@ -371,14 +370,15 @@ function CodeEditor({ EyeIcon }) {
             style={{
               marginTop: 15
             }}
-            value={data.transpiledQuery}
+            value={`--DuckDB\n${data.transpiledQuery}`}
             extensions={[sql(config)]}
             width='100%'
-            height='140px'
+            height='300px'
             theme={'dark'}
             className='codemirror-x'
             prefix='test'
             readOnly
+
           />
           {!isCopied && (
             <div className='codemirror-wrapper-copy' onClick={handleCopy}>
@@ -393,7 +393,6 @@ function CodeEditor({ EyeIcon }) {
 
         </div>
       )}
-
       {error ? <p
         style={{
           color: "crimson",
@@ -401,9 +400,6 @@ function CodeEditor({ EyeIcon }) {
           margin: 0,
         }}
       >{JSON.stringify(error)}</p> : <></>}
-
-
-
     </div>
   );
 }
@@ -411,9 +407,19 @@ function CodeEditor({ EyeIcon }) {
 
 
 
-function SplitSection({ isBackgroundColored, reverse, Img, ImgMobile, alignImg, video, BeforeTitle, title, description, linkText, linkURL, LinkSvg, Component }) {
+function SplitSection({ isBackgroundColored, reverse, Img, ImgMobile, alignImg, video, BeforeTitle, title, description, linkText, linkURL, LinkSvg, Component,
+  paddingTop,
+  sectionHref
+
+}) {
   return (
-    <section className={`${clsx('split_section')} ${isBackgroundColored == 'yes' ? "coloredBckg" : ''}`}>
+    <section
+      style={paddingTop ? {
+        paddingTop
+      } : {}}
+      className={`${clsx('split_section')} ${isBackgroundColored == 'yes' ? "coloredBckg" : ''}`}
+      id={!!sectionHref ? sectionHref : ""}
+    >
       <div className="container">
         <div className={`${clsx('row align-items-center')} ${reverse == 'yes' ? styles.reverse : ''}`}>
           <div className={`${alignImg == 'big' ? clsx('col col--4') : clsx('col col--6')}`}>
@@ -460,15 +466,9 @@ export default function HomepageFeatures() {
           </div>
         </div>
       </section>
-      <div id="sql-transpiler" className={`container sql-transpiler-announce`}>
-        <p>
-          lorem ipsum some text here to change later, lorem upsum to change this text
-        </p>
-      </div>
       {SplitSectionList.map((props, idx) => (
         <SplitSection key={idx} {...props} />
       ))}
-
     </main>
   );
 }
