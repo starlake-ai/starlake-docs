@@ -143,6 +143,11 @@
   --ifm-card-background-color: #fff;
 }
 
+body,
+:root {
+  scroll-behavior: smooth;
+}
+
 .hero__subtitle,
 .feature-description,
 .split-description {
@@ -1783,7 +1788,7 @@ body>img[class*='zoom'] {
 .codemirror-wrapper-copy {
   position: absolute;
   top: 10px;
-  right: 10px;
+  right: 15px;
   background-color: #222;
   padding: 4px 6px;
   border-radius: 10px;
@@ -1836,12 +1841,11 @@ body>img[class*='zoom'] {
 
 .codemirror-tabs-2-tab.active {
   opacity: 1;
-  background-color: white;
+  background-color: #abb8ff;
   color: #222;
 }
 
 .codemirror-btn {
-  /* background-color: #abb8ff; */
   background-color: #fff;
   outline: none;
   border: none;
@@ -1851,4 +1855,6 @@ body>img[class*='zoom'] {
   /* width: 170px; */
   /* width: 170px; */
   cursor: pointer;
+  bottom: 10px;
+  right: 10px;
 }
