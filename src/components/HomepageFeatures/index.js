@@ -72,7 +72,7 @@ const SplitSectionList = [
       </p>
     ),
     linkText: 'Discover',
-    linkURL: 'docs/next/guides/unit-tests/concepts',
+    linkURL: 'docs/next/guides/unit-tests/concepts/index.html',
     LinkSvg: require('@site/static/img/eye.svg').default,
     Component: <CodeEditor EyeIcon={require('@site/static/img/eye.svg').default} />,
     paddingTop: 100,
@@ -97,7 +97,7 @@ const SplitSectionList = [
       </p>
     ),
     linkText: 'Discover',
-    linkURL: 'docs/next/intro',
+    linkURL: 'docs/next/intro/index.html',
     LinkSvg: require('@site/static/img/eye.svg').default,
   },
   {
@@ -118,7 +118,7 @@ const SplitSectionList = [
       </p>
     ),
     linkText: 'Read more',
-    linkURL: 'docs/category/extract',
+    linkURL: 'docs/category/extract/index.html',
     LinkSvg: require('@site/static/img/arrow_right.svg').default,
   },
   {
@@ -138,7 +138,7 @@ const SplitSectionList = [
       </p>
     ),
     linkText: 'Read more',
-    linkURL: 'docs/intro',
+    linkURL: 'docs/intro/index.html',
     LinkSvg: require('@site/static/img/arrow_right.svg').default,
   },
   {
@@ -158,7 +158,7 @@ const SplitSectionList = [
       </p>
     ),
     linkText: 'Read more',
-    linkURL: 'docs/guides/orchestrate/tutorial',
+    linkURL: 'docs/guides/orchestrate/tutorial/index.html',
     LinkSvg: require('@site/static/img/arrow_right.svg').default,
   },
   {
@@ -179,7 +179,7 @@ const SplitSectionList = [
       </p>
     ),
     linkText: 'Read more',
-    linkURL: 'docs/guides/load/autoload',
+    linkURL: 'docs/guides/load/autoload/index.html',
     LinkSvg: require('@site/static/img/arrow_right.svg').default,
   },
   {
@@ -201,7 +201,7 @@ const SplitSectionList = [
       </p>
     ),
     linkText: 'Read more',
-    linkURL: 'docs/guides/load/security',
+    linkURL: 'docs/guides/load/security/index.html',
     LinkSvg: require('@site/static/img/arrow_right.svg').default,
   },
   {
@@ -221,7 +221,7 @@ const SplitSectionList = [
       </p>
     ),
     linkText: 'Read more',
-    linkURL: 'docs/next/user-guide/metrics',
+    linkURL: 'docs/next/user-guide/metrics/index.html',
     LinkSvg: require('@site/static/img/arrow_right.svg').default,
   },
   {
@@ -357,7 +357,9 @@ function CodeEditor() {
             handleTranspileFetch()
           }}
           className='codemirror-btn'>
+            
           {"Transpile"}
+          
         </button>
       </div>
       {data.showSecondEditor && (
