@@ -349,7 +349,7 @@ function CodeEditor() {
           disabled={data.isLoading}
           style={{
             opacity: data.isLoading ? 0.5 : 1,
-            position: "absolute",
+            position: "absolute"
 
           }}
           onClick={() => {

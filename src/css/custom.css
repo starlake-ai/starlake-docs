@@ -1849,14 +1849,14 @@ body>img[class*='zoom'] {
   background-color: #fff;
   outline: none;
   border: none;
-  padding: 8px 30px;
+  padding: 8px 10px;
   color: #222;
   margin-top: 8px;
   /* width: 170px; */
   /* width: 170px; */
   cursor: pointer;
-  bottom: 10px;
-  right: 10px;
+  bottom: 20px;
+  right: 20px;
   font-size: 15px;
 
 
