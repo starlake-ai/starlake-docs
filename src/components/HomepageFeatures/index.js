@@ -274,7 +274,7 @@ function CodeEditor() {
   const [data, setData] = useState({
     from_warehouse: "DATABRICKS",
     to_warehouse: "DUCKDB",
-    query: `${QUERY_PREFIX}SELECT * \nFROM my_table WHERE \nmy_column = 'my_value'`,
+    query: `${QUERY_PREFIX}WITH orders AS (SELECT 5 as order_id,\n  'sprocket' as item_name,\n  200 as quantity)\nSELECT * EXCEPT (order_id) FROM orders`,
     transpiledQuery: "",
     isLoading: false,
     showSecondEditor: false
