@@ -10,10 +10,10 @@ const CopyIcon = require('@site/static/img/copy-icon.svg').default
 const SuccessIcon = require('@site/static/img/success-icon.svg').default
 
 const WAREHOUSE_OPTIONS = [
-  { id: 1, label: "DATABRICKS", text: 'DATABRICKS' },
-  { id: 2, label: "SNOWFLAKE", text: 'SNOWFLAKE' },
-  { id: 3, label: "GOOGLE_BIG_QUERY", text: "BIGQUERY" },
-  { id: 4, label: "AMAZON_REDSHIFT", text: 'REDSHIFT' },
+  { id: 1, label: "GOOGLE_BIG_QUERY", text: "BigQuery" },
+  { id: 2, label: "DATABRICKS", text: 'Databricks' },
+  { id: 3, label: "AMAZON_REDSHIFT", text: 'Redshift' },
+  { id: 4, label: "SNOWFLAKE", text: 'Snowflake' },
 ]
 const FeatureList = [
   {
