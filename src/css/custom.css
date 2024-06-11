@@ -1874,25 +1874,74 @@ body>img[class*='zoom'] {
 }
 
 @-webkit-keyframes glowing {
-  0% { background-color: #6779dd; -webkit-box-shadow: 0 0 3px #6779dd; }
-  50% { background-color: #abb8ff; -webkit-box-shadow: 0 0 40px #abb8ff; }
-  100% { background-color: #6779dd; -webkit-box-shadow: 0 0 3px #6779dd; }
+  0% {
+    background-color: #6779dd;
+    -webkit-box-shadow: 0 0 3px #6779dd;
+  }
+
+  50% {
+    background-color: #abb8ff;
+    -webkit-box-shadow: 0 0 40px #abb8ff;
+  }
+
+  100% {
+    background-color: #6779dd;
+    -webkit-box-shadow: 0 0 3px #6779dd;
+  }
 }
 
 @-moz-keyframes glowing {
-  0% { background-color: #6779dd; -moz-box-shadow: 0 0 3px #6779dd; }
-  50% { background-color: #abb8ff; -moz-box-shadow: 0 0 40px #abb8ff; }
-  100% { background-color: #6779dd; -moz-box-shadow: 0 0 3px #6779dd; }
+  0% {
+    background-color: #6779dd;
+    -moz-box-shadow: 0 0 3px #6779dd;
+  }
+
+  50% {
+    background-color: #abb8ff;
+    -moz-box-shadow: 0 0 40px #abb8ff;
+  }
+
+  100% {
+    background-color: #6779dd;
+    -moz-box-shadow: 0 0 3px #6779dd;
+  }
 }
 
 @-o-keyframes glowing {
-  0% { background-color: #6779dd; box-shadow: 0 0 3px #6779dd; }
-  50% { background-color: #abb8ff; box-shadow: 0 0 40px #abb8ff; }
-  100% { background-color: #6779dd; box-shadow: 0 0 3px #6779dd; }
+  0% {
+    background-color: #6779dd;
+    box-shadow: 0 0 3px #6779dd;
+  }
+
+  50% {
+    background-color: #abb8ff;
+    box-shadow: 0 0 40px #abb8ff;
+  }
+
+  100% {
+    background-color: #6779dd;
+    box-shadow: 0 0 3px #6779dd;
+  }
 }
 
 @keyframes glowing {
-  0% { background-color: #6779dd; box-shadow: 0 0 3px #6779dd; }
-  50% { background-color: #abb8ff; box-shadow: 0 0 40px #abb8ff; }
-  100% { background-color: #6779dd; box-shadow: 0 0 3px #6779dd; }
+  0% {
+    background-color: #6779dd;
+    box-shadow: 0 0 3px #6779dd;
+  }
+
+  50% {
+    background-color: #abb8ff;
+    box-shadow: 0 0 40px #abb8ff;
+  }
+
+  100% {
+    background-color: #6779dd;
+    box-shadow: 0 0 3px #6779dd;
+  }
+}
+
+.cm-scroller {
+  font-size: 1.7rem;
+
 }
