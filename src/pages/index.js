@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import clsx from 'clsx';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
@@ -37,6 +37,23 @@ function HomepageHeader() {
 
 export default function Home() {
   const { siteConfig } = useDocusaurusContext();
+  useEffect(() => {
+    function scrollToSection() {
+      if (window.location.hash === "#sql-transpiler") {
+        const element = document.querySelector("#sql-transpiler-section");
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    }
+    scrollToSection();
+
+    window.addEventListener('hashchange', scrollToSection);
+
+    return () => {
+      window.removeEventListener('hashchange', scrollToSection);
+    };
+  }, []); // Empty
   return (
     <Layout
       title={`${siteConfig.title}`}

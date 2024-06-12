@@ -76,7 +76,7 @@ const SplitSectionList = [
     LinkSvg: require('@site/static/img/eye.svg').default,
     Component: <CodeEditor EyeIcon={require('@site/static/img/eye.svg').default} />,
     paddingTop: 100,
-    sectionHref: 'sql-transpiler'
+    sectionHref: 'sql-transpiler-section'
   },
   {
     title: (
@@ -357,9 +357,9 @@ function CodeEditor() {
             handleTranspileFetch()
           }}
           className='codemirror-btn'>
-            
+
           {"Transpile"}
-          
+
         </button>
       </div>
       {data.showSecondEditor && (
