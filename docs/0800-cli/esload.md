@@ -15,7 +15,7 @@ title: esload
 
 Parameter|Cardinality|Description
 ---|---|---
---timestamp:`<value>`|*Optional*|Elasticsearch index timestamp suffix as in \{@timestamp|yyyy.MM.dd\}
+--timestamp:`<value>`|*Optional*|Elasticsearch index timestamp suffix as in `{@timestamp\|yyyy.MM.dd}`
 --id:`<value>`|*Optional*|Elasticsearch Document Id
 --mapping:`<value>`|*Optional*|Path to Elasticsearch Mapping File
 --domain:`<value>`|*Required*|Domain Name

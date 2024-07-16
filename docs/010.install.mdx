@@ -43,7 +43,7 @@ Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/sta
 Pull the docker image from the [docker hub](https://hub.docker.com/repository/docker/starlakeai/starlake/tags?page=1&ordering=last_updated)
 
 ```shell
-$ docker pull starlakeai/starlake:1.2.0
+$ docker pull starlakeai/starlake:VERSION
 ```
 You may also run Starlake from a docker container. To do so, download this [Dockerfile](https://github.com/starlake-ai/starlake/blob/master/distrib/Dockerfile)
 and build your docker image
@@ -52,21 +52,21 @@ and build your docker image
 $ git clone git@github.com:starlake-ai/starlake.git
 $ cd starlake
 $ docker build -t starlakeai/starlake  .
-$ docker run -it starlake help
+$ docker run -it starlakeai/starlake:VERSION help
 
 ```
 
 To build the docker image with a specific version of Starlake or a specific branch, you can use the following command:
 
 ```sh
-$ docker build -t starlakeai/starlake:1.2.0 --build-arg SL_VERSION=1.2.0 .
+$ docker build -t starlakeai/starlake:VERSION --build-arg SL_VERSION=1.2.0 .
 ```
 
 To execute the docker image, you can use the following command:
 
 ```shell
 
-$ docker run -it -v /path/to/starlake/project:/starlake starlake <command>
+$ docker run -it -v /path/to/starlake/project:/starlake starlakeai/starlake:VERSION <command>
 
 ```
 
@@ -80,7 +80,7 @@ $ docker run -e SL_ROOT=$SL_ROOT \
     -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
     -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
     -e REDSHIFT_PASSWORD=$REDSHIFT_PASSWORD \
-    -it starlake <command>
+    -it starlakeai/starlake:VERSION <command>
 
 ```
 

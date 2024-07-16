@@ -32,7 +32,7 @@ c:\> starlake bootstrap
 ```
 $ mkdir $HOME/userguide
 $ cd $HOME/userguide
-$ docker run  -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlake bootstrap
+$ docker run  -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap
 ```
 
 
@@ -69,7 +69,7 @@ You are always required to set the SL_ROOT env var when using Docker
 ```
 $ mkdir $HOME/userguide
 $ cd $HOME/userguide
-$ docker run  -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlake bootstrap
+$ docker run  -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap
 ```
 
 </TabItem>
@@ -177,7 +177,7 @@ c:> starlake <command>>
 $ docker run    -v `pwd`:/app/userguide \
                 -e SL_ROOT=/app/userguide \
                 -e SL_ENV=DUCKDB \
-                -it starlake <command>
+                -it starlakeai/starlake:VERSION <command>
 ```
 
 </TabItem>
