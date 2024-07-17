@@ -88,11 +88,11 @@ const config = {
           position: 'left',
         },
         { to: '/blog', label: 'Blog', position: 'left' },
+        /*
         {
           type: 'docsVersionDropdown',
           position: 'right',
         },
-        /*
                 {
                     href: 'https://search.maven.org/search?q=ai.starlake',
                     position: 'right',

@@ -1,6 +1,6 @@
 ---
 slug: how-unit-test-your-sql-data-pipelines
-title: Polars versus Spark
+title: How to unit test your data pipelines
 author: Bounkong Khamphousone
 author_title: Starlake Core Team
 author_url: https://www.linkedin.com/in/bounkong/
@@ -13,9 +13,13 @@ tags: [Unit Test, Databricks, DuckDB, Data Engineering, Analytics, BigQuery, Sno
 </head>
 
 
+
 In today's data-driven landscape, ensuring the reliability and accuracy of your data warehouse is paramount. The cost of not testing your data can be astronomical, leading to critical business decisions based on faulty data and eroding trust. 
 
 The path to rigorous data testing comes with its own set of challenges. In this article, I will highlight how you can confidently deploy your data pipelines by leveraging [Starlake JSQLTranspiler](https://github.com/starlake-ai/jsqltranspiler) and DuckDB, while also reducing costs. we will go beyond testing your transform usually written in SQL and see how we can also test our Ingestion jobs.
+
+![]( /img/blog/how-to-unit-test-your-sql-data-pipelines/data-pipeline-cicd.gif)
+
 ## The art of mastering data pipelines
 
 Mastering your data pipeline is a challenging art. A data pipeline generally contains the following phases:
