@@ -1,5 +1,5 @@
 ---
-sidebar_position: 300
+sidebar_position: 310
 title: table-dependencies
 ---
 
@@ -23,4 +23,5 @@ Parameter|Cardinality|Description
 --related:`<value>`|*Optional*|Should we include only entities with relations to others ? false by default
 --tables:`<value>`|*Optional*|Which tables should we include in the dot file ?
 --all:`<value>`|*Optional*|Include all tables in the dot file ? All by default
+--json:`<value>`|*Optional*|JSON output ?
 

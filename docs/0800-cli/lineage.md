@@ -1,5 +1,5 @@
 ---
-sidebar_position: 210
+sidebar_position: 220
 title: lineage
 ---
 
@@ -20,6 +20,7 @@ Parameter|Cardinality|Description
 --reload:`<value>`|*Optional*|Should we reload the domains first ?
 --viz:`<value>`|*Optional*|Should we generate a dot file ?
 --svg:`<value>`|*Optional*|Should we generate SVG files ?
+--json:`<value>`|*Optional*|Should we generate JSON files ?
 --png:`<value>`|*Optional*|Should we generate PNG files ?
 --print:`<value>`|*Optional*|Print dependencies as text
 --objects:`<value>`|*Optional*|comma separated list of objects to display: task, table, view, unknown

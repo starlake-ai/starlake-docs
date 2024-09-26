@@ -1,5 +1,5 @@
 ---
-sidebar_position: 140
+sidebar_position: 150
 title: extract-schema
 ---
 
@@ -15,8 +15,10 @@ title: extract-schema
 
 Parameter|Cardinality|Description
 ---|---|---
---config:`<value>`|*Required*|Database tables & connection info
+--config:`<value>`|*Optional*|Database tables & connection info
+--tables:`<value>`|*Optional*|Database tables info
+--connectionRef:`<value>`|*Optional*|Database connection to use
 --outputDir:`<value>`|*Optional*|Where to output YML files
---external:`<value>`|*Optional*|Where to output YML files
+--external:`<value>`|*Optional*|Should we output YML files in the external folder
 --parallelism:`<value>`|*Optional*|parallelism level of the extraction process. By default equals to the available cores
 

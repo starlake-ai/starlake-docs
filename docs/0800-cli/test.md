@@ -1,5 +1,5 @@
 ---
-sidebar_position: 310
+sidebar_position: 320
 title: test
 ---
 
@@ -17,6 +17,10 @@ Parameter|Cardinality|Description
 ---|---|---
 --load:`<value>`|*Optional*|Test load tasks only
 --transform:`<value>`|*Optional*|Test transform tasks only
---name:`<value>`|*Optional*|Test this test only
+--domain:`<value>`|*Optional*|Test this domain only
+--table:`<value>`|*Optional*|Test this table or task only in the selected domain
+--test:`<value>`|*Optional*|Test this test only in the domain and table/task selected
+--site:`<value>`|*Optional*|Test this test only in the domain and table/task selected
+--outputDir:`<value>`|*Optional*|Where to output the tests
 --accessToken:`<value>`|*Optional*|Access token to use for authentication
 
