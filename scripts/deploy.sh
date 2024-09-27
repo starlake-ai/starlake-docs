@@ -1,6 +1,6 @@
-if test -d ../../starlake-ui2/public/starlake; then
+if test -d ../../starlake-website/public/starlake; then
     BASE_URL=/starlake/ yarn build && \
-    cd ../../starlake-ui2 && \
+    cd ../../starlake-website && \
     rm -rf ./public/starlake/* && \
     cp -fr ../public/starlake-docs/build/* ./public/starlake/
 fi
