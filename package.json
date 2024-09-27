@@ -15,10 +15,10 @@
   },
   "dependencies": {
     "@codemirror/lang-sql": "^6.6.4",
-    "@docusaurus/core": "^3.4.0",
-    "@docusaurus/preset-classic": "^3.4.0",
-    "@docusaurus/theme-mermaid": "^3.4.0",
-    "@docusaurus/theme-search-algolia": "^3.4.0",
+    "@docusaurus/core": "^3.5.2",
+    "@docusaurus/preset-classic": "^3.5.2",
+    "@docusaurus/theme-mermaid": "^3.5.2",
+    "@docusaurus/theme-search-algolia": "^3.5.2",
     "@easyops-cn/docusaurus-search-local": "^0.44.0",
     "@mdx-js/react": "^3.0.1",
     "@uiw/react-codemirror": "^4.22.2",
@@ -31,9 +31,8 @@
     "react-player": "^2.16.0"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.4.0",
-    "@docusaurus/types": "3.4.0"
-
+    "@docusaurus/module-type-aliases": "^3.5.2",
+    "@docusaurus/types": "^3.5.2"
   },
   "browserslist": {
     "production": [
