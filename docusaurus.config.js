@@ -77,8 +77,8 @@ const config = {
       title: 'Starlake',
       logo: {
         alt: 'Starlake',
-        src: 'img/starlake_icon.svg',
-        srcDark: 'img/starlake_icon.svg',
+        src: 'img/starlake-logo.png',
+        srcDark: 'img/starlake-logo.png',
       },
       items: [
         {
