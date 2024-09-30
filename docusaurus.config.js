@@ -1,56 +1,56 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require('prism-react-renderer').themes.github;
-const darkCodeTheme = require('prism-react-renderer').themes.dracula;
+const lightCodeTheme = require("prism-react-renderer").themes.github;
+const darkCodeTheme = require("prism-react-renderer").themes.dracula;
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Declarative Data Pipelines',
-  tagline: 'Effortless Extract / Load / Transform / Orchestrate',
-  favicon: 'img/favicon_starlake.ico',
+  title: "Declarative Data Pipelines",
+  tagline: "Effortless Extract / Load / Transform / Orchestrate",
+  favicon: "img/favicon_starlake.ico",
 
   // Set the production url of your site here
-  url: 'https://starlake.ai',
-  baseUrl: process.env.BASE_URL || '/',
+  url: "https://starlake.ai",
+  baseUrl: process.env.BASE_URL || "/",
 
-  organizationName: 'starlake-ai', // Usually your GitHub org/user name.
-  projectName: 'starlake', // Usually your repo name.
+  organizationName: "starlake-ai", // Usually your GitHub org/user name.
+  projectName: "starlake", // Usually your repo name.
 
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenLinks: "throw",
+  onBrokenMarkdownLinks: "warn",
 
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
   // to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
+    defaultLocale: "en",
+    locales: ["en"],
   },
   presets: [
     [
-      'classic',
+      "classic",
       {
         docs: {
-          sidebarPath: require.resolve('./sidebars.js'),
+          sidebarPath: require.resolve("./sidebars.js"),
           // Please change this to your repo.
-          editUrl: 'https://github.com/starlake-ai/starlake/edit/master/docs/',
+          editUrl: "https://github.com/starlake-ai/starlake/edit/master/docs/",
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
-          editUrl: 'https://github.com/starlake-ai/starlake/edit/master/docs/',
+          editUrl: "https://github.com/starlake-ai/starlake/edit/master/docs/",
         },
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: require.resolve("./src/css/custom.css"),
         },
         googleAnalytics: {
-          trackingID: 'UA-207943293-1',
+          trackingID: "UA-207943293-1",
           // Optional fields.
           anonymizeIP: true, // Should IPs be anonymized?
         },
         gtag: {
-          trackingID: 'G-FYS72XYD48',
+          trackingID: "G-FYS72XYD48",
           anonymizeIP: true,
         },
       },
@@ -64,31 +64,31 @@ const config = {
       },
     },
     prism: {
-      additionalLanguages: ['java', 'scala', 'sql', 'powershell', 'python'],
+      additionalLanguages: ["java", "scala", "sql", "powershell", "python"],
       theme: lightCodeTheme,
     },
     // Replace with your project's social card
     colorMode: {
-      defaultMode: 'light',
+      defaultMode: "light",
       disableSwitch: true,
       respectPrefersColorScheme: false,
     },
     navbar: {
-      title: 'Starlake',
+      title: "Starlake",
       logo: {
-        alt: 'Starlake',
-        src: 'img/starlake-logo.png',
-        srcDark: 'img/starlake-logo.png',
-        href: 'https://starlake.ai',
+        alt: "Starlake",
+        src: "img/starlake-logo.png",
+        srcDark: "img/starlake-logo.png",
+        href: "https://starlake.ai",
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'starlakeSidebar',
-          label: 'Documentation',
-          position: 'left',
+          type: "docSidebar",
+          sidebarId: "starlakeSidebar",
+          label: "Documentation",
+          position: "left",
         },
-        { to: '/blog', label: 'Blog', position: 'left' },
+        { to: "/blog", label: "Blog", position: "left" },
         /*
         {
           type: 'docsVersionDropdown',
@@ -102,53 +102,53 @@ const config = {
                 },
                 */
         {
-          href: 'https://github.com/starlake-ai/starlake',
-          position: 'right',
-          className: 'header-github-link header-icon-link',
-          'aria-label': 'GitHub repository',
+          href: "https://github.com/starlake-ai/starlake",
+          position: "right",
+          className: "header-github-link header-icon-link",
+          "aria-label": "GitHub repository",
         },
         {
-          href: 'https://join.slack.com/t/starlakeai/shared_invite/zt-28vf5d49s-rnyuh70OrJjcX_2Vz2mafw',
-          position: 'right',
-          className: 'header-slack-link header-icon-link',
-          'aria-label': 'Community',
+          href: "https://join.slack.com/t/starlakeai/shared_invite/zt-28vf5d49s-rnyuh70OrJjcX_2Vz2mafw",
+          position: "right",
+          className: "header-slack-link header-icon-link",
+          "aria-label": "Community",
         },
       ],
     },
-    footer: {
-      style: 'dark',
-      links: [
-        {
-          items: [
-            {
-              label: 'Documentation',
-              to: '/docs/intro',
-            },
-            {
-              label: 'Blog',
-              href: '/blog',
-            },
-          ],
-        },
+    //     footer: {
+    //       style: "dark",
+    //       links: [
+    //         {
+    //           items: [
+    //             {
+    //               label: "Documentation",
+    //               to: "/docs/intro",
+    //             },
+    //             {
+    //               label: "Blog",
+    //               href: "/blog",
+    //             },
+    //           ],
+    //         },
 
-        {
-          items: [
-            {
-              html: `
-<ul class="footer_right"><li><a href="https://github.com/starlake-ai/starlake" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link header-github-link header-icon-link" aria-label="GitHub repository"></a></li><li><a href="https://join.slack.com/t/starlakeai/shared_invite/zt-28vf5d49s-rnyuh70OrJjcX_2Vz2mafw" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link header-slack-link header-icon-link" aria-label="Community"></a></li></ul>
-`,
-            },
-          ],
-        },
-      ],
-    },
+    //         {
+    //           items: [
+    //             {
+    //               html: `
+    // <ul class="footer_right"><li><a href="https://github.com/starlake-ai/starlake" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link header-github-link header-icon-link" aria-label="GitHub repository"></a></li><li><a href="https://join.slack.com/t/starlakeai/shared_invite/zt-28vf5d49s-rnyuh70OrJjcX_2Vz2mafw" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link header-slack-link header-icon-link" aria-label="Community"></a></li></ul>
+    // `,
+    //             },
+    //           ],
+    //         },
+    //       ],
+    //     },
     zoom: {
-      selector: '.markdown :not(em) > img, .split_section .img-fluid',
+      selector: ".markdown :not(em) > img, .split_section .img-fluid",
       config: {
         // options you can specify via https://github.com/francoischalifour/medium-zoom#usage
         background: {
-          light: 'rgba(2, 0, 19, 0.5)',
-          dark: 'rgba(2, 0, 19, 0.5)',
+          light: "rgba(2, 0, 19, 0.5)",
+          dark: "rgba(2, 0, 19, 0.5)",
         },
       },
     },
@@ -156,7 +156,7 @@ const config = {
 
   plugins: [
     [
-      require.resolve('@easyops-cn/docusaurus-search-local'),
+      require.resolve("@easyops-cn/docusaurus-search-local"),
       {
         // ... Your options.
         // `hashed` is recommended as long-term-cache of index file is possible.
@@ -169,7 +169,7 @@ const config = {
       },
     ],
     [
-      require.resolve('docusaurus-plugin-image-zoom'),
+      require.resolve("docusaurus-plugin-image-zoom"),
       {
         hashed: true,
       },
@@ -178,7 +178,7 @@ const config = {
   markdown: {
     mermaid: true,
   },
-  themes: ['@docusaurus/theme-mermaid'],
+  themes: ["@docusaurus/theme-mermaid"],
 };
 
 module.exports = config;
