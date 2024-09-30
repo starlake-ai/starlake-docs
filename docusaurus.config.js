@@ -79,6 +79,7 @@ const config = {
         alt: 'Starlake',
         src: 'img/starlake-logo.png',
         srcDark: 'img/starlake-logo.png',
+        href: 'https://starlake.ai',
       },
       items: [
         {

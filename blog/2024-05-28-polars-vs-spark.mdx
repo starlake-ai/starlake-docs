@@ -86,8 +86,10 @@ I decided to conduct this test on my almost 3-year-old MacBook Pro M1 Max with 6
 
 I ran Spark with default settings and without any fine-tuning. This means it utilized all 10 cores of my MacBook Pro M1 Max but only 1 gigabyte of memory for execution.
 
-::: note
+:::note
+
 I could have optimized my Spark workload, but given the small size of the dataset (27GB of CSV), it didn't make sense. The default settings were sufficient.
+
 :::
 
 Here are the results after a cold restart  of my laptop before each test  to ensure the test did not benefit from any operating system cache.
@@ -96,8 +98,10 @@ Here are the results after a cold restart  of my laptop before each test  to ens
 
 - Polars pipeline took: 56 seconds
 
-::: note
+:::note
+
 Rerunning Polars gave me 23 seconds instead of 56 seconds. This discrepancy is probably due to filesystem caching by the operating system.
+
 :::
 
 

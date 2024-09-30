@@ -1,4 +1,5 @@
 if test -d ../../starlake-website/public/starlake; then
+    rm -rf build && \
     BASE_URL=/starlake/ yarn build && \
     cd ../../starlake-website && \
     rm -rf ./public/starlake/* && \
