@@ -139,12 +139,12 @@ export default function Footer() {
           <div className="footer-col">
             <h6 className="footer-title tl">Resources</h6>
             <p className="tl">
-              <a href="/termsAndConditions" className="footer-link">
+              <a href="/starlake/docs/intro" className="footer-link">
                 Docs
               </a>
             </p>
             <p className="tl">
-              <a href="/termsAndConditions" className="footer-link">
+              <a href="/starlake/blog" className="footer-link">
                 Blog
               </a>
             </p>
