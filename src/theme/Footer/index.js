@@ -27,7 +27,7 @@ const content = {
     copyright: {
       text: "Copyright © 2024 ",
       company: "Starlake.ai",
-      companyLink: "https://starlake.ai",
+      companyLink: "https://website.starlake.ai/",
     },
   },
 };
