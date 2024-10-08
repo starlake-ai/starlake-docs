@@ -11,7 +11,7 @@ const config = {
   favicon: "img/favicon_starlake.ico",
 
   // Set the production url of your site here
-  url: "https://website.starlake.ai/",
+  url: "https://starlake.ai/",
   baseUrl: process.env.BASE_URL || "/",
 
   organizationName: "starlake-ai", // Usually your GitHub org/user name.
@@ -79,7 +79,7 @@ const config = {
         alt: "Starlake",
         src: "img/starlake-logo.png",
         srcDark: "img/starlake-logo.png",
-        href: "https://website.starlake.ai/",
+        href: "https://starlake.ai/",
       },
       items: [
         {
