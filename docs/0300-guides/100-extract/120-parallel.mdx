@@ -1,10 +1,19 @@
 # Parallel extraction
 
+:::info
+
+Parallel extraction is available only on databases that support concurrent read-write connections.
+
+:::
+
+
+
 To make extraction faster, we can parallelize the extraction process.
 This is done by setting the `numPartitions` attribute.
 
 
-```yaml {7,8,9} title="metadata/extract/my_extract_config.sl.yml"
+```yaml {8,9,10} title="metadata/extract/my_extract_config.sl.yml"
+version: 1
 extract:
   connectionRef: "duckdb" # The database connection to use
   jdbcSchemas:
@@ -25,7 +34,8 @@ Note that when using parallel extraction,
 If incremental extraction is used (fullExport set to false),
 the partitionColumn used for parallel extraction is also the column used for incremental extraction:
 
-```yaml {7,8,9} title="metadata/extract/my_extract_config.sl.yml"
+```yaml {8,9,10} title="metadata/extract/my_extract_config.sl.yml"
+version: 1
 extract:
   connectionRef: "duckdb" # The database connection to use
   jdbcSchemas:

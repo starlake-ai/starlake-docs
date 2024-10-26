@@ -5,7 +5,8 @@ Schema's extraction will try to retrieve its remarks based on its table name if 
 
 Query extraction doesn't infer primary keys nor foreign keys. All attributes are considered not required.
 
-```yaml {7,8} title="metadata/extract/my_extract_config.sl.yml"
+```yaml {8,9} title="metadata/extract/my_extract_config.sl.yml"
+version: 1
 extract:
   connectionRef: "duckdb" # The database connection to use
   jdbcSchemas:

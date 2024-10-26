@@ -21,14 +21,20 @@ The autoload command will:
 - stage the files
 - load the files into the target tables
 
-Run the following command to autoload the files located the incoming folder.
+Clean the metadata/load folder from any schema you generated previously and run the following command to autoload the files located the incoming folder.
+
+:::warning
+
+autoload will stop short of inferring the schema if the schema file already exists in the metadata/load folder.
+
+:::
 
 ```bash
 starlake autoload
 ```
 
 :::note
-Starlake looks at files present in the $SL_ROOT/incoming folder.
+Starlake looks at files present in the $SL_ROOT/datasets/incoming folder.
 
 The default incoming folder may be changed by setting the SL_INCOMING environment variable.
 :::

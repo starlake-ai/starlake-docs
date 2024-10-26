@@ -34,4 +34,5 @@ comet import
 Parameter|Cardinality|Description
 ---|---|---
 --domains:`domain1,domain2...`|*Optional*|Domains to stage
+--options:`k1=v1,k2=v2...`|*Optional, Unbounded*|Stage arguments to be used as substitutions
 

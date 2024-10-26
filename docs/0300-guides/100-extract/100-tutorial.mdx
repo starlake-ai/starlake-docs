@@ -7,7 +7,7 @@ Extract tables in one shot or incrementally from a database as a set of files.
 
 - Install [duckdb](https://duckdb.org/docs/installation/)
 
-- Download the [sample duckdb.db](https://github.com/starlake-ai/starlake/samples/starbake/datasets/duckdb.db) database and store it in the `datasets` folder in your project directory `$SL_ROOT/datasets`
+- Download the [sample duckdb.db](https://github.com/starlake-ai/starlake/blob/master/samples/starbake/datasets/duckdb.db) database and store it in the `datasets` folder in your project directory `$SL_ROOT/datasets`
 
 This will bring in the following database schema:
 
@@ -44,6 +44,7 @@ Extracting Data involves the following steps:
 In the project folder, under the `metadata` folder,  edit the file application.sl.yml and set the connection parameters to the source database.
 
 ```yaml title="metadata/application.sl.yml"
+version: 1
 application:
   ...
   connections:
@@ -59,6 +60,7 @@ application:
 In the metadata/extract folder, create a new file `my_extract_config.sl.yml` and set the connectionRef to the connection defined in the application.sl.yml file.
 
 ```yaml title="metadata/extract/my_extract_config.sl.yml"
+version: 1
 extract:
   connectionRef: "duckdb" # The database connection to use
   jdbcSchemas:
@@ -79,7 +81,7 @@ That's it! We are ready to extract the data from the database.
 ## Extract the data
 ```shell
 $ cd $SL_ROOT
-$ starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming/starbake
+$ starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming/
 ```
 
 The `$SL_ROOT/incoming/starbake` folder will contain the extracted data in CSV format.
@@ -94,6 +96,6 @@ using starlake load command instead of going through the infer-schema feature st
 
 ```bash
 $ cd $SL_ROOT
-$ starlake.sh extract-schema --config my_extract_config.sl.yml # extract description
+$ starlake extract-schema --config my_extract_config # extract description
 ```
 

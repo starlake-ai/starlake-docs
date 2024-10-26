@@ -78,7 +78,7 @@ $ docker run  -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/s
 starlake will then create a default project hierarchy that allow you to start to extract, load, transform your data and orchestrate you pipelines.
 
 
-``` text {2,5,7,8,9,10}
+``` text {2,5,7,8,9,10,11,12,13}
 .
 ├── metadata
 │   ├── application.sl.yml      # project configuration
@@ -92,11 +92,12 @@ starlake will then create a default project hierarchy that allow you to start to
 │   ├── transform
 │   ├── types
 │   │   ├── default.sl.yml      # types mapping
-└── incoming                    # sample incoming data for this user guide
-    ├── starbake
-    │   ├── order_202403011414.json
-    │   ├── order_line_202403011415.csv
-    └── └── product.xml
+└── datasets                    # sample incoming data for this user guide
+    └── incoming
+        └── starbake
+            ├── order_202403011414.json
+            ├── order_line_202403011415.csv
+            └── product.xml
 
 ```
 
@@ -143,6 +144,11 @@ application:
         authType: "APPLICATION_DEFAULT"
         authScopes: "https://www.googleapis.com/auth/cloud-platform"
         writeMethod: "direct"
+    redshift:
+      ...
+    snowflake:
+      ...
+    ...
 
 
 

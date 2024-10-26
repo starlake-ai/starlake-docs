@@ -7,7 +7,8 @@ To enable incremental extraction, you need to provide a column that can be used 
 This column is called the `partitionColumn`.
 
 
-```yaml {7,8} title="metadata/extract/my_extract_config.sl.yml"
+```yaml {8,9} title="metadata/extract/my_extract_config.sl.yml"
+version: 1
 extract:
   connectionRef: "duckdb" # The database connection to use
   jdbcSchemas:
