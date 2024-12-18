@@ -51,13 +51,14 @@ Starlake allows you to write your query as follows:
 
 The `sl_start_date` and `sl_end_date` variables represent the start and end of the day for
 which the query is being executed. These are reserved environment variables that are automatically 
-passed to the transformation process.
+passed to the transformation process by the orchestrator (e.g., Airflow or Dagster).
 
 You might wonder what happens if the job fails to run for a specific day.
-There’s no need to worry—Starlake handles this seamlessly by leveraging Airflow's
+There's no need to worry—Starlake handles this seamlessly by leveraging Airflow's
  **Catchup** mechanism. By configuration, Starlake requests the orchestrator 
  to catch up on any missed intervals. To enable this, simply add the `catchup` flag
- to your YAML DAG definition in Starlake.
+ to your YAML DAG definition in Starlake, and as expected the orchestrator will run the missed intervals using 
+ the `sl_start_date` and `sl_end_date` variables valued accordingly.
 
 
 ![alt_text](/img/blog/incremental-models/catchup.png "image_tooltip")
