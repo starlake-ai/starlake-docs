@@ -1,5 +1,5 @@
 ---
-sidebar_position: 290
+sidebar_position: 300
 title: site
 ---
 
@@ -18,5 +18,5 @@ Generate site
 Parameter|Cardinality|Description
 ---|---|---
 --outputDir:`<value>`|*Optional*|Output Directory
---template:`<value>`|*Required*|Template name or template path to use
+--template:`<value>`|*Optional*|Template name or template path to use
 

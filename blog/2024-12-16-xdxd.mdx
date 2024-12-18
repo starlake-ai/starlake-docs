@@ -1,0 +1,82 @@
+---
+slug: incremtal-models-the-easy-way
+title: Incremental models, the easy way.
+author: Hayssam Saleh
+author_title: Starlake Core Team
+author_url: https://www.linkedin.com/in/hayssams/
+author_image_url: https://s.gravatar.com/avatar/04aa2a859a66b52787bcba8c36beba8c.png
+tags: [Data Engineering, Analytics, Incremental Models, Data Orchestration, Backfill, Catchup]
+---
+
+
+
+
+## Incremental models, the easy way.
+
+One of the key advantages of Starlake is its ability to handle incremental models without 
+requiring state management. 
+This is a significant benefit of it being an integrated declarative data stack. 
+Not only does it use the same YAML DSL for both loading and transforming activities, 
+but it also leverages the backfill capabilities of your target orchestrator.
+
+When running transformations, we encounter two cases:
+
+### Full-refresh
+
+The existing data is overwritten or a new table is created if it did not exist before
+
+![Full refresh](/img/blog/incremental-models/full-refresh.png "Full refresh")
+
+
+### Incremental
+
+As data arrives periodically we have to build KPIs on that new data only. 
+For example, the daily_sales KPI does not need the whole input dataset but just the data
+for the day we are computing the KPI. The computed daily KPI are then appended 
+to the existing dataset, greatly reducing the amount of data processed.
+
+
+![Day 1](/img/blog/incremental-models/day1.png "Day 1")
+
+![Day 2](/img/blog/incremental-models/day2.png "Day 2")
+
+![Day 3](/img/blog/incremental-models/day3.png "Day 3")
+
+
+Starlake allows you to write your query as follows:
+
+
+![alt_text](/img/blog/incremental-models/query.png "image_tooltip")
+
+
+The `sl_start_date` and `sl_end_date` variables represent the start and end of the day for
+which the query is being executed. These are reserved environment variables that are automatically 
+passed to the transformation process.
+
+You might wonder what happens if the job fails to run for a specific day.
+There’s no need to worry—Starlake handles this seamlessly by leveraging Airflow's
+ **Catchup** mechanism. By configuration, Starlake requests the orchestrator 
+ to catch up on any missed intervals. To enable this, simply add the `catchup` flag
+ to your YAML DAG definition in Starlake.
+
+
+![alt_text](/img/blog/incremental-models/catchup.png "image_tooltip")
+
+
+What if you want to backfill a large period of time ? Your orchestrator has it all too:
+
+![alt_text](/img/blog/incremental-models/backfill.png "image_tooltip")
+
+
+### Conclusion
+
+In conclusion, Starlake's integrated and declarative approach simplifies 
+the management of incremental and full-refresh transformations, 
+eliminating the need for complex state management. 
+
+By leveraging reserved environment variables like `sl_start_date` and `sl_end_date`, 
+Starlake seamlessly integrates with orchestrators such as Airflow and Dagster to handle backfills, 
+missed intervals, and large periods of historical data with ease. 
+This ensures responsibility segregation between Starlake and the orchestrator: 
+Starlake's design empowers teams to focus on writing queries and delivering insights, 
+while it takes care of orchestration and state management effortlessly.

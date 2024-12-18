@@ -9,9 +9,9 @@ The following strategies are available:
 |---|---|
 | APPEND | Insert all rows into the table. If the table already contains data, the new rows will be appended. |
 | OVERWRITE | Replace all rows in the table with the new rows. This will delete all existing rows and insert the new ones. |
-| OVERWRITE_BY_KEY | Merge the new rows with the existing rows. If a row with the same key already exists in the table, the new row will overwrite the old one otherwise it will be appended. |
-| OVERWRITE_BY_KEY_AND_TIMESTAMP | Merge the new rows with the existing rows. If a row with the same key and an older timestamp already exists in the table, the new row will overwrite the old one otherwise it will be appended. |
-| OVERWRITE_BY_PARTITION | Merge the new rows with the existing rows. All existing partitions present in the new data will be overwritten. All other partitions will be left untouched and new partitions will be appended. |
+| UPSERT_BY_KEY | Merge the new rows with the existing rows. If a row with the same key already exists in the table, the new row will overwrite the old one otherwise it will be appended. |
+| UPSERT_BY_KEY_AND_TIMESTAMP | Merge the new rows with the existing rows. If a row with the same key and an older timestamp already exists in the table, the new row will overwrite the old one otherwise it will be appended. |
+| UPSERT_BY_PARTITION | Merge the new rows with the existing rows. All existing partitions present in the new data will be overwritten. All other partitions will be left untouched and new partitions will be appended. |
 | DELETE_THEN_INSERT | Delete rows in the target table for which records with the same keys exist in the incoming data, before inserting the incoming rows.  |
 | SCD2 | Merge the new rows with the existing rows using the [Slowly Changing Dimension Type 2](https://en.wikipedia.org/wiki/Slowly_changing_dimension) strategy. This will keep track of the history of the rows in the table. |
 | ADAPTATIVE | The write strategy will be determined at runtime based on the properties of the file being loaded.|
@@ -48,7 +48,7 @@ table:
     - ...
 ```
 
-## OVERWRITE_BY_KEY
+## UPSERT_BY_KEY
 If the table does not exist, it will be created.
 Merge the new rows with the existing rows.
 If a row with the same key already exists in the table,
@@ -62,13 +62,13 @@ table:
   metadata:
     ...
     writeStrategy:
-      type: "OVERWRITE_BY_KEY"
+      type: "UPSERT_BY_KEY"
       key: ["id"]
       on: TARGET
   attributes:
     - ...
 ```
-## OVERWRITE_BY_KEY_AND_TIMESTAMP
+## UPSERT_BY_KEY_AND_TIMESTAMP
 If the table does not exist, it will be created.
 Merge the new rows with the existing rows. If a row with the same key and an older timestamp already exists in the table, the new row will overwrite the old one otherwise it will be appended.
 <br/>
@@ -79,7 +79,7 @@ table:
   metadata:
     ...
     writeStrategy:
-      type: "OVERWRITE_BY_KEY_AND_TIMESTAMP"
+      type: "UPSERT_BY_KEY_AND_TIMESTAMP"
       key: ["id"]
       timestamp: "valid_from"
       on: TARGET
