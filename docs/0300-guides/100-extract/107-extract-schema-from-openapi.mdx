@@ -1,0 +1,113 @@
+# Extracting Schema from OpenAPI
+
+This documentation outlines the process to extract Starlake schemas from OpenAPI definitions using a YAML configuration map.
+The instructions provide a comprehensive explanation of how to map OpenAPI routes and schemas to Starlake.
+
+## Overview
+The schema extraction process leverages YAML configuration to define relations between Starlake's domains and tables with OpenAPI definitions.
+These configuration support advanced features like excluding routes or fields, and handling explosion strategies for complex data structures.
+Table names are deduced from paths and normalized. Attribute names are normalized as well in order for them to be compatible with databases.
+
+Generally speaking, what we are interested in an OpenAPI definition are GET operations and their schema. Starlake filters out schema's that are not objects or array of object. Furthermore, the extraction flatten root array and consider the output to match JSON Lines.
+
+## Extract step-by-step
+
+### 1. Define OpenAPI-Starlake Mapping
+
+In `metadata/extract/` defines a YAML config file, here named `my_openapi_extract_config.sl.yml`.
+
+```yaml {7,8} title="metadata/extract/my_openapi_extract_config.sl.yml"
+version: 1
+extract:
+  connectionRef: "my_open_api"
+  openAPI:
+    basePath: /api/v2
+    domains:
+      - name: api
+        schemas:
+          exclude:
+            - Model\.Common\.Id
+        routes:
+          - paths:
+              - ^/api/v2/clients/\{id}/details$
+            explode:
+              on: ARRAY
+              rename:
+                postal_adresses: adresses
+```
+
+The given example don't highlight all possible configuration. Let's break the configuration down and see how you may define yours:
+
+- sanitizeAttributeName: One of :
+  - ON_EXTRACT: attribute name is sanitized and stored as field name. Default.
+  - ON_LOAD: attribute name is sanitized and stored as rename property when attribute's name differs from sanitized name
+- connectionRef: reference a FS connection indicating where the open API file is
+- openAPI:
+  - basePath: paths are used for table names. This base path is remove before table name is produced.
+  - formatTypeMapping: map of String, String allowing to map a custom format to a starlake type. By default, if the format is not standard, the type is resolved as String.
+  - domains:
+    - basePath: same as root's one but override its for the domain. May be interesting if root base path is /api/v2 and we want to create re referential domain where api are all located under /api/v2/referentials/. Otherwise we would get table name like `referentials_products` instead of `products`.
+    - name: starlake domain name. Group multiple root under one specific domain.
+    - schemas: apply `include` then `exclude` list. OpenAPI have named schemas. If you are facing an OpenAPI definitions
+    where you want to discard specific schemas, just add it to `exclude` list. These may be an API where it requires you to list all ids before gettings the details of each of them. In contrary, if you are only interested by some schemas, use `include` list.
+    - routes:
+      - paths: all paths to include in the process. If regex is too complex, you may add multiple entries. By default, takes all paths.
+      - as: force the table name. Be sure that eligible `paths` are outputting only one schema. Otherwise an error is thrown during process because of collision.
+      - operations: GET or POST. By default, it is GET.
+      - exclude: paths to exclude. Detect `paths` first and then exclude them.
+      - excludeFields: in the response schema's, the API may define some deprecated attributes that you may want to drop. Just add their patterns.
+      - explode:
+        - on: May be one of :
+          - ALL: Keep properties of type object or array.
+          - ARRAY: Keep properties of type object. Don't dive on array type.
+          - OBJECT: Keep properties of type array. If encounters an object, dive deeper.
+        - exclude: list of properties to ignore. Sub properties are concatenated to thei parent with `_`. I.e `postal.address.number` become `postal_address_number`.
+        - rename: each exploded schemas are saved by default to a table named: `{api_path}_{property_path}`. If you don't want, you can use `rename` to match a property path to a table name. It's a map of `table_name -> property pattern`. If you force the renaming to `""`, then the output table will be `api_path`. It won't be suffixed with a dangling `_`.
+
+
+### 2. Define file connections to the OpenAPI definition file
+```yaml {7,8} title="metadata/application.sl.yml"
+version: 1
+application:
+  connections:
+    my_open_api:
+        type: "fs"
+        options:
+            path: my_open_api_file.json
+```
+
+`path` defines the location to the openAPI definition. By convention, these file will be in `metadata/extract/openapi`
+but you are free to specify an absolute location or use a substituted variable.
+
+### 3. Drop your OpenAPI definition
+According to the defined connection, you can drop your openAPI definition into `metadata/extract/openapi/my_open_api_file.json`.
+
+### 4. Extract
+
+Now, you just have to launch schema extraction. Schema extraction will extract to the `load` folder by default but you can specify another one with `outputDir`.
+If any domain or table exists, they are merged together.
+
+```shell
+$ starlake extract-schema --config my_openapi_extract_config
+```
+
+## Name normalization
+You may need to know how Starlake normalize names in order to apply those same transformation in your code and get a perfect match.
+
+### Table name
+Table names are deduced from path. This is how they are normalized:
+- remove path parameters
+- remove all accents
+- replace non alpha numeric with underscore
+- replace consecutive/trailing underscores
+- add underscore before capitals preceeded by lowercase
+- add underscore after a group of capitals
+- lower all
+
+### Attribute name
+Attribute names are normalized as follow:
+- remove all accents
+- replace non alpha numeric with underscore
+- replace consecutive/trailing underscores
+- add underscore before capitals preceeded by lowercase
+- add underscore after a group of capitals
