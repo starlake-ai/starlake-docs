@@ -1,0 +1,173 @@
+---
+slug: bigquery-wildcard-tables
+title: How to Load and Transform into BigQuery Wildcard Tables
+author: Hayssam Saleh
+author_title: Starlake Core Team
+author_url: https://www.linkedin.com/in/hayssams/
+author_image_url: https://s.gravatar.com/avatar/04aa2a859a66b52787bcba8c36beba8c.png
+tags: [Data Engineering, Analytics, Wildcards tables, BigQuery]
+---
+
+![Sharding](/img/blog/sharding/sharding2.png "BigQuery Wildcard Tables")
+
+    ## BigQuery Wildcard Tables
+    When loading files into BigQuery, 
+    you may need to split your data into multiple partitions to reduce data size, 
+    improve query performance, and lower costs. 
+    However, BigQuery’s native partitioning only supports columns with date/time or integer values. 
+    While partitioning on string columns isn’t directly supported, 
+    BigQuery provides a workaround with wildcard tables, offering nearly identical benefits.
+
+    In this example, we demonstrate how Starlake simplifies the process by seamlessly 
+    loading your data into wildcard tables.
+
+
+    ## The Problem
+
+    At a global retail company, I encountered a challenge where daily transctions CSV files were received 
+    from branches across various countries. 
+    These files were named in the format transactions_YYYYMMDD.csv, 
+    and the goal was to load them into BigQuery, partitioned by country, region and date.
+
+    The CSV files contained data in the following format:
+
+    ```csv
+    store_id, customer_id, trans_id, trans_date, trans_time, country, region, ...
+    1, 1, 1, 2024-12-19, 12:00:00, US, CA
+    1, 2, 2, 2024-12-19, 13:01:00, US, CA
+    2, 3, 3, 2024-12-19, 13:01:00, US, NY
+    2, 4, 4, 2024-12-19, 13:01:00, US, NY
+    ```
+
+    With hundreds of millions of transactions generated daily, 
+    querying the data efficiently by country and region was critical. 
+    Partitioning the data in this way would reduce storage size and significantly speed up queries.
+
+    However, since BigQuery doesn’t support partitioning by string columns, 
+    we leveraged wildcard tables to achieve the same benefits. 
+    The desired result was to create separate tables in BigQuery for each country and region, 
+    structured as follows:
+
+    ```
+    sales.transactions_US_CA
+    sales.transactions_US_NY
+    ```
+
+    Each table would store transactions for a specific country and region, 
+    while also being partitioned by date for optimal performance.
+
+    ### The Solution with Starlake Load
+
+    First, we need to instruct Starlake to infer the schema of the table from the 
+    CSV files and load them into BigQuery. This can be achieved with the following command:
+
+    ```bash
+    starlake infer-schema --domain sales \
+                        --table transactions \
+                        --input transations_20241219.csv 
+    ```
+
+    This command infers the schema of the CSV file and generates a YAML 
+    file that defines the schema and loading instructions. 
+    The resulting YAML file would look like this:
+
+    ```yaml title="transactions.sl.yml"
+    version: 1
+    table:
+    name: "transactions"
+    pattern: "transations_.*.csv"
+    attributes:
+    - name: store_id
+        type: int
+    - name: customer_id
+        type: int
+    - name: trans_id
+        type: int
+    - name: trans_date
+        type: timestamp
+    - name: trans_time
+        type: timestamp
+    - name: country
+        type: string
+    - name: region
+        type: string
+    metadata:
+        format: DSV
+        withHeader: true
+        separator: ","
+        writeStrategy:
+        type: APPEND
+    ```
+
+    Additionally, a second YAML file specifies where the input files are located:
+
+    ```yaml title="_config_.sl.yml"
+    version: 1
+    load:
+    name: "sales"
+    metadata:
+        directory: "{{incoming_path}}/sales"
+    ```
+
+    To load the data into BigQuery, follow these steps:
+        1.	Place the transaction files, following the expected filename pattern, into the directory `{{incoming_path}}/sales`. 
+        The `{{incoming_path}}` variable is defined in the environment configuration file.
+        2.	Run the following command:
+
+    ```bash
+    starlake load --domain sales --table transactions
+    ```
+
+    Since we aim to partition the data by country, region, and transaction date, 
+    and BigQuery does not support string columns for partitioning, we can use wildcard tables to 
+    achieve the same benefits. 
+
+    To implement this, we need to update 
+    the metadata section in the transactions.sl.yml file with additional instructions for creating wildcard tables.
+
+    ```yaml title="transactions.sl.yml"
+    ...
+    metadata:
+    ...
+    sink:
+        sharding: [country, region]
+        partition: [trans_date]
+    ````
+
+    The `sharding` key tells Starlake to create a wildcard table for each unique combination of country and region.
+    The `partition` key tells Starlake to partition the data in each wildcard table by transaction date.
+
+
+    We can now load the data into BigQuery and Starlake will create the following tables:
+
+    ```
+    sales.transactions_US_CA
+    sales.transactions_US_NY
+    ```
+
+
+    That's it - we've successfully loaded your data into BigQuery using wildcard tables!
+
+
+    ### The Solution with Starlake Transform
+
+    In addition to loading data, Starlake also supports transforming data using SQL queries.
+    To create the wildcard tables during the transformation process,
+    We use the exact same attributes in the sink section of the transform YAML file as we did in the load process.
+    Starlake will automatically create the wildcard tables in BigQuery when the transformation is executed.
+
+
+    ### Conclusion
+
+    This section illustrates how Starlake streamlines the process of loading data into BigQuery using wildcard tables.
+
+    By leveraging Starlake’s declarative approach, 
+    you can effortlessly partition your data by string columns, 
+    enhancing query performance while minimizing costs. 
+    Additionally, Starlake’s support for both data loading and transformation 
+    enables you to seamlessly create wildcard tables as part of the transformation process.
+
+    Also, Starlake’s integrated approach 
+    ensures consistency by allowing you to reuse the same attributes 
+    in the sink section of the transformation YAML file as those defined during the data loading process. 
+    This simplifies workflows and promotes efficiency.
