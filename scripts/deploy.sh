@@ -1,3 +1,4 @@
+# run as ./scripts/deploy.sh
 if test -d ../../starlake-website/public/starlake; then
     rm -rf build && \
     yarn install && \
