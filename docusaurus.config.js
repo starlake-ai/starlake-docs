@@ -3,6 +3,7 @@
 
 const lightCodeTheme = require("prism-react-renderer").themes.github;
 const darkCodeTheme = require("prism-react-renderer").themes.dracula;
+const isBlog = process.env.IS_BLOG === 'true';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -33,14 +34,13 @@ const config = {
       {
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
-          // Please change this to your repo.
           editUrl: "https://docs.starlake.ai",
-          routeBasePath: '/',
+          routeBasePath: isBlog ? '/docs' : '/',
         },
         blog: {
           showReadingTime: true,
-          // Please change this to your repo.
           editUrl: "https://blog.starlake.ai",
+          routeBasePath: isBlog ? '/' : '/blog',
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
@@ -88,8 +88,9 @@ const config = {
           sidebarId: "starlakeSidebar",
           label: "Documentation",
           position: "left",
+          to: "https://docs.starlake.ai"
         },
-        { to: "/blog", label: "Blog", position: "left" },
+        { to: "https://blog.starlake.ai", label: "Blog", position: "left" },
         /*
         {
           type: 'docsVersionDropdown',
