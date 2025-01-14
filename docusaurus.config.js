@@ -34,12 +34,13 @@ const config = {
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
           // Please change this to your repo.
-          editUrl: "https://github.com/starlake-ai/starlake/edit/master/docs/",
+          editUrl: "https://docs.starlake.ai",
+          routeBasePath: '/',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
-          editUrl: "https://github.com/starlake-ai/starlake/edit/master/docs/",
+          editUrl: "https://blog.starlake.ai",
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),

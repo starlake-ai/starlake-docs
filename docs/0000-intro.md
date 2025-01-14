@@ -1,8 +1,8 @@
 ---
+id: intro
+slug: /
 sidebar_position: 1
 ---
-
-
 
 # What is Starlake ?
 
@@ -13,7 +13,7 @@ The workflow below is a typical use case:
 * Define or infer the structure of each POSITION/DSV/JSON/XML file with a schema using YAML syntax
 * Configure the loading process
 * Start watching your data being available as Tables in your warehouse.
-* Build aggregates using SQL, Jinja and YAML configuration files.  
+* Build aggregates using SQL, Jinja and YAML configuration files.
 
 Starlake may be used indistinctly for all or any of these steps.
 
@@ -30,7 +30,7 @@ Input file schemas, ingestion rules, transformation and indexing definitions use
 
 ## Extract
 
-Starlake provides a simple yet powerful  way to extract, in full or incrementally, tables from your database. 
+Starlake provides a simple yet powerful  way to extract, in full or incrementally, tables from your database.
 
 Using parallel load through a JDBC connection and configuring the incremental fields in the schema, you may extract your data incrementally.
 Once copied to the cloud provider of your choice, the data is available for further processing by the Load and Transform steps.
@@ -64,7 +64,7 @@ Starlake loads the data using an embedded Spark engine. Please note that this mo
 
 :::note
 
-For some datawarehouses like BigQuery, Starlake can make use of the datawarehouse load API to load the data. 
+For some datawarehouses like BigQuery, Starlake can make use of the datawarehouse load API to load the data.
 This is the fastest way to load the data but comes at the expense of limited features.
 
 :::
@@ -98,7 +98,7 @@ The table below list the features supported by each mode, the one that meet your
     - Append Mode
     - Overwrite Mode
     - Merge Mode (SCD2, Remove duplicates, overwrite by key / partition ...)
-    
+
     - Run Pre or Post Load SQL scripts
     - Report Data quality using expectations
 - Save to any sink
@@ -129,8 +129,8 @@ The table below list the features supported by each mode, the one that meet your
 Simply write standard SQL et describe how you want the result to be stored in a YAML description file.
 The major benefits Starlake bring to your Data transformation jobs are:
 
-* Write transformations in regular SQL as SELECT statements only, 
-Starlake will convert them to INSERT INTO, MERGE INTO or UPDATE statements depending on the write strategy you choose. 
+* Write transformations in regular SQL as SELECT statements only,
+Starlake will convert them to INSERT INTO, MERGE INTO or UPDATE statements depending on the write strategy you choose.
 
 
 ## Orchestrate
@@ -139,5 +139,5 @@ No more need to write complex ETL scripts, just write your SQL and YAML configur
 
 Starlake provides a simple yet powerful way to orchestrate your data pipeline.
 Dependencies between tasks are inferred from SQL statements and YAML configuration files.
-Starlake will generate a Directed Acyclic Graph (DAG) of your data pipeline and execute in the right order 
+Starlake will generate a Directed Acyclic Graph (DAG) of your data pipeline and execute in the right order
 the tasks that are ready to run through your own Airflow or Dagster scheduler.

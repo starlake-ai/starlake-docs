@@ -139,12 +139,12 @@ export default function Footer() {
           <div className="footer-col">
             <h6 className="footer-title tl">Resources</h6>
             <p className="tl">
-              <a href="/starlake/docs/intro" className="footer-link">
+              <a href="https://docs.starlake.ai" className="footer-link">
                 Docs
               </a>
             </p>
             <p className="tl">
-              <a href="/starlake/blog" className="footer-link">
+              <a href="https://blog.starlake.ai" className="footer-link">
                 Blog
               </a>
             </p>
