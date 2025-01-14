@@ -1,1 +1,304 @@
- 
+# Quick Installation Guide
+
+Get started with Starlake in minutes. Choose your preferred installation method below.
+
+## Installation Methods
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs groupId="installation-methods">
+<TabItem value="docker" label="🐳 Docker (Recommended)">
+
+### Prerequisites
+- Docker installed and running
+- No other dependencies required - everything is included in the container
+
+### Installation
+
+The fastest way to get started with Starlake:
+
+```bash
+# Pull the latest stable image
+docker pull starlakeai/starlake:latest
+
+# Verify installation
+docker run -it starlakeai/starlake:latest help
+```
+
+<details>
+<summary>Custom Build Instructions</summary>
+
+Build a specific version or branch:
+
+```bash
+# Clone repository
+git clone git@github.com:starlake-ai/starlake.git
+cd starlake
+
+# Build with specific version
+docker build -t starlakeai/starlake:VERSION \
+    --build-arg SL_VERSION=1.2.0 .
+```
+
+</details>
+
+### Running Starlake with Docker
+
+<Tabs groupId="docker-usage">
+<TabItem value="basic" label="Basic Usage">
+
+```bash
+# Mount current directory and run Starlake
+docker run -it \
+    -v $(pwd):/starlake \
+    starlakeai/starlake:latest <command>
+
+# Example: Run help command
+docker run -it \
+    -v $(pwd):/starlake \
+    starlakeai/starlake:latest help
+```
+
+</TabItem>
+
+<TabItem value="aws" label="AWS Integration">
+
+```bash
+# Run with AWS credentials
+docker run -it \
+    -v $(pwd):/starlake \
+    -e SL_ROOT=/starlake \
+    -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+    -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+    -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
+    -e AWS_REGION=$AWS_REGION \
+    starlakeai/starlake:latest <command>
+```
+
+</TabItem>
+
+<TabItem value="gcp" label="GCP Integration">
+
+```bash
+# Run with GCP credentials
+docker run -it \
+    -v $(pwd):/starlake \
+    -v $HOME/.config/gcloud:/root/.config/gcloud \
+    -e SL_ROOT=/starlake \
+    -e GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json \
+    starlakeai/starlake:latest <command>
+```
+
+</TabItem>
+
+<TabItem value="azure" label="Azure Integration">
+
+```bash
+# Run with Azure credentials
+docker run -it \
+    -v $(pwd):/starlake \
+    -e SL_ROOT=/starlake \
+    -e AZURE_TENANT_ID=$AZURE_TENANT_ID \
+    -e AZURE_CLIENT_ID=$AZURE_CLIENT_ID \
+    -e AZURE_CLIENT_SECRET=$AZURE_CLIENT_SECRET \
+    starlakeai/starlake:latest <command>
+```
+
+</TabItem>
+
+<TabItem value="advanced" label="Advanced Options">
+
+```bash
+# Run with custom configuration
+docker run -it \
+    -v $(pwd):/starlake \
+    -e SL_ROOT=/starlake \
+    -e SL_ENV=production \
+    -e SL_METRICS_ACTIVE=true \
+    -e JAVA_OPTS="-Xmx4g" \
+    -e SPARK_DRIVER_MEMORY=4g \
+    starlakeai/starlake:latest <command>
+```
+
+Common environment variables:
+- `SL_ROOT`: Project root directory inside container
+- `SL_ENV`: Environment (dev, test, prod)
+- `SL_METRICS_ACTIVE`: Enable/disable metrics collection
+- `JAVA_OPTS`: JVM options
+- `SPARK_DRIVER_MEMORY`: Spark driver memory allocation
+
+</TabItem>
+</Tabs>
+
+:::tip Mount Points
+Always mount your project directory to `/starlake` in the container to ensure proper file access.
+:::
+
+:::note Cloud Credentials
+For production environments, consider using mounted credential files or secret management services instead of environment variables.
+:::
+
+</TabItem>
+
+<TabItem value="linux_macos" label="🖥️ Linux/MacOS">
+
+### Prerequisites
+- Java 11+ installed
+  ```bash
+  # Verify Java version
+  java -version
+  ```
+- If needed, install Java from [Oracle JDK](https://www.oracle.com/java/technologies/javase-jdk11-downloads.html) or [OpenJDK](https://adoptopenjdk.net/)
+
+### Installation
+
+One-line installation script:
+
+```bash
+sh <(curl https://raw.githubusercontent.com/starlake-ai/starlake/master/distrib/setup.sh)
+```
+
+The script will create the following directory structure:
+```text
+starlake/
+├── bin/
+│   ├── deps/      # Extra dependencies (e.g., Oracle client)
+│   ├── sl         # Starlake CLI
+│   └── spark      # Embedded Spark runtime
+```
+
+</TabItem>
+
+<TabItem value="windows" label="🪟 Windows">
+
+### Prerequisites
+- Java 11+ installed
+  ```powershell
+  # Verify Java version
+  java -version
+  ```
+- PowerShell 5.0 or later
+- Administrator privileges
+
+### Installation
+
+Run in PowerShell as administrator:
+
+```powershell
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/starlake-ai/starlake/master/distrib/setup.ps1").Content
+```
+
+</TabItem>
+</Tabs>
+
+## Development Tools
+
+### VS Code Extension
+
+### Prerequisites
+- Visual Studio Code installed
+- GraphViz (required for pipeline visualization)
+
+Install GraphViz based on your platform:
+
+<Tabs groupId="graphviz">
+<TabItem value="linux" label="Linux">
+
+```bash
+# Debian/Ubuntu
+sudo apt install graphviz
+
+# RHEL/CentOS
+sudo yum install graphviz
+```
+
+</TabItem>
+
+<TabItem value="macos" label="MacOS">
+
+```bash
+brew install graphviz
+```
+
+</TabItem>
+
+<TabItem value="windows" label="Windows">
+
+Download the installer from [GraphViz Official Website](https://graphviz.org/download/#windows)
+
+</TabItem>
+
+<TabItem value="docker" label="Docker">
+
+GraphViz comes pre-installed in the Starlake Docker image.
+
+</TabItem>
+</Tabs>
+
+### Installation
+
+Enhance your development experience with our official VS Code extension:
+
+1. Open VS Code
+2. Go to Extensions (Ctrl+Shift+X)
+3. Search for "Starlake"
+4. Install "Starlake Data Pipeline Tools"
+
+Features:
+- Syntax highlighting for Starlake configurations
+- Schema validation
+- SQL transformation snippets
+- Pipeline visualization
+
+## Verify Installation
+
+Test your installation:
+
+```bash
+starlake --version
+```
+
+You should see output like:
+```
+Starlake Version 1.2.0
+```
+
+## Next Steps
+
+- [Create your first project](guides/bootstrap)
+- [Load your first dataset](guides/load/tutorial)
+- [Transform your data](guides/transform/tutorial)
+
+## Troubleshooting
+
+Common installation issues and solutions:
+
+1. **Java Version Mismatch**
+   ```bash
+   # Check Java version
+   java -version
+
+   # Install correct version if needed
+   ```
+
+2. **Permission Issues**
+   ```bash
+   # Fix permissions on Linux/MacOS
+   chmod +x bin/sl
+   ```
+
+3. **Docker Issues**
+   ```bash
+   # Verify Docker installation
+   docker --version
+
+   # Test Docker permissions
+   docker run hello-world
+   ```
+
+:::note Extra Dependencies
+
+Any additional libraries (e.g., Oracle client) should be copied to the `bin/deps` folder.
+
+:::

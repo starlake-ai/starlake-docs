@@ -177,4 +177,4 @@ Begin your journey to modern data pipeline automation:
 2. Write transformations in familiar SQL
 3. Let Starlake handle the orchestration
 
-Visit our [Quick Start Guide](/docs/quickstart) to see how Starlake can transform your data engineering workflow.
+Visit our [Quick Start Guide](/quickstart) to see how Starlake can transform your data engineering workflow.
