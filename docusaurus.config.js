@@ -34,12 +34,10 @@ const config = {
       {
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
-          editUrl: "https://docs.starlake.ai",
           routeBasePath: isBlog ? '/docs' : '/',
         },
         blog: {
           showReadingTime: true,
-          editUrl: "https://blog.starlake.ai",
           routeBasePath: isBlog ? '/' : '/blog',
         },
         theme: {
@@ -157,6 +155,21 @@ const config = {
   },
 
   plugins: [
+    isBlog && [
+      '@docusaurus/plugin-client-redirects',
+      {
+        redirects: [
+          {
+            from: '/docs',
+            to: 'https://docs.starlake.ai',
+          },
+          {
+            from: '/docs/*',
+            to: 'https://docs.starlake.ai/:splat',
+          },
+        ],
+      },
+    ],
     [
       require.resolve("@easyops-cn/docusaurus-search-local"),
       {
@@ -176,7 +189,7 @@ const config = {
         hashed: true,
       },
     ],
-  ],
+  ].filter(Boolean),
   markdown: {
     mermaid: true,
   },
