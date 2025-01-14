@@ -32,13 +32,22 @@ const config = {
     [
       "classic",
       {
-        docs: {
+        docs: isBlog ? {
+          path: 'blog-docs',  // Point to a different directory when in blog mode
           sidebarPath: require.resolve("./sidebars.js"),
-          routeBasePath: isBlog ? '/docs' : '/',
+          routeBasePath: '/docs',
+        } : {
+          path: 'docs',  // Regular docs directory
+          sidebarPath: require.resolve("./sidebars.js"),
+          routeBasePath: '/',
         },
-        blog: {
+        blog: isBlog ? {
           showReadingTime: true,
-          routeBasePath: isBlog ? '/' : '/blog',
+          routeBasePath: '/',
+        } : {
+          showReadingTime: true,
+          routeBasePath: '/blog',
+          exclude: ['**/*'],
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
@@ -81,14 +90,26 @@ const config = {
         href: "https://starlake.ai",
       },
       items: [
-        {
+        isBlog ? {
+          href: "https://docs.starlake.ai",
+          label: "Documentation",
+          position: "left",
+        } : {
           type: "docSidebar",
           sidebarId: "starlakeSidebar",
           label: "Documentation",
           position: "left",
-          to: "https://docs.starlake.ai"
+          to: "/",
         },
-        { to: "https://blog.starlake.ai", label: "Blog", position: "left" },
+        !isBlog ? {
+          href: "https://blog.starlake.ai",
+          label: "Blog",
+          position: "left",
+        } : {
+          to: "/",
+          label: "Blog",
+          position: "left",
+        },
         /*
         {
           type: 'docsVersionDropdown',
@@ -113,7 +134,7 @@ const config = {
           className: "header-slack-link header-icon-link",
           "aria-label": "Community",
         },
-      ],
+      ].filter(Boolean),
     },
     //     footer: {
     //       style: "dark",
@@ -155,32 +176,10 @@ const config = {
   },
 
   plugins: [
-    isBlog && [
-      '@docusaurus/plugin-client-redirects',
-      {
-        redirects: [
-          {
-            from: '/docs',
-            to: 'https://docs.starlake.ai',
-          },
-          {
-            from: '/docs/*',
-            to: 'https://docs.starlake.ai/:splat',
-          },
-        ],
-      },
-    ],
-    [
+    !isBlog && [
       require.resolve("@easyops-cn/docusaurus-search-local"),
       {
-        // ... Your options.
-        // `hashed` is recommended as long-term-cache of index file is possible.
         hashed: true,
-        // For Docs using Chinese, The `language` is recommended to set to:
-        // ```
-        // language: ["en", "zh"],
-        // ```
-        // When applying `zh` in language, please install `nodejieba` in your project.
       },
     ],
     [
