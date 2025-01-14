@@ -15,7 +15,7 @@ yarn install
 ## Local Development
 
 ```console
-BASE_URL=/starlake/ yarn start 
+BASE_URL=/starlake/ yarn start
 ```
 
 This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
@@ -30,12 +30,8 @@ This command generates static content into the `build` directory and can be serv
 
 ## Deployment
 
-```console
-GIT_USER=<Your GitHub username> USE_SSH=true BASE_URL=/starlake/ yarn deploy
-```
-
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
-
-
-Upgrade node: nvm install node --reinstall-packages-from=node
-
+We're using cloudflare pages to deploy the docs.
+The deployment is done automatically when a PR is merged to the main branch.
+When the PR is merged, the cloudflare pages will automatically build and deploy the changes two cloudflare pages:
+ - docs: https://docs.starlake.ai using https://dash.cloudflare.com/ec8885017c1f05235b32673b17651361/pages/view/docs-starlake
+ - blog: https://blog.starlake.ai using https://dash.cloudflare.com/ec8885017c1f05235b32673b17651361/pages/view/blog-starlake

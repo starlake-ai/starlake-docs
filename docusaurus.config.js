@@ -3,6 +3,7 @@
 
 const lightCodeTheme = require("prism-react-renderer").themes.github;
 const darkCodeTheme = require("prism-react-renderer").themes.dracula;
+const isBlog = process.env.IS_BLOG === 'true';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -31,16 +32,22 @@ const config = {
     [
       "classic",
       {
-        docs: {
+        docs: isBlog ? {
+          path: 'blog-docs',  // Point to a different directory when in blog mode
           sidebarPath: require.resolve("./sidebars.js"),
-          // Please change this to your repo.
-          editUrl: "https://docs.starlake.ai",
+          routeBasePath: '/docs',
+        } : {
+          path: 'docs',  // Regular docs directory
+          sidebarPath: require.resolve("./sidebars.js"),
           routeBasePath: '/',
         },
-        blog: {
+        blog: isBlog ? {
           showReadingTime: true,
-          // Please change this to your repo.
-          editUrl: "https://blog.starlake.ai",
+          routeBasePath: '/',
+        } : {
+          showReadingTime: true,
+          routeBasePath: '/blog',
+          exclude: ['**/*'],
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
@@ -83,13 +90,26 @@ const config = {
         href: "https://starlake.ai",
       },
       items: [
-        {
+        isBlog ? {
+          href: "https://docs.starlake.ai",
+          label: "Documentation",
+          position: "left",
+        } : {
           type: "docSidebar",
           sidebarId: "starlakeSidebar",
           label: "Documentation",
           position: "left",
+          to: "/",
         },
-        { to: "/blog", label: "Blog", position: "left" },
+        !isBlog ? {
+          href: "https://blog.starlake.ai",
+          label: "Blog",
+          position: "left",
+        } : {
+          to: "/",
+          label: "Blog",
+          position: "left",
+        },
         /*
         {
           type: 'docsVersionDropdown',
@@ -114,7 +134,7 @@ const config = {
           className: "header-slack-link header-icon-link",
           "aria-label": "Community",
         },
-      ],
+      ].filter(Boolean),
     },
     //     footer: {
     //       style: "dark",
@@ -156,17 +176,10 @@ const config = {
   },
 
   plugins: [
-    [
+    !isBlog && [
       require.resolve("@easyops-cn/docusaurus-search-local"),
       {
-        // ... Your options.
-        // `hashed` is recommended as long-term-cache of index file is possible.
         hashed: true,
-        // For Docs using Chinese, The `language` is recommended to set to:
-        // ```
-        // language: ["en", "zh"],
-        // ```
-        // When applying `zh` in language, please install `nodejieba` in your project.
       },
     ],
     [
@@ -175,7 +188,7 @@ const config = {
         hashed: true,
       },
     ],
-  ],
+  ].filter(Boolean),
   markdown: {
     mermaid: true,
   },

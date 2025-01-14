@@ -25,7 +25,7 @@ const content = {
       description: "StarLake",
     },
     copyright: {
-      text: "Copyright © 2024 ",
+      text: `Copyright © ${new Date().getFullYear()}`,
       company: "Starlake.ai",
       companyLink: "https://starlake.ai",
     },
@@ -123,7 +123,7 @@ export default function Footer() {
   };
   const handleClickLink = () => {
     window.open(
-      "https://www.linkedin.com/company/starlake-ai/mycompany/",
+      "https://www.linkedin.com/company/starlake-ai/",
       "_blank"
     );
   };
