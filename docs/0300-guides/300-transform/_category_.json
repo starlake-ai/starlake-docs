@@ -1,7 +1,8 @@
 {
-  "label": "Transform",
+  "label": "Data Transformation",
+  "position": 4,
   "link": {
     "type": "generated-index",
-    "description": "Run SQL (or Python) scripts to transform data from source to target and store the results using different write strategies."
+    "description": "Transform your data using SQL and YAML configurations. Learn about incremental processing, dependencies, and optimization."
   }
 }

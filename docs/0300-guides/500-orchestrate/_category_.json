@@ -1,7 +1,8 @@
 {
-  "label": "Orchestrate",
+  "label": "Orchestration & Deployment",
+  "position": 6,
   "link": {
     "type": "generated-index",
-    "description": "Schedule your transforms to run on a regular basis using your favorite orchestration tool."
+    "description": "Deploy and orchestrate your pipelines in production. Integration with Airflow, Dagster, and cloud platforms."
   }
 }
