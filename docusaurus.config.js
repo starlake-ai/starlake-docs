@@ -175,10 +175,12 @@ const config = {
   },
 
   plugins: [
-    !isBlog && [
+    [
       require.resolve("@easyops-cn/docusaurus-search-local"),
       {
         hashed: true,
+        docsRouteBasePath: isBlog ? '/docs/' : '/',
+        blogRouteBasePath: isBlog ? '/blog/' : '/',
       },
     ],
     [
