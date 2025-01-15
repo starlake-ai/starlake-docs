@@ -7,20 +7,20 @@ const isBlog = process.env.IS_BLOG === 'true';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "Starlake.ai: Simplify Your ETL and Data Integration Workflows",
+  title: "Starlake",
   tagline: "Transform your data with seamless ETL, real-time pipelines, and powerful transformation tools",
   favicon: "img/favicon_starlake.ico",
 
   // Set the production url of your site here
-  url: "https://starlake.ai",
-  baseUrl: process.env.BASE_URL || "/",
+  url: isBlog ? "https://blog.starlake.ai" : "https://docs.starlake.ai",
+  baseUrl: "/",
 
   organizationName: "starlake-ai", // Usually your GitHub org/user name.
   projectName: "starlake", // Usually your repo name.
 
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
-
+  trailingSlash: false,
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
   // to replace "en" with "zh-Hans".
@@ -175,10 +175,12 @@ const config = {
   },
 
   plugins: [
-    !isBlog && [
+    [
       require.resolve("@easyops-cn/docusaurus-search-local"),
       {
         hashed: true,
+        docsRouteBasePath: isBlog ? '/docs/' : '/',
+        blogRouteBasePath: isBlog ? '/blog/' : '/',
       },
     ],
     [

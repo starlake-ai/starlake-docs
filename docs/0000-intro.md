@@ -3,7 +3,6 @@ id: intro
 slug: /
 sidebar_position: 1
 sidebar_label: "Overview"
-title: "Starlake: Open Source Data Integration & ETL Platform"
 description: "Discover how Starlake revolutionizes data pipelines with its declarative ETL tool for seamless data transformation and orchestration."
 ---
 
