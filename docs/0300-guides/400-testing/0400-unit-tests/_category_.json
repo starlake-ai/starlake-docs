@@ -1,8 +1,0 @@
-{
-  "label": "Testing & Quality",
-  "position": 4,
-  "link": {
-    "type": "generated-index",
-    "description": "Ensure data pipeline reliability with Starlake's comprehensive testing framework. Run unit tests locally before deploying to production."
-  }
-}
