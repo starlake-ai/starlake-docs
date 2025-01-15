@@ -7,7 +7,7 @@ const isBlog = process.env.IS_BLOG === 'true';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "Starlake.ai: Simplify Your ETL and Data Integration Workflows",
+  title: "Starlake",
   tagline: "Transform your data with seamless ETL, real-time pipelines, and powerful transformation tools",
   favicon: "img/favicon_starlake.ico",
 

@@ -27,7 +27,7 @@ const content = {
     copyright: {
       text: `Copyright © ${new Date().getFullYear()}`,
       company: "Starlake.ai",
-      companyLink: "https://starlake.ai",
+      companyLink: "https://starlake.ai/",
     },
   },
 };
