@@ -3,11 +3,11 @@ id: intro
 slug: /
 sidebar_position: 1
 sidebar_label: "Overview"
-title: "Starlake: Modern Data Pipeline Automation Made Simple"
+title: "Starlake: Open Source Data Integration & ETL Platform"
 description: "Discover how Starlake revolutionizes data pipelines with its declarative ETL tool for seamless data transformation and orchestration."
 ---
 
-# Starlake: Modern Data Pipeline Automation Made Simple
+# Starlake: Open Source Data Integration & ETL Platform
 
 Starlake is an enterprise-grade data pipeline platform that transforms how organizations handle data integration. Using a declarative approach with YAML and SQL, it eliminates complex coding while ensuring robust data governance and quality.
 
