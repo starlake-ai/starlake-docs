@@ -7,8 +7,8 @@ const isBlog = process.env.IS_BLOG === 'true';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "Declarative Data Pipelines",
-  tagline: "Effortless Extract / Load / Transform / Orchestrate",
+  title: "Starlake.ai: Simplify Your ETL and Data Integration Workflows",
+  tagline: "Transform your data with seamless ETL, real-time pipelines, and powerful transformation tools",
   favicon: "img/favicon_starlake.ico",
 
   // Set the production url of your site here
@@ -51,11 +51,6 @@ const config = {
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
-        },
-        googleAnalytics: {
-          trackingID: "UA-207943293-1",
-          // Optional fields.
-          anonymizeIP: true, // Should IPs be anonymized?
         },
         gtag: {
           trackingID: "G-FYS72XYD48",
@@ -173,6 +168,10 @@ const config = {
         },
       },
     },
+    metadata: [{
+      name: 'description',
+      content: 'Transform your data with Starlake.ai – Seamless ETL, real-time pipelines, and powerful transformation tools. Open-source declarative data pipeline solution for BigQuery, Snowflake, Redshift and more.'
+    }],
   },
 
   plugins: [

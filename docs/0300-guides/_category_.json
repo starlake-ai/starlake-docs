@@ -1,5 +1,6 @@
 {
-  "label": "Guides",
+  "label": "Guides & Tutorials",
+  "position": 3,
   "link": {
     "type": "generated-index",
     "description": "Build and Orchestrate your data pipelines using YAML and SQL only."

@@ -1,3 +1,12 @@
+---
+id: getting-started-project-setup
+title: Create Your First Starlake Project
+description: Learn how to bootstrap a new Starlake project and configure your data warehouse connection for ETL pipelines
+keywords: [starlake, data engineering, etl, bootstrap, project setup, data warehouse, bigquery, duckdb]
+sidebar_label: Project Setup
+sidebar_position: 1
+---
+
 # Create a project
 
 import Tabs from '@theme/Tabs';
@@ -5,13 +14,21 @@ import TabItem from '@theme/TabItem';
 
 ## Select a project template
 
-To create a new project, you need first to create an empty folder and run the
-starlake bootstrap CLI command from there:
+To create a new project, first create an empty folder and run the starlake bootstrap CLI command:
 
 <Tabs groupId="platforms">
+<TabItem value="docker" label="Docker">
+
+```bash
+$ mkdir $HOME/userguide
+$ cd $HOME/userguide
+$ docker run -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap
+```
+
+</TabItem>
 <TabItem value="linux_macos" label="Linux/MacOS">
 
-```
+```bash
 $ mkdir $HOME/userguide
 $ cd $HOME/userguide
 $ starlake bootstrap
@@ -20,65 +37,54 @@ $ starlake bootstrap
 </TabItem>
 <TabItem value="windows" label="Windows">
 
-```
+```powershell
 c:\> mkdir c:\userguide
 c:\> cd c:\userguide
 c:\> starlake bootstrap
 ```
 
 </TabItem>
-<TabItem value="docker" label="Docker">
-
-```
-$ mkdir $HOME/userguide
-$ cd $HOME/userguide
-$ docker run  -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap
-```
-
-
-</TabItem>
-
 </Tabs>
 
 :::note
 
 By default, the project will be created in the current working directory.
-To bootstrap the project in a different folder set SL_ROOT env variable to that folder:
+To bootstrap the project in a different folder, set the SL_ROOT environment variable:
 
 :::
 
 <Tabs groupId="platforms">
+<TabItem value="docker" label="Docker">
+
+```bash
+$ mkdir $HOME/userguide
+$ cd $HOME/userguide
+$ docker run -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap
+```
+
+</TabItem>
 <TabItem value="linux_macos" label="Linux/MacOS">
 
-```
+```bash
 $ SL_ROOT=/my/other/location starlake bootstrap
 ```
 
 </TabItem>
 <TabItem value="windows" label="Windows">
 
-```
-c:\> set SL_ROOT=c:\my\other\location
+```powershell
+c:\> mkdir c:\my\other\location
 c:\> starlake bootstrap
-```
-
-</TabItem>
-<TabItem value="docker" label="Docker">
-You are always required to set the SL_ROOT env var when using Docker
-
-```
-$ mkdir $HOME/userguide
-$ cd $HOME/userguide
-$ docker run  -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap
 ```
 
 </TabItem>
 </Tabs>
 
-starlake will then create a default project hierarchy that allow you to start to extract, load, transform your data and orchestrate you pipelines.
+## Project Structure
 
+Starlake will create a default project hierarchy that enables you to start extracting, loading, transforming and orchestrating your data pipelines:
 
-``` text {2,5,7,8,9,10,11,12,13}
+```text {2,5,7,8,9,10,11,12,13}
 .
 ├── metadata
 │   ├── application.sl.yml      # project configuration
@@ -98,30 +104,24 @@ starlake will then create a default project hierarchy that allow you to start to
             ├── order_202403011414.json
             ├── order_line_202403011415.csv
             └── product.xml
-
 ```
 
+Key directories:
+- `incoming`: Contains files to be loaded into your warehouse
+- `metadata`: Contains extract, load and transform configuration files
+- `expectations`: Contains data validation rules for loaded/transformed data
 
-- The `incoming` folder host all the files you will want to load into your warehouse.
-- The `metadata` folder contains the __extract__, __load__ and __transform__ configuration files
-- The `expectations` folder contains the expectations configuration files used for validating the data loaded / transformed in your warehouse
+## Configure Your Data Warehouse Connection
 
-## Configure your datawarehouse connection
+The project configuration is stored in `metadata/application.sl.yml`. This file contains:
+- Project version
+- List of connections to different data sinks
+- Active connection reference
+- Environment-specific configuration overrides
 
-The project configuration is stored in the `metadata/application.sl.yml` file. This file contains the project version and the list of connections to the different data sinks.
+Here's an example configuration:
 
-
-This application configuration file contains multiple connections:
-- Each connection is a sink where data can be loaded/transformed
-- The active connection to use for loading/transforming data is specified in the `connectionRef` property of the application section
-- The `connectionRef` property can be set to any of the connection names defined in the `connections` section.
-- We use environment variables to override the default values of the project configuration. The example below set the active connectionRef using the `activeConnection`variable.
-This allows us to run our project on different datawarehouses (DEV / QA / PROD) without the need to update the project configuration.
-
-
-```yaml {title="metadata/application.sl.yml" }
-
----
+```yaml title="metadata/application.sl.yml"
 application:
   connectionRef: "{{activeConnection}}"
 
@@ -144,28 +144,25 @@ application:
         authType: "APPLICATION_DEFAULT"
         authScopes: "https://www.googleapis.com/auth/cloud-platform"
         writeMethod: "direct"
-    redshift:
-      ...
-    snowflake:
-      ...
-    ...
-
-
-
 ```
 
-
-The files `env.DUCKDB.sl.yml` and `env.BQ.sl.yml` are used to override the default values of the project configuration for the DuckDB and BigQuery connections.
-We then only need to define the SL_ENV environment variable to switch between the different environments.
-
-To switch to the DuckDB connection, we can run the following command:
-
+The files `env.DUCKDB.sl.yml` and `env.BQ.sl.yml` override default values for DuckDB and BigQuery connections. Set the `SL_ENV` environment variable to switch between environments:
 
 <Tabs groupId="platforms">
+<TabItem value="docker" label="Docker">
+
+```bash
+$ docker run -v `pwd`:/app/userguide \
+             -e SL_ROOT=/app/userguide \
+             -e SL_ENV=DUCKDB \
+             -it starlakeai/starlake:VERSION <command>
+```
+
+</TabItem>
 <TabItem value="linux_macos" label="Linux/MacOS">
 
 ```bash
-$ SL_ENV=DUCKDB starlake <command>>
+$ SL_ENV=DUCKDB starlake <command>
 ```
 
 </TabItem>
@@ -173,33 +170,21 @@ $ SL_ENV=DUCKDB starlake <command>>
 
 ```powershell
 c:> SET SL_ENV=DUCKDB
-c:> starlake <command>>
-```
-
-</TabItem>
-<TabItem value="docker" label="Docker">
-
-```bash
-$ docker run    -v `pwd`:/app/userguide \
-                -e SL_ROOT=/app/userguide \
-                -e SL_ENV=DUCKDB \
-                -it starlakeai/starlake:VERSION <command>
+c:> starlake <command>
 ```
 
 </TabItem>
 </Tabs>
 
-## Next steps
+## Next Steps
 
-That's it, we are ready to go. Let's start by [loading some data](load/tutorial) into our warehouse and then [transforming it](transform/tutorial) to make it ready for analysis.
+You're now ready to start working with Starlake! The next steps are:
 
-In this tutorial,
-- extract data from a database and then load the data into your favorite datawarehouse.
-- Run transformations from the command line and from Airflow
-- Generate the documentation for the project
+1. [Load data](load/tutorial) into your warehouse
+2. [Transform data](transform/tutorial) for analysis
+3. Run transformations from CLI and Airflow
+4. Generate project documentation
 
-We will use the [Starbake](https://github.com/starlake-ai/StarBake/) project, a simple Github project that allows us to create fake data inside a database for our tutorial.
+We'll use the [Starbake](https://github.com/starlake-ai/StarBake/) sample project to demonstrate these capabilities:
 
-![](/img/starbake.png)
-
-
+![Starbake Architecture](/img/starbake.png)
