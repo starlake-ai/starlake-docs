@@ -24,12 +24,11 @@ tags: [Data Engineering, Analytics, Wildcards tables, BigQuery]
 
     ## The Problem
 
-    At a global retail company, I encountered a challenge where daily transctions CSV files were received 
-    from branches across various countries. 
-    These files were named in the format transactions_YYYYMMDD.csv, 
-    and the goal was to load them into BigQuery, partitioned by country, region and date.
+    Assume your business receives daily transactions as CSV files from branches across various countries. 
+    These files are named in the format transactions_YYYYMMDD.csv, 
+    and the goal is to load them into BigQuery, partitioned by country, region and date.
 
-    The CSV files contained data in the following format:
+    The CSV files contains data in the following format:
 
     ```csv
     store_id, customer_id, trans_id, trans_date, trans_time, country, region, ...
@@ -40,12 +39,12 @@ tags: [Data Engineering, Analytics, Wildcards tables, BigQuery]
     ```
 
     With hundreds of millions of transactions generated daily, 
-    querying the data efficiently by country and region was critical. 
+    querying the data efficiently by country and region is critical. 
     Partitioning the data in this way would reduce storage size and significantly speed up queries.
 
     However, since BigQuery doesn’t support partitioning by string columns, 
-    we leveraged wildcard tables to achieve the same benefits. 
-    The desired result was to create separate tables in BigQuery for each country and region, 
+    we can leverage wildcard tables to achieve the same benefits. 
+    The desired result is to create separate tables in BigQuery for each country and region, 
     structured as follows:
 
     ```
