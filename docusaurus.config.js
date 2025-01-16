@@ -168,14 +168,10 @@ const config = {
         },
       },
     },
-    metadata: [{
-      name: 'description',
-      content: 'Transform your data with Starlake.ai – Seamless ETL, real-time pipelines, and powerful transformation tools. Open-source declarative data pipeline solution for BigQuery, Snowflake, Redshift and more.'
-    },
-    {
-      name: 'keywords',
-      content: 'ETL tools, data integration platforms, data pipeline automation, data transformation, data quality, data governance, data orchestration, BigQuery, Snowflake, Redshift, open source ETL'
-    }],
+    metadata: [
+      {name: 'keywords', content: 'starlake, etl, data pipeline, data transformation'},
+      {name: 'description', content: 'Official documentation for Starlake data pipeline platform'},
+    ],
     structuredData: {
       "@context": "https://schema.org",
       "@type": "WebSite",
