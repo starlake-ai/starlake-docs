@@ -171,7 +171,48 @@ const config = {
     metadata: [{
       name: 'description',
       content: 'Transform your data with Starlake.ai – Seamless ETL, real-time pipelines, and powerful transformation tools. Open-source declarative data pipeline solution for BigQuery, Snowflake, Redshift and more.'
+    },
+    {
+      name: 'keywords',
+      content: 'ETL tools, data integration platforms, data pipeline automation, data transformation, data quality, data governance, data orchestration, BigQuery, Snowflake, Redshift, open source ETL'
     }],
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Starlake Documentation",
+      "url": "https://docs.starlake.ai",
+      "description": "Official documentation for Starlake - the open source declarative data pipeline platform",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Starlake",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://docs.starlake.ai/img/starlake-logo.png"
+        }
+      },
+      "about": {
+        "@type": "SoftwareApplication",
+        "name": "Starlake",
+        "applicationCategory": "ETL Software",
+        "operatingSystem": "Cross-platform",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      },
+      "audience": {
+        "@type": "Audience",
+        "audienceType": "Data Engineers, Data Scientists, Enterprise IT Teams"
+      },
+      "mainEntity": {
+        "@type": "TechArticle",
+        "headline": "Starlake Documentation",
+        "description": "Complete documentation for installing, configuring and using Starlake data pipeline platform",
+        "articleSection": ["Installation", "Configuration", "Tutorials", "API Reference"],
+        "keywords": "ETL, data pipeline, data transformation, data quality, data governance"
+      }
+    }
   },
 
   plugins: [
@@ -187,6 +228,15 @@ const config = {
       require.resolve("docusaurus-plugin-image-zoom"),
       {
         hashed: true,
+      },
+    ],
+    [
+      '@docusaurus/plugin-sitemap',
+      {
+        changefreq: 'weekly',
+        priority: 0.5,
+        ignorePatterns: ['/tags/**'],
+        filename: 'sitemap.xml',
       },
     ],
   ].filter(Boolean),
