@@ -181,5 +181,10 @@ tags: [Data Engineering, Analytics, Wildcards tables, BigQuery]
 
     Also, Starlake’s integrated approach 
     ensures consistency by allowing you to reuse the same attributes 
-    in the sink section of the transformation YAML file as those defined during the data loading process. 
+    in the sink section of the transformation YAML file as those defined during the data loading process.
+
+    Finally, Starlake’s support for wildcard tables in BigQuery comes with zero additional cost.
+    The data is sharded on the fly at load time in a single step, 
+    reducing cost and increasing load & transform jobs performance.
+
     This simplifies workflows and promotes efficiency.
