@@ -147,6 +147,19 @@ tags: [Data Engineering, Analytics, Wildcards tables, BigQuery]
 
     That's it - we've successfully loaded your data into BigQuery using wildcard tables!
 
+    Let's query the data to ensure it's been loaded correctly:
+
+    ```sql
+    SELECT * FROM sales.transactions_*
+    WHERE _TABLE_SUFFIX = "US_CA" AND trans_date = '2024-12-19'
+    ```
+
+    ```sql
+    SELECT * FROM sales.transactions_*
+    WHERE _TABLE_SUFFIX in ('US_CA', 'US_NY' ) and trans_date = '2024-12-19'
+    ```
+
+
 
     ### The Solution with Starlake Transform
 
