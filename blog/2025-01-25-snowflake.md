@@ -5,7 +5,7 @@ author: Hayssam Saleh
 author_title: Starlake Core Team Member
 author_url: https://www.linkedin.com/in/hayssams/
 author_image_url: https://s.gravatar.com/avatar/04aa2a859a66b52787bcba8c36beba8c.png
-tags: [Snowflake, ETL, Starlake, COPY INTO]
+tags: [Snowflake, ETL, Starlake]
 ---
 
 ## Summary
@@ -14,6 +14,8 @@ Snowflake offers powerful tools for data loading and transformation, so why cons
 What distinguishes Starlake, and why is it important?
 This article delves into these questions, exploring how Starlake complements and enhances your Snowflake experience.
 Specifically, this article tackles the challenges of loading files into Snowflake
+
+Although Starlake supports transformation activities, the scope of this article is limited to data loading.
 
 {/* truncate */}
 
@@ -269,7 +271,9 @@ table:
         timestamp: delivered_on
 ```
 
-That’s it! To load the files interactively, place your files in the incoming/hr folder again and simply run the following command:
+That’s it! Starlake will take care of updating the table schema and metadata whenever our changes require it.
+
+To load the files interactively, place your files in the incoming/hr folder again and simply run the following command:
 
 ```shell
 starlake load
@@ -304,3 +308,5 @@ dag:
 ```
 
 Your DAG files have been successfully generated and are ready to be deployed to your preferred orchestrator.
+
+
