@@ -1,11 +1,11 @@
 ---
 slug: snowflake
-title: Snowflake ETL
+title: Snowflake Data Loading
 author: Hayssam Saleh
 author_title: Starlake Core Team Member
 author_url: https://www.linkedin.com/in/hayssams/
 author_image_url: https://s.gravatar.com/avatar/04aa2a859a66b52787bcba8c36beba8c.png
-tags: [Snowflake, ETL, Starlake]
+tags: [Snowflake, ETL, Starlake, COPY INTO]
 ---
 
 ## Summary
@@ -13,27 +13,26 @@ tags: [Snowflake, ETL, Starlake]
 Snowflake offers powerful tools for data loading and transformation, so why consider Starlake?
 What distinguishes Starlake, and why is it important?
 This article delves into these questions, exploring how Starlake complements and enhances your Snowflake experience.
-Specifically, this article tackles the challenges of:
-- Loading files into Snowflake
-- Transforming data within Snowflake 
-- Orchestrating data pipelines in Snowflake
+Specifically, this article tackles the challenges of loading files into Snowflake
+
+{/* truncate */}
 
 ## Data Loading Challenges
 
 Data loading might seem straightforward, but in reality, it comes with numerous challenges. Over the course of my data loading activities, I’ve encountered several obstacles, including:
 
-- File Format Diversity: Working with traditional formats like CSV, JSON, and XML, as well as handling mainframe-generated files with fixed-width records and no attribute delimiters—a common scenario in the banking industry.
+- __File Format Diversity__: Working with traditional formats like CSV, JSON, and XML, as well as handling mainframe-generated files with fixed-width records and no attribute delimiters—a common scenario in the banking industry.
 
-- Inconsistent Date and Time Formats: Dealing with varying formats, which are rarely in the standard U.S. format and often differ between files or even within the same file.
+- __Inconsistent Date and Time Formats__: Dealing with varying formats, which are rarely in the standard U.S. format and often differ between files or even within the same file.
 
-- Compliance Requirements: Addressing legal and regulatory requirements by encrypting sensitive attributes or discarding certain data elements before loading. In my case, I had to hash credit card numbers to avoid having them accessible inside the data warehouse.
+- __Compliance Requirements__: Addressing legal and regulatory requirements by encrypting sensitive attributes or discarding certain data elements before loading. In my case, I had to hash credit card numbers to avoid having them accessible inside the data warehouse.
 
-- Data Warehouse Constraints: Adapting input data to fit the limitations of data warehouses. For instance, Snowflake does not support nested and repeated fields, which are frequently present in Apache Parquet files, requiring pre-transformation of the data.
+- __Data Warehouse Constraints__: Adapting input data to fit the limitations of data warehouses. For instance, Snowflake does not support nested and repeated fields, which are frequently present in Apache Parquet files, requiring pre-transformation of the data.
 
-- Semantic typing
+- __Semantic typing__:
 How can you ensure the content of a file is semantically correct? For instance, validating that the email field contains a valid email address or that the credit card number is a numeric value with 15 to 19 digits?
 
-- Custom Materialization Strategy: 
+- __Custom Materialization Strategy__: 
 When loading data, selecting the right materialization strategy is crucial. Common strategies like APPEND and OVERWRITE are straightforward, but what if your use case requires handling incoming data using a Slowly Changing Dimension Type 2 (SCD Type 2) approach ?
 
 Additionally, it’s critical to validate incoming data to ensure its quality and integrity before loading it into a data warehouse—never trust the source blindly. Robust validation processes are key to maintaining high-quality data pipelines.
@@ -62,7 +61,7 @@ CREATE TABLE credit_card_user (
 );
 ```
 
-1. Stage the Files
+3. Stage the Files
 Use Snowflake’s internal or external stage for file uploads. To leverage external cloud storage like Amazon S3, Google Cloud Storage, or Azure Blob Storage.
 Set up an external stage linked to your storage and use __COPY INTO__ command to load the data from the stage into your Snowflake table.
 
@@ -74,7 +73,7 @@ STORAGE_INTEGRATION = my_integration;
 
 Check for errors using Snowflake’s error-handling features:
 
-3. Automate the Load Process
+4. Automate the Load Process
 
 Snowpipe: Automate continuous data loading for files added to a stage.
 
@@ -88,7 +87,7 @@ ON_ERROR = 'CONTINUE',
 FILE_FORMAT = (TYPE = 'CSV');
 ```
 
-Configure notifications to trigger Snowpipe when new files arrive in the stage:
+5. Configure notifications to trigger Snowpipe when new files arrive in the stage:
 
 ```sql
 CREATE OR REPLACE NOTIFICATION INTEGRATION my_notification_integration
@@ -101,7 +100,7 @@ COMMENT = 'Integration for Snowpipe notifications';
 
 Grant permissions to Snowflake’s service account on the queue and replace __cloud_provider__ with AWS, GCP, or AZURE, and __queue_name__ with your cloud provider’s queue name
 
-Update your Snowpipe to use the notification integration.
+6. Update your Snowpipe to use the notification integration.
 
 ```sql
 ALTER PIPE my_pipe
@@ -148,7 +147,7 @@ That's it!
 
 Starlake generated the schema description file below for your target table and even loaded the data into our datawarehouse.
 
-```yaml title='metadata/load/hr/credit_card_ser.sl.yml gnerated file'
+```yaml title='metadata/load/hr/credit_card_user.sl.yml gnerated file'
 
 version: 1
 table:
@@ -171,10 +170,12 @@ Let’s now address the challenges we need to tackle.
 ### Tackling the data loading challenges
 
 1. Semantic input validation
+
 We need to ensure that:
-	•	All attributes are present and non-empty.
-	•	Email addresses are valid.
-	•	Credit card numbers consist of 15 to 19 digits.
+
+- All attributes are present and non-empty.
+- Email addresses are valid.
+- Credit card numbers consist of 15 to 19 digits.
 
 To achieve this, we add the following validation rules to the metadata/types/custom.sl.yml file:
 
@@ -303,4 +304,3 @@ dag:
 ```
 
 Your DAG files have been successfully generated and are ready to be deployed to your preferred orchestrator.
-

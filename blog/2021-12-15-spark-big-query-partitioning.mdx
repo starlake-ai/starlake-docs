@@ -24,6 +24,9 @@ When loading data into BigQuery, you may want to:
 For performance reasons, when having huge amount of data, tables are usually split
 into multiple partitions. BigQuery supports range partitioning which are uncommon and date/time partitioning
 which is the most widely used type of partitioning.
+
+{/* truncate */}
+
 The diagram below shows our initial table partitioned by the `date` field.
 
 ![Initial data]( /img/blog/spark-bigquery/initial-data.png "Initial data")
