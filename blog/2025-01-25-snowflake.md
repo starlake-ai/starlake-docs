@@ -309,4 +309,9 @@ dag:
 
 Your DAG files have been successfully generated and are ready to be deployed to your preferred orchestrator.
 
+The sample below illustrates how your DAGs look like on Airflow:
+
+![Airflow Load](/img/blog/snowflake/orchestration.jpg "Airflow Load")
+
+
 
