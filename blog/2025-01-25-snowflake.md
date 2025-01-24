@@ -1,5 +1,5 @@
 ---
-slug: snowflake
+slug: snowflake-data-loading
 title: Snowflake Data Loading
 author: Hayssam Saleh
 author_title: Starlake Core Team Member
