@@ -1,10 +1,8 @@
 ---
 slug: snowflake
 title: Snowflake Data Loading
-author: Hayssam Saleh
-author_title: Starlake Core Team Member
-author_url: https://www.linkedin.com/in/hayssams/
-author_image_url: https://s.gravatar.com/avatar/04aa2a859a66b52787bcba8c36beba8c.png
+authors:
+  - hayssams
 tags: [Snowflake, ETL, Starlake]
 ---
 
