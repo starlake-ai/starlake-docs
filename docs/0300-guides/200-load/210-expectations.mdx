@@ -13,7 +13,8 @@ table:
         type: integer
         ...
     expectations:
-      - "is_col_value_not_unique('id') => result(0) == 1"
+      - expect: "is_col_value_not_unique('id') => result(0) == 1"
+        failOnError: true # or false if you want to continue
 
 ```
 

@@ -53,7 +53,6 @@ FROM
 GROUP BY
     p.product_id,
     o.order_id, p.name, o.timestamp
-
 ```
 
 <br/>
@@ -68,7 +67,6 @@ SELECT
 FROM
     kpi.product_summary ps
         JOIN kpi.revenue_summary rs ON ps.order_id = rs.order_id
-
 ```
 
 Storing the sql files in the `kpi` directory instructs starlake to store the insights in the `kpi` schema.
@@ -153,6 +151,7 @@ D select * from kpi.order_summary limit 5;
 └──────────┴─────────────────────────┴────────────────────┴─────────────────────┴──────────────────┘
 D .quit
 ```
+
 <br/>
 Our insight is now built and stored in the `kpi` schema. We can now run them from inside our orchestrator to schedule them to run at regular intervals.
 

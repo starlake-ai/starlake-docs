@@ -68,14 +68,13 @@ You can specify the clustering and partitioning of the table in the transform co
 ```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
 task:
   ...
-  clustering:
-    columns:
+  sink:
+    partition:
       - column1
       - column2
-  partitioning:
-    columns:
-      - column1
-      - column2
+    clustering:
+      - column3
+      - column4
 ```
 
 Detailed explanation of the clustering and partitioning can be found [here](../load/sink).
@@ -146,7 +145,8 @@ You can specify the expectations of the table in the transform configuration fil
 task:
   ...
   expectations:
-    - "is_col_value_not_unique('id') => result(0) == 1"
+    - expect: "is_col_value_not_unique('id') => result(0) == 1"
+      failOnError: true
 ```
 
 

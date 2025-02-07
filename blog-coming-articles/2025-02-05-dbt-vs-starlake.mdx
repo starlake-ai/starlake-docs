@@ -1,0 +1,184 @@
+---
+slug: snowflake
+title: DBT vs Starlake
+authors:
+  - hayssams
+tags: [Snowflake, ETL, Starlake]
+---
+
+
+## Summary
+
+Starlake vs DBT: How do they compare ?
+
+In our daily engineering tasks, we handle the following:
+- Seeding data into the database
+- Running transformations
+- Testing
+- Orchestrating
+Let's see how both tools handle these tasks:
+
+
+## Seeding data
+
+Both DBT and Starlake support seeding data into the database.
+- DBT provides the dbt seed command for this purpose.
+- Starlake offers the starlake autoload command.
+
+Either tool can be used to accomplish the task, but there are some differences to consider:
+
+`dbt seed` is limited to CSV files and is explicitly not recommended for production data. 
+It is best suited for small files, as it does not scale effectively.
+
+In contrast, Starlake is designed to handle large datasets and is optimized for production use. 
+It supports multiple file formats, including CSV, JSON, XML, Fixed-Width Files, and Parquet, 
+enabling efficient processing of large files.
+
+Additionally, Starlake offers schema inference, automatically detecting data structures to save time. 
+It also provides configurable write strategies to manage duplicates and errors, 
+allowing data to be seeded using OVERWRITE, APPEND, or UPSERT strategies, 
+including Slowly Changing Dimensions (SCD) Type 2.
+
+Furthermore, Starlake supports data validation, 
+ensuring data is clean and consistent before being loaded into the database.
+
+
+
+## Running transformations
+
+Both DBT and Starlake rely on the target datawarehouse to run the transformations after INSERT / UPDATE / MERGRE statements 
+have been generated from the model SELECT statements.
+
+However, they differ in several key ways:
+
+- Lineage Tracking: DBT places the burden of defining lineage on the developer, requiring the manual use of the ref macro. In contrast, Starlake automatically tracks lineage by analyzing the SQL code.
+- Incremental Models: DBT requires users to manually configure and manage incremental models, whereas Starlake handles them automatically.
+
+
+### Lineage
+
+Both DBT and Starlake support lineage tracking, but they handle it differently.
+
+- DBT requires the user to manually track lineage by using the `ref jinja macro` to reference other models in your SQL.
+        Forgetting to use the ref macro can result in incomplete or incorrect lineage tracking.
+
+- Starlake, on the other hand, automatically tracks lineage for all models. 
+        It analyzes the SQL code of each model and determines lineage without requiring any manual intervention.
+
+This automation in Starlake simplifies lineage tracking, reducing the risk of human error.
+
+### incremental models
+
+Both DBT and Starlake  supports incremental models, which are used to update only the rows that have changed since the last run.
+
+- DBT requires the user to write custom SQL code to create incremental models, which can be complex and error-prone.
+
+```sql 
+
+{{
+    config(
+        materialized='incremental',
+        unique_key='date_day'
+    )
+}}
+
+select
+    date_trunc('day', event_at) as date_day,
+    count(distinct user_id) as daily_active_users
+from {{ ref('app_data_events') }}
+{% if is_incremental() %}
+  where date_day >= (select coalesce(max(date_day), '1900-01-01') from {{ this }})
+{% endif %}
+group by 1
+
+```
+
+The approache is error-prone (explain why)
+
+Starlake on the other hand takes care of the incremental models automatically:
+
+```yaml
+task:
+  sink:
+    writeStrategy:
+      type: upsert_by_key
+      key: [date_day]
+```
+
+```sql 
+
+select
+    date_trunc('day', event_at) as date_day,
+    count(distinct user_id) as daily_active_users
+from app_data_events
+where date_day between {{  sl_start_date }} and {{ sl_end_date }}
+group by 1
+
+```
+
+### Unit Testing
+
+
+DBT supports testing using the dbt test command, 
+allowing users to write custom tests in SQL to validate their data. 
+However, these unit tests require direct access to the target data warehouse engine to execute.
+
+In contrast, Starlake provides a built-in testing framework that enables tests to run locally without 
+needing access to the target data warehouse. 
+This approach offers greater flexibility and efficiency, 
+allowing users to test data locally or within their CI/CD pipeline before deployment.
+
+Starlake achieves this by transpiling data warehouse queries to the DuckDB engine, 
+enabling local execution without relying on the actual data warehouse.
+
+
+
+### Orchestration
+DBT does not provide built-in orchestration capabilities, except through its cloud offering.
+
+In contrast, Starlake automatically generates Airflow or Dagster DAGs using standard or custom templates. Users can also create their own templates to generate DAGs for other orchestrators, offering greater flexibility in workflow automation.
+
+Additionally, Starlake can generate dataset-aware DAGs that orchestrate the entire data pipeline, including data from seeding. This ensures seamless integration of all data processing steps within a single workflow.
+
+For even more flexibility, Starlake allows generating DAGs at different levels—per project, domain, table, or task, depending on the specific orchestration needs.
+
+Moreover, the Starlake Docker image comes with Airflow and Dagster pre-installed, enabling users to run DAGs locally with just a click of a button.
+
+### Whoever think excel is dead is wrong
+
+
+### Monitoring
+
+
+### Security
+
+
+### Cost
+
+
+### U.I.
+
+Both DBT and Starlake provide a VS Code plugin to enhance the user experience.
+However Starlake goes further by providing a web-based UI to manage the entire data pipeline, 
+this U.I. goes far beyond the YAML editor you may find in the dbt cloud offering.
+
+### A.I.
+
+
+
+### Community
+
+DBT has a large and active community, with many users sharing knowledge and best practices through forums, Slack channels, and other platforms.
+
+Starlake, as a newer tool, is rapidly gaining popularity, with a growing community of users and contributors. In addition to community support, Starlake offers dedicated support and training resources to help users get started and fully leverage its capabilities.
+
+Despite being newer, Starlake has been running in production on customer sites for over three years, proving its reliability and scalability in diverse environments.
+
+
+### Conclusion
+
+If you think DBT is the only tool for your data engineering needs, think again. Starlake offers a powerful alternative that simplifies and accelerates the data pipeline, from seeding to orchestration. With its advanced features, automation, and flexibility, 
+Starlake is a compelling choice for modern data teams looking to streamline their workflows and maximize productivity.
+
+
+
