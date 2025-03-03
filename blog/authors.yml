@@ -1,8 +1,8 @@
 hayssams:
   name: Hayssam Saleh
   title: Starlake Core Team
-  url: https://github.com/starlake-ai
-  image_url: https://avatars.githubusercontent.com/u/89859410?s=200&v=4
+  url: https://www.linkedin.com/in/hayssams/
+  image_url: https://gravatar.com/avatar/04aa2a859a66b52787bcba8c36beba8c
   socials:
     github: hayssams
     linkedin: hayssams
@@ -10,8 +10,8 @@ hayssams:
 tiboun:
   name: Bounkong Khamphousone
   title: Starlake Core Team
-  url: https://github.com/starlake-ai
-  image_url: https://2.gravatar.com/avatar/82db9f824c7cc18bd7b7e091c5752353c869752d8ff5bac90e8770de89635cf9
+  url: https://www.linkedin.com/in/bounkong/
+  image_url: https://gravatar.com/avatar/82db9f824c7cc18bd7b7e091c5752353c869752d8ff5bac90e8770de89635cf9
   socials:
     github: tiboun
     linkedin: bounkong
@@ -20,8 +20,26 @@ elarib:
   name: Abdelhamide El Arib
   title: Starlake Core Team
   url: https://www.linkedin.com/in/elarib/
-  image_url: https://media.licdn.com/dms/image/v2/C5603AQE5ubYjLQwCmQ/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1599933407571?e=1740009600&v=beta&t=RNTOM8V-CCOs5d3Qwk06UoerF3kXChYzaMCfP8kaj68
+  image_url: https://gravatar.com/avatar/b83e9bb5bde96226b9f5c48ac2e8c84f
   socials:
     github: elarib
     linkedin: elarib
-  
+
+smanciot:
+  name: Stéphane Manciot
+  title: Starlake Core Team
+  url: https://www.linkedin.com/in/smanciot/
+  image_url: https://gravatar.com/avatar/21bfcea02873a65ecbf86b6777b527be
+  socials:
+    github: fupelaqu
+    linkedin: smanciot
+
+zedach:
+  name: Mourad Dachraoui
+  title: Starlake Core Team
+  url: https://www.linkedin.com/in/dachraoui/
+  image_url: https://gravatar.com/avatar/5edc982d8510237eddda7f89583e41ac
+  socials:
+    github: zedach
+    linkedin: dachraoui
+
