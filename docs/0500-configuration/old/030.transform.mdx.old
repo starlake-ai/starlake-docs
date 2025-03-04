@@ -5,7 +5,7 @@ sidebar_position: 30
 # Transform
 ## Job
 
-A job is a set of transform tasks executed using the specified engine.
+A job is a set of transform models executed using the specified engine.
 ````scala
 name: String
 ````
@@ -13,11 +13,11 @@ name: String
 *Required*. Job logical name.
 
 ````scala
-tasks: List[Task]
+models: List[Task]
 ````
 
 
-*Required*. List of transform tasks to execute.
+*Required*. List of transform models to execute.
 
 ````scala
 area : String
@@ -58,7 +58,7 @@ engine : String
 
 
 ## Task
-Task executed in the context of a job. Each task is executed in its own session.
+Task executed in the context of a job. Each model is executed in its own session.
 
 ````scala
 sql: String

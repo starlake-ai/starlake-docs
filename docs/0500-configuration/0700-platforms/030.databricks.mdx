@@ -31,7 +31,7 @@ Create a storage account and name it for example `starlakestorage` and assigns i
 
 ![Azure create container]( /img/databricks/azure-container.png "Azure create container")
 
-But you can also distribute these tasks across several containers.
+But you can also distribute these models across several containers.
 </TabItem>
 <TabItem value="gcp" label="Google Cloud Platform">
 
@@ -173,25 +173,25 @@ load:
     directory: "{{incoming_path}}/HR"
 ```
 
-Create tasks and reference the two jars you uploaded and are now visible to databricks through the `dbfs:/mnt/starlake-app` mount
+Create models and reference the two jars you uploaded and are now visible to databricks through the `dbfs:/mnt/starlake-app` mount
 
-- The first task (`import`) will copy the files matching the expected patterns into the pending directory for ingestion by starlake 
+- The first model (`import`) will copy the files matching the expected patterns into the pending directory for ingestion by starlake 
 
-![starlake import]( /img/databricks/import-task.png "starlake import")
+![starlake import]( /img/databricks/import-model.png "starlake import")
 
-- The second task (`watch`) will run the starlake ingestion job store the result as parquet files in your dataset directory
+- The second model (`watch`) will run the starlake ingestion job store the result as parquet files in your dataset directory
 
-![starlake watch]( /img/databricks/watch-task.png "starlake watch")
+![starlake watch]( /img/databricks/watch-model.png "starlake watch")
 
 ## Ingest your data
-Start the `import` task first and then the `watch` task. The execution logs are available through the `runs` tab:
+Start the `import` model first and then the `watch` model. The execution logs are available through the `runs` tab:
 
-![tasks runs]( /img/databricks/runs.png "tasks runs")
+![models runs]( /img/databricks/runs.png "models runs")
 
 Since we set the `SL_HIVE=true` environnment variable, ingested data are also available as tables
 
 ![starlake watch]( /img/databricks/database.png "starlake watch")
 
-The audit log for the above tasks will be stored in a BigQuery table if we set `SL_AUDIT_SINK_TYPE=BigQuerySink` environnment variable 
+The audit log for the above models will be stored in a BigQuery table if we set `SL_AUDIT_SINK_TYPE=BigQuerySink` environnment variable 
 
 

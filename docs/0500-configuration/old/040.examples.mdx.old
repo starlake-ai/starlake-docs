@@ -402,7 +402,7 @@ transform:
     name: "graduateProgram"
     views:
       graduate_View: "fs:accepted/graduateProgram"
-    tasks:
+    models:
       - domain: "graduateProgram"
         area: "business"
         dataset: "output"
@@ -431,7 +431,7 @@ transform:
     coalesce: true
     views:
       graduate_View: "fs:accepted/graduateProgram"
-    tasks:
+    models:
       - domain: "graduateProgram"
         area: "business"
         dataset: "output"
@@ -449,11 +449,11 @@ transform:
 
 ### Transform Parquet to BigQuery
 
-Based ont the [parquet to parquet](#parquet-to-parquet) example, we add the sink section to force the task to store the SQL result in BigQuery
+Based ont the [parquet to parquet](#parquet-to-parquet) example, we add the sink section to force the model to store the SQL result in BigQuery
 
 The result will store in the current project under the `business` BigQuery dataset in the `output` table.
 
-You may also specify the target project in the `/tasks/dataset` property using the syntax `PROJECT_ID:business`
+You may also specify the target project in the `/models/dataset` property using the syntax `PROJECT_ID:business`
 
 
 
@@ -463,7 +463,7 @@ transform:
     name: "graduateProgram"
     views:
       graduate_View: "fs:accepted/graduateProgram"
-    tasks:
+    models:
       - domain: "graduateProgram"
         area: "business"
         dataset: "output"
@@ -495,7 +495,7 @@ transform:
     name: "graduateProgram"
     views:
       graduate_View: "bq:gcp_project_id:bqdataset/graduateProgram"
-    tasks:
+    models:
       - domain: "graduateProgram"
         sink:
             type: BQ

@@ -96,8 +96,8 @@ The commit contains the following structural elements, to communicate intent to 
 - Others: commit types other than ``fix:`` and ``feat:`` are allowed, for example `commitlint-config-conventional <https://github.com/marionebl/commitlint/tree/master/%40commitlint/config-conventional>`_ recommends ``chore:``, ``docs:``, ``style:``, ``refactor:``, ``perf:``, ``test:``, and others. We also recommend improvement for commits that improve a current implementation without adding a new feature or fixing a bug. Notice these types are not mandated by the conventional commits specification, and have no implicit effect in semantic versioning (unless they include a BREAKING CHANGE, which is NOT recommended).
 - A scope may be provided to a commit’s type, to provide additional contextual information and is contained within parenthesis, e.g., feat(parser): add ability to parse arrays.        
 
-- Run ``test`` SBT task
-- Run ``scalafmt`` SBT task
+- Run ``test`` SBT model
+- Run ``scalafmt`` SBT model
 - Push commits to your branch
 - Open a merge request against the branch you branched from.
     * The merge request's title has to match the following pattern: ``[CDP-[NUM]]: [My message]`` where [NUM] is the related issue number. E.g: ``[CDP-42]: My great contribution``.
@@ -112,7 +112,7 @@ The commit contains the following structural elements, to communicate intent to 
 
 # Code Style Guide
 
-* Starlake Data Pipeline uses ``scalafmt`` to format scala codes. Configuration is located in the file ``.scalafmt`` at the root of the project. Use ``scalafmt`` SBT task to format your code and use ``scalafmtCheck`` SBT task to validate your code.
+* Starlake Data Pipeline uses ``scalafmt`` to format scala codes. Configuration is located in the file ``.scalafmt`` at the root of the project. Use ``scalafmt`` SBT model to format your code and use ``scalafmtCheck`` SBT model to validate your code.
 * Git commit log is linted with ``gitlint``. Configuration is located in the file ``.gitlint``.
     * Use ``gitlint --commits master..HEAD`` to validate your commit log.
     * You can install commit-msg hook with ``gitlint install-hook``. It will prevent you from committing with a wrong message.

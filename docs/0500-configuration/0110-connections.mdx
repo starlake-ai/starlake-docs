@@ -40,7 +40,7 @@ application:
         ingesting: "ingesting" # Location where files are moved while they are being processed. May be overloaded by the ${SL_AREA_INGESTING} environment variable.
         accepted: "accepted" # Location where files are moved after they have been processed and accepted. May be overloaded by the ${SL_AREA_ACCEPTED} environment variable.
         rejected: "rejected" # Location where files are moved after they have been processed and rejected. May be overloaded by the ${SL_AREA_REJECTED} environment variable.
-        business: "business" # Location where transform tasks store their result. May be overloaded by the ${SL_AREA_BUSINESS} environment variable.
+        business: "business" # Location where transform models store their result. May be overloaded by the ${SL_AREA_BUSINESS} environment variable.
         replay: "replay" # Location rejected records are stored in their orginial format. May be overloaded by the ${SL_AREA_REPLAY} environment variable.
         hiveDatabase: "${domain}_${area}" # Hive database name. May be overloaded by the ${SL_AREA_HIVE_DATABASE} environment variable.
 
