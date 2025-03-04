@@ -18,10 +18,10 @@ order on your tools of choice for scheduling and monitoring batch oriented workf
 Starlake DAG generation relies on:
 
 - **starlake** command line tool
-- **DAG** **configuration**(s) and their **references** within the loads and tasks
+- **DAG** **configuration**(s) and their **references** within the loads and models
 - **template**(s) that may be customized
-- **starlake-orchestration** framework to dynamically generate the tasks that will be run
-- **managing dependencies** between tasks to execute transforms in the **correct order**
+- **starlake-orchestration** framework to dynamically generate the models that will be run
+- **managing dependencies** between models to execute transforms in the **correct order**
 
 ## Prerequisites
 
@@ -60,8 +60,8 @@ where options are:
 | ----------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------- |
 | --outputDir `<value>` | optional    | Path for saving the resulting DAG file(s) (*$\{SL_ROOT\}/metadata/dags/generated* by default).                             |
 | --clean                 | optional    | Should the existing DAG file(s) be removed first (*false* by default)                                             |
-| --domains               | optional    | Wether to generate DAG file(s) to load schema(s) or not (*true* by default if *--tasks* option has not been specified) |
-| --tasks                 | optional    | Whether to generate DAG file(s) for tasks or not  (*true* by default if *--domains* option has not been specified)     |
+| --domains               | optional    | Wether to generate DAG file(s) to load schema(s) or not (*true* by default if *--models* option has not been specified) |
+| --models                 | optional    | Whether to generate DAG file(s) for models or not  (*true* by default if *--domains* option has not been specified)     |
 | --tags `<value>`      | optional    | Whether to generate DAG file(s) for the specified tags only (no tags by default)                                           |
 
 ## Configuration
@@ -122,11 +122,11 @@ application:
 #...
 ```
 
-- at the **transformation** level, in the **transformation** configuration file *$\{SL_ROOT\}/metadata/transform/\{domain\}/\{transformation\}.sl.yml* under the *task.dagRef* property.<br/>
+- at the **transformation** level, in the **transformation** configuration file *$\{SL_ROOT\}/metadata/transform/\{domain\}/\{transformation\}.sl.yml* under the *model.dagRef* property.<br/>
 In this case the configuration file will be used as the default DAG configuration for the transformation only.
 
 ```yaml
-task:
+model:
   dagRef: agr_cloud_run_domain
 #...
 ```
@@ -217,7 +217,7 @@ Four possible strategies:
 ###### NONE
 :::note NONE
 
-The load of the domain will not be conditionned and no pre-load tasks will be executed (the default strategy).
+The load of the domain will not be conditionned and no pre-load models will be executed (the default strategy).
 
 :::
 
@@ -317,7 +317,7 @@ dag:
 
 ##### Load dependencies
 
-**load_dependencies** defines wether or not we want to **generate recursively** all the **dependencies** associated to each task for which the transformation DAG was generated (*False* by default).
+**load_dependencies** defines wether or not we want to **generate recursively** all the **dependencies** associated to each model for which the transformation DAG was generated (*False* by default).
 
 ```yaml
 dag:
@@ -332,9 +332,9 @@ Depending on the **template** chosen, a specific **concrete** factory class exte
 
 
 #### IStarlakeJob
-`ai.starlake.job.IStarlakeJob` is the **generic factory interface** responsible for **generating** the **tasks** that will run the starlake's [stage](../../cli/stage), [load](../../category/load) and [transform](../../category/transform) commands:
+`ai.starlake.job.IStarlakeJob` is the **generic factory interface** responsible for **generating** the **models** that will run the starlake's [stage](../../cli/stage), [load](../../category/load) and [transform](../../category/transform) commands:
 
-- **sl_import** will generate the task that will run the starlake [stage](../../cli/stage) command.
+- **sl_import** will generate the model that will run the starlake [stage](../../cli/stage) command.
 
 ```python
 def sl_import(
@@ -347,10 +347,10 @@ def sl_import(
 
 | name    | type | description                                           |
 | ------- | ---- | ----------------------------------------------------- |
-| task_id | str  | the optional task id (`\{domain\}_import` by default) |
+| task_id | str  | the optional model id (`\{domain\}_import` by default) |
 | domain  | str  | the required domain to import                         |
 
-- **sl_load** will generate the task that will run the starlake [load](../../cli/load) command.
+- **sl_load** will generate the model that will run the starlake [load](../../cli/load) command.
 
 ```python
 def sl_load(
@@ -365,12 +365,12 @@ def sl_load(
 
 | name         | type                | description                                                 |
 | ------------ | ------------------- | ----------------------------------------------------------- |
-| task_id      | str                 | the optional task id (`\{domain\}_\{table\}_load` by default) |
+| task_id      | str                 | the optional model id (`\{domain\}_\{table\}_load` by default) |
 | domain       | str                 | the required domain of the table to load                    |
 | table        | str                 | the required table to load                                  |
 | spark_config | StarlakeSparkConfig | the optional `ai.starlake.job.StarlakeSparkConfig`        |
 
-- **sl_transform** will generate the task that will run the starlake [transform](../../cli/transform) command.
+- **sl_transform** will generate the model that will run the starlake [transform](../../cli/transform) command.
 
 ```python
 def sl_transform(
@@ -384,7 +384,7 @@ def sl_transform(
 
 | name              | type                | description                                            |
 | ----------------- | ------------------- | ------------------------------------------------------ |
-| task_id           | str                 | the optional task id (`{transform_name}` by default) |
+| task_id           | str                 | the optional model id (`{transform_name}` by default) |
 | transform_name    | str                 | the transform to run                                   |
 | transform_options | str                 | the optional transform options                         |
 | spark_config      | StarlakeSparkConfig | the optional `ai.starlake.job.StarlakeSparkConfig`   |
@@ -403,7 +403,7 @@ def sl_job(
 
 | name         | type                | description                                           |
 | ------------ | ------------------- | ----------------------------------------------------- |
-| task_id      | str                 | the required task id                                  |
+| task_id      | str                 | the required model id                                  |
 | arguments    | list                | The required arguments of the starlake command to run |
 | spark_config | StarlakeSparkConfig | the optional `ai.starlake.job.StarlakeSparkConfig`  |
 
@@ -414,12 +414,12 @@ def sl_job(
 
 ```Apache Airflow Concrete factory classes```
 
-Each **concrete** factory class extends `ai.starlake.airflow.StarlakeAirflowJob` and implements the **sl_job** method that will generate the **Airflow task** that will run the corresponding starlake command.
+Each **concrete** factory class extends `ai.starlake.airflow.StarlakeAirflowJob` and implements the **sl_job** method that will generate the **Airflow model** that will run the corresponding starlake command.
 
 :::note Default pool
 
 For all templates instantiating `StarlakeAirflowJob` class, the
-**default_pool** option defines the Airflow pool to use for all tasks executed within the DAG.
+**default_pool** option defines the Airflow pool to use for all models executed within the DAG.
 
 :::
 
@@ -432,7 +432,7 @@ dag:
 
 :::note Bash
 
-`ai.starlake.airflow.bash.StarlakeAirflowBashJob` is a concrete implementation of `StarlakeAirflowJob` that generates tasks using `airflow.operators.bash.BashOperator`. Usefull for **on premise** execution.
+`ai.starlake.airflow.bash.StarlakeAirflowBashJob` is a concrete implementation of `StarlakeAirflowJob` that generates models using `airflow.operators.bash.BashOperator`. Usefull for **on premise** execution.
 
 :::
 
@@ -452,7 +452,7 @@ An additional **SL_STARLAKE_PATH** option is required to specify the **path** to
 - **submit** the **Dataproc job** to the latter by instantiating `airflow.providers.google.cloud.operators.dataproc.DataprocSubmitJobOperator`
 - **delete** the **Dataproc cluster** by instantiating `airflow.providers.google.cloud.operators.dataproc.DataprocDeleteClusterOperator`
 
-The **creation** of the **Dataproc cluster** can be performed by calling the `create_cluster` method of the *cluster* property or by calling the `pre_tasks` method of the StarlakeAirflowDataprocJob (the call to the `pre_load` method will, behind the scene, call the `pre_tasks` method and add the optional resulting task to the group of Airflow tasks).
+The **creation** of the **Dataproc cluster** can be performed by calling the `create_cluster` method of the *cluster* property or by calling the `pre_tasks` method of the StarlakeAirflowDataprocJob (the call to the `pre_load` method will, behind the scene, call the `pre_tasks` method and add the optional resulting model to the group of Airflow models).
 
 The **submission** of the **Dataproc job** can be performed by calling the `submit_job` method of the *cluster* property or by calling the `sl_job` method of the StarlakeAirflowDataprocJob.
 
@@ -836,16 +836,16 @@ sl_job = StarlakeAirflowCloudRunJob(options=dict(options, **sys.modules[__name__
 #...
     def sl_transform(self, task_id: str, transform_name: str, transform_options: str=None, spark_config: StarlakeSparkConfig=None, **kwargs) -> T:
         """Transform job.
-        Generate the scheduler task that will run the starlake `transform` command.
+        Generate the scheduler model that will run the starlake `transform` command.
 
     Args:
-            task_id (str): The optional task id.
+            task_id (str): The optional model id.
             transform_name (str): The transform to run.
             transform_options (str): The optional transform options to use.
             spark_config (StarlakeSparkConfig): The optional spark configuration to use.
 
     Returns:
-            T: The scheduler task.
+            T: The scheduler model.
         """
         task_id = f"{transform_name}" if not task_id else task_id
         arguments = ["transform", "--name", transform_name]
@@ -996,8 +996,8 @@ dag:
     cloud_run_async: False # whether or not to use asynchronous cloud run job execution
 # retry_on_failure: True # when asynchronous job execution has been selected, it specifies whether or not we want to use a bash sensor with automatic retry for a specific exit code (implies airflow v2.6+)
     tags: "{\{domain\}} {\{domain\}}_CLOUD_RUN" # tags that will be added to the dag
-    load_dependencies: False # whether or not to add all dependencies as airflow tasks within the resulting dag
-    default_pool: "custom_default_pool" # pool to use for all tasks defined within the dag
+    load_dependencies: False # whether or not to add all dependencies as airflow models within the resulting dag
+    default_pool: "custom_default_pool" # pool to use for all models defined within the dag
 ```
 
 #### Dataproc cluster configuration
@@ -1156,8 +1156,8 @@ dag:
     spark_bucket: "${datastore_bucket}"
 
     tags: "{\{domain\}} {\{domain\}}_DATAPROC" # tags that will be added to the dag
-    load_dependencies: False # whether or not to add all dependencies as airflow tasks within the resulting dag
-    default_pool: "custom_default_pool" # pool to use for all tasks defined within the dag
+    load_dependencies: False # whether or not to add all dependencies as airflow models within the resulting dag
+    default_pool: "custom_default_pool" # pool to use for all models defined within the dag
 ```
 
 - *variables.tf*
@@ -1229,7 +1229,7 @@ spark_config = getattr(sys.modules[__name__], "get_spark_config", default_spark_
 #...
     def create_task(airflow_task_id: str, task_name: str, task_type: str):
         spark_config_name=StarlakeAirflowOptions.get_context_var('spark_config_name', task_name.lower(), options)
-        if (task_type == 'task'):
+        if (task_type == 'model'):
             return sl_job.sl_transform(
                 task_id=airflow_task_id, 
                 transform_name=task_name,
@@ -1256,7 +1256,7 @@ spark_config = getattr(sys.modules[__name__], "get_spark_config", default_spark_
 #...
 def create_task(task_id: str, task_name: str, task_type: str, ins: dict={"start": In(Nothing)}):
     spark_config_name=sl_job.get_context_var('spark_config_name', task_name.lower(), options)
-    if (task_type == 'task'):
+    if (task_type == 'model'):
         return sl_job.sl_transform(
             task_id=task_id, 
             transform_name=task_name,
@@ -1311,9 +1311,9 @@ def get_spark_config(spark_config_name: str, **kwargs):
 
 ## Dependencies
 
-For any transformation, Starlake is able to calculate all its dependencies towards other tasks or loads thanks to the **analysis** of **SQL queries**.
+For any transformation, Starlake is able to calculate all its dependencies towards other models or loads thanks to the **analysis** of **SQL queries**.
 
-As seen previously, the **load_dependencies** option defines whether or not we wish to recursively **generate all the dependencies** associated with each task for which the transformation DAG must be generated (False by default). If we choose to not generate those dependencies, the corresponding DAG will be scheduled using the **Airflow's data-aware scheduling mechanism**.
+As seen previously, the **load_dependencies** option defines whether or not we wish to recursively **generate all the dependencies** associated with each model for which the transformation DAG must be generated (False by default). If we choose to not generate those dependencies, the corresponding DAG will be scheduled using the **Airflow's data-aware scheduling mechanism**.
 
 All **dependencies** for data transformation are **available** in the generated DAG via the **Python** dictionary **variable** **task_deps**.
 
@@ -1321,16 +1321,16 @@ All **dependencies** for data transformation are **available** in the generated 
 task_deps=json.loads("""[ {
   "data" : {
     "name" : "Customers.HighValueCustomers",
-    "typ" : "task",
+    "typ" : "model",
     "parent" : "Customers.CustomerLifeTimeValue",
-    "parentTyp" : "task",
+    "parentTyp" : "model",
     "parentRef" : "CustomerLifetimeValue",
     "sink" : "Customers.HighValueCustomers"
   },
   "children" : [ {
     "data" : {
       "name" : "Customers.CustomerLifeTimeValue",
-      "typ" : "task",
+      "typ" : "model",
       "parent" : "starbake.Customers",
       "parentTyp" : "table",
       "parentRef" : "starbake.Customers",
@@ -1342,18 +1342,18 @@ task_deps=json.loads("""[ {
         "typ" : "table",
         "parentTyp" : "unknown"
       },
-      "task" : false
+      "model" : false
     }, {
       "data" : {
         "name" : "starbake.Orders",
         "typ" : "table",
         "parentTyp" : "unknown"
       },
-      "task" : false
+      "model" : false
     } ],
-    "task" : true
+    "model" : true
   } ],
-  "task" : true
+  "model" : true
 } ]""")
 ```
 
@@ -1398,15 +1398,15 @@ _extra_dataset: Union[dict, None] = sys.modules[__name__].__dict__.get('extra_da
 _extra_dataset_parameters = '?' + '&'.join(list(f'{k}={v}' for (k,v) in _extra_dataset.items())) if _extra_dataset else ''
 
 # if you choose to not load the dependencies, a schedule will be created to check if the dependencies are met
-def _load_datasets(task: dict):
-    if 'children' in task:
-        for child in task['children']:
+def _load_datasets(model: dict):
+    if 'children' in model:
+        for child in model['children']:
             datasets.append(keep_ascii_only(child['data']['name']).lower())
             _load_datasets(child)
 
 if load_dependencies.lower() != 'true':
-    for task in task_deps:
-        _load_datasets(task)
+    for model in task_deps:
+        _load_datasets(model)
     schedule = list(map(lambda dataset: Dataset(dataset + _extra_dataset_parameters), datasets))
 
 #...
@@ -1424,7 +1424,7 @@ with DAG(dag_id=os.path.basename(__file__).replace(".py", "").replace(".pyc", ""
 #...
 ```
 
-Those **required Datasets** are **updated** for **each** **load** and **task** that have been **executed**.
+Those **required Datasets** are **updated** for **each** **load** and **model** that have been **executed**.
 
 The *ai.starlake.airflow.StarlakeAirflowJob* class is responsible for **recording** the **outlets** related to the execution of each starlake command.
 
@@ -1499,14 +1499,14 @@ sensor = None
 if not load_dependencies:
     assets: Set[str] = []
 
-    def load_assets(task: dict):
-        if 'children' in task:
-            for child in task['children']:
+    def load_assets(model: dict):
+        if 'children' in model:
+            for child in model['children']:
                 assets.append(sanitize_id(child['data']['name']))
                 load_assets(child)
 
-    for task in task_deps:
-        load_assets(task)
+    for model in task_deps:
+        load_assets(model)
 
     def multi_asset_sensor_with_skip_reason(context: MultiAssetSensorEvaluationContext):
         asset_events = context.latest_materialization_records_by_key()
@@ -1544,7 +1544,7 @@ defs = Definitions(
 )
 ```
 
-Those **required Assets** are **materialized** for **each** **load** and **task** that have been **executed**.
+Those **required Assets** are **materialized** for **each** **load** and **model** that have been **executed**.
 
 The *ai.starlake.dagster.StarlakeDagsterJob* class is responsible for **recording** the **assets** related to the execution of each starlake command.
 
@@ -1574,7 +1574,7 @@ def sl_job(self, task_id: str, arguments: list, spark_config: StarlakeSparkConfi
     Generate the Dagster node that will run the starlake command.
 
     Args:
-        task_id (str): The required task id.
+        task_id (str): The required model id.
         arguments (list): The required arguments of the starlake command to run.
 
     Returns:

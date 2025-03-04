@@ -10,7 +10,7 @@ Now that our load and transform are working, we can run them on our orchestrator
 Make sure you run the [Transform step](../transform/tutorial) first to get the data in the database.
 
 ## Running the DAG
-Using starlake `dag-generate` command, we can generate a DAG file that will run our load and transform tasks.
+Using starlake `dag-generate` command, we can generate a DAG file that will run our load and transform models.
 
 ```bash
 starlake dag-generate --clean
@@ -45,7 +45,7 @@ Note how load DAGs are tagged with the domain name.
 
 The DAG generation is based on the configuration files located in the `metadata/dags` directory.
 You put there the configuration files for the DAGs you want to generate and reference them globally in the `metadata/application.sl.yml` file
-or specifically for each load or transform task through the `dagRef` attribute.
+or specifically for each load or transform model through the `dagRef` attribute.
 
 
 <Tabs groupId="schedulers">
@@ -100,7 +100,7 @@ dag:
 </Tabs>
 
 
-`load_dependencies: "true"` is a flag that tells the DAG generator to include the dependent tables or tasks in the DAG file.
+`load_dependencies: "true"` is a flag that tells the DAG generator to include the dependent tables or models in the DAG file.
 
 `template` is the template file that will be used to generate the DAG file. This ay reference :
 
@@ -109,5 +109,5 @@ dag:
 - a template that is built-in in the starlake library and is located in the [load](https://github.com/starlake-ai/starlake/tree/master/src/main/resources/templates/dags/load) and [transform](https://github.com/starlake-ai/starlake/tree/master/src/main/resources/templates/dags/transform) resource directories.
 
 
-The load and transforms tasks will be run as bash commands on the orchestrator. To run them on a different executor, you can change the template to a different one or build your own.
+The load and transforms models will be run as bash commands on the orchestrator. To run them on a different executor, you can change the template to a different one or build your own.
 Starlake comes with a few templates out of the box targeting `cloud run` or `dataproc`.

@@ -11,12 +11,12 @@ tags: [Snowflake, ETL, Starlake]
 
 Starlake vs DBT: How do they compare ?
 
-In our daily engineering tasks, we handle the following:
+In our daily engineering models, we handle the following:
 - Seeding data into the database
 - Running transformations
 - Testing
 - Orchestrating
-Let's see how both tools handle these tasks:
+Let's see how both tools handle these models:
 
 
 ## Seeding data
@@ -25,7 +25,7 @@ Both DBT and Starlake support seeding data into the database.
 - DBT provides the dbt seed command for this purpose.
 - Starlake offers the starlake autoload command.
 
-Either tool can be used to accomplish the task, but there are some differences to consider:
+Either tool can be used to accomplish the model, but there are some differences to consider:
 
 `dbt seed` is limited to CSV files and is explicitly not recommended for production data. 
 It is best suited for small files, as it does not scale effectively.
@@ -98,7 +98,7 @@ The approache is error-prone (explain why)
 Starlake on the other hand takes care of the incremental models automatically:
 
 ```yaml
-task:
+model:
   sink:
     writeStrategy:
       type: upsert_by_key
@@ -140,7 +140,7 @@ In contrast, Starlake automatically generates Airflow or Dagster DAGs using stan
 
 Additionally, Starlake can generate dataset-aware DAGs that orchestrate the entire data pipeline, including data from seeding. This ensures seamless integration of all data processing steps within a single workflow.
 
-For even more flexibility, Starlake allows generating DAGs at different levels—per project, domain, table, or task, depending on the specific orchestration needs.
+For even more flexibility, Starlake allows generating DAGs at different levels—per project, domain, table, or model, depending on the specific orchestration needs.
 
 Moreover, the Starlake Docker image comes with Airflow and Dagster pre-installed, enabling users to run DAGs locally with just a click of a button.
 

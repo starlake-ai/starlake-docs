@@ -21,7 +21,7 @@ You can do that by adding setting the `attributesDesc` key in the YAML configura
 
 ```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 
-task:
+model:
   ...
   attributesDesc:
     name: <column_name>
@@ -39,7 +39,7 @@ But in that case, you will need to set the `parseSQL` (`true` by default) to `fa
 
 ```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 
-task:
+model:
   ...
   parseSQL: false
   ...

@@ -14,7 +14,7 @@ Compared to DBT:
 
 Built-in Lineage Support: Starlake offers out-of-the-box column and table level lineage tracking for regular SQL, without the need for ref jinja helpers.
 Effortless Incremental Models: Fully supports incremental models without placing any burden on the developer. No macros or state management are required, as it leverages your orchestrator’s capabilities.
-Automated DAG Generation: Starlake analyzes your SQL transformations to automatically generate DAGs and task dependencies, ensuring tasks execute in the correct order.
+Automated DAG Generation: Starlake analyzes your SQL transformations to automatically generate DAGs and model dependencies, ensuring models execute in the correct order.
 Unified YAML DSL: For consistency and simplicity, Starlake uses the same YAML DSL for common features across both load and transform activities, including security, write strategies, partitioning, clustering, job scheduling, and metadata management.
 Flexible Unit Testing: Write your transformations in the SQL dialect of your choice—whether it’s BigQuery, Snowflake, Redshift, Spark SQL, or PostgreSQL. Seamlessly test these transformations locally using DuckDB or within your CI pipeline. This is powered by JSQLTranspiler.
 Intuitive User Interface: Like the load feature, Starlake’s transformation capabilities are supported by a user-friendly interface (see the link above in the Load section).

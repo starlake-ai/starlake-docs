@@ -1,6 +1,6 @@
 # Customize the Transform
 
-Add write strategies, partitioning, access control, and more to your transform tasks.
+Add write strategies, partitioning, access control, and more to your transform models.
 
 :::note
 Datawarehouses are organized around schemas where tables are grouped.
@@ -34,16 +34,16 @@ The SQL file contains only the SELECT statement that contain the transformations
 
 And the YAML file contains the configuration of the transformation. The sections below describe the content of the YAML file.
 
-By default, your transforms tasks will be named after the table they are transforming. The result of the SQL file will be written to the table with the same name as the SQL file (`<table>`in this case) in the schema with the same name as
+By default, your transforms models will be named after the table they are transforming. The result of the SQL file will be written to the table with the same name as the SQL file (`<table>`in this case) in the schema with the same name as
 the folder name (`<domain>` in this case).
 
 You can change this by specifying a different name in the `name` field of the transform configuration file:
 
 ```yaml tile="metadata/transform/<domain>/custom.sl.yml"
-task:
+model:
   domain: mydomain # will write to the mydomain schema whatever the name of the <domain> folder
   table: mytable # will write to the mytable table whatever the name of the <table> in the filename
-  name: custom # this task name. Will be used to name the task when running from the CLI
+  name: custom # this model name. Will be used to name the model when running from the CLI
 ```
 
 
@@ -53,7 +53,7 @@ If not specified, the result of the `SELECT`statement contained in the SQL file 
 You may use any of these strategies. Below is an example of using the `overwrite` strategy.
 
 ```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
-task:
+model:
   writeStrategy:
     type: overwrite ## or any of the strategies defined [here](../load/write-strategies)
 ```
@@ -66,7 +66,7 @@ Transform strategies work exactly like the load [write strategies](../load/write
 You can specify the clustering and partitioning of the table in the transform configuration file.
 
 ```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
-task:
+model:
   ...
   sink:
     partition:
@@ -86,7 +86,7 @@ You can specify the access control of the table in the transform configuration f
 
 ```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
 
-task:
+model:
     ...
     acl:
         - role: SELECT
@@ -113,7 +113,7 @@ You can override this by specifying the `connectionRef` in the transform configu
 
 ```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
 
-task:
+model:
     ...
     connectionRef: myConnection
     ...
@@ -128,7 +128,7 @@ This allows you to transform data from one database and write it to another data
 
 ```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
 
-task:
+model:
     ...
     sink:
       connectionRef: myOtherConnection
@@ -142,7 +142,7 @@ task:
 You can specify the expectations of the table in the transform configuration file.
 
 ```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
-task:
+model:
   ...
   expectations:
     - expect: "is_col_value_not_unique('id') => result(0) == 1"

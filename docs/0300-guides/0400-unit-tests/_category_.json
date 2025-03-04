@@ -2,6 +2,6 @@
   "label": "Unit Tests",
   "link": {
     "type": "generated-index",
-    "description": "Test your load and transform tasks on your local machine or on your CI server before deploying to the cloud."
+    "description": "Test your load and transform models on your local machine or on your CI server before deploying to the cloud."
   }
 }

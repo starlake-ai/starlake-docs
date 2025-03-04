@@ -16,5 +16,5 @@ Build lineage
 Parameter|Cardinality|Description
 ---|---|---
 --output:`<value>`|*Optional*|Where to save the generated dot file ? Output to the console by default
---task:`<value>`|*Required*|task name to buidl lineage for
+--model:`<value>`|*Required*|model name to buidl lineage for
 

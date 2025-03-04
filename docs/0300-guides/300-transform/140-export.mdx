@@ -8,7 +8,7 @@ You may export to CSV / JSON / Parquet / Avro or whatever file formt supported b
 You can export the data to a CSV file using by specifying the csv format in the sink attribute of your transform.
 
 ```yaml title="metadata/transform/<domain>/<transform>.sl.yml"
-task:
+model:
   sink:
     format: csv
     extension: csv
@@ -20,7 +20,7 @@ The file will be saved in the `datasets` folder (relative to the root path) of t
 You may also request the file to be saved in an absolute path by specifying the file path (relative to the root path)  in the `path` attribute of the sink.
 
 ```yaml title="metadata/transform/<domain>/<transform>.sl.yml"
-task:
+model:
   sink:
     format: csv
     path: mnt/data/output.csv
@@ -43,7 +43,7 @@ You may also export the data to a database. You can specify the database connect
 
 ```yaml title="metadata/transform/<domain>/<transform>.sl.yml"
 
-task:
+model:
   ...
   sink:
     connectionRef: my_database
