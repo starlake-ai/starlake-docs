@@ -18,7 +18,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <Tabs groupId="installation-methods">
-<TabItem value="docker" label="🐳 Docker (Recommended)">
+<TabItem value="docker" label="🐳 Docker">
 
 ### Prerequisites
 - Docker installed and running
@@ -61,11 +61,13 @@ docker build -t starlakeai/starlake:VERSION \
 ```bash
 # Mount current directory and run Starlake
 docker run -it \
+    -e SL_ROOT=/starlake \
     -v $(pwd):/starlake \
     starlakeai/starlake:latest <command>
 
 # Example: Run help command
 docker run -it \
+    -e SL_ROOT=/starlake \
     -v $(pwd):/starlake \
     starlakeai/starlake:latest help
 ```
