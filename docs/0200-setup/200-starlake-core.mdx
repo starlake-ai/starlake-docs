@@ -1,23 +1,69 @@
 ---
-id: quickstart
-title: "Quick Start Guide: Install & Setup Starlake"
-sidebar_label: "Quick Start"
-sidebar_position: 2
+id: starlake-core-setup
+title: "Starlake Core"
 description: "Get started with Starlake in minutes. Step-by-step installation guide for Docker, Linux, MacOS, and Windows with cloud integration examples."
 keywords: [starlake installation, data pipeline setup, etl quickstart, docker etl, cloud integration]
 ---
 
-# Quick Start Guide
-
-Get started with Starlake in minutes. Choose your preferred installation method below or our advanced UI.
-To install Starlake with the advanced user interface, follow the [Starlake UI Installation Guide](https://github.com/starlake-ai/starlake-docker).
-
-## Installation Methods
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+## Installation Methods
+
+
 <Tabs groupId="installation-methods">
+
+<TabItem value="linux_macos" label="🖥️ Linux/MacOS">
+
+### Prerequisites
+- Java 11+ installed
+  ```bash
+  # Verify Java version
+  java -version
+  ```
+- If needed, install Java from [Oracle JDK](https://www.oracle.com/java/technologies/javase-jdk11-downloads.html) or [OpenJDK](https://adoptopenjdk.net/)
+
+### Installation
+
+One-line installation script:
+
+```bash
+sh <(curl https://raw.githubusercontent.com/starlake-ai/starlake/master/distrib/setup.sh)
+```
+
+The script will create the following directory structure:
+```text
+starlake/
+├── bin/
+│   ├── deps/      # Extra dependencies (e.g., Oracle client)
+│   ├── sl         # Starlake CLI
+│   └── spark      # Embedded Spark runtime
+```
+
+</TabItem>
+
+<TabItem value="windows" label="🪟 Windows">
+
+### Prerequisites
+- Java 11+ installed
+  ```powershell
+  # Verify Java version
+  java -version
+  ```
+- PowerShell 5.0 or later
+- Administrator privileges
+
+### Installation
+
+Run in PowerShell as administrator:
+
+```powershell
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/starlake-ai/starlake/master/distrib/setup.ps1").Content
+```
+
+</TabItem>
+
+
 <TabItem value="docker" label="🐳 Docker">
 
 ### Prerequisites
@@ -153,55 +199,6 @@ For production environments, consider using mounted credential files or secret m
 
 </TabItem>
 
-<TabItem value="linux_macos" label="🖥️ Linux/MacOS">
-
-### Prerequisites
-- Java 11+ installed
-  ```bash
-  # Verify Java version
-  java -version
-  ```
-- If needed, install Java from [Oracle JDK](https://www.oracle.com/java/technologies/javase-jdk11-downloads.html) or [OpenJDK](https://adoptopenjdk.net/)
-
-### Installation
-
-One-line installation script:
-
-```bash
-sh <(curl https://raw.githubusercontent.com/starlake-ai/starlake/master/distrib/setup.sh)
-```
-
-The script will create the following directory structure:
-```text
-starlake/
-├── bin/
-│   ├── deps/      # Extra dependencies (e.g., Oracle client)
-│   ├── sl         # Starlake CLI
-│   └── spark      # Embedded Spark runtime
-```
-
-</TabItem>
-
-<TabItem value="windows" label="🪟 Windows">
-
-### Prerequisites
-- Java 11+ installed
-  ```powershell
-  # Verify Java version
-  java -version
-  ```
-- PowerShell 5.0 or later
-- Administrator privileges
-
-### Installation
-
-Run in PowerShell as administrator:
-
-```powershell
-Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/starlake-ai/starlake/master/distrib/setup.ps1").Content
-```
-
-</TabItem>
 </Tabs>
 
 ## Development Tools
@@ -273,14 +270,14 @@ starlake --version
 
 You should see output like:
 ```
-Starlake Version 1.2.0
+Starlake Version 1.3.4
 ```
 
 ## Next Steps
 
-- [Create your first project](guides/getting-started-project-setup)
-- [Load your first dataset](guides/load/tutorial)
-- [Transform your data](guides/transform/tutorial)
+- [Create your first project](../guides/getting-started-project-setup)
+- [Load your first dataset](../guides/load/tutorial)
+- [Transform your data](../guides/transform/tutorial)
 
 ## Troubleshooting
 
@@ -297,7 +294,7 @@ Common installation issues and solutions:
 2. **Permission Issues**
    ```bash
    # Fix permissions on Linux/MacOS
-   chmod +x bin/sl
+   chmod +x bin/starlake
    ```
 
 3. **Docker Issues**

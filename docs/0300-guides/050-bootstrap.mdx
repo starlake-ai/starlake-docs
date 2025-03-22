@@ -17,15 +17,6 @@ import TabItem from '@theme/TabItem';
 To create a new project, first create an empty folder and run the starlake bootstrap CLI command:
 
 <Tabs groupId="platforms">
-<TabItem value="docker" label="Docker">
-
-```bash
-$ mkdir $HOME/userguide
-$ cd $HOME/userguide
-$ docker run -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap
-```
-
-</TabItem>
 <TabItem value="linux_macos" label="Linux/MacOS">
 
 ```bash
@@ -44,6 +35,15 @@ c:\> starlake bootstrap
 ```
 
 </TabItem>
+<TabItem value="docker" label="Docker">
+
+```bash
+$ mkdir $HOME/userguide
+$ cd $HOME/userguide
+$ docker run -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap
+```
+
+</TabItem>
 </Tabs>
 
 :::note
@@ -54,15 +54,6 @@ To bootstrap the project in a different folder, set the SL_ROOT environment vari
 :::
 
 <Tabs groupId="platforms">
-<TabItem value="docker" label="Docker">
-
-```bash
-$ mkdir $HOME/userguide
-$ cd $HOME/userguide
-$ docker run -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap
-```
-
-</TabItem>
 <TabItem value="linux_macos" label="Linux/MacOS">
 
 ```bash
@@ -75,6 +66,15 @@ $ SL_ROOT=/my/other/location starlake bootstrap
 ```powershell
 c:\> mkdir c:\my\other\location
 c:\> starlake bootstrap
+```
+
+</TabItem>
+<TabItem value="docker" label="Docker">
+
+```bash
+$ mkdir $HOME/userguide
+$ cd $HOME/userguide
+$ docker run -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap
 ```
 
 </TabItem>
@@ -149,16 +149,7 @@ application:
 The files `env.DUCKDB.sl.yml` and `env.BQ.sl.yml` override default values for DuckDB and BigQuery connections. Set the `SL_ENV` environment variable to switch between environments:
 
 <Tabs groupId="platforms">
-<TabItem value="docker" label="Docker">
 
-```bash
-$ docker run -v `pwd`:/app/userguide \
-             -e SL_ROOT=/app/userguide \
-             -e SL_ENV=DUCKDB \
-             -it starlakeai/starlake:VERSION <command>
-```
-
-</TabItem>
 <TabItem value="linux_macos" label="Linux/MacOS">
 
 ```bash
@@ -171,6 +162,16 @@ $ SL_ENV=DUCKDB starlake <command>
 ```powershell
 c:> SET SL_ENV=DUCKDB
 c:> starlake <command>
+```
+
+</TabItem>
+<TabItem value="docker" label="Docker">
+
+```bash
+$ docker run -v `pwd`:/app/userguide \
+             -e SL_ROOT=/app/userguide \
+             -e SL_ENV=DUCKDB \
+             -it starlakeai/starlake:VERSION <command>
 ```
 
 </TabItem>

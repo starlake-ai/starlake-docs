@@ -35,3 +35,8 @@ The deployment is done automatically when a PR is merged to the main branch.
 When the PR is merged, the cloudflare pages will automatically build and deploy the changes two cloudflare pages:
  - docs: https://docs.starlake.ai using https://dash.cloudflare.com/ec8885017c1f05235b32673b17651361/pages/view/docs-starlake
  - blog: https://blog.starlake.ai using https://dash.cloudflare.com/ec8885017c1f05235b32673b17651361/pages/view/blog-starlake
+
+
+
+## Card Component
+https://docusaurus.community/knowledge/component-library/new/Card/
