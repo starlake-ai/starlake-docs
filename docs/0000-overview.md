@@ -15,9 +15,9 @@ Starlake is an enterprise-grade data pipeline platform that transforms how organ
   Your browser does not support the video tag.
 </video>
 
-## Revolutionize Your Data Workflows
+## Declarative Data Engineering
 
-Starlake is to Data Engineering what Terrofrm is to infrastructure. Using an YAMl declarative synatx, describe your load and transform tasks and
+Starlake is to Data Engineering what Terraform is to infrastructure. Using an YAMl declarative synatx, describe your load and transform tasks and
 let Starlake automatically generate your orchestration code.
 
 
