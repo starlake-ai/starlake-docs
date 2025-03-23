@@ -8,17 +8,15 @@ description: "Discover how Starlake revolutionizes data pipelines with its decla
 
 # Starlake: Open Source Data Integration & ETL Platform
 
-Starlake is an enterprise-grade data pipeline platform that transforms how organizations handle data integration. Using a declarative approach with YAML and SQL, it eliminates complex coding while ensuring robust data governance and quality.
+Starlake is an enterprise-grade data pipeline tool that transforms how organizations handle data integration. Using a declarative approach with YAML and SQL, it eliminates complex coding while ensuring robust data governance and quality.
 
-<video width="100%" controls autoPlay loop muted>
-<source src="https://starlake.ai/starlake.webm" type="video/webm" />
-  Your browser does not support the video tag.
-</video>
+![](/img/starlake-perimeter.png)
 
 ## Declarative Data Engineering
 
-Starlake is to Data Engineering what Terraform is to infrastructure. Using an YAMl declarative synatx, describe your load and transform tasks and
-let Starlake automatically generate your orchestration code.
+Starlake is to Data Pipelines what Terraform is to Infrastructure.
+
+Using an YAML declarative syntax, describe your load and transform tasks and let Starlake automatically generate your orchestration code.
 
 
 ### 1. [Declarative Extract](guides/extract/tutorial)

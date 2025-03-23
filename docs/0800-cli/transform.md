@@ -15,7 +15,7 @@ title: transform
 
 Parameter|Cardinality|Description
 ---|---|---
---name:`<value>`|*Required*|Task Name
+--name:`<value>`|*Required*|Task Name in the form domain.task
 --compile:`<value>`|*Optional*|Return final query only
 --tags:`<value>`|*Optional*|Return final query only
 --format:`<value>`|*Optional*|pretty print the final query and update sql file
