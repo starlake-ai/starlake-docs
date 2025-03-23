@@ -167,12 +167,10 @@ Visit our [test tutorial](guides/unit-tests/concepts) to learn more
 
 Automate your entire data pipeline:
 
-- Support Airflow, Dagster and Snowflake orchestrators
-- Visual pipeline monitoring
-- Efficient parallel execution
-- Automated error handling and recovery
+Starlake automatically analyzes the dependencies between your SQL tasks and generates the corresponding DAGs (Directed Acyclic Graphs).
+These DAGs are built using either predefined or custom templates, giving you the flexibility to support any orchestration scenario.
 
-Define your load DAG template
+All you need to do is specify the DAG template you want Starlake to use for your load and transform tasks.
 
 ```yaml
 dag:
