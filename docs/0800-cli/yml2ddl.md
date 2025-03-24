@@ -23,4 +23,3 @@ Parameter|Cardinality|Description
 --schemas:`<value>`|*Optional*|List of schemas to generate DDL for. All by default
 --apply:`<value>`|*Optional*|Does the file contain a header (For CSV files only)
 --parallelism:`<value>`|*Optional*|parallelism level. By default equals to the available cores: 16
-

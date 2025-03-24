@@ -21,4 +21,3 @@ Parameter|Cardinality|Description
 --tasks:`<value>`|*Optional*|Whether to generate DAG file(s) for tasks or not
 --domains:`<value>`|*Optional*|Whether to generate DAG file(s) for domains or not
 --orchestrator:`<value>`|*Optional*|snowflake or databricks
-

@@ -23,4 +23,3 @@ Parameter|Cardinality|Description
 --options:`k1=v1,k2=v2...`|*Optional*|Watch arguments to be used as substitutions
 --test:`<value>`|*Optional*|Should we run this load as a test ? Default value is false
 --files:`<value>`|*Optional*|load this file only
-

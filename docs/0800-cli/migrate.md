@@ -19,4 +19,3 @@ Once project is migrated, check the difference and makes sure that everything is
 
 Parameter|Cardinality|Description
 ---|---|---
-

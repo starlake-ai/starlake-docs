@@ -48,4 +48,3 @@ Parameter|Cardinality|Description
 --template:`<value>`|*Required*|Script template dir
 --audit-schema:`<value>`|*Required*|Audit DB that will contain the audit export table
 --delta-column:`<value>`|*Optional*|The default date column used to determine new rows to export. Overrides config database-extractor.default-column value.
-

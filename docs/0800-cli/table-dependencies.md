@@ -24,4 +24,3 @@ Parameter|Cardinality|Description
 --tables:`<value>`|*Optional*|Which tables should we include in the dot file ?
 --all:`<value>`|*Optional*|Include all tables in the dot file ? All by default
 --json:`<value>`|*Optional*|JSON output ?
-

@@ -24,4 +24,3 @@ Parameter|Cardinality|Description
 --tag2:`<value>`|*Optional*|new project git tag (latest for most recent tag) - if path2 and commit1 are empty
 --template:`<value>`|*Optional*|SSP / Mustache Template path
 --output:`<value>`|*Optional*|Output path
-

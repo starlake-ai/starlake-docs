@@ -92,7 +92,7 @@ In this case the configuration file will be used as the default DAG configuratio
 ```yaml
 load:
   metadata:
-    dagRef:load_dataproc_domain
+    dagRef:load_bash_domain
 #...
 ```
 
@@ -440,59 +440,6 @@ An additional **SL_STARLAKE_PATH** option is required to specify the **path** to
 
 ![](/img/orchestration/airflow/bash.png)
 
-:::note Dataproc
-
-`ai.starlake.airflow.gcp.StarlakeAirflowDataprocJob` is another implementation of `StarlakeAirflowJob` that overrides the `sl_job` method that will run the starlake command by submitting **Dataproc job** to the configured **Dataproc cluster**.
-
-:::
-
-**StarlakeAirflowDataprocJob** delegates to an instance of `ai.starlake.airflow.gcp.StarlakeAirflowDataprocCluster` class the responsibility to :
-
-- **create** the **Dataproc cluster** by instantiating `airflow.providers.google.cloud.operators.dataproc.DataprocCreateClusterOperator`
-- **submit** the **Dataproc job** to the latter by instantiating `airflow.providers.google.cloud.operators.dataproc.DataprocSubmitJobOperator`
-- **delete** the **Dataproc cluster** by instantiating `airflow.providers.google.cloud.operators.dataproc.DataprocDeleteClusterOperator`
-
-The **creation** of the **Dataproc cluster** can be performed by calling the `create_cluster` method of the *cluster* property or by calling the `pre_tasks` method of the StarlakeAirflowDataprocJob (the call to the `pre_load` method will, behind the scene, call the `pre_tasks` method and add the optional resulting task to the group of Airflow tasks).
-
-The **submission** of the **Dataproc job** can be performed by calling the `submit_job` method of the *cluster* property or by calling the `sl_job` method of the StarlakeAirflowDataprocJob.
-
-The **deletion** of the **Dataproc cluster** can be performed by calling the `delete_cluster` method of the *cluster* property or by calling the `post_tasks` method of the StarlakeAirflowDataprocJob.
-
-Bellow is the list of **additional options** used to configure the **Dataproc cluster**:
-
-| name                                   | type | description                                                                                                                       |
-| -------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **cluster_id**                   | str  | the optional unique id of the cluster that will participate in the definition of the Dataproc cluster name (if not specified)     |
-| **dataproc_name**                | str  | the optional dataproc name of the cluster that will participate in the definition of the Dataproc cluster name (if not specified) |
-| **dataproc_project_id**          | str  | the optional dataproc project id (the project id on which the composer has been instantiated by default)                          |
-| **dataproc_region**              | str  | the optional region (`europe-west1` by default)                                                                                 |
-| **dataproc_subnet**              | str  | the optional subnet (the `default` subnet if not specified)                                                                     |
-| **dataproc_service_account**     | str  | the optional service account (`service-{self.project_id}@dataproc-accounts.iam.gserviceaccount.com` by default)                 |
-| **dataproc_image_version**       | str  | the image version of the dataproc cluster (`2.2-debian1` by default)                                                            |
-| **dataproc_master_machine_type** | str  | the optional master machine type (`n1-standard-4` by default)                                                                   |
-| **dataproc_master_disk_type**    | str  | the optional master disk type (`pd-standard` by default)                                                                        |
-| **dataproc_master_disk_size**    | int  | the optional master disk size (`1024` by default)                                                                               |
-| **dataproc_worker_machine_type** | str  | the optional worker machine type (`n1-standard-4` by default)                                                                   |
-| **dataproc_worker_disk_type**    | str  | the optional worker disk size (`pd-standard` by default)                                                                        |
-| **dataproc_worker_disk_size**    | int  | the optional worker disk size (`1024` by default)                                                                               |
-| **dataproc_num_workers**         | int  | the optional number of workers (`4` by default)                                                                                 |
-
-All of these options will be used by default if no *StarlakeAirflowDataprocClusterConfig* was defined when instantiating *StarlakeAirflowDataprocCluster* or if the latter was not defined when instantiating *StarlakeAirflowDataprocJob*.
-
-Bellow is the list of **additional options** used to configure the **Dataproc job**:
-
-| name                               | type | description                                                                    |
-| ---------------------------------- | ---- | ------------------------------------------------------------------------------ |
-| **spark_jar_list**           | str  | the required list of spark jars to be used (using `,` as separator)          |
-| **spark_bucket**             | str  | the required bucket to use for spark and biqquery temporary storage            |
-| **spark_job_main_class**     | str  | the optional main class of the spark job (`ai.starlake.job.Main` by default) |
-| **spark_executor_memory**    | str  | the optional amount of memory to use per executor process (`11g` by default) |
-| **spark_executor_cores**     | int  | the optional number of cores to use on each executor (`4` by default)        |
-| **spark_executor_instances** | int  | the optional number of executor instances (`1` by default)                   |
-
-`spark_executor_memory`, `spark_executor_cores` and `spark_executor_instances` options will be used by default if no **StarlakeSparkConfig** was passed to the `sl_load` and `sl_transform` methods.
-
-![](/img/orchestration/airflow/dataproc.png)
 
 :::note Cloud run
 
@@ -533,61 +480,6 @@ Each **concrete** factory class extends `ai.starlake.dagster.StarlakeDagsterJob`
 An additional **SL_STARLAKE_PATH** option is required to specify the **path** to the **starlake executable**.
 
 ![](/img/orchestration/dagster/shell.png)
-
-###### StarlakeDagsterDataprocJob
-:::note Dataproc
-
-`ai.starlake.dagster.gcp.StarlakeDagsterDataprocJob` concrete factory class executes starlake's commands by submitting **Dataproc job** to the configured **Dataproc cluster**.
-
-:::
-
-**StarlakeDagsterDataprocJob** delegates to an instance of the `dagster_gcp.DataprocResource` class the responsibility to :
-
-- **create** the **Dataproc cluster** 
-- **submit** the **Dataproc job** to the latter
-- **delete** the **Dataproc cluster**
-
-This instance is available through the `__dataproc__` property of the `StarlakeDagsterDataprocJob` class and is configured using the `ai.starlake.gcp.StarlakeDataprocClusterConfig` class.
-
-The creation of the **Dataproc cluster** can be performed by calling the `pre_tasks` method of the StarlakeDagsterDataprocJob.
-
-The **submission** of the **Dataproc job** can be performed by calling the `sl_job` method of the StarlakeDagsterDataprocJob.
-
-The deletion of the **Dataproc cluster** can be performed by calling the `post_tasks` method of the StarlakeDagsterDataprocJob.
-
-Bellow is the list of **additional options** used to configure the **Dataproc cluster**:
-
-| name                                   | type | description                                                                                                                       |
-| -------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **cluster_id**                   | str  | the optional unique id of the cluster that will participate in the definition of the Dataproc cluster name (if not specified)     |
-| **dataproc_name**                | str  | the optional dataproc name of the cluster that will participate in the definition of the Dataproc cluster name (if not specified) |
-| **dataproc_project_id**          | str  | the optional dataproc project id (the project id on which the composer has been instantiated by default)                          |
-| **dataproc_region**              | str  | the optional region (`europe-west1` by default)                                                                                 |
-| **dataproc_subnet**              | str  | the optional subnet (the `default` subnet if not specified)                                                                     |
-| **dataproc_service_account**     | str  | the optional service account (`service-{self.project_id}@dataproc-accounts.iam.gserviceaccount.com` by default)                 |
-| **dataproc_image_version**       | str  | the image version of the dataproc cluster (`2.2-debian1` by default)                                                            |
-| **dataproc_master_machine_type** | str  | the optional master machine type (`n1-standard-4` by default)                                                                   |
-| **dataproc_master_disk_type**    | str  | the optional master disk type (`pd-standard` by default)                                                                        |
-| **dataproc_master_disk_size**    | int  | the optional master disk size (`1024` by default)                                                                               |
-| **dataproc_worker_machine_type** | str  | the optional worker machine type (`n1-standard-4` by default)                                                                   |
-| **dataproc_worker_disk_type**    | str  | the optional worker disk size (`pd-standard` by default)                                                                        |
-| **dataproc_worker_disk_size**    | int  | the optional worker disk size (`1024` by default)                                                                               |
-| **dataproc_num_workers**         | int  | the optional number of workers (`4` by default)                                                                                 |
-
-All of these options will be used by default if no *StarlakeDataprocClusterConfig* was defined when instantiating *StarlakeDagsterDataprocJob*.
-
-Bellow is the list of **additional options** used to configure the **Dataproc job**:
-
-| name                               | type | description                                                                    |
-| ---------------------------------- | ---- | ------------------------------------------------------------------------------ |
-| **spark_jar_list**           | str  | the required list of spark jars to be used (using `,` as separator)          |
-| **spark_bucket**             | str  | the required bucket to use for spark and biqquery temporary storage            |
-| **spark_job_main_class**     | str  | the optional main class of the spark job (`ai.starlake.job.Main` by default) |
-| **spark_executor_memory**    | str  | the optional amount of memory to use per executor process (`11g` by default) |
-| **spark_executor_cores**     | int  | the optional number of cores to use on each executor (`4` by default)        |
-| **spark_executor_instances** | int  | the optional number of executor instances (`1` by default)                   |
-
-`spark_executor_memory`, `spark_executor_cores` and `spark_executor_instances` options will be used by default if no **StarlakeSparkConfig** was passed to the `sl_load` and `sl_transform` methods.
 
 ###### StarlakeDagsterCloudRunJob
 :::note Cloud run
@@ -654,20 +546,6 @@ All extend this abstract template by instantiating the corresponding concrete fa
 {% include 'templates/dags/load/__airflow_scheduled_table_tpl.py.j2' %}
 ```
 
-- *airflow_scheduled_table_dataproc.py.j2* instantiates a `StarlakeAirflowDataprocJob` class.
-
-```python title="src/main/resources/templates/dags/load/airflow_scheduled_table_dataproc.py.j2"
-# This template executes individual dataproc jobs and requires the following dag generation options set:
-# - dataproc_project_id: the project id of the dataproc cluster (if not set, the project id of the composer environment will be used) [OPTIONAL]
-# - dataproc_region: the region of the dataproc cluster (if not set, europe-west1 will be used) [OPTIONAL]
-# - dataproc_subnet: the subnetwork of the dataproc cluster (if not set, the default subnetwork will be used) [OPTIONAL]
-# - dataproc_service_account: the service account of the dataproc cluster (if not set, the default service account will be used) [OPTIONAL]
-# - dataproc_image_version: the image version of the dataproc cluster (if not set, 2.2-debian12 will be used) [OPTIONAL]
-# ...
-{% include 'templates/dags/__starlake_airflow_dataproc_job.py.j2' %}
-{% include 'templates/dags/load/__airflow_scheduled_table_tpl.py.j2' %}
-```
-
 </TabItem>
 <TabItem value="dagster" label="Dagster">
 
@@ -699,20 +577,6 @@ All extend this abstract template by instantiating the corresponding concrete fa
 # ...
 {% include 'templates/dags/__starlake_dagster_cloud_run_job.py.j2' %}
 {% include 'templates/dags/load/__airflow_scheduled_table_tpl.py.j2' %}
-```
-
-- *dagster_scheduled_table_dataproc.py.j2* instantiates a `StarlakeDagsterDataprocJob` class.
-
-```python title="src/main/resources/templates/dags/load/dagster_scheduled_table_dataproc.py.j2"
-# This template executes individual dataproc jobs and requires the following dag generation options set:
-# - dataproc_project_id: the project id of the dataproc cluster (if not set, the project id of the composer environment will be used) [OPTIONAL]
-# - dataproc_region: the region of the dataproc cluster (if not set, europe-west1 will be used) [OPTIONAL]
-# - dataproc_subnet: the subnetwork of the dataproc cluster (if not set, the default subnetwork will be used) [OPTIONAL]
-# - dataproc_service_account: the service account of the dataproc cluster (if not set, the default service account will be used) [OPTIONAL]
-# - dataproc_image_version: the image version of the dataproc cluster (if not set, 2.2-debian12 will be used) [OPTIONAL]
-# ...
-{% include 'templates/dags/__starlake_dagster_dataproc_job.py.j2' %}
-{% include 'templates/dags/load/__dagster_scheduled_table_tpl.py.j2' %}
 ```
 
 </TabItem>
@@ -752,14 +616,6 @@ All extend this abstract template by instantiating the corresponding concrete fa
 {% include 'templates/dags/load/__airflow_scheduled_table_tpl.py.j2' %}
 ```
 
-- *airflow_scheduled_task_dataproc.py.j2* instantiates a `StarlakeAirflowDataprocJob` class.
-
-```python title="src/main/resources/templates/dags/transform/airflow_scheduled_task_dataproc.py.j2"
-# ...
-{% include 'templates/dags/__starlake_airflow_dataproc_job.py.j2' %}
-{% include 'templates/dags/load/__airflow_scheduled_table_tpl.py.j2' %}
-```
-
 </TabItem>
 <TabItem value="dagster" label="Dagster">
 
@@ -784,14 +640,6 @@ All extend this abstract template by instantiating the corresponding concrete fa
 ```python title="src/main/resources/templates/dags/transform/dagster_scheduled_task_cloud_run.py.j2"
 # ...
 {% include 'templates/dags/__starlake_dagster_cloud_run_job.py.j2' %}
-{% include 'templates/dags/load/__dagster_scheduled_table_tpl.py.j2' %}
-```
-
-- *dagster_scheduled_task_dataproc.py.j2* instantiates a `StarlakeDagsterDataprocJob` class.
-
-```python title="src/main/resources/templates/dags/transform/dagster_scheduled_task_dataproc.py.j2"
-# ...
-{% include 'templates/dags/__starlake_dagster_dataproc_job.py.j2' %}
 {% include 'templates/dags/load/__dagster_scheduled_table_tpl.py.j2' %}
 ```
 
@@ -1000,180 +848,6 @@ dag:
     default_pool: "custom_default_pool" # pool to use for all tasks defined within the dag
 ```
 
-#### Dataproc cluster configuration
-:::note Dataproc cluster configuration
-
-All starlake **DAG templates for dataproc** offer the ability to **customize** the **configuration** of the **dataproc cluster** through the implementation of optional **Python functions** that will return instances of *ai.starlake.gcp.StarlakeDataprocMachineConfig* given the name of the config to apply, which, by default, will be evaluated to the name of the dag (if the option **cluster_config_name** has not been specified).
-
-:::
-
-<Tabs groupId="schedulers">
-<TabItem value="airflow" label="Airflow">
-
-```python title="src/main/resources/template/dags/__starlake_airflow_dataproc_job.py.j2"
-#...
-#optional get_dataproc_master_config function that returns an instance of StarlakeAirflowDataprocMasterConfig per dag name
-dataproc_master_config = getattr(sys.modules[__name__], "get_dataproc_master_config", default_dataproc_master_config)
-
-#optional get_dataproc_worker_config function that returns an instance of StarlakeAirflowDataprocWorkerConfig per dag name
-dataproc_worker_config = getattr(sys.modules[__name__], "get_dataproc_worker_config", default_dataproc_worker_config)
-
-#optional get_dataproc_secondary_worker_config function that returns an instance of StarlakeAirflowDataprocWorkerConfig per dag name
-dataproc_secondary_worker_config = getattr(sys.modules[__name__], "get_dataproc_secondary_worker_config", lambda dag_name: None)
-
-cluster_config_name = StarlakeAirflowOptions.get_context_var("cluster_config_name", os.path.basename(__file__).replace(".py", "").replace(".pyc", "").lower(), options)
-
-#optional variable jobs as a dict of all options to apply by job
-#eg jobs = {"task1 domain.task1 name": {"options": "task1 transform options"}, "task2 domain.task2 name": {"options": "task2 transform options"}}
-sl_job = StarlakeAirflowDataprocJob(
-    cluster = StarlakeAirflowDataprocCluster(
-        cluster_config=StarlakeAirflowDataprocClusterConfig(
-            cluster_id=sys.modules[__name__].__dict__.get('cluster_id', cluster_config_name),
-            dataproc_name=sys.modules[__name__].__dict__.get('dataproc_name', None),
-            # highlight-start
-            master_config = dataproc_master_config(cluster_config_name, **sys.modules[__name__].__dict__.get('dataproc_master_properties', {})),
-            worker_config = dataproc_worker_config(cluster_config_name, **sys.modules[__name__].__dict__.get('dataproc_worker_properties', {})),
-            secondary_worker_config = dataproc_secondary_worker_config(cluster_config_name),
-            # highlight-end
-            idle_delete_ttl=sys.modules[__name__].__dict__.get('dataproc_idle_delete_ttl', None),
-            single_node=sys.modules[__name__].__dict__.get('dataproc_single_node', None),
-            options=options,
-            **sys.modules[__name__].__dict__.get('dataproc_cluster_properties', {})
-        ),
-        pool=sys.modules[__name__].__dict__.get('pool', None),
-        options=options
-    ),
-    options=dict(options, **sys.modules[__name__].__dict__.get('jobs', {}))
-)
-```
-</TabItem>
-<TabItem value="dagster" label="Dagster">
-
-```python title="src/main/resources/template/dags/__starlake_dagster_dataproc_job.py.j2"
-#...
-#optional get_dataproc_master_config function that returns an instance of StarlakeDataprocWorkerConfig per dag name
-dataproc_master_config = getattr(sys.modules[__name__], "get_dataproc_master_config", default_dataproc_master_config)
-
-#optional get_dataproc_worker_config function that returns an instance of StarlakeDataprocWorkerConfig per dag name
-dataproc_worker_config = getattr(sys.modules[__name__], "get_dataproc_worker_config", default_dataproc_worker_config)
-
-#optional get_dataproc_secondary_worker_config function that returns an instance of StarlakeDataprocWorkerConfig per dag name
-dataproc_secondary_worker_config = getattr(sys.modules[__name__], "get_dataproc_secondary_worker_config", lambda dag_name: None)
-
-cluster_config_name = StarlakeOptions.get_context_var("cluster_config_name", os.path.basename(__file__).replace(".py", "").replace(".pyc", "").lower(), options)
-
-#optional variable jobs as a dict of all options to apply by job
-#eg jobs = {"task1 domain.task1 name": {"options": "task1 transform options"}, "task2 domain.task2 name": {"options": "task2 transform options"}}
-sl_job = StarlakeDagsterDataprocJob(
-    cluster_config=StarlakeDataprocClusterConfig(
-        cluster_id=sys.modules[__name__].__dict__.get('cluster_id', cluster_config_name),
-        dataproc_name=sys.modules[__name__].__dict__.get('dataproc_name', None),
-        # highlight-start
-        master_config = dataproc_master_config(cluster_config_name, **sys.modules[__name__].__dict__.get('dataproc_master_properties', {})),
-        worker_config = dataproc_worker_config(cluster_config_name, **sys.modules[__name__].__dict__.get('dataproc_worker_properties', {})),
-        secondary_worker_config = dataproc_secondary_worker_config(cluster_config_name),
-        idle_delete_ttl=sys.modules[__name__].__dict__.get('dataproc_idle_delete_ttl', None),
-        # highlight-end
-        single_node=sys.modules[__name__].__dict__.get('dataproc_single_node', None),
-        options=options,
-        **sys.modules[__name__].__dict__.get('dataproc_cluster_properties', {})
-    ), 
-    pool=sys.modules[__name__].__dict__.get('pool', None),
-    options=dict(options, **sys.modules[__name__].__dict__.get('jobs', {}))
-)
-```
-</TabItem>
-</Tabs>
-
-Again, because those functions should be implemented in the **same module** as that of the **generated DAG** (`dataproc_master_config = getattr(sys.modules[__name__], "get_dataproc_master_config", default_dataproc_master_config)`, ...), we need to create a **customized DAG template** that will allow us to implement those methods.
-
-A **good practice** is to inject those configurations via the use of **Terraform variables**.
-
-```python title="metadata/dags/templates/__custom_dataproc.py.j2"
-import json
-
-from ai.starlake.job.airflow import AirflowStarlakeOptions
-from ai.starlake.job.airflow.gcp import StarlakeDataprocWorkerConfig
-
-clusters:dict = json.loads("""${clusters}""") # Terraform variable
-
-# ...
-
-def get_dataproc_worker_config(cluster_config_name: str, **kwargs):
-    # lookup a specific configuration given the name of the cluster configuration
-    worker_config = AirflowStarlakeOptions.get_context_var(cluster_config_name.upper().replace('-', '_'), clusters.get(cluster_config_name, None), options, deserialize_json=True)
-    if worker_config:
-        return StarlakeDataprocWorkerConfig(
-            num_instances=int(worker_config.get('numWorkers', 0)),
-            machine_type=worker_config.get('workerType', None),
-            disk_type=None,
-            disk_size=None,
-            options=options,
-            **kwargs
-        )
-    else:
-        return None
-
-# additional dataproc cluster properties
-dataproc_cluster_properties = {
-    "spark:spark.driver.maxResultSize": "15360m",
-    "spark:spark.driver.memory": "30720m",
-}
-```
-
-```python title="metadata/dags/templates/custom_scheduled_task_dataproc.py.j2"
-# our customized DAG template for data transformation using dataproc
-
-{% include 'dags/templates/__custom_jobs.py.j2' %} # specific code to inject jobs parameters
-{% include 'dags/templates/__custom_dataproc.py.j2' %} # specific code to customize the configuration of our dataproc cluster
-{% include 'templates/dags/transform/scheduled_task_dataproc.py.j2' %} # the base Starlake DAG template that needs to be extended
-```
-
-```yaml title="metadata/dags/custom_transform_dataproc.yml"
----
-# norm_dataproc_domain.sl.yml our DAG configuration using our customized DAG template
-
-dag:
-  comment: "dag for transforming tables for domain {\{domain\}} with dataproc" # will appear as a description of the dag
-  # highlight-next-line
-  template: "custom_scheduled_task_dataproc.py.j2" # the dag template to use
-  filename: "{\{domain\}}_norm_dataproc.py" # the relative path to the outputDir specified as a parameter of the `dag-generate` command where the generated dag file will be copied
-  options:
-    sl_env_var: "{\"SL_ROOT\": \"${root_path}\", \"SL_DATASETS\": \"${root_path}/datasets\", \"SL_TIMEZONE\": \"Europe/Paris\"}"
-
-    dataproc_name: "${dataproc_name}"
-    dataproc_project_id: "${project_id}"
-    dataproc_region: "${region}"
-    dataproc_subnet: "${subnet}"
-    dataproc_service_account: "${dataproc_service_account}"
-    dataproc_image_version: "${dataproc_image_version}"
-    dataproc_master_machine_type: "${dataproc_master_machine_type}"
-    dataproc_worker_machine_type: "${dataproc_worker_machine_type}"
-    dataproc_num_workers: "${dataproc_num_workers}"
-    cluster_config_name: "{{domain|lower|replace('_', '-')}}-norms"# the name of the cluster configuration that will be looked up
-    spark_config_name: "{{domain|lower|replace('_', '-')}}-norms"
-    spark_jar_list: "gs://${artefacts_bucket}/${main_jar}" #gs://${artefacts_bucket}/org.yaml/snakeyaml/2.2/jars/snakeyaml-2.2.jar gs://spark-lib/bigquery/spark-3.5-bigquery-0.35.1.jar gs://${artefacts_bucket}/com.google.cloud.spark/spark-bigquery-with-dependencies_2.12/${spark_bq_version}/spark-bigquery-with-dependencies_2.12-${spark_bq_version}.jar
-    spark_bucket: "${datastore_bucket}"
-
-    tags: "{\{domain\}} {\{domain\}}_DATAPROC" # tags that will be added to the dag
-    load_dependencies: False # whether or not to add all dependencies as airflow tasks within the resulting dag
-    default_pool: "custom_default_pool" # pool to use for all tasks defined within the dag
-```
-
-- *variables.tf*
-
-```terraform
-variable "clusters" {
-  type = map(object({
-    workerType             = string
-    numWorkers             = string
-    sparkExecutorInstances = string
-    numVcpu                = string
-    memAlloc               = string
-  }))
-  default = {}
-}
-```
 
 - *main.tf*
 
@@ -1189,125 +863,6 @@ resource "google_storage_bucket_object" "composer_storage_objects" {
 }
 ```
 
-- *vars_dev.tfvars*
-
-```terraform
-clusters = {
-    products-norms = {
-        workerType             = ""
-        numWorkers             = "0"
-        sparkExecutorInstances = "0"
-        numVcpu                = "0"
-        memAlloc               = ""
-    },
-    customers-norms = {
-        workerType             = "n1-standard-4"
-        numWorkers             = "4"
-        sparkExecutorInstances = "3"
-        numVcpu                = "16"
-        memAlloc               = "30g"
-    },
-}
-```
-
-#### Spark configuration
-:::note Spark configuration
-
-As for the configuration of the dataproc cluster, it is possible to **customize** the **spark configuration** thanks to the optional implementation of a **Python function** named **get_spark_config** that will return an instance of *StarlakeSparkConfig* given the name of a spark configuration to apply, which by default is the name of the transformation (if the option **spark_config_name** has not been defined).
-
-:::
-
-```python title="src/main/resources/template/dags/__common_airflow.py.j2"
-#...
-spark_config = getattr(sys.modules[__name__], "get_spark_config", default_spark_config)
-```
-
-<Tabs groupId="schedulers">
-<TabItem value="airflow" label="Airflow">
-
-```python title="src/main/resources/template/dags/transform/__airflow_scheduled_task_tpl.py.j2"
-#...
-    def create_task(airflow_task_id: str, task_name: str, task_type: str):
-        spark_config_name=StarlakeAirflowOptions.get_context_var('spark_config_name', task_name.lower(), options)
-        if (task_type == 'task'):
-            return sl_job.sl_transform(
-                task_id=airflow_task_id, 
-                transform_name=task_name,
-                # highlight-next-line
-                spark_config=spark_config(spark_config_name, **sys.modules[__name__].__dict__.get('spark_properties', {}))
-            )
-        else:
-            load_domain_and_table = task_name.split(".",1)
-            domain = load_domain_and_table[0]
-            table = load_domain_and_table[1]
-            return sl_job.sl_load(
-                task_id=airflow_task_id, 
-                domain=domain, 
-                table=table,
-                # highlight-next-line
-                spark_config=spark_config(spark_config_name, **sys.modules[__name__].__dict__.get('spark_properties', {}))
-            )
-```
-
-</TabItem>
-<TabItem value="dagster" label="Dagster">
-
-```python title="src/main/resources/template/dags/transform/__dagster_scheduled_task_tpl.py.j2"
-#...
-def create_task(task_id: str, task_name: str, task_type: str, ins: dict={"start": In(Nothing)}):
-    spark_config_name=sl_job.get_context_var('spark_config_name', task_name.lower(), options)
-    if (task_type == 'task'):
-        return sl_job.sl_transform(
-            task_id=task_id, 
-            transform_name=task_name,
-            # highlight-next-line
-            spark_config=spark_config(spark_config_name, **sys.modules[__name__].__dict__.get('spark_properties', {})),
-            ins=ins,
-        )
-    else:
-        load_domain_and_table = task_name.split(".",1)
-        domain = load_domain_and_table[0]
-        table = load_domain_and_table[1]
-        return sl_job.sl_load(
-            task_id=task_id, 
-            domain=domain, 
-            table=table,
-            # highlight-next-line
-            spark_config=spark_config(spark_config_name, **sys.modules[__name__].__dict__.get('spark_properties', {})),
-            ins=ins,
-        )
-```
-
-</TabItem>
-</Tabs>
-
-Again, because this function should be implemented  in the **same module** as that of the **generated DAG**, we need to create a **customized DAG template** that will allow us to implement this method, and a **good practice** will be to inject those configurations via the use of **Terraform variables**.
-
-```python title="metadata/dags/templates/__custom_dataproc.py.j2"
-import json
-
-from ai.starlake.job import StarlakeSparkConfig
-from ai.starlake.job.airflow import AirflowStarlakeOptions
-
-clusters:dict = json.loads("""${clusters}""") # Terraform variable
-
-def get_spark_config(spark_config_name: str, **kwargs):
-    # use of the Terraform variable to lookup the spark configuration
-    spark_config = AirflowStarlakeOptions.get_context_var(spark_config_name.upper().replace('-', '_'), clusters.get(spark_config_name, None), options, deserialize_json=True)
-    if spark_config:
-        return StarlakeSparkConfig(
-            memory=spark_config.get('memAlloc', None),
-            cores=int(spark_config.get('numVcpu', 0)),
-            instances=int(spark_config.get('sparkExecutorInstances', 0)),
-            cls_options=AirflowStarlakeOptions(),
-            options=options,
-            **kwargs
-        )
-    else:
-        return None
-
-#...
-```
 
 ## Dependencies
 

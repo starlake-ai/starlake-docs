@@ -18,4 +18,3 @@ Create a new project optionally based on a specific template eq. quickstart / us
 Parameter|Cardinality|Description
 ---|---|---
 --template:`<value>`|*Optional*|Template to use to bootstrap project
-

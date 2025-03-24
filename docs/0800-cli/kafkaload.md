@@ -54,4 +54,3 @@ Parameter|Cardinality|Description
 --streaming-trigger-option:`<value>`|*Optional*|10 seconds for example. see https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/streaming/Trigger.html#ProcessingTime-java.lang.String-
 --streaming-to-table:`<value>`|*Optional*|Table name to sink to
 --streaming-partition-by:`<value>`|*Optional*|List of columns to use for partitioning
-

@@ -42,4 +42,3 @@ Parameter|Cardinality|Description
 --write_mode:`<value>`|*Optional*|One of Set(OVERWRITE, APPEND)
 --options:`k1=v1,k2=v2...`|*Optional*|Any Spark option to use (sep, delimiter, quote, quoteAll, escape, header ...)
 --partitions:`<value>`|*Optional*|How many output partitions
-

@@ -26,4 +26,3 @@ Parameter|Cardinality|Description
 --test:`<value>`|*Optional*|Should we run this transform as a test ? Default value is false
 --accessToken:`<value>`|*Optional*|Access token to use for authentication
 --options:`k1=v1,k2=v2...`|*Optional, Unbounded*|Job arguments to be used as substitutions
-

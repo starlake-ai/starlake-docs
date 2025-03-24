@@ -23,4 +23,3 @@ Parameter|Cardinality|Description
 --site:`<value>`|*Optional*|Generate the results of the tests as a website
 --outputDir:`<value>`|*Optional*|Where to output the tests
 --accessToken:`<value>`|*Optional*|Access token to use for authentication
-

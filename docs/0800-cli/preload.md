@@ -20,4 +20,3 @@ Parameter|Cardinality|Description
 --strategy:`<value>`|*Optional*|pre load strategy
 --globalAckFilePath:`<value>`|*Optional*|Global ack file path
 --options:`k1=v1,k2=v2...`|*Optional*|Pre load arguments to be used as substitutions
-

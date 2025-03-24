@@ -26,4 +26,3 @@ Parameter|Cardinality|Description
 --objects:`<value>`|*Optional*|comma separated list of objects to display: task, table, view, unknown
 --all:`<value>`|*Optional*|Include all tasks  in the dot file ? None by default
 --verbose:`<value>`|*Optional*|Add extra table properties
-

@@ -22,4 +22,3 @@ Parameter|Cardinality|Description
 --tables:`<value>`|*Optional*|List of datasetName.tableName1,datasetName.tableName2 ...
 --accessToken:`<value>`|*Optional*|Access token to use for authentication
 --persist:`<value>`|*Optional*|Persist results ?
-

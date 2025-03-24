@@ -47,4 +47,3 @@ Parameter|Cardinality|Description
 --includeTables:`table1,table2,table3...`|*Optional*|Schemas to include during extraction.
 --excludeTables:`table1,table2,table3...`|*Optional*|Schemas to exclude during extraction. if `include-schemas` is defined, this config is ignored.
 --:`<value>`|*Optional*|
-

@@ -21,4 +21,3 @@ Parameter|Cardinality|Description
 --output_table:`<value>`|*Required*|JDBC Output Table
 --options:`<value>`|*Optional*|Connection options eq for jdbc : driver, user, password, url, partitions, batchSize
 --write_strategy:`<value>`|*Optional*|One of the write strategies: APPEND, OVERWRITE (see strategy types)
-

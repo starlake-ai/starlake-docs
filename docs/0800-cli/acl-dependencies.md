@@ -23,4 +23,3 @@ Parameter|Cardinality|Description
 --png:`<value>`|*Optional*|Should we generate PNG files ?
 --tables:`<value>`|*Optional*|Which tables should we include in the dot file ? All by default
 --all:`<value>`|*Optional*|Include all ACL in the dot file ? None by default
-

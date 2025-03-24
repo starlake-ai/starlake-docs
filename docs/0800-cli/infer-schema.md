@@ -23,4 +23,3 @@ Parameter|Cardinality|Description
 --format:`<value>`|*Optional*|Force input file format
 --rowTag:`<value>`|*Optional*|row tag to use if detected format is XML
 --clean:`<value>`|*Optional*|Delete previous YML before writing
-

@@ -1,6 +1,5 @@
 {
   "label": "Setup",
-  "position": 3,
   "link": {
     "type": "doc",
     "id": "starlake-setup"
