@@ -57,10 +57,13 @@ application:
   connections:
     bigquery:
       type: "bigquery"
+      # Uncomment the line below to use the spark bigquery connector instead of the native one.
+      # sparkFormat: "bigquery" 
       options:
         location: "us-central1" # EU or US or ...
         authType: "APPLICATION_DEFAULT"
         authScopes: "https://www.googleapis.com/auth/cloud-platform" # comma separated list of scopes
+        # writeMethod: # Only when 'sparkFormat' above is set. "direct" # direct or indirect (indirect is required for certain features see https://github.com/GoogleCloudDataproc/spark-bigquery-connector)
         #authType: SERVICE_ACCOUNT_JSON_KEYFILE
         #jsonKeyfile: "/Users/me/.gcloud/keys/starlake-me.json"
         #authType: "ACCESS_TOKEN"
@@ -72,60 +75,7 @@ application:
 ```
 
 </TabItem>
-<TabItem label="Spark BigQuery Direct" value="spark-bigquery-direct">
 
-```yaml
-application:
-  connections:
-    bigquery:
-      type: "bigquery"
-      sparkFormat: "bigquery"
-      options:
-        writeMethod: "direct" # direct or indirect (indirect is required for certain features see https://github.com/GoogleCloudDataproc/spark-bigquery-connector)
-        location: "us-central1" # EU or US or ...
-        authType: "APPLICATION_DEFAULT"
-        authScopes: "https://www.googleapis.com/auth/cloud-platform" # comma separated list of scopes
-        # authType: SERVICE_ACCOUNT_JSON_KEYFILE
-        # jsonKeyfile: "/Users/me/.gcloud/keys/starlake-me.json"
-        # authType: "ACCESS_TOKEN"
-        # gcpAccessToken: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-  spark:
-    datasource:
-      bigquery: # Setting properties here will apply them to all bigquery data sources (connection.type == bigquery)
-        allowFieldAddition: "true" # Allow schema updates. To disable, set it to false
-        allowFieldRelaxation: "true" # Allow schema updates. To disable, set it to false
-
-```
-
-</TabItem>
-<TabItem label="Spark BigQuery Indirect" value="spark-bigquery-indirect">
-
-```yaml
-application:
-  connections:
-    bigquery:
-      type: "bigquery"
-      sparkFormat: "bigquery"
-      options:
-        writeMethod: "indirect" # direct or indirect (indirect is required for certain features see https://github.com/GoogleCloudDataproc/spark-bigquery-connector)
-        gcsBucket: "starlake-app" # Temporary GCS Bucket where intermediary files will be stored. Required in indirect mode only
-        location: "us-central1" # EU or US or ...
-        authType: "APPLICATION_DEFAULT"
-        authScopes: "https://www.googleapis.com/auth/cloud-platform" # comma separated list of scopes
-        materializationDataset: "my-bucket-name" # when sparkFormat is defined, required by the spark-bigquery-connector (https://github.com/GoogleCloudDataproc/spark-bigquery-connector?tab=readme-ov-file#properties)
-        #authType: SERVICE_ACCOUNT_JSON_KEYFILE
-        #jsonKeyfile: "/Users/me/.gcloud/keys/starlake-me.json"
-        #authType: "ACCESS_TOKEN"
-        #gcpAccessToken: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-  spark:
-    datasource:
-      bigquery:
-        allowFieldAddition: "true" # Allow schema updates. To disable, set it to false
-        allowFieldRelaxation: "true" # Allow schema updates. To disable, set it to false
-
-```
-
-</TabItem>
 </Tabs>
 
 ## Apache Spark / Databricks
@@ -188,6 +138,8 @@ application:
   connections:
     snowflake:
       type: jdbc
+      # Uncomment the line below to use the spark snowflake connector instead of the native one.
+      # sparkFormat: snowflake 
       options:
         url: "jdbc:snowflake://{{SNOWFLAKE_ACCOUNT}}.snowflakecomputing.com"
         driver: "net.snowflake.client.jdbc.SnowflakeDriver"
@@ -197,37 +149,18 @@ application:
         db: {{SNOWFLAKE_DB}}
         keep_column_case: "off"
         preActions: "alter session set TIMESTAMP_TYPE_MAPPING = 'TIMESTAMP_LTZ';ALTER SESSION SET QUOTED_IDENTIFIERS_IGNORE_CASE = true"
+                sfUrl: "{{SNOWFLAKE_ACCOUNT}}.snowflakecomputing.com" # make sure you do not prefix by jdbc:snowflake://. This is done by the snowflaek driver
+        #sfUrl: "jdbc:snowflake://{{SNOWFLAKE_ACCOUNT}}.snowflakecomputing.com" # make sure the key is prefixed with 'sf' is 'sparkFormat' is set
+        # sfUser: {{SNOWFLAKE_USER}} # make sure the key is prefixed with 'sf' is 'sparkFormat' is set
+        # sfPassword: {{SNOWFLAKE_PASSWORD}} # make sure the key is prefixed with 'sf' is 'sparkFormat' is set
+        # sfWarehouse: {{SNOWFLAKE_WAREHOUSE}} # make sure the key is prefixed with 'sf' is 'sparkFormat' is set
+        # sfDatabase: {{SNOWFLAKE_DB}} # make sure the key is prefixed with 'sf' is 'sparkFormat' is set
+
       
 ``` 
 
 </TabItem>
 
-<TabItem label="Snowflake Spark" value="snow-spark">
-
-
-```yaml
-
-application:
-  connectionRef: {{connection}}
-  connections:
-    snowflake:
-    spark-snowflake:
-      type: jdbc
-      sparkFormat: snowflake
-      options:
-        sfUrl: "{{SNOWFLAKE_ACCOUNT}}.snowflakecomputing.com" # make sure you do not prefix by jdbc:snowflake://. This is done by the snowflaek driver
-        #sfDriver: "net.snowflake.client.jdbc.SnowflakeDriver"
-        sfUser: {{SNOWFLAKE_USER}}
-        sfPassword: {{SNOWFLAKE_PASSWORD}}
-        sfWarehouse: {{SNOWFLAKE_WAREHOUSE}}
-        sfDatabase: {{SNOWFLAKE_DB}}
-        keep_column_case: "off"
-        autopushdown: on
-        preActions: "alter session set TIMESTAMP_TYPE_MAPPING = 'TIMESTAMP_LTZ';ALTER SESSION SET QUOTED_IDENTIFIERS_IGNORE_CASE = true"
-
-``` 
-
-</TabItem>
 </Tabs>
 
 
@@ -243,6 +176,9 @@ application:
 application:
   connections:
     redshift:
+      type: jdbc
+      # Uncomment the line below if you are running on top of Spark or Databricks
+      # sparkFormat: "io.github.spark_redshift_community.spark.redshift"  # set to "redshift" if running on top of Databricks
       options:
         url: "jdbc:redshift://account.region.redshift.amazonaws.com:5439/database",
         driver: com.amazon.redshift.Driver
@@ -255,30 +191,12 @@ application:
 
 </TabItem>
 
-<TabItem label="Redshift Spark" value="redshift-spark">
-
-```yaml
-
-application:
-  connections:
-    redshift:
-      sparkFormat: "io.github.spark_redshift_community.spark.redshift" # if running on top of Spark or else  "redshift" if running on top of Databricks
-      options:
-        url: "jdbc:redshift://account.region.redshift.amazonaws.com:5439/database",
-        driver: com.amazon.redshift.Driver
-        password: "{{REDSHIFT_PASSWORD}}"
-        tempdir: "s3a://bucketName/data",
-        tempdir_region: "eu-central-1" # required only if running from outside AWS (your laptop ...)
-        aws_iam_role: "arn:aws:iam::aws_count_id:role/role_name"
-
-``` 
-
-</TabItem>
 </Tabs>
 
 
 ## Postgres
 
+The syntax below applies to any JDBC database. The example below is for Postgres.
 
 <Tabs groupId="pg_connections">
 
@@ -290,6 +208,8 @@ application:
   connections:
     postgresql:
       type: jdbc
+      # Uncomment the line below to use the spark postgres connector instead of the native one.
+      # sparkFormat: jdbc 
       options:
         url: "jdbc:postgresql://{{POSTGRES_HOST}}:{{POSTGRES_PORT}}/{{POSTGRES_DATABASE}}"
         driver: "org.postgresql.Driver"
@@ -300,24 +220,5 @@ application:
 
 </TabItem>
 
-<TabItem label="Postgres Spark" value="pg-spark">
-
-```yaml
-
-application:
-  connectionRef: "postgresql"
-  connections:
-    postgresql:
-      type: jdbc
-      sparkFormat: jdbc
-      options:
-        url: "jdbc:postgresql://{{POSTGRES_HOST}}:{{POSTGRES_PORT}}/{{POSTGRES_DATABASE}}"
-        driver: "org.postgresql.Driver"
-        user: "{{DATABASE_USER}}"
-        password: "{{DATABASE_PASSWORD}}"
-        quoteIdentifiers: false
-``` 
-
-</TabItem>
 </Tabs>
 
