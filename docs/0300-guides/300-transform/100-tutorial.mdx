@@ -31,7 +31,7 @@ SELECT
     SUM(ol.quantity * ol.sale_price) AS total_revenue
 FROM
     starbake.orders o
-    JOIN starbake.order_line ol ON o.order_id = ol.order_id
+    JOIN starbake.order_lines ol ON o.order_id = ol.order_id
 GROUP BY
     o.order_id, o.timestamp
 ```
@@ -94,12 +94,12 @@ This should produce a acyclic graph showing the order in which the insights shou
 ```plaintext
 kpi.order_summary
   kpi.product_summary
-    starbake.product
-    starbake.order_line
-    starbake.order
+    starbake.products
+    starbake.order_lines
+    starbake.orders
   kpi.revenue_summary
-    starbake.order
-    starbake.order_line
+    starbake.orders
+    starbake.order_lines
 ```
 
 If you installed the [GraphViz tool](/setup/starlake-core-setup#prerequisites-4), you can produce the same graph in svg or png format using the following command:
