@@ -23,3 +23,4 @@ Parameter|Cardinality|Description
 --format:`<value>`|*Optional*|Force input file format
 --rowTag:`<value>`|*Optional*|row tag to use if detected format is XML
 --clean:`<value>`|*Optional*|Delete previous YML before writing
+--encoding:`<value>`|*Optional*|Input file encoding. Default to UTF-8

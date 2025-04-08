@@ -16,6 +16,7 @@ title: extract-schema
 Parameter|Cardinality|Description
 ---|---|---
 --config:`<value>`|*Optional*|Database tables & connection info
+--all:`<value>`|*Optional*|Should we extract all schemas and tables to external folder ?
 --tables:`<value>`|*Optional*|Database tables info
 --connectionRef:`<value>`|*Optional*|Database connection to use
 --outputDir:`<value>`|*Optional*|Where to output YML files
