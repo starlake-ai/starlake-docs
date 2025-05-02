@@ -25,14 +25,19 @@ starlake dag-generate --clean
 
 This will generate your DAG files in the root of the `dags/generated` directory.
 
-You may now 'dry-run' the DAGs to see if they are working as expected.
+You may also  'dry-run' the DAGs to see if they are working as expected.
 
 ```bash
 python -m ai.starlake.orchestration --file {{file}} dry-run
 ```
 
 where `{{file}}` is the path to the DAG file you want to run (`dags/generated` in our example).  
-This will display all the SQL commands that will be run.
+
+:::note 
+- In Snowflake: This will display all the SQL commands that will be run.
+- In Airflow: This will run de DAG in test mode.
+- In Dagster: This will run de DAG in local mode.
+:::
 
 We are now ready to deploy the DAGs directly on our orchestrator.
 ```bash
@@ -92,7 +97,7 @@ dag:
     template: "load/airflow_scheduled_table_bash.py.j2"
     filename: "airflow_all_tables.py"
     options:
-        load_dependencies: "true"
+        pre_load_strategy: "imported"
 
 ```
 
@@ -116,7 +121,7 @@ dag:
     template: "load/dagster_scheduled_table_shell.py.j2"
     filename: "dagster_all_load.py"
     options:
-        load_dependencies: "true"
+        pre_load_strategy: "imported"
 
 ```
 
@@ -139,8 +144,6 @@ dag:
     comment: "default Snowflake pipeline configuration for load"
     template: "load/snowflake_load_sql.py.j2"
     filename: snowflake_{{domain}}_{{table}}.py"
-    options:
-        load_dependencies: "true"
 
 ```
 
@@ -158,12 +161,24 @@ dag:
 </TabItem>
 </Tabs>
 
+`pre_load_strategy(none by default)`: 
+You can specify an optional preload strategy to conditionally load a domain. 
+Valid values are: imported, ack, pending, or none. If not set, the default strategy is none.
+- imported: Loads files from the stage directory.
+- ack: Loads files only if an acknowledgment (ack) file is present in the stage directory.
+- pending: Loads files from the pending directory.
+- none: Disables preloading.
 
-`load_dependencies: "true"` is a flag that tells the DAG generator to include the dependent tables or tasks in the DAG file.
+The preload strategy acts as a lightweight pre-check. 
+It simply checks for the presence of files based on the selected strategy. 
+If no matching files are found, the process exits silently—without raising an error or consuming additional resources.
+
+
+`load_dependencies: "true"` is a flag that tells the DAG generator to include for transformations, the dependent tables or tasks in the DAG file.
 
 `template` is the template file that will be used to generate the DAG file. This ay reference :
 
-- an absolute path on teh filesystem
+- an absolute path on the filesystem
 - a relative path to the `metadata/dags/templates/` directory
 - a template that is built-in in the starlake library and is located in the [load](https://github.com/starlake-ai/starlake/tree/master/src/main/resources/templates/dags/load) and [transform](https://github.com/starlake-ai/starlake/tree/master/src/main/resources/templates/dags/transform) resource directories.
 
