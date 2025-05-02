@@ -1,13 +1,20 @@
 # Tutorial
 
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+:::note
+Starlake is not an orchestrator. It generates DAGs for you to run on your orchestrator of choice.
+:::
+
 Now that our load and transform are working, we can run them on our orchestrator.
+
+Starlake can generate DAGs for different orchestrators like Airflow, Dagster, and Snowflake Tasks.
 
 ## Prerequisites
 Make sure you run the [Transform step](../transform/tutorial) first to get the data in the database.
+
+On Snowflake, you need to login with a role with the `CREATE TASK` and `USAGE` privileges.
 
 ## Running the DAG
 Using starlake `dag-generate` command, we can generate a DAG file that will run our load and transform tasks.
@@ -18,7 +25,21 @@ starlake dag-generate --clean
 
 This will generate your DAG files in the root of the `dags/generated` directory.
 
-Just copy anything below the dags/generated directory to your orchestrator dags directory and you are good to go.
+You may now 'dry-run' the DAGs to see if they are working as expected.
+
+```bash
+python -m ai.starlake.orchestration --file {{file}} dry-run
+```
+
+where `{{file}}` is the path to the DAG file you want to run (`dags/generated` in our example).  
+This will display all the SQL commands that will be run.
+
+We are now ready to deploy the DAGs directly on our orchestrator.
+```bash
+python -m ai.starlake.orchestration --file {{file}} deploy
+```
+
+This will deploy the DAGs to your orchestrator.
 
 
 <Tabs groupId="schedulers">
@@ -35,11 +56,25 @@ Just copy anything below the dags/generated directory to your orchestrator dags 
     TODO
 
 </TabItem>
+<TabItem value="snowflake" label="Snowflake Tasks">
+
+![](/img/orchestration/snowflake/snowflake-dags.png)
+
+</TabItem>
 </Tabs>
 
-:::note
-Note how load DAGs are tagged with the domain name.
-:::
+
+### Backfilling
+You can backfill the DAGs to run them on a specific date range.
+```bash
+python -m ai.starlake.orchestration  \
+        --file {{file}} backfill     \
+        --start-date {{start_date}}  \
+        --end-date {{end_date}}
+```
+
+Where `{{start_date}}` and `{{end_date}}` are the start and end dates of the range you want to run the DAGs on.
+This will run the DAGs on the specified date range.
 
 ## Configuration
 
@@ -97,6 +132,30 @@ dag:
 
 
 </TabItem>
+<TabItem value="snowflake" label="Snowflake Tasks">
+
+```yaml title="Load configuration: metadata/dags/airflow_scheduled_table_bash.sl.yml"
+dag:
+    comment: "default Snowflake pipeline configuration for load"
+    template: "load/snowflake_load_sql.py.j2"
+    filename: snowflake_{{domain}}_{{table}}.py"
+    options:
+        load_dependencies: "true"
+
+```
+
+```yaml title="Transform configuration: metadata/dags/airflow_scheduled_task_bash.sl.yml"
+dag:
+    comment: "default Dagster pipeline configuration for transform"
+    template: "transform/snowflake_scheduled_transform_sql.py.j2"
+    filename: "snowflake_{{domain}}_tasks.py"
+    options:
+        load_dependencies: "true"
+
+```
+
+
+</TabItem>
 </Tabs>
 
 
@@ -111,3 +170,5 @@ dag:
 
 The load and transforms tasks will be run as bash commands on the orchestrator. To run them on a different executor, you can change the template to a different one or build your own.
 Starlake comes with templates out of the box.
+
+On Snowflake, the tasks will be run as native snowpark tasks.
