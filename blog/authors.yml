@@ -53,4 +53,17 @@ mkassir:
     github: mhdkassir
     linkedin: mohamad-kassir
 
+jhurault:
+  name: Julien Hurault
+
+
+sspaeti:
+  name: Simon Späti
+  title: Data Engineer & Technical Author at ssp.sh
+  url: https://ssp.sh
+  image_url: https://2.gravatar.com/avatar/8f8746399d130e88640fd6a222fc669145b9430aa25753b337cfac104e1b77f0?size=512&d=initials
+  socials:
+    github: sspaeti
+    linkedin: sspaeti
+    newsletter: https://ssp.sh
 
