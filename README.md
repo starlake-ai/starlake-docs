@@ -20,6 +20,8 @@ BASE_URL=/starlake/ yarn start
 
 This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
 
+*For previewing the blog run `IS_BLOG=true BASE_URL=/starlake/ yarn start`*
+
 ## Build
 
 ```console
