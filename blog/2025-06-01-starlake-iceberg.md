@@ -27,7 +27,7 @@ $ starlake bootstrap
 
 This will create a new project with a default configuration.
 
-Let's update the application.sl.yml file to use iceberg. We do not need to incldue any library since iceberg jars are distributed with Starlake.
+Let's update the application.sl.yml file to use iceberg. We do not need to include any library since iceberg jars are distributed with Starlake.
 
 ```yaml
 application:
@@ -58,13 +58,13 @@ env:
 The bootstrap comes with sample files. We just need to run the following command to load the data into iceberg.
 
 ```bash
-$ export SL_ENV=ICEBERG # to use the iceberg connection
+$ export SL_ENV=ICEBERG # to use definitions in the env.ICEBERG.sl.yml file
 $ starlake autoload
 ```
 
 That's it! We have loaded the data into iceberg.
 
-## Run transformations with Starlake on iceberg tables
+## Run transformations with Starlake on Iceberg tables
 
 Let's create a new transformation.
 
@@ -137,12 +137,19 @@ warehouse/
 ## Querying data
 To query the data, we can use duckdb.
 
-```SQL
+```bash
 $ duckdb
-D INSTALL iceberg
-D LOAD iceberg
+v1.1.1 af39bd0dcf
+Enter ".help" for usage hints.
+Connected to a transient in-memory database.
+Use ".open FILENAME" to reopen on a persistent database.
 
-D WITH o as (
+> INSTALL iceberg
+> LOAD iceberg
+```
+
+```SQL
+> WITH o as (
     SELECT * FROM iceberg_scan('warehouse/starbake/orders')
 ),
 ol as (
