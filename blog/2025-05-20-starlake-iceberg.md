@@ -45,7 +45,7 @@ application:
 
 iceberg metadata is stored in the `warehouse` folder.
 
-By default, Starlake will use the duckdb connection. Let's define a new connection for iceberg. Create the file env.ICEBERG.sl.yml in the metadata directory, with the following content:
+By default, Starlake will use the duckdb connection. Let's define a new connection for iceberg. Create the file `env.ICEBERG.sl.yml` in the metadata directory, with the following content:
 
 ```yaml
 version: 1
@@ -73,7 +73,7 @@ $ mkdir metadata/transform/kpi
 $ touch metadata/transform/kpi/revenue_summary.sql
 ```
 
-Edit the file metadata/transform/kpi/revenue_summary.sql with the following content:
+Edit the file `metadata/transform/kpi/revenue_summary.sql` with the following content:
 
 ```sql
 SELECT
