@@ -169,7 +169,7 @@ GROUP BY
 
 That's it! We have queried the data from iceberg using duckdb.
 
-Full code is available [here](https://github.com/starlake-io/starlake/tree/main/examples/iceberg).
+Full code is available [here](https://github.com/starlake-ai/starlake/tree/master/samples/iceberg).
 
 
 
