@@ -45,7 +45,7 @@ application:
 
 iceberg metadata is stored in the warehouse` folder.
 
-By default, Starlake will use the duckdb conection. Let's define a new connection for iceberg. Create the file env.ICEBERG.sl.yml in the metadata directory, with the following content:
+By default, Starlake will use the duckdb connection. Let's define a new connection for iceberg. Create the file env.ICEBERG.sl.yml in the metadata directory, with the following content:
 
 ```yaml
 version: 1
@@ -168,6 +168,8 @@ GROUP BY
 
 
 That's it! We have queried the data from iceberg using duckdb.
+
+Full code is available [here](https://github.com/starlake-io/starlake/tree/main/examples/iceberg).
 
 
 
