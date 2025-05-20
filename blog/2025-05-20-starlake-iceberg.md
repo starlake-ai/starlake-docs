@@ -43,7 +43,7 @@ application:
     sql.defaultCatalog:  local
 ```
 
-iceberg metadata is stored in the warehouse` folder.
+iceberg metadata is stored in the `warehouse` folder.
 
 By default, Starlake will use the duckdb connection. Let's define a new connection for iceberg. Create the file env.ICEBERG.sl.yml in the metadata directory, with the following content:
 
