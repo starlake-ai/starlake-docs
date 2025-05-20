@@ -1,9 +1,13 @@
 ---
 slug: starlake-iceberg
-title: Starlake and Iceberg
+title: Starlake Iceberg integration
 authors:
     - hayssams
-tags: 
+tags:
+    - iceberg
+    - starlake
+    - duckdb
+    - spark
 ---
 
 ## Introduction
