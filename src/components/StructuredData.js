@@ -57,7 +57,7 @@ export default function StructuredData() {
       "name": "Starlake",
       "applicationCategory": "Data Integration Platform",
       "operatingSystem": "Cross-platform",
-      "description": "Open source declarative data pipeline platform for ETL and data transformation",
+      "description": "Open source declarative data pipeline platform for data loading and transformation",
     },
     "audience": {
       "@type": "Audience",
