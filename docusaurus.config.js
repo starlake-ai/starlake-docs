@@ -8,7 +8,7 @@ const isBlog = process.env.IS_BLOG === 'true';
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "Starlake",
-  tagline: "Transform your data with seamless ETL, real-time pipelines, and powerful transformation tools",
+  tagline: "Load and Transform your data declaratively",
   favicon: "img/favicon_starlake.ico",
 
   // Set the production url of your site here
@@ -191,7 +191,7 @@ const config = {
       "about": {
         "@type": "SoftwareApplication",
         "name": "Starlake",
-        "applicationCategory": "ETL Software",
+        "applicationCategory": "Data Loading & Transformation Platform",
         "operatingSystem": "Cross-platform",
         "offers": {
           "@type": "Offer",

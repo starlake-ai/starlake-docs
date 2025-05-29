@@ -17,6 +17,8 @@ Parameter|Cardinality|Description
 ---|---|---
 --name:`<value>`|*Required*|Task Name in the form domain.task
 --compile:`<value>`|*Optional*|Return final query only
+--query:`<value>`|*Optional*|Run this query instead of the one in the task
+--dry-run:`<value>`|*Optional*|Dry run only (supported on BigQuery only)
 --tags:`<value>`|*Optional*|Return final query only
 --format:`<value>`|*Optional*|pretty print the final query and update sql file
 --interactive:`<value>`|*Optional*|Run query without sinking the result
