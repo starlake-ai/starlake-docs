@@ -119,7 +119,7 @@ The commit contains the following structural elements, to communicate intent to 
 
 # Build settings
 
-The CI currently compiles with java 11, so we suggest you to use this version if you plan to contribute.
+The CI currently compiles with java 17, so we suggest you to use this version if you plan to contribute.
 
 If you plan to build from powershell, you may want to set the input and output settings of the terminal as utf-8.
 This can be done as follows: `$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = New-Object System.Text.UTF8Encoding`
