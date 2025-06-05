@@ -6,7 +6,7 @@ sidebar_label: "Overview"
 description: "Discover how Starlake revolutionizes data pipelines with its declarative tool for seamless data loading, transformation and orchestration."
 ---
 
-# Starlake: Open Source Data Integration & ETL Platform
+# Starlake: Open Source Data Loading & Transformation Platform
 
 Starlake is an enterprise-grade data pipeline tool that transforms how organizations handle data integration. Using a declarative approach with YAML and SQL, it eliminates complex coding while ensuring robust data governance and quality.
 
