@@ -11,9 +11,9 @@ description: "Learn about Starlake's dual licensing model: Open Source for the c
 
 ## When Open Source Isn't Truly Open
 
-While many tools claim to be open source, their usefulness is limited if the actual execution engine remains locked behind proprietary runtimes or tightly controlled SaaS platforms. True openness requires more than just readable code — it means giving teams the freedom to **run, schedule, and scale pipelines on their own terms**.  
+While many tools claim to be open source, their usefulness is limited if the actual execution engine remains locked behind proprietary runtimes or tightly controlled SaaS platforms. True openness requires more than just readable code, it means giving teams the freedom to **run, schedule, and scale pipelines on their own terms**.  
 Unlike other frameworks that rely on closed, self-managed orchestrators, **Starlake integrates natively with standard open orchestrators** like **Apache Airflow**, **Dagster**, **AWS Managed Workflows**, and **Google Cloud Composer**. You can even plug in **any orchestrator** as long as it supports our templated commands.  
-This gives you full control over your infrastructure, compliance, cost, and cloud strategy — all while remaining truly open.
+This gives you full control over your infrastructure, compliance, cost, and cloud strategy all while remaining truly open.
 
 
 # Licensing at Starlake
@@ -27,9 +27,9 @@ We offer two licensing models:
 
 ---
 
-## Starlake Core — Open Source (Apache 2.0)
+## Starlake Core - Open Source (Apache 2.0)
 
-**Starlake Core** — the declarative data pipeline engine behind all Starlake components — is licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0), allowing:
+**Starlake Core** - the declarative data pipeline engine behind all Starlake components - is licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0), allowing:
 
 - CLI and SDK usage
 - VSCode integration
@@ -47,11 +47,11 @@ We offer two licensing models:
 - Embed it in your internal or customer projects  
 - Contribute improvements to the open community
 
-This ensures your pipelines are powered by an open, auditable, and portable engine — with no license fees or lock-in.
+This ensures your pipelines are powered by an open, auditable, and portable engine - with no license fees or lock-in.
 
 ---
 
-## Starlake Server — Elastic License
+## Starlake Server - Elastic License
 
 **Starlake Server**, essentially the **Web UI**, is released under the [Elastic License 2.0 (ELv2)](https://www.elastic.co/licensing/elastic-license).
 
