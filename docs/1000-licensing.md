@@ -66,7 +66,7 @@ This model ensures we can sustainably grow and maintain advanced features while 
 🚫 **What is not allowed:**
 
 - Offering the Starlake Server **as a managed or hosted service to third parties**  
-- Modifying and reselling the API  
+- Reselling the API  
 - Creating a competing commercial SaaS
 
 In short: **you can use it freely - even commercially - to serve clients. Just not as a hosted product offering.**
