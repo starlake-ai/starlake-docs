@@ -12,7 +12,7 @@ description: "Learn about Starlake's dual licensing model: Open Source for the c
 ## When Open Source Isn't Truly Open
 
 While many tools claim to be open source, their usefulness is limited if the actual execution engine remains locked behind proprietary runtimes or tightly controlled SaaS platforms. True openness requires more than just readable code, it means giving teams the freedom to **run, schedule, and scale pipelines on their own terms**.  
-Unlike other frameworks that rely on closed, self-managed orchestrators, **Starlake integrates natively with standard open orchestrators** like **Apache Airflow**, **Dagster**, **AWS Managed Workflows**, and **Google Cloud Composer**. You can even plug in **any orchestrator** as long as it supports our templated commands.  
+Unlike other frameworks that rely on closed, self-managed orchestrators, **Starlake integrates natively with standard open orchestrators** like **Apache Airflow**, **Dagster**, **AWS Managed Workflows**, and **Google Cloud Composer**. You can even plug in **any orchestrator** as long as you write the required orchestration templates.  
 This gives you full control over your infrastructure, compliance, cost, and cloud strategy all while remaining truly open.
 
 
