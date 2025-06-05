@@ -11,25 +11,20 @@ By employing a declarative approach using YAML and SQL, it minimizes complex cod
 
 Starlake offers three deployment options:
 
-**Starlake OSS Core:** 
-This open-source command-line tool enables you to run your Starlake projects locally. 
-It is free to use and encompasses all core features of the platform.
-
-**Starlake Self-Hosted:** 
-Building upon Starlake OSS Core, this version introduces a web-based user interface for managing your projects through a browser. 
+**Starlake Self Hosted:** 
+Building upon Starlake CLI, this version also brings in a web-based user interface for managing your projects through a browser. 
 It includes all command-line functionalities, along with advanced UI and AI features. 
-Starlake Self-Hosted is free to use and can be deployed on your own infrastructure, whether on-premises or in the cloud.
+Starlake is free to use and can be deployed on your own infrastructure, whether on-premises or in the cloud.
 
 **Starlake Cloud:** 
 This fully managed cloud-based version of Starlake offers all platform features and is available as a subscription service.
 
-The table below provides a comparison of the three deployment options:
+The table below provides a comparison of these deployment options:
 <table>
   <thead>
     <tr>
       <th>Feature</th>
-      <th>Starlake OSS Core</th>
-      <th>Starlake Self-Hosted</th>
+      <th>Starlake</th>
       <th>Starlake Cloud</th>
     </tr>
   </thead>
@@ -38,17 +33,14 @@ The table below provides a comparison of the three deployment options:
       <td>Command-line interface</td>
       <td>✅</td>
       <td>✅</td>
-      <td>✅</td>
     </tr>
     <tr>
       <td>Web-based UI</td>
-      <td>❌</td>
       <td>✅</td>
       <td>✅</td>
     </tr>
     <tr>
       <td>AI features</td>
-      <td>❌</td>
       <td>✅</td>
       <td>✅</td>
     </tr>
@@ -56,17 +48,14 @@ The table below provides a comparison of the three deployment options:
       <td>Orchestration</td>
       <td>✅</td>
       <td>✅</td>
-      <td>✅</td>
     </tr>
     <tr>
       <td>Deployment</td>
-      <td>Local</td>
       <td>On-Premise / Your Cloud</td>
       <td>SaaS</td>
     </tr>
     <tr>
       <td>Cost</td>
-      <td>Free</td>
       <td>Free</td>
       <td>Subscription</td>
     </tr>
@@ -77,39 +66,23 @@ The table below provides a comparison of the three deployment options:
 
 <div className='container'>
   <div className='row'>
-    <div className='col col--4'>
+    <div className='col col--6'>
       <div>
         <Card shadow='tl'>
           <CardHeader>
-            <h3><center>Starlake Core</center></h3>
+            <h3><center>Starlake</center></h3>
           </CardHeader>
           <CardBody>
           </CardBody>
           <CardFooter>
-            <a href="/setup/starlake-core-setup">
+            <a href="/setup/starlake-setup">
               <button className='button button--secondary button--block'>Setup locally</button> 
             </a>
           </CardFooter>
         </Card>
       </div>
     </div>
-    <div className='col col--4'>
-      <div >
-        <Card shadow='tl'>
-          <CardHeader>
-            <h3><center>Starlake Self-Hosted</center></h3>
-          </CardHeader>
-          <CardBody>
-          </CardBody>
-          <CardFooter>
-            <a href="/setup/starlake-self-hosted-setup">
-            <button className='button button--secondary button--block'>Deploy on your cloud</button> 
-            </a>
-          </CardFooter>
-        </Card>
-      </div>
-    </div>
-    <div className='col col--4'>
+    <div className='col col--6'>
       <div >
         <Card shadow='tl'>
           <CardHeader>
