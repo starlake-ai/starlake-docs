@@ -35,7 +35,7 @@ Let’s break it down.
 
 
 - Fast engine: Starlake uses a **Scala-based engine** for lightning-fast performance, while Dbt Fusion relies on a **Rust-based engine**.
-- Native SQL comprehension: Both tools support native SQL, but Starlake's engine is designed for **high performance** and **scalability**.
+- Native SQL comprehension: Both tools support native SQL semantics.
 - State-aware orchestration: Dbt Fusion's orchestration is limited to Dbt Cloud, while Starlake generates DAGs for **any orchestrator** with ready ones for Airflow, Dagster, and Snowflake Tasks.
 - Cost management: Dbt Fusion uses the SDF Engine for cost management, while Starlake leverages **OSS JSQLParser** and **JSQLTranspiler** for cost-effective SQL transformations.
 - Lineage & governance: Dbt Fusion offers lineage and governance features in their paid tier, while Starlake provides these capabilities for free.
