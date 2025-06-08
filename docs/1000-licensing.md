@@ -4,7 +4,6 @@ title: "Licensing"
 slug: "/licensing"
 tags: ["licensing", "open source", "commercial"]
 keywords: ["Starlake Core", "Starlake API", "Elastic License", "Apache License"]
-sidebar_position: 1
 sidebar_label: "Licensing"
 description: "Learn about Starlake's dual licensing model: Open Source for the core engine and Elastic License for server side features. Understand what you can do with each license."
 ---
