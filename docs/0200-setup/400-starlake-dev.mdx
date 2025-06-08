@@ -1,20 +1,26 @@
 ---
-id: starlake-self-hosted-setup
-title: "Starlake Self Hosted"
+id: starlake-dev
+title: "Starlake with Airflow / Dagster"
 description: "Get started with Starlake in minutes. Step-by-step installation guide for Docker, Linux, MacOS, and Windows with cloud integration examples."
 keywords: [starlake installation, data pipeline setup, etl quickstart, docker etl, cloud integration]
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-#
+:::tip
+This is a Docker-based setup for Starlake with Airflow or Dagster pre-configured.
 
-Starlake is a YAML based integrated declarative data stack that make files ingestion and SQL / Python transformations pipelines easy to build, maintain, and monitor.
-It also provides a rich and intuitive UI to build and manage your data pipelines.
+:::
+
+This is ideal for developers and data engineers 
+who want to quickly set up a data pipeline environment without the need to separately install and configure Airflow or Dagster.
+Airflow and Dagster wxill be automatically installed and configured as part of the Starlake setup.
+It provides a streamlined setup process, allowing you to focus on building and managing your data projects 
+rather than dealing with infrastructure configurations.
+
 The core project is open source and can be found at [starlake-ai/starlake](https://github.com/starlake-ai/starlake)
 
-Starlake self-hosted may be installed on your own infrastructure, whether on your on-premises or in the cloud.
-
+Starlake may be installed on your own infrastructure, whether on your on-premises or in the cloud.
 
 You may install it on a server or a developer workstation using the docker-compose file provided to run the Starlake UI with Airflow or Dagster.
 Three installation options are available for the following platforms:
@@ -24,7 +30,7 @@ Three installation options are available for the following platforms:
 
 
 
-<Tabs groupId="self-hosted-setup-options">
+<Tabs groupId="small-data-setup-options">
 <TabItem value="docker-compose" label="🐳 Starlake on Docker Compose">
 ## Starlake on Docker Compose
 
@@ -89,7 +95,7 @@ If you have many container projects, create as many volume as needed.
 #### Limit
 
 - Currently, we cannot mount the starlake projects directory directly under the mounted `/external_projects`. Subfolders of the mounted external project can't be accessed correctly.
-- This feature has been tested only on mac at the moment
+- This feature has been tested only on MacOS and linux at the moment
 
 
 ### Stopping Starlake UI
