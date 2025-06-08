@@ -74,7 +74,7 @@ In short: **you can use it freely - even commercially - to serve clients. Just n
 
 ## Summary Table
 
-| Feature                         | Starlake Core (Apache 2.0) | Starlake Server (Elastic License)       |
+| Feature                         | Starlake Core (Apache 2.0) | Starlake Server (Elastic License)      |
 |---------------------------------|-----------------------------|---------------------------------------|
 | License Type                    | Open Source                 | Source-available, usage-restricted    |
 | Can use in production           | ✅ Yes                      | ✅ Yes                                |
@@ -84,8 +84,7 @@ In short: **you can use it freely - even commercially - to serve clients. Just n
 | Modify and contribute           | ✅ Yes                      | ✅ Yes                                |
 | VS Code extension               | ✅ Yes                      | ✅ Yes                                |
 | MCP Server                      | ✅ Yes                      | ✅ Yes                                |
-| Web UI                          | ❌ No                       | ✅ Yes                                |
-| Cost                            | Free                        | Free for internal / consulting use    |
+| Cost (internal & consulting use)| Free                        | Free                                  |
 
 ---
 
