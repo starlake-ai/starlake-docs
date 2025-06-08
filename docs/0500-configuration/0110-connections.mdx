@@ -13,7 +13,8 @@ The following types of connections are supported:
 - [Spark / Databricks](#apache-spark--databricks)
 - [Snowflake](#snowflake)
 - [Redshift](#amazon-redshift)
-- [Postgres](#postgres)
+- [DuckdDB / Ducklake](#duckdb)
+- [Any Database](#any-database)
 
 
 ## Local File System
@@ -49,8 +50,7 @@ application:
 ## Google BigQuery
 
 Starlake support native and spark bigquery connections.
-<Tabs groupId="bq_connections">
-<TabItem label="BigQuery" value="bigquery">
+
 
 ```yaml
 application:
@@ -75,17 +75,10 @@ application:
     taxonomy: RGPD
 ```
 
-</TabItem>
-
-</Tabs>
 
 ## Snowflake
 
 ### User / Password Auth
-<Tabs groupId="snow_connections">
-
-<TabItem label="Snowflake" value="snow-jdbc">
-
 You may use the native Snowflake JDBC driver or the Spark Snowflake connector. The native driver is recommended for most use cases.
 The Spark Snowflake connector is only required when exporting data from Snowflake to Excel or CSV / Parquet / ... files or when loading data from 
 to Snowflake using the Starlake Spark embedded library .
@@ -120,9 +113,6 @@ application:
       
 ``` 
 
-</TabItem>
-
-</Tabs>
 
 ### Single Sign On (OAuth)
 
@@ -203,6 +193,7 @@ Spark connections are used to read and write data from Spark.
 
 ```yaml
 application:
+  defaultWriteFormat: parquet
   connections:
     spark:
       type: "spark"
@@ -215,13 +206,10 @@ application:
 
 <TabItem label="Spark Delta" value="spark-delta">
 
-In addition to the connection defined below, please download the following jars: 
-- [delta-spark_2.12-VERSION.jar](https://repo1.maven.org/maven2/io/delta/delta-spark_2.12) and place it in the `bin/deps` directory of the starlake directory.
-- [delta-storage_2.12-VERSION.jar](https://repo1.maven.org/maven2/io/delta/delta-storage) and place it in the `bin/deps` directory of the starlake directory.
-
 
 ```yaml
 application:
+  defaultWriteFormat: delta
   connections:
     spark:
       type: "spark"
@@ -236,6 +224,33 @@ application:
 ``` 
 
 </TabItem>
+
+<TabItem label="Spark Iceberg" value="spark-iceberg">
+
+
+
+```yaml
+application:
+  defaultWriteFormat: iceberg
+  connections:
+    spark:
+      type: "spark"
+      options:
+        # any spark configuration can be set here
+  spark:
+    sql.extensions: "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
+    sql.catalog.spark_catalog: org.apache.iceberg.spark.SparkSessionCatalog
+    sql.catalog.spark_catalog.type: hadoop
+    sql.catalog.local: org.apache.iceberg.spark.SparkCatalog
+    sql.catalog.local.type: hadoop
+    sql.catalog.spark_catalog.warehouse: "{{SL_ROOT}}/warehouse"
+    sql.catalog.local.warehouse: "{{SL_ROOT}}/warehouse"
+    sql.defaultCatalog:  local
+``` 
+
+</TabItem>
+
+
 </Tabs>
 
 
@@ -269,13 +284,28 @@ application:
 </Tabs>
 
 
-## Postgres / Any database
+
+## DuckDB
+DuckDB is a lightweight, in-process SQL OLAP database management system. It is designed to support analytical queries on large datasets.
+
+```yaml
+application:
+  connections:
+    duckdb:
+      type: jdbc
+      options:
+        url: "jdbc:duckdb:{{DUCKDB_PATH}}"
+        driver: "org.duckdb.DuckDBDriver"
+        user: "{{DATABASE_USER}}"
+        password: "{{DATABASE_PASSWORD}}"
+        ## uncomment and customize the line below if using ducklake
+        # preActions: ""ATTACH IF NOT EXISTS 'ducklake:metadata.ducklake' As my_ducklake (DATA_PATH 'file_path/');USE my_ducklake;"
+```
+
+
+## Any Database
 
 The syntax below applies to any JDBC database. The example below is for Postgres.
-
-<Tabs groupId="pg_connections">
-
-<TabItem label="Postgres JDBC" value="postgres-jdbc">
 
 ```yaml
 application:
@@ -292,8 +322,4 @@ application:
         password: "{{DATABASE_PASSWORD}}"
         quoteIdentifiers: false
 ```  
-
-</TabItem>
-
-</Tabs>
 
