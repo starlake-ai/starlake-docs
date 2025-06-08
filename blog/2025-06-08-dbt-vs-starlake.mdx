@@ -33,12 +33,18 @@ Let’s break it down.
 
 ### Feature-by-Feature Comparison
 
+:::note
+
+Disclaimer: Dbt offers a free tier for teams with fewer than 15 users.
+This comparison focuses on organizations with more than 15 users, where most of Dbt Fusion’s advanced features are gated behind a paid subscription.
+
+:::
 
 - Fast engine: Starlake uses a **Scala-based engine** for lightning-fast performance, while Dbt Fusion relies on a **Rust-based engine**.
-- Native SQL comprehension: Both tools support native SQL semantics.
-- State-aware orchestration: Dbt Fusion's orchestration is limited to Dbt Cloud, while Starlake generates DAGs for **any orchestrator** with ready ones for Airflow, Dagster, and Snowflake Tasks.
+- Native SQL comprehension:  Both tools enable real-time error detection, SQL autocompletion and context-aware assistance without needing to hit the data warehouse. The difference ? With Dbt Fusion, it’s a paid feature. With Starlake, it’s free and open.
+- State-aware orchestration: Dbt Fusion's orchestration is limited to Dbt Saas Offering, while Starlake generates DAGs for **any orchestrator** with ready ones for Airflow, Dagster, and Snowflake Tasks.
 - Cost management: Dbt Fusion uses the SDF Engine for cost management, while Starlake leverages **OSS JSQLParser** and **JSQLTranspiler** for cost-effective SQL transformations.
-- Lineage & governance: Dbt Fusion offers lineage and governance features in their paid tier, while Starlake provides these capabilities for free.
+- Lineage & governance: Dbt Fusion offers lineage and governance features in their paid tier, while Starlake provides these capabilities for free and open.
 - Web-based visual editor: Dbt Fusion's visual editor is part of their paid tier, while Starlake offers a free web-based visual editor.
 - Platform integration: aka. Consistent experience across all interfaces, Dbt Fusion's platform integration is available in their paid tier, while Starlake provides free integration with various platforms.
 - Data seeding: Dbt Fusion supports CSV-only data seeding, while Starlake offers **full support for various data formats (CSV, JSON, XML, Fixed Length ...)** with schema validation and user-defined materialization strategies.
@@ -53,7 +59,7 @@ Let’s break it down.
 |-------------------------------------|--------------------------------------------|------------------------------------------------|
 | **Fast engine**                     | Yes (Rust-based)                           | Yes (Scala-based)                              |
 | **Native SQL comprehension**        | Yes                                        | Yes                                            |
-| **State-aware orchestration**       | Limited to Dbt Cloud                       | Yes on any orchestrator                        |
+| **State-aware orchestration**       | Limited to Dbt Saas offering               | Yes on any orchestrator                        |
 | **Cost management**                 | via SDF Engine                             | via OSS JSQLParser/ JSQLTranspiler             |
 | **Lineage & governance**            | Paid tier                                  | Free                                           |
 | **Web-based visual editor**         | No                                         | Yes and always free                            |
