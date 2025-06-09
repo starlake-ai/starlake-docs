@@ -53,21 +53,21 @@ This ensures your pipelines are powered by an open, auditable, and portable engi
 
 ---
 
-## Starlake Server - Elastic License
+## Starlake Cockpit - Elastic License
 
-**Starlake Server**, essentially the **Web UI**, is released under the [Elastic License 2.0 (ELv2)](https://www.elastic.co/licensing/elastic-license).
+**Starlake Cockpit**, essentially the **Web UI**, is released under the [Elastic License 2.0 (ELv2)](https://www.elastic.co/licensing/elastic-license).
 
 This model ensures we can sustainably grow and maintain advanced features while keeping the platform accessible.
 
 ✅ **What you can do:**
 
 - Use it freely inside your organization  
-- Build and deliver **solutions to your customers** using Starlake Server  
+- Build and deliver **solutions to your customers** using Starlake Cockpit  
 - Include it as part of **consulting or deployment work**  
 
 🚫 **What is not allowed:**
 
-- Offering the Starlake Server **as a managed or hosted service to third parties**  
+- Offering the Starlake Cockpit **as a managed or hosted service to third parties**  
 - Reselling the API  
 - Creating a competing commercial SaaS
 
