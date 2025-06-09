@@ -19,16 +19,19 @@ This gives you full control over your infrastructure, compliance, cost, and clou
 
 At Starlake, we balance the best of both worlds: the transparency and community of open source, and the sustainability and innovation of a commercial platform.
 
+
+
 We offer two licensing models:
 
-- **Starlake Core**: Open Source under Apache 2.0  
-- **Starlake Server**: Source-available under Elastic License
+- **Starlake CLI**: Open Source under Apache 2.0. Starlake CLI is the core engine that powers all Starlake components, allowing you to build and run data pipelines with full freedom.
+- **Starlake Copilot**: Open Source under Apache 2.0. Starlake Copilot is the AI assistant that helps you build and manage your data pipelines using natural language prompts.
+- **Starlake Cockpit**: Source-available under Elastic License. Starlake Cockpit provides a user-friendly interface for managing and monitoring your data pipelines.
 
 ---
 
-## Starlake Core - Open Source (Apache 2.0)
+## Starlake CLI & Copilot - Open Source (Apache 2.0)
 
-**Starlake Core** - the declarative data pipeline engine behind all Starlake components - is licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0), allowing:
+**Starlake** - the declarative data pipeline engine behind all Starlake components - is licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0), allowing:
 
 - CLI and SDK usage
 - VSCode integration
@@ -74,7 +77,7 @@ In short: **you can use it freely - even commercially - to serve clients. Just n
 
 ## Summary Table
 
-| Feature                         | Starlake Core (Apache 2.0) | Starlake Server (Elastic License)      |
+| Feature                         | Starlake CLI (Apache 2.0) | Starlake Cockpit (Elastic License)      |
 |---------------------------------|-----------------------------|---------------------------------------|
 | License Type                    | Open Source                 | Source-available, usage-restricted    |
 | Can use in production           | ✅ Yes                      | ✅ Yes                                |
