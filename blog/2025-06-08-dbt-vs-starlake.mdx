@@ -55,11 +55,12 @@ This comparison focuses on organizations with more than 15 users, where most of 
 - SQL Productivity tools: Dbt comes with DBT Canva, a paid product, at Starlake this is handled by Starlake Copilot through english prompts, which is free and open-source.
 
 
-| **Feature**                         | **Dbt Fusion **                             | **Starlake.ai**                                |
+| **Feature**                         | **Dbt Fusion **                            | **Starlake.ai**                                |
 |-------------------------------------|--------------------------------------------|------------------------------------------------|
 | **Fast engine**                     | Yes (Rust-based)                           | Yes (Scala-based)                              |
 | **State-aware orchestration**       | Limited to Dbt own orchestrator            | Yes on Airflow, Dagster, Snowflake Tasks, etc. |
-| **Native SQL comprehension**        | Based on SDF + DataFusion                  | Based on JSQLParser/JSQLTranspiler and DuckDB  |
+| **Native SQL comprehension**        | Based on SDF                               | Based on JSQLParser/JSQLTranspiler             |
+| **Database offloading**             | DataFusion                                 | DuckDB                                         |
 | **Lineage & governance**            | Paid tier                                  | Free                                           |
 | **Web-based visual editor**         | No                                         | Yes and always free                            |
 | **Platform integration**            | Paid tier                                  | Free                                           |
