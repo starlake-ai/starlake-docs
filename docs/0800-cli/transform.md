@@ -24,6 +24,8 @@ Parameter|Cardinality|Description
 --interactive:`<value>`|*Optional*|Run query without sinking the result
 --reload:`<value>`|*Optional*|Reload YAML  files. Used in server mode
 --truncate:`<value>`|*Optional*|Force table to be truncated before insert. Default value is false
+--pageSize:`<value>`|*Optional*|Force table to be truncated before insert. Default value is false
+--pageNumber:`<value>`|*Optional*|Force table to be truncated before insert. Default value is false
 --recursive:`<value>`|*Optional*|Execute all dependencies recursively. Default value is false
 --test:`<value>`|*Optional*|Should we run this transform as a test ? Default value is false
 --accessToken:`<value>`|*Optional*|Access token to use for authentication
