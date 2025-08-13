@@ -302,7 +302,13 @@ function QuickstartCard({ quickstart, isFavorite, onToggleFavorite, onStartActio
     <div className={styles.card}>
       <div className={styles.cardHeader}>
         <div className={styles.cardIcon}>
-          {quickstart.iconSymbol}
+          <img 
+            src={quickstart.icon} 
+            alt={`${quickstart.title} icon`}
+            width="32"
+            height="32"
+            style={{ width: '32px', height: '32px' }}
+          />
         </div>
         <button
           onClick={() => onToggleFavorite(quickstart.id)}
