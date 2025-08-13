@@ -5,9 +5,9 @@ id: azure_quickstart
 categories: Azure, Data Engineering, Cloud
 status: Published
 icon: azure
-title: Quickstart for dbt and Azure
+title: Quickstart for starlake and Azure
 description: Get started with Starlake and Azure data services in minutes
-tags: Azure, dbt, Data Engineering, Cloud, Quick Start
+tags: Azure, starlake, Data Engineering, Cloud, Quick Start
 tabs:
   - id: 1
     label: Introduction

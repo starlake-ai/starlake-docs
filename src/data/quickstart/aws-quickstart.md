@@ -5,9 +5,9 @@ id: aws_quickstart
 categories: AWS, Data Engineering, Cloud
 status: Published
 icon: aws
-title: Quickstart for dbt and AWS
+title: Quickstart for starlake and AWS
 description: Get started with Starlake and AWS data services in minutes
-tags: AWS, dbt, Data Engineering, Cloud, Quick Start
+tags: AWS, starlake, Data Engineering, Cloud, Quick Start
 tabs:
   - id: 1
     label: Introduction

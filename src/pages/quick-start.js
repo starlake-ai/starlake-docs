@@ -95,14 +95,6 @@ export default function QuickStart() {
     );
   };
 
-  const clearAllFilters = () => {
-    setSelectedCategories([]);
-  };
-
-  const selectAllCategories = () => {
-    setSelectedCategories(quickstartData.categories);
-  };
-
   const handleStartAction = (quickstart) => {
     setSelectedGuide(quickstart);
     setCurrentView('guide');
@@ -147,7 +139,7 @@ export default function QuickStart() {
         <h3 className={styles.filterTitle}>Filter by</h3>
         
         <div className={styles.filterSection}>
-          <h4 className={styles.filterSectionTitle}>Choose a topic</h4>
+          <h4 className={styles.filterSectionTitle}>Choose a category</h4>
           <div className={styles.filterOptions}>
             {quickstartData.categories.map(category => (
               <label key={category} className={styles.filterOption}>
@@ -161,20 +153,7 @@ export default function QuickStart() {
               </label>
             ))}
           </div>
-          <button 
-            onClick={selectAllCategories}
-            className={styles.selectAllButton}
-          >
-            Select all
-          </button>
         </div>
-
-        <button 
-          onClick={clearAllFilters}
-          className={styles.clearAllButton}
-        >
-          Clear all
-        </button>
       </div>
 
       <div className={styles.content}>

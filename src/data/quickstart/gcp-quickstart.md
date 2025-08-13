@@ -5,9 +5,9 @@ id: gcp_quickstart
 categories: GCP, Data Engineering, Cloud
 status: Published
 icon: gcp
-title: Quickstart for dbt and GCP
+title: Quickstart for starlake and GCP
 description: Get started with Starlake and Google Cloud Platform in minutes
-tags: GCP, dbt, Data Engineering, Cloud, Quick Start
+tags: GCP, starlake, Data Engineering, Cloud, Quick Start
 tabs:
   - id: 1
     label: Introduction

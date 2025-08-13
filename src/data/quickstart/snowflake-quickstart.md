@@ -5,9 +5,9 @@ id: snowflake_quickstart
 categories: Snowflake, Data Warehouse, Cloud
 status: Published
 icon: snowflake
-title: Quickstart for dbt and Snowflake
+title: Quickstart for starlake and Snowflake
 description: Get started with Starlake and Snowflake in minutes
-tags: Snowflake, dbt, Data Warehouse, Cloud, Quick Start
+tags: Snowflake, starlake, Data Warehouse, Cloud, Quick Start
 tabs:
   - id: 1
     label: Introduction

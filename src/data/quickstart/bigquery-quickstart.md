@@ -5,9 +5,9 @@ id: bigquery_quickstart
 categories: BigQuery, Data Warehouse, Cloud
 status: Published
 icon: bigquery
-title: Quickstart for dbt and BigQuery
+title: Quickstart for starlake and BigQuery
 description: Get started with Starlake and BigQuery in minutes
-tags: BigQuery, dbt, Data Warehouse, Cloud, Quick Start
+tags: BigQuery, starlake, Data Warehouse, Cloud, Quick Start
 tabs:
   - id: 1
     label: Introduction

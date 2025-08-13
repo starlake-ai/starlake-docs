@@ -2,7 +2,7 @@
   "quickstarts": [
     {
       "id": "aws_quickstart",
-      "title": "Quickstart for dbt and AWS",
+      "title": "Quickstart for starlake and AWS",
       "description": "Get started with Starlake and AWS data services in minutes",
       "summary": "Quick start guide for using Starlake with AWS data services",
       "author": "Starlake Team",
@@ -16,7 +16,7 @@
       "status": "Published",
       "tags": [
         "AWS",
-        "dbt",
+        "starlake",
         "Data Engineering",
         "Cloud",
         "Quick Start"
@@ -57,7 +57,7 @@
     },
     {
       "id": "azure_quickstart",
-      "title": "Quickstart for dbt and Azure",
+      "title": "Quickstart for starlake and Azure",
       "description": "Get started with Starlake and Azure data services in minutes",
       "summary": "Quick start guide for using Starlake with Microsoft Azure data services",
       "author": "Starlake Team",
@@ -71,7 +71,7 @@
       "status": "Published",
       "tags": [
         "Azure",
-        "dbt",
+        "starlake",
         "Data Engineering",
         "Cloud",
         "Quick Start"
@@ -112,7 +112,7 @@
     },
     {
       "id": "bigquery_quickstart",
-      "title": "Quickstart for dbt and BigQuery",
+      "title": "Quickstart for starlake and BigQuery",
       "description": "Get started with Starlake and BigQuery in minutes",
       "summary": "Quick start guide for using Starlake with Google BigQuery",
       "author": "Starlake Team",
@@ -126,7 +126,7 @@
       "status": "Published",
       "tags": [
         "BigQuery",
-        "dbt",
+        "starlake",
         "Data Warehouse",
         "Cloud",
         "Quick Start"
@@ -167,7 +167,7 @@
     },
     {
       "id": "databricks_quickstart",
-      "title": "Quickstart for dbt and Databricks",
+      "title": "Quickstart for starlake and Databricks",
       "description": "Get started with Starlake and Databricks in minutes",
       "summary": "Quick start guide for using Starlake with Databricks unified analytics platform",
       "author": "Starlake Team",
@@ -181,7 +181,7 @@
       "status": "Published",
       "tags": [
         "Databricks",
-        "dbt",
+        "starlake",
         "Data Engineering",
         "Cloud",
         "Quick Start"
@@ -222,7 +222,7 @@
     },
     {
       "id": "gcp_quickstart",
-      "title": "Quickstart for dbt and GCP",
+      "title": "Quickstart for starlake and GCP",
       "description": "Get started with Starlake and Google Cloud Platform in minutes",
       "summary": "Quick start guide for using Starlake with Google Cloud Platform",
       "author": "Starlake Team",
@@ -236,7 +236,7 @@
       "status": "Published",
       "tags": [
         "GCP",
-        "dbt",
+        "starlake",
         "Data Engineering",
         "Cloud",
         "Quick Start"
@@ -277,7 +277,7 @@
     },
     {
       "id": "snowflake_quickstart",
-      "title": "Quickstart for dbt and Snowflake",
+      "title": "Quickstart for starlake and Snowflake",
       "description": "Get started with Starlake and Snowflake in minutes",
       "summary": "Quick start guide for using Starlake with Snowflake data warehouse",
       "author": "Starlake Team",
@@ -291,7 +291,7 @@
       "status": "Published",
       "tags": [
         "Snowflake",
-        "dbt",
+        "starlake",
         "Data Warehouse",
         "Cloud",
         "Quick Start"

@@ -5,9 +5,9 @@ id: databricks_quickstart
 categories: Databricks, Data Engineering, Cloud
 status: Published
 icon: databricks
-title: Quickstart for dbt and Databricks
+title: Quickstart for starlake and Databricks
 description: Get started with Starlake and Databricks in minutes
-tags: Databricks, dbt, Data Engineering, Cloud, Quick Start
+tags: Databricks, starlake, Data Engineering, Cloud, Quick Start
 tabs:
   - id: 1
     label: Introduction
