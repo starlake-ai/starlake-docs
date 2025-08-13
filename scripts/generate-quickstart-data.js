@@ -2,7 +2,6 @@ const matter = require('gray-matter');
 const fs = require('fs');
 const path = require('path');
 
-// Icon mapping for different platforms
 const iconMap = {
   snowflake: '❄️',
   databricks: '🔷',
@@ -26,7 +25,6 @@ function parseQuickstartFiles() {
       const fileContent = fs.readFileSync(filePath, 'utf8');
       const { data, content } = matter(fileContent);
       
-      // Parse categories
       if (data.categories) {
         const categoryList = data.categories.split(',').map(cat => cat.trim());
         categoryList.forEach(cat => categories.add(cat));
@@ -58,7 +56,6 @@ function parseQuickstartFiles() {
 function generateQuickstartJSON() {
   const data = parseQuickstartFiles();
   
-  // Write to JSON file
   const outputPath = path.join(process.cwd(), 'src/data/quickstart-data.json');
   fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
   
@@ -70,7 +67,6 @@ function generateQuickstartJSON() {
   return data;
 }
 
-// Run if called directly
 if (require.main === module) {
   generateQuickstartJSON();
 }

@@ -1,0 +1,345 @@
+{
+  "quickstarts": [
+    {
+      "id": "aws_quickstart",
+      "title": "Quickstart for dbt and AWS",
+      "description": "Get started with Starlake and AWS data services in minutes",
+      "summary": "Quick start guide for using Starlake with AWS data services",
+      "author": "Starlake Team",
+      "categories": [
+        "AWS",
+        "Data Engineering",
+        "Cloud"
+      ],
+      "icon": "aws",
+      "iconSymbol": "☁️",
+      "status": "Published",
+      "tags": [
+        "AWS",
+        "dbt",
+        "Data Engineering",
+        "Cloud",
+        "Quick Start"
+      ],
+      "content": "This is a comprehensive quick start guide for using Starlake with AWS data services.",
+      "tabs": [
+        {
+          "id": 1,
+          "label": "Introduction",
+          "content": "# Introduction to Starlake with AWS\n\nWelcome to the Starlake AWS quick start guide! This guide will walk you through setting up Starlake with AWS data services.\n\n## What you'll learn\n\n- How to set up AWS credentials\n- How to configure Starlake for AWS\n- How to create your first data pipeline\n- How to deploy and monitor your pipelines\n\n## Prerequisites\n\n- An AWS account\n- Basic knowledge of AWS services\n- Starlake CLI installed\n\nLet's get started!\n"
+        },
+        {
+          "id": 2,
+          "label": "Set up AWS credentials",
+          "content": "# Set up AWS Credentials\n\nBefore you can use Starlake with AWS, you need to configure your AWS credentials.\n\n## Step 1: Create an IAM User\n\n1. Log in to your AWS Management Console\n2. Navigate to IAM service\n3. Click \"Users\" and then \"Add user\"\n4. Enter a username (e.g., \"starlake-user\")\n5. Select \"Programmatic access\"\n\n## Step 2: Attach Permissions\n\nAttach the following policies to your user:\n- AmazonS3FullAccess\n- AmazonRedshiftFullAccess\n- AmazonGlueFullAccess\n\n## Step 3: Get Access Keys\n\n1. After creating the user, click \"Create access key\"\n2. Save the Access Key ID and Secret Access Key\n3. Configure these in your Starlake environment\n"
+        },
+        {
+          "id": 3,
+          "label": "Configure Starlake",
+          "content": "# Configure Starlake for AWS\n\nNow let's configure Starlake to work with your AWS environment.\n\n## Environment Variables\n\nSet the following environment variables:\n\n```bash\nexport AWS_ACCESS_KEY_ID=your_access_key\nexport AWS_SECRET_ACCESS_KEY=your_secret_key\nexport AWS_DEFAULT_REGION=us-east-1\n```\n\n## Starlake Configuration\n\nCreate a `starlake.conf` file:\n\n```yaml\nconnections:\n  aws:\n    type: \"aws\"\n    region: \"us-east-1\"\n    bucket: \"your-data-bucket\"\n```\n"
+        },
+        {
+          "id": 4,
+          "label": "Create your first pipeline",
+          "content": "# Create Your First Pipeline\n\nLet's create a simple data pipeline using Starlake and AWS.\n\n## Step 1: Define the Extract\n\nCreate `extract/aws-sales.yml`:\n\n```yaml\nextract:\n  connectionRef: \"aws\"\n  tables:\n    - name: \"sales_data\"\n      schema: \"public\"\n      incremental: true\n      timestamp: \"created_at\"\n```\n\n## Step 2: Define the Load\n\nCreate `load/sales.yml`:\n\n```yaml\ntable:\n  pattern: \"sales_data.*.parquet\"\n  metadata:\n    mode: \"FILE\"\n    format: \"PARQUET\"\n  attributes:\n    - name: \"order_id\"\n      type: \"string\"\n      required: true\n    - name: \"amount\"\n      type: \"float\"\n```\n"
+        },
+        {
+          "id": 5,
+          "label": "Deploy and monitor",
+          "content": "# Deploy and Monitor\n\nNow let's deploy your pipeline and monitor its execution.\n\n## Deploy the Pipeline\n\n```bash\nstarlake extract --config extract/aws-sales.yml\nstarlake load --config load/sales.yml\n```\n\n## Monitor Execution\n\n1. Check the Starlake logs for execution status\n2. Monitor AWS CloudWatch for resource usage\n3. Verify data in your target warehouse\n\n## Next Steps\n\n- Set up scheduling with AWS EventBridge\n- Configure alerts and notifications\n- Scale your pipelines as needed\n"
+        },
+        {
+          "id": 6,
+          "label": "Next steps",
+          "content": "# Next Steps\n\nCongratulations! You've successfully set up Starlake with AWS.\n\n## What's Next?\n\n- **Advanced Configuration**: Learn about advanced AWS features\n- **Scheduling**: Set up automated pipeline execution\n- **Monitoring**: Implement comprehensive monitoring\n- **Security**: Enhance security configurations\n\n## Resources\n\n- [Starlake Documentation](https://docs.starlake.ai)\n- [AWS Documentation](https://docs.aws.amazon.com)\n- [Community Support](https://github.com/starlake-ai/starlake)\n\n## Need Help?\n\nIf you encounter any issues:\n1. Check the troubleshooting guide\n2. Review the logs for error messages\n3. Reach out to the community\n"
+        }
+      ]
+    },
+    {
+      "id": "azure_quickstart",
+      "title": "Quickstart for dbt and Azure",
+      "description": "Get started with Starlake and Azure data services in minutes",
+      "summary": "Quick start guide for using Starlake with Microsoft Azure data services",
+      "author": "Starlake Team",
+      "categories": [
+        "Azure",
+        "Data Engineering",
+        "Cloud"
+      ],
+      "icon": "azure",
+      "iconSymbol": "🔵",
+      "status": "Published",
+      "tags": [
+        "Azure",
+        "dbt",
+        "Data Engineering",
+        "Cloud",
+        "Quick Start"
+      ],
+      "content": "This is a comprehensive quick start guide for using Starlake with Microsoft Azure data services.",
+      "tabs": [
+        {
+          "id": 1,
+          "label": "Introduction",
+          "content": "# Introduction to Starlake with Azure\n\nWelcome to the Starlake Azure quick start guide! This guide will walk you through setting up Starlake with Microsoft Azure data services.\n\n## What you'll learn\n\n- How to set up Azure resources and permissions\n- How to configure Starlake for Azure services\n- How to create your first data pipeline\n- How to deploy and monitor your pipelines\n\n## Prerequisites\n\n- An Azure subscription\n- Azure CLI installed and configured\n- Basic knowledge of Azure services\n- Starlake CLI installed\n- PowerShell or Bash shell\n\n## Why Azure + Starlake?\n\n- **Integrated Services**: Seamless integration with Azure data services\n- **Scalability**: Auto-scaling with Azure's cloud infrastructure\n- **Security**: Enterprise-grade security with Azure AD\n- **Cost-effective**: Pay-as-you-go pricing model\n- **Compliance**: Built-in compliance and governance features\n\nLet's get started!\n"
+        },
+        {
+          "id": 2,
+          "label": "Set up Azure resources",
+          "content": "# Set up Azure Resources\n\nBefore you can use Starlake with Azure, you need to configure your Azure resources and permissions.\n\n## Step 1: Create Azure Resource Group\n\n```bash\n# Login to Azure\naz login\n\n# Create resource group\naz group create \\\n  --name starlake-rg \\\n  --location eastus \\\n  --tags environment=dev project=starlake\n```\n\n## Step 2: Create Azure Storage Account\n\n```bash\n# Create storage account\naz storage account create \\\n  --name starlakestorage \\\n  --resource-group starlake-rg \\\n  --location eastus \\\n  --sku Standard_LRS \\\n  --kind StorageV2 \\\n  --https-only true\n\n# Get storage account key\nSTORAGE_KEY=$(az storage account keys list \\\n  --account-name starlakestorage \\\n  --resource-group starlake-rg \\\n  --query '[0].value' -o tsv)\n```\n\n## Step 3: Create Azure Data Lake Storage Gen2\n\n```bash\n# Create container for data\naz storage container create \\\n  --name data \\\n  --account-name starlakestorage \\\n  --account-key $STORAGE_KEY\n\n# Create container for logs\naz storage container create \\\n  --name logs \\\n  --account-name starlakestorage \\\n  --account-key $STORAGE_KEY\n```\n\n## Step 4: Create Azure Synapse Analytics (Optional)\n\n```bash\n# Create Synapse workspace\naz synapse workspace create \\\n  --name starlake-synapse \\\n  --resource-group starlake-rg \\\n  --storage-account starlakestorage \\\n  --file-system data \\\n  --sql-admin-login-user starlakeadmin \\\n  --sql-admin-login-password YourSecurePassword123! \\\n  --location eastus\n\n# Create SQL pool\naz synapse sql pool create \\\n  --name starlake-pool \\\n  --workspace-name starlake-synapse \\\n  --resource-group starlake-rg \\\n  --performance-level DW100c\n```\n\n## Step 5: Create Service Principal\n\n```bash\n# Create service principal\nSP_INFO=$(az ad sp create-for-rbac \\\n  --name starlake-sp \\\n  --role contributor \\\n  --scopes /subscriptions/$(az account show --query id -o tsv)/resourceGroups/starlake-rg)\n\n# Extract credentials\nCLIENT_ID=$(echo $SP_INFO | jq -r '.appId')\nCLIENT_SECRET=$(echo $SP_INFO | jq -r '.password')\nTENANT_ID=$(echo $SP_INFO | jq -r '.tenant')\n```\n"
+        },
+        {
+          "id": 3,
+          "label": "Configure Starlake",
+          "content": "# Configure Starlake for Azure\n\nNow let's configure Starlake to work with your Azure environment.\n\n## Environment Variables\n\nSet the following environment variables:\n\n```bash\nexport AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv)\nexport AZURE_TENANT_ID=$TENANT_ID\nexport AZURE_CLIENT_ID=$CLIENT_ID\nexport AZURE_CLIENT_SECRET=$CLIENT_SECRET\nexport AZURE_STORAGE_ACCOUNT=starlakestorage\nexport AZURE_STORAGE_KEY=$STORAGE_KEY\nexport AZURE_SYNAPSE_WORKSPACE=starlake-synapse\nexport AZURE_SYNAPSE_POOL=starlake-pool\n```\n\n## Starlake Configuration\n\nCreate a `starlake.conf` file in your project root:\n\n```yaml\nconnections:\n  azure:\n    type: \"azure\"\n    subscription_id: \"${AZURE_SUBSCRIPTION_ID}\"\n    tenant_id: \"${AZURE_TENANT_ID}\"\n    client_id: \"${AZURE_CLIENT_ID}\"\n    client_secret: \"${AZURE_CLIENT_SECRET}\"\n    storage_account: \"${AZURE_STORAGE_ACCOUNT}\"\n    storage_key: \"${AZURE_STORAGE_KEY}\"\n    synapse_workspace: \"${AZURE_SYNAPSE_WORKSPACE}\"\n    synapse_pool: \"${AZURE_SYNAPSE_POOL}\"\n    options:\n      spark.sql.adaptive.enabled: true\n      spark.sql.adaptive.coalescePartitions.enabled: true\n\n# Global settings\nsettings:\n  default-connection: \"azure\"\n  default-format: \"PARQUET\"\n  default-mode: \"FILE\"\n```\n\n## Test Connection\n\n```bash\nstarlake test-connection --connection azure\n```\n\n## Create Azure Data Factory (Optional)\n\n```bash\n# Create Data Factory\naz datafactory create \\\n  --name starlake-adf \\\n  --resource-group starlake-rg \\\n  --location eastus\n\n# Create linked service for storage\naz datafactory linked-service create \\\n  --factory-name starlake-adf \\\n  --resource-group starlake-rg \\\n  --name AzureStorageLinkedService \\\n  --properties '{\n    \"type\": \"AzureStorage\",\n    \"typeProperties\": {\n      \"connectionString\": {\n        \"type\": \"SecureString\",\n        \"value\": \"DefaultEndpointsProtocol=https;AccountName=starlakestorage;AccountKey='$STORAGE_KEY'\"\n      }\n    }\n  }'\n```\n"
+        },
+        {
+          "id": 4,
+          "label": "Create your first pipeline",
+          "content": "# Create Your First Pipeline\n\nLet's create a simple data pipeline using Starlake and Azure.\n\n## Step 1: Define the Extract\n\nCreate `extract/azure-sales.yml`:\n\n```yaml\nextract:\n  connectionRef: \"azure\"\n  tables:\n    - name: \"sales_data\"\n      schema: \"public\"\n      incremental: true\n      timestamp: \"created_at\"\n      partitionColumn: \"sale_date\"\n      fetchSize: 1000\n      where: \"sale_date >= '2024-01-01'\"\n\n# Optional: Add transformations during extract\ntransform:\n  - name: \"clean_sales_data\"\n    sql: |\n      SELECT \n        order_id,\n        customer_id,\n        product_id,\n        amount,\n        sale_date,\n        created_at\n      FROM sales_data\n      WHERE amount > 0\n```\n\n## Step 2: Define the Load\n\nCreate `load/sales.yml`:\n\n```yaml\ntable:\n  pattern: \"sales_data.*.parquet\"\n  metadata:\n    mode: \"FILE\"\n    format: \"PARQUET\"\n    encoding: \"UTF-8\"\n    withHeader: true\n  writeStrategy:\n    type: \"UPSERT_BY_KEY_AND_TIMESTAMP\"\n    timestamp: \"created_at\"\n    key: [\"order_id\"]\n  attributes:\n    - name: \"order_id\"\n      type: \"string\"\n      required: true\n      privacy: \"NONE\"\n    - name: \"customer_id\"\n      type: \"string\"\n      required: true\n      privacy: \"HIDE\"\n    - name: \"product_id\"\n      type: \"string\"\n      required: true\n    - name: \"amount\"\n      type: \"float\"\n      required: true\n    - name: \"sale_date\"\n      type: \"timestamp\"\n      required: true\n    - name: \"created_at\"\n      type: \"timestamp\"\n      required: true\n```\n\n## Step 3: Create Sample Data\n\nCreate a sample CSV file `data/sales_sample.csv`:\n\n```csv\norder_id,customer_id,product_id,amount,sale_date,created_at\nORD001,CUST001,PROD001,150.50,2024-01-15,2024-01-15 10:30:00\nORD002,CUST002,PROD002,299.99,2024-01-16,2024-01-16 14:20:00\nORD003,CUST001,PROD003,75.25,2024-01-17,2024-01-17 09:15:00\n```\n\n## Step 4: Upload to Azure Storage\n\n```bash\n# Upload sample data to Azure Blob Storage\naz storage blob upload-batch \\\n  --account-name starlakestorage \\\n  --account-key $STORAGE_KEY \\\n  --source data/ \\\n  --destination data\n```\n"
+        },
+        {
+          "id": 5,
+          "label": "Deploy and monitor",
+          "content": "# Deploy and Monitor\n\nNow let's deploy your pipeline and monitor its execution.\n\n## Deploy the Pipeline\n\n```bash\n# Extract data from source\nstarlake extract --config extract/azure-sales.yml\n\n# Load data into Azure\nstarlake load --config load/sales.yml\n\n# Or run both in sequence\nstarlake run --extract-config extract/azure-sales.yml --load-config load/sales.yml\n```\n\n## Monitor Execution\n\n### 1. Check Starlake Logs\n\n```bash\n# View recent logs\ntail -f logs/starlake.log\n\n# Check execution status\nstarlake status --job-id <job_id>\n```\n\n### 2. Monitor Azure Resources\n\n```bash\n# Check storage account usage\naz storage account show \\\n  --name starlakestorage \\\n  --resource-group starlake-rg \\\n  --query \"usageInBytes\"\n\n# List blobs in container\naz storage blob list \\\n  --account-name starlakestorage \\\n  --account-key $STORAGE_KEY \\\n  --container-name data \\\n  --output table\n```\n\n### 3. Monitor Synapse Analytics (if using)\n\n```sql\n-- Connect to Synapse SQL pool\n-- Check loaded data\nSELECT COUNT(*) as total_rows \nFROM starlake_schema.sales_data;\n\n-- Sample data\nSELECT * \nFROM starlake_schema.sales_data \nLIMIT 10;\n\n-- Data quality check\nSELECT \n  COUNT(*) as total_orders,\n  SUM(amount) as total_amount,\n  MIN(sale_date) as earliest_sale,\n  MAX(sale_date) as latest_sale\nFROM starlake_schema.sales_data;\n```\n\n### 4. Monitor Data Factory (if using)\n\n```bash\n# List pipelines\naz datafactory pipeline list \\\n  --factory-name starlake-adf \\\n  --resource-group starlake-rg\n\n# Get pipeline run details\naz datafactory pipeline-run show \\\n  --factory-name starlake-adf \\\n  --resource-group starlake-rg \\\n  --run-id <run_id>\n```\n\n### 5. Set up Azure Monitor Alerts\n\n```bash\n# Create action group for alerts\naz monitor action-group create \\\n  --name starlake-alerts \\\n  --resource-group starlake-rg \\\n  --short-name starlake \\\n  --action email admin@yourcompany.com\n\n# Create alert rule for storage account\naz monitor metrics alert create \\\n  --name storage-alert \\\n  --resource-group starlake-rg \\\n  --scopes /subscriptions/$AZURE_SUBSCRIPTION_ID/resourceGroups/starlake-rg/providers/Microsoft.Storage/storageAccounts/starlakestorage \\\n  --condition \"avg UsedCapacity > 1000000000\" \\\n  --action /subscriptions/$AZURE_SUBSCRIPTION_ID/resourceGroups/starlake-rg/providers/microsoft.insights/actionGroups/starlake-alerts\n```\n\n## Next Steps\n\n- Set up scheduling with Azure Logic Apps\n- Configure alerts and notifications\n- Scale your pipelines as needed\n- Implement data quality checks\n"
+        },
+        {
+          "id": 6,
+          "label": "Next steps",
+          "content": "# Next Steps\n\nCongratulations! You've successfully set up Starlake with Azure.\n\n## What's Next?\n\n### Advanced Configuration\n\n- **Data Quality**: Implement data validation rules\n- **Incremental Loading**: Set up efficient incremental updates\n- **Partitioning**: Optimize performance with table partitioning\n- **Security**: Implement Azure AD authentication and RBAC\n\n### Scheduling and Orchestration\n\n```bash\n# Create Logic App for scheduling\naz logic workflow create \\\n  --name starlake-scheduler \\\n  --resource-group starlake-rg \\\n  --location eastus \\\n  --definition '{\n    \"triggers\": {\n      \"Recurrence\": {\n        \"recurrence\": {\n          \"frequency\": \"Day\",\n          \"interval\": 1\n        },\n        \"type\": \"Recurrence\"\n      }\n    },\n    \"actions\": {\n      \"CallStarlake\": {\n        \"type\": \"Http\",\n        \"inputs\": {\n          \"method\": \"POST\",\n          \"uri\": \"https://your-function-url.com/api/trigger\",\n          \"body\": {\n            \"action\": \"run-pipeline\"\n          }\n        }\n      }\n    }\n  }'\n```\n\n### Monitoring and Alerting\n\n- Set up Azure Monitor dashboards\n- Configure Application Insights\n- Monitor data quality metrics\n- Track pipeline performance and costs\n\n### Security Enhancements\n\n- Implement Azure AD authentication\n- Set up role-based access control (RBAC)\n- Use Azure Key Vault for secrets\n- Configure network security groups\n\n## Resources\n\n- [Starlake Documentation](https://docs.starlake.ai)\n- [Azure Documentation](https://docs.microsoft.com/azure)\n- [Azure Synapse Analytics](https://docs.microsoft.com/azure/synapse-analytics)\n- [Azure Data Factory](https://docs.microsoft.com/azure/data-factory)\n- [Community Support](https://github.com/starlake-ai/starlake)\n\n## Need Help?\n\nIf you encounter any issues:\n1. Check the troubleshooting guide\n2. Review the logs for error messages\n3. Verify Azure permissions\n4. Check Azure subscription limits\n5. Reach out to the community\n\n## Example Advanced Configuration\n\n```yaml\n# Advanced Azure configuration\nconnections:\n  azure:\n    type: \"azure\"\n    subscription_id: \"${AZURE_SUBSCRIPTION_ID}\"\n    tenant_id: \"${AZURE_TENANT_ID}\"\n    client_id: \"${AZURE_CLIENT_ID}\"\n    client_secret: \"${AZURE_CLIENT_SECRET}\"\n    storage_account: \"${AZURE_STORAGE_ACCOUNT}\"\n    storage_key: \"${AZURE_STORAGE_KEY}\"\n    synapse_workspace: \"${AZURE_SYNAPSE_WORKSPACE}\"\n    synapse_pool: \"${AZURE_SYNAPSE_POOL}\"\n    options:\n      spark.sql.adaptive.enabled: true\n      spark.sql.adaptive.coalescePartitions.enabled: true\n      spark.sql.adaptive.skewJoin.enabled: true\n\n# Data quality rules\nquality:\n  rules:\n    - name: \"amount_positive\"\n      sql: \"amount > 0\"\n      severity: \"ERROR\"\n    - name: \"valid_dates\"\n      sql: \"sale_date <= CURRENT_DATE()\"\n      severity: \"WARNING\"\n\n# Performance optimization\nperformance:\n  partitionBy: [\"sale_date\"]\n  optimizeWrite: true\n  autoCompact: true\n```\n"
+        }
+      ]
+    },
+    {
+      "id": "bigquery_quickstart",
+      "title": "Quickstart for dbt and BigQuery",
+      "description": "Get started with Starlake and BigQuery in minutes",
+      "summary": "Quick start guide for using Starlake with Google BigQuery",
+      "author": "Starlake Team",
+      "categories": [
+        "BigQuery",
+        "Data Warehouse",
+        "Cloud"
+      ],
+      "icon": "bigquery",
+      "iconSymbol": "🔍",
+      "status": "Published",
+      "tags": [
+        "BigQuery",
+        "dbt",
+        "Data Warehouse",
+        "Cloud",
+        "Quick Start"
+      ],
+      "content": "This is a comprehensive quick start guide for using Starlake with Google BigQuery.",
+      "tabs": [
+        {
+          "id": 1,
+          "label": "Introduction",
+          "content": "# Introduction to Starlake with BigQuery\n\nWelcome to the Starlake BigQuery quick start guide! This guide will walk you through setting up Starlake with Google BigQuery.\n\n## What you'll learn\n\n- How to set up Google Cloud credentials\n- How to configure Starlake for BigQuery\n- How to create your first data pipeline\n- How to deploy and monitor your pipelines\n\n## Prerequisites\n\n- A Google Cloud Platform account\n- BigQuery enabled in your project\n- Basic knowledge of SQL and data warehousing\n- Starlake CLI installed\n- Google Cloud SDK installed\n\n## Why BigQuery + Starlake?\n\n- **Serverless**: No infrastructure management required\n- **Scalability**: Handles petabytes of data automatically\n- **Cost-effective**: Pay only for data processed\n- **Integration**: Native integration with Google Cloud services\n- **Performance**: Fast queries with columnar storage\n\nLet's get started!\n"
+        },
+        {
+          "id": 2,
+          "label": "Set up Google Cloud credentials",
+          "content": "# Set up Google Cloud Credentials\n\nBefore you can use Starlake with BigQuery, you need to configure your Google Cloud credentials.\n\n## Step 1: Create a Google Cloud Project\n\n1. Go to the [Google Cloud Console](https://console.cloud.google.com/)\n2. Click **\"Select a project\"** or create a new one\n3. Note your **Project ID** (you'll need this later)\n\n## Step 2: Enable BigQuery API\n\n1. In the Google Cloud Console, go to **APIs & Services** > **Library**\n2. Search for **\"BigQuery API\"**\n3. Click on it and press **\"Enable\"**\n\n## Step 3: Create a Service Account\n\n1. Go to **IAM & Admin** > **Service Accounts**\n2. Click **\"Create Service Account\"**\n3. Enter a name (e.g., `starlake-service-account`)\n4. Add description: \"Service account for Starlake BigQuery integration\"\n5. Click **\"Create and Continue\"**\n\n## Step 4: Assign Permissions\n\nAdd these roles to your service account:\n\n- **BigQuery Data Editor**\n- **BigQuery Job User**\n- **BigQuery User**\n- **Storage Object Admin** (if using GCS)\n\n## Step 5: Create and Download Key\n\n1. Click on your service account\n2. Go to **Keys** tab\n3. Click **\"Add Key\"** > **\"Create new key\"**\n4. Choose **JSON** format\n5. Download the key file and save it securely\n\n## Step 6: Set Up Authentication\n\n```bash\n# Set the path to your service account key\nexport GOOGLE_APPLICATION_CREDENTIALS=\"/path/to/your/service-account-key.json\"\n\n# Or authenticate using gcloud\ngcloud auth application-default login\n```\n"
+        },
+        {
+          "id": 3,
+          "label": "Configure Starlake",
+          "content": "# Configure Starlake for BigQuery\n\nNow let's configure Starlake to work with your BigQuery environment.\n\n## Environment Variables\n\nSet the following environment variables:\n\n```bash\nexport GOOGLE_CLOUD_PROJECT=your-project-id\nexport GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json\nexport BIGQUERY_DATASET=starlake_dataset\nexport BIGQUERY_LOCATION=US\n```\n\n**Note**: Replace `your-project-id` with your actual Google Cloud project ID.\n\n## Starlake Configuration\n\nCreate a `starlake.conf` file in your project root:\n\n```yaml\nconnections:\n  bigquery:\n    type: \"bigquery\"\n    project: \"${GOOGLE_CLOUD_PROJECT}\"\n    dataset: \"${BIGQUERY_DATASET}\"\n    location: \"${BIGQUERY_LOCATION}\"\n    credentials: \"${GOOGLE_APPLICATION_CREDENTIALS}\"\n    options:\n      useLegacySql: false\n      allowLargeResults: true\n\n# Global settings\nsettings:\n  default-connection: \"bigquery\"\n  default-format: \"PARQUET\"\n  default-mode: \"FILE\"\n```\n\n## Create BigQuery Dataset\n\n```bash\n# Using bq command line tool\nbq mk --dataset \\\n  --location=US \\\n  ${GOOGLE_CLOUD_PROJECT}:${BIGQUERY_DATASET}\n\n# Or using gcloud\ngcloud bigquery datasets create ${BIGQUERY_DATASET} \\\n  --location=US \\\n  --project=${GOOGLE_CLOUD_PROJECT}\n```\n\n## Test Connection\n\n```bash\nstarlake test-connection --connection bigquery\n```\n"
+        },
+        {
+          "id": 4,
+          "label": "Create your first pipeline",
+          "content": "# Create Your First Pipeline\n\nLet's create a simple data pipeline using Starlake and BigQuery.\n\n## Step 1: Define the Extract\n\nCreate `extract/bigquery-sales.yml`:\n\n```yaml\nextract:\n  connectionRef: \"bigquery\"\n  tables:\n    - name: \"sales_data\"\n      schema: \"public\"\n      incremental: true\n      timestamp: \"created_at\"\n      partitionColumn: \"sale_date\"\n      fetchSize: 1000\n      where: \"sale_date >= '2024-01-01'\"\n\n# Optional: Add transformations during extract\ntransform:\n  - name: \"clean_sales_data\"\n    sql: |\n      SELECT \n        order_id,\n        customer_id,\n        product_id,\n        amount,\n        sale_date,\n        created_at\n      FROM sales_data\n      WHERE amount > 0\n```\n\n## Step 2: Define the Load\n\nCreate `load/sales.yml`:\n\n```yaml\ntable:\n  pattern: \"sales_data.*.parquet\"\n  metadata:\n    mode: \"FILE\"\n    format: \"PARQUET\"\n    encoding: \"UTF-8\"\n    withHeader: true\n  writeStrategy:\n    type: \"UPSERT_BY_KEY_AND_TIMESTAMP\"\n    timestamp: \"created_at\"\n    key: [\"order_id\"]\n  attributes:\n    - name: \"order_id\"\n      type: \"string\"\n      required: true\n      privacy: \"NONE\"\n    - name: \"customer_id\"\n      type: \"string\"\n      required: true\n      privacy: \"HIDE\"\n    - name: \"product_id\"\n      type: \"string\"\n      required: true\n    - name: \"amount\"\n      type: \"float\"\n      required: true\n    - name: \"sale_date\"\n      type: \"timestamp\"\n      required: true\n    - name: \"created_at\"\n      type: \"timestamp\"\n      required: true\n```\n\n## Step 3: Create Sample Data\n\nCreate a sample CSV file `data/sales_sample.csv`:\n\n```csv\norder_id,customer_id,product_id,amount,sale_date,created_at\nORD001,CUST001,PROD001,150.50,2024-01-15,2024-01-15 10:30:00\nORD002,CUST002,PROD002,299.99,2024-01-16,2024-01-16 14:20:00\nORD003,CUST001,PROD003,75.25,2024-01-17,2024-01-17 09:15:00\n```\n\n## Step 4: Upload to Google Cloud Storage\n\n```bash\n# Create a GCS bucket (if not exists)\ngsutil mb gs://your-bucket-name\n\n# Upload sample data\ngsutil cp data/sales_sample.csv gs://your-bucket-name/sales/\n```\n"
+        },
+        {
+          "id": 5,
+          "label": "Deploy and monitor",
+          "content": "# Deploy and Monitor\n\nNow let's deploy your pipeline and monitor its execution.\n\n## Deploy the Pipeline\n\n```bash\n# Extract data from source\nstarlake extract --config extract/bigquery-sales.yml\n\n# Load data into BigQuery\nstarlake load --config load/sales.yml\n\n# Or run both in sequence\nstarlake run --extract-config extract/bigquery-sales.yml --load-config load/sales.yml\n```\n\n## Monitor Execution\n\n### 1. Check Starlake Logs\n\n```bash\n# View recent logs\ntail -f logs/starlake.log\n\n# Check execution status\nstarlake status --job-id <job_id>\n```\n\n### 2. Monitor BigQuery Jobs\n\n```bash\n# List recent jobs\nbq ls --jobs --max_results=10\n\n# Get job details\nbq show --job=true <job_id>\n```\n\n### 3. Verify Data in BigQuery\n\n```sql\n-- Check loaded data\nSELECT COUNT(*) as total_rows \nFROM `your-project-id.starlake_dataset.sales_data`;\n\n-- Sample data\nSELECT * \nFROM `your-project-id.starlake_dataset.sales_data` \nLIMIT 10;\n\n-- Data quality check\nSELECT \n  COUNT(*) as total_orders,\n  SUM(amount) as total_amount,\n  MIN(sale_date) as earliest_sale,\n  MAX(sale_date) as latest_sale\nFROM `your-project-id.starlake_dataset.sales_data`;\n```\n\n### 4. Monitor Costs\n\n```bash\n# Check BigQuery usage\nbq query --use_legacy_sql=false \"\n  SELECT \n    job_type,\n    SUM(total_bytes_processed) as bytes_processed,\n    SUM(total_slot_ms) as slot_ms,\n    COUNT(*) as job_count\n  FROM \\`region-us\\`.INFORMATION_SCHEMA.JOBS_BY_PROJECT\n  WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 24 HOUR)\n  GROUP BY job_type\n  ORDER BY bytes_processed DESC;\n\"\n```\n\n## Next Steps\n\n- Set up scheduling with Cloud Scheduler\n- Configure alerts and notifications\n- Scale your pipelines as needed\n- Implement data quality checks\n"
+        },
+        {
+          "id": 6,
+          "label": "Next steps",
+          "content": "# Next Steps\n\nCongratulations! You've successfully set up Starlake with BigQuery.\n\n## What's Next?\n\n### Advanced Configuration\n\n- **Data Quality**: Implement data validation rules\n- **Incremental Loading**: Set up efficient incremental updates\n- **Partitioning**: Optimize performance with table partitioning\n- **Clustering**: Improve query performance with clustering\n\n### Scheduling and Orchestration\n\n```bash\n# Set up Cloud Scheduler job\ngcloud scheduler jobs create http starlake-daily \\\n  --schedule=\"0 2 * * *\" \\\n  --uri=\"https://your-function-url.com/trigger\" \\\n  --http-method=POST \\\n  --headers=\"Content-Type=application/json\" \\\n  --message-body='{\"action\":\"run-pipeline\"}'\n```\n\n### Monitoring and Alerting\n\n- Set up BigQuery alerts for job failures\n- Configure Cloud Monitoring dashboards\n- Monitor data quality metrics\n- Track pipeline performance and costs\n\n### Security Enhancements\n\n- Implement row-level security (RLS)\n- Set up column-level security\n- Use BigQuery's data masking features\n- Configure IAM policies\n\n## Resources\n\n- [Starlake Documentation](https://docs.starlake.ai)\n- [BigQuery Documentation](https://cloud.google.com/bigquery/docs)\n- [BigQuery Best Practices](https://cloud.google.com/bigquery/docs/best-practices)\n- [Community Support](https://github.com/starlake-ai/starlake)\n\n## Need Help?\n\nIf you encounter any issues:\n1. Check the troubleshooting guide\n2. Review the logs for error messages\n3. Verify BigQuery permissions\n4. Check Google Cloud billing\n5. Reach out to the community\n\n## Example Advanced Configuration\n\n```yaml\n# Advanced BigQuery configuration\nconnections:\n  bigquery:\n    type: \"bigquery\"\n    project: \"${GOOGLE_CLOUD_PROJECT}\"\n    dataset: \"${BIGQUERY_DATASET}\"\n    location: \"${BIGQUERY_LOCATION}\"\n    credentials: \"${GOOGLE_APPLICATION_CREDENTIALS}\"\n    options:\n      useLegacySql: false\n      allowLargeResults: true\n      maximumBytesBilled: \"1000000000\"\n      priority: \"INTERACTIVE\"\n\n# Data quality rules\nquality:\n  rules:\n    - name: \"amount_positive\"\n      sql: \"amount > 0\"\n      severity: \"ERROR\"\n    - name: \"valid_dates\"\n      sql: \"sale_date <= CURRENT_DATE()\"\n      severity: \"WARNING\"\n```\n"
+        }
+      ]
+    },
+    {
+      "id": "databricks_quickstart",
+      "title": "Quickstart for dbt and Databricks",
+      "description": "Get started with Starlake and Databricks in minutes",
+      "summary": "Quick start guide for using Starlake with Databricks unified analytics platform",
+      "author": "Starlake Team",
+      "categories": [
+        "Databricks",
+        "Data Engineering",
+        "Cloud"
+      ],
+      "icon": "databricks",
+      "iconSymbol": "🔷",
+      "status": "Published",
+      "tags": [
+        "Databricks",
+        "dbt",
+        "Data Engineering",
+        "Cloud",
+        "Quick Start"
+      ],
+      "content": "This is a comprehensive quick start guide for using Starlake with Databricks unified analytics platform.",
+      "tabs": [
+        {
+          "id": 1,
+          "label": "Introduction",
+          "content": "# Introduction to Starlake with Databricks\n\nWelcome to the Starlake Databricks quick start guide! This guide will walk you through setting up Starlake with Databricks unified analytics platform.\n\n## What you'll learn\n\n- How to set up Databricks workspace and clusters\n- How to configure Starlake for Databricks\n- How to create your first data pipeline\n- How to deploy and monitor your pipelines\n\n## Prerequisites\n\n- A Databricks workspace (Azure, AWS, or GCP)\n- Admin access to your Databricks workspace\n- Basic knowledge of Apache Spark and SQL\n- Starlake CLI installed\n- Python 3.8+ installed\n\n## Why Databricks + Starlake?\n\n- **Unified Platform**: Data engineering, analytics, and ML in one place\n- **Scalability**: Auto-scaling clusters for any workload\n- **Performance**: Optimized Spark engine with Delta Lake\n- **Collaboration**: Multi-user workspace with version control\n- **Integration**: Native integration with cloud providers\n\nLet's get started!\n"
+        },
+        {
+          "id": 2,
+          "label": "Set up Databricks workspace",
+          "content": "# Set up Databricks Workspace\n\nBefore you can use Starlake with Databricks, you need to configure your Databricks workspace.\n\n## Step 1: Create Databricks Workspace\n\n### For Azure Databricks:\n\n1. Go to Azure Portal\n2. Search for **\"Azure Databricks\"**\n3. Click **\"Create\"**\n4. Fill in the required details:\n   - **Workspace name**: `starlake-workspace`\n   - **Subscription**: Your Azure subscription\n   - **Resource group**: Create new or use existing\n   - **Location**: Choose your preferred region\n   - **Pricing tier**: Standard or Premium\n5. Click **\"Review + Create\"** then **\"Create\"**\n\n### For AWS Databricks:\n\n1. Go to [Databricks AWS Console](https://accounts.cloud.databricks.com/)\n2. Click **\"Create Workspace\"**\n3. Choose **\"AWS\"** as cloud provider\n4. Fill in workspace details and click **\"Create\"**\n\n### For GCP Databricks:\n\n1. Go to [Databricks GCP Console](https://accounts.gcp.databricks.com/)\n2. Click **\"Create Workspace\"**\n3. Choose **\"GCP\"** as cloud provider\n4. Fill in workspace details and click **\"Create\"**\n\n## Step 2: Create a Cluster\n\n1. Open your Databricks workspace\n2. Go to **\"Compute\"** in the left sidebar\n3. Click **\"Create Cluster\"**\n4. Configure your cluster:\n   - **Cluster name**: `starlake-cluster`\n   - **Cluster mode**: **All-purpose** or **Single node**\n   - **Databricks runtime version**: Choose latest LTS version\n   - **Node type**: Choose based on your workload (e.g., `Standard_DS3_v2` for Azure)\n   - **Min workers**: 1\n   - **Max workers**: 2-4 (adjust based on needs)\n   - **Auto-termination**: 30 minutes (for cost optimization)\n5. Click **\"Create Cluster\"**\n\n## Step 3: Create a Personal Access Token\n\n1. In Databricks, click on your user profile (top right)\n2. Select **\"User Settings\"**\n3. Go to **\"Access Tokens\"** tab\n4. Click **\"Generate New Token\"**\n5. Add a comment (e.g., \"Starlake integration\")\n6. Click **\"Generate\"**\n7. **Copy and save the token** (you won't see it again!)\n"
+        },
+        {
+          "id": 3,
+          "label": "Configure Starlake",
+          "content": "# Configure Starlake for Databricks\n\nNow let's configure Starlake to work with your Databricks environment.\n\n## Environment Variables\n\nSet the following environment variables:\n\n```bash\nexport DATABRICKS_HOST=https://your-workspace.cloud.databricks.com\nexport DATABRICKS_TOKEN=your-personal-access-token\nexport DATABRICKS_CLUSTER_ID=your-cluster-id\nexport DATABRICKS_CATALOG=starlake_catalog\nexport DATABRICKS_SCHEMA=starlake_schema\n```\n\n**Note**: Replace the values with your actual Databricks workspace details.\n\n## Get Cluster ID\n\nTo find your cluster ID:\n\n1. Go to **\"Compute\"** in Databricks\n2. Click on your cluster name\n3. Copy the cluster ID from the URL or cluster details\n\n## Starlake Configuration\n\nCreate a `starlake.conf` file in your project root:\n\n```yaml\nconnections:\n  databricks:\n    type: \"databricks\"\n    host: \"${DATABRICKS_HOST}\"\n    token: \"${DATABRICKS_TOKEN}\"\n    cluster_id: \"${DATABRICKS_CLUSTER_ID}\"\n    catalog: \"${DATABRICKS_CATALOG}\"\n    schema: \"${DATABRICKS_SCHEMA}\"\n    options:\n      spark.sql.adaptive.enabled: true\n      spark.sql.adaptive.coalescePartitions.enabled: true\n\n# Global settings\nsettings:\n  default-connection: \"databricks\"\n  default-format: \"DELTA\"\n  default-mode: \"FILE\"\n```\n\n## Create Unity Catalog (Optional)\n\nIf using Unity Catalog:\n\n```sql\n-- Create catalog\nCREATE CATALOG IF NOT EXISTS starlake_catalog;\n\n-- Create schema\nCREATE SCHEMA IF NOT EXISTS starlake_catalog.starlake_schema;\n\n-- Grant permissions\nGRANT ALL PRIVILEGES ON CATALOG starlake_catalog TO `your-user@domain.com`;\nGRANT ALL PRIVILEGES ON SCHEMA starlake_catalog.starlake_schema TO `your-user@domain.com`;\n```\n\n## Test Connection\n\n```bash\nstarlake test-connection --connection databricks\n```\n"
+        },
+        {
+          "id": 4,
+          "label": "Create your first pipeline",
+          "content": "# Create Your First Pipeline\n\nLet's create a simple data pipeline using Starlake and Databricks.\n\n## Step 1: Define the Extract\n\nCreate `extract/databricks-sales.yml`:\n\n```yaml\nextract:\n  connectionRef: \"databricks\"\n  tables:\n    - name: \"sales_data\"\n      schema: \"public\"\n      incremental: true\n      timestamp: \"created_at\"\n      partitionColumn: \"sale_date\"\n      fetchSize: 1000\n      where: \"sale_date >= '2024-01-01'\"\n\n# Optional: Add transformations during extract\ntransform:\n  - name: \"clean_sales_data\"\n    sql: |\n      SELECT \n        order_id,\n        customer_id,\n        product_id,\n        amount,\n        sale_date,\n        created_at\n      FROM sales_data\n      WHERE amount > 0\n```\n\n## Step 2: Define the Load\n\nCreate `load/sales.yml`:\n\n```yaml\ntable:\n  pattern: \"sales_data.*.parquet\"\n  metadata:\n    mode: \"FILE\"\n    format: \"DELTA\"\n    encoding: \"UTF-8\"\n    withHeader: true\n  writeStrategy:\n    type: \"UPSERT_BY_KEY_AND_TIMESTAMP\"\n    timestamp: \"created_at\"\n    key: [\"order_id\"]\n  attributes:\n    - name: \"order_id\"\n      type: \"string\"\n      required: true\n      privacy: \"NONE\"\n    - name: \"customer_id\"\n      type: \"string\"\n      required: true\n      privacy: \"HIDE\"\n    - name: \"product_id\"\n      type: \"string\"\n      required: true\n    - name: \"amount\"\n      type: \"float\"\n      required: true\n    - name: \"sale_date\"\n      type: \"timestamp\"\n      required: true\n    - name: \"created_at\"\n      type: \"timestamp\"\n      required: true\n```\n\n## Step 3: Create Sample Data\n\nCreate a sample CSV file `data/sales_sample.csv`:\n\n```csv\norder_id,customer_id,product_id,amount,sale_date,created_at\nORD001,CUST001,PROD001,150.50,2024-01-15,2024-01-15 10:30:00\nORD002,CUST002,PROD002,299.99,2024-01-16,2024-01-16 14:20:00\nORD003,CUST001,PROD003,75.25,2024-01-17,2024-01-17 09:15:00\n```\n\n## Step 4: Upload to Cloud Storage\n\n### For Azure:\n```bash\n# Upload to Azure Blob Storage\naz storage blob upload-batch \\\n  --account-name your-storage-account \\\n  --container-name data \\\n  --source data/\n```\n\n### For AWS:\n```bash\n# Upload to S3\naws s3 cp data/sales_sample.csv s3://your-bucket/sales/\n```\n\n### For GCP:\n```bash\n# Upload to GCS\ngsutil cp data/sales_sample.csv gs://your-bucket/sales/\n```\n"
+        },
+        {
+          "id": 5,
+          "label": "Deploy and monitor",
+          "content": "# Deploy and Monitor\n\nNow let's deploy your pipeline and monitor its execution.\n\n## Deploy the Pipeline\n\n```bash\n# Extract data from source\nstarlake extract --config extract/databricks-sales.yml\n\n# Load data into Databricks\nstarlake load --config load/sales.yml\n\n# Or run both in sequence\nstarlake run --extract-config extract/databricks-sales.yml --load-config load/sales.yml\n```\n\n## Monitor Execution\n\n### 1. Check Starlake Logs\n\n```bash\n# View recent logs\ntail -f logs/starlake.log\n\n# Check execution status\nstarlake status --job-id <job_id>\n```\n\n### 2. Monitor Databricks Jobs\n\n1. Go to **\"Workflows\"** in Databricks\n2. Click on your job to view details\n3. Check the **\"Runs\"** tab for execution history\n4. Click on a run to see detailed logs\n\n### 3. Monitor Cluster Usage\n\n1. Go to **\"Compute\"** in Databricks\n2. Click on your cluster\n3. Check the **\"Metrics\"** tab for:\n   - CPU usage\n   - Memory usage\n   - Network I/O\n   - Cost tracking\n\n### 4. Verify Data in Databricks\n\nOpen a notebook in Databricks and run:\n\n```sql\n-- Check loaded data\nSELECT COUNT(*) as total_rows \nFROM starlake_catalog.starlake_schema.sales_data;\n\n-- Sample data\nSELECT * \nFROM starlake_catalog.starlake_schema.sales_data \nLIMIT 10;\n\n-- Data quality check\nSELECT \n  COUNT(*) as total_orders,\n  SUM(amount) as total_amount,\n  MIN(sale_date) as earliest_sale,\n  MAX(sale_date) as latest_sale\nFROM starlake_catalog.starlake_schema.sales_data;\n```\n\n### 5. Check Delta Lake History\n\n```sql\n-- View table history\nDESCRIBE HISTORY starlake_catalog.starlake_schema.sales_data;\n\n-- Check table details\nDESCRIBE DETAIL starlake_catalog.starlake_schema.sales_data;\n```\n\n## Next Steps\n\n- Set up scheduling with Databricks Jobs\n- Configure alerts and notifications\n- Scale your pipelines as needed\n- Implement data quality checks\n"
+        },
+        {
+          "id": 6,
+          "label": "Next steps",
+          "content": "# Next Steps\n\nCongratulations! You've successfully set up Starlake with Databricks.\n\n## What's Next?\n\n### Advanced Configuration\n\n- **Data Quality**: Implement data validation rules\n- **Incremental Loading**: Set up efficient incremental updates\n- **Partitioning**: Optimize performance with table partitioning\n- **Z-Ordering**: Improve query performance with Z-ordering\n\n### Scheduling and Orchestration\n\n```python\n# Create a Databricks job\nfrom databricks_api import DatabricksAPI\n\ndb = DatabricksAPI(\n  host=DATABRICKS_HOST,\n  token=DATABRICKS_TOKEN\n)\n\n# Create job\njob = db.jobs.create_job(\n  name=\"Starlake Daily Pipeline\",\n  existing_cluster_id=DATABRICKS_CLUSTER_ID,\n  notebook_task={\n    \"notebook_path\": \"/Shared/starlake-pipeline\",\n    \"base_parameters\": {\n      \"config_path\": \"extract/databricks-sales.yml\"\n    }\n  },\n  schedule={\n    \"quartz_cron_expression\": \"0 0 2 * * ?\",\n    \"timezone_id\": \"UTC\"\n  }\n)\n```\n\n### Monitoring and Alerting\n\n- Set up Databricks alerts for job failures\n- Configure cluster auto-scaling\n- Monitor data quality metrics\n- Track pipeline performance and costs\n\n### Security Enhancements\n\n- Implement row-level security (RLS)\n- Set up column-level security\n- Use Unity Catalog for data governance\n- Configure network security\n\n## Resources\n\n- [Starlake Documentation](https://docs.starlake.ai)\n- [Databricks Documentation](https://docs.databricks.com)\n- [Delta Lake Documentation](https://docs.delta.io)\n- [Community Support](https://github.com/starlake-ai/starlake)\n\n## Need Help?\n\nIf you encounter any issues:\n1. Check the troubleshooting guide\n2. Review the logs for error messages\n3. Verify Databricks permissions\n4. Check cluster configuration\n5. Reach out to the community\n\n## Example Advanced Configuration\n\n```yaml\n# Advanced Databricks configuration\nconnections:\n  databricks:\n    type: \"databricks\"\n    host: \"${DATABRICKS_HOST}\"\n    token: \"${DATABRICKS_TOKEN}\"\n    cluster_id: \"${DATABRICKS_CLUSTER_ID}\"\n    catalog: \"${DATABRICKS_CATALOG}\"\n    schema: \"${DATABRICKS_SCHEMA}\"\n    options:\n      spark.sql.adaptive.enabled: true\n      spark.sql.adaptive.coalescePartitions.enabled: true\n      spark.databricks.delta.optimizeWrite.enabled: true\n      spark.databricks.delta.autoCompact.enabled: true\n      spark.databricks.delta.properties.defaults.enableChangeDataFeed: true\n\n# Data quality rules\nquality:\n  rules:\n    - name: \"amount_positive\"\n      sql: \"amount > 0\"\n      severity: \"ERROR\"\n    - name: \"valid_dates\"\n      sql: \"sale_date <= CURRENT_DATE()\"\n      severity: \"WARNING\"\n\n# Performance optimization\nperformance:\n  partitionBy: [\"sale_date\"]\n  zOrderBy: [\"customer_id\", \"product_id\"]\n  optimizeWrite: true\n  autoCompact: true\n```\n"
+        }
+      ]
+    },
+    {
+      "id": "gcp_quickstart",
+      "title": "Quickstart for dbt and GCP",
+      "description": "Get started with Starlake and Google Cloud Platform in minutes",
+      "summary": "Quick start guide for using Starlake with Google Cloud Platform",
+      "author": "Starlake Team",
+      "categories": [
+        "GCP",
+        "Data Engineering",
+        "Cloud"
+      ],
+      "icon": "gcp",
+      "iconSymbol": "🔴",
+      "status": "Published",
+      "tags": [
+        "GCP",
+        "dbt",
+        "Data Engineering",
+        "Cloud",
+        "Quick Start"
+      ],
+      "content": "This is a comprehensive quick start guide for using Starlake with Google Cloud Platform.",
+      "tabs": [
+        {
+          "id": 1,
+          "label": "Introduction",
+          "content": "# Introduction to Starlake with GCP\n\nWelcome to the Starlake Google Cloud Platform quick start guide! This guide will walk you through setting up Starlake with Google Cloud Platform.\n\n## What you'll learn\n\n- How to set up Google Cloud resources and permissions\n- How to configure Starlake for GCP services\n- How to create your first data pipeline\n- How to deploy and monitor your pipelines\n\n## Prerequisites\n\n- A Google Cloud Platform account\n- Google Cloud SDK installed and configured\n- Basic knowledge of GCP services\n- Starlake CLI installed\n- Billing enabled on your GCP project\n\n## Why GCP + Starlake?\n\n- **Serverless**: No infrastructure management required\n- **Scalability**: Auto-scaling with Google's infrastructure\n- **Cost-effective**: Pay only for what you use\n- **Integration**: Native integration with Google Cloud services\n- **Performance**: Optimized for Google's data services\n\nLet's get started!\n"
+        },
+        {
+          "id": 2,
+          "label": "Set up GCP resources",
+          "content": "# Set up GCP Resources\n\nBefore you can use Starlake with GCP, you need to configure your Google Cloud resources and permissions.\n\n## Step 1: Create GCP Project\n\n```bash\n# Set your project ID\nexport PROJECT_ID=your-project-id\n\n# Create new project (optional)\ngcloud projects create $PROJECT_ID --name=\"Starlake Project\"\n\n# Set the project as default\ngcloud config set project $PROJECT_ID\n\n# Enable billing (required for most services)\ngcloud billing projects link $PROJECT_ID --billing-account=YOUR_BILLING_ACCOUNT_ID\n```\n\n## Step 2: Enable Required APIs\n\n```bash\n# Enable BigQuery API\ngcloud services enable bigquery.googleapis.com\n\n# Enable Cloud Storage API\ngcloud services enable storage.googleapis.com\n\n# Enable Cloud Functions API (for serverless)\ngcloud services enable cloudfunctions.googleapis.com\n\n# Enable Cloud Scheduler API (for scheduling)\ngcloud services enable cloudscheduler.googleapis.com\n\n# Enable Cloud Build API (for CI/CD)\ngcloud services enable cloudbuild.googleapis.com\n```\n\n## Step 3: Create Cloud Storage Bucket\n\n```bash\n# Create a unique bucket name\nexport BUCKET_NAME=starlake-data-$(date +%s)\n\n# Create bucket\ngsutil mb -l us-central1 gs://$BUCKET_NAME\n\n# Create folders for data organization\ngsutil mkdir gs://$BUCKET_NAME/data\ngsutil mkdir gs://$BUCKET_NAME/logs\ngsutil mkdir gs://$BUCKET_NAME/temp\n```\n\n## Step 4: Create BigQuery Dataset\n\n```bash\n# Create BigQuery dataset\nbq mk --dataset \\\n  --location=US \\\n  $PROJECT_ID:starlake_dataset\n\n# Create schema for your data\nbq mk --table \\\n  --location=US \\\n  $PROJECT_ID:starlake_dataset.sales_data \\\n  order_id:STRING,customer_id:STRING,product_id:STRING,amount:FLOAT,sale_date:DATE,created_at:TIMESTAMP\n```\n\n## Step 5: Create Service Account\n\n```bash\n# Create service account\ngcloud iam service-accounts create starlake-sa \\\n  --display-name=\"Starlake Service Account\" \\\n  --description=\"Service account for Starlake GCP integration\"\n\n# Get service account email\nexport SA_EMAIL=starlake-sa@$PROJECT_ID.iam.gserviceaccount.com\n\n# Grant BigQuery permissions\ngcloud projects add-iam-policy-binding $PROJECT_ID \\\n  --member=\"serviceAccount:$SA_EMAIL\" \\\n  --role=\"roles/bigquery.dataEditor\"\n\ngcloud projects add-iam-policy-binding $PROJECT_ID \\\n  --member=\"serviceAccount:$SA_EMAIL\" \\\n  --role=\"roles/bigquery.jobUser\"\n\n# Grant Cloud Storage permissions\ngcloud projects add-iam-policy-binding $PROJECT_ID \\\n  --member=\"serviceAccount:$SA_EMAIL\" \\\n  --role=\"roles/storage.objectAdmin\"\n\n# Create and download key\ngcloud iam service-accounts keys create starlake-sa-key.json \\\n  --iam-account=$SA_EMAIL\n```\n"
+        },
+        {
+          "id": 3,
+          "label": "Configure Starlake",
+          "content": "# Configure Starlake for GCP\n\nNow let's configure Starlake to work with your GCP environment.\n\n## Environment Variables\n\nSet the following environment variables:\n\n```bash\nexport GOOGLE_CLOUD_PROJECT=$PROJECT_ID\nexport GOOGLE_APPLICATION_CREDENTIALS=/path/to/starlake-sa-key.json\nexport GCP_BUCKET_NAME=$BUCKET_NAME\nexport BIGQUERY_DATASET=starlake_dataset\nexport BIGQUERY_LOCATION=US\n```\n\n## Starlake Configuration\n\nCreate a `starlake.conf` file in your project root:\n\n```yaml\nconnections:\n  gcp:\n    type: \"gcp\"\n    project: \"${GOOGLE_CLOUD_PROJECT}\"\n    credentials: \"${GOOGLE_APPLICATION_CREDENTIALS}\"\n    bucket: \"${GCP_BUCKET_NAME}\"\n    dataset: \"${BIGQUERY_DATASET}\"\n    location: \"${BIGQUERY_LOCATION}\"\n    options:\n      spark.sql.adaptive.enabled: true\n      spark.sql.adaptive.coalescePartitions.enabled: true\n\n# Global settings\nsettings:\n  default-connection: \"gcp\"\n  default-format: \"PARQUET\"\n  default-mode: \"FILE\"\n```\n\n## Test Connection\n\n```bash\nstarlake test-connection --connection gcp\n```\n\n## Create Cloud Functions (Optional)\n\n```bash\n# Create function for pipeline triggers\ngcloud functions deploy starlake-trigger \\\n  --runtime python39 \\\n  --trigger-http \\\n  --allow-unauthenticated \\\n  --entry-point trigger_pipeline \\\n  --source ./functions \\\n  --set-env-vars PROJECT_ID=$PROJECT_ID,BUCKET_NAME=$BUCKET_NAME\n```\n\n## Set up Cloud Scheduler (Optional)\n\n```bash\n# Create scheduled job\ngcloud scheduler jobs create http starlake-daily \\\n  --schedule=\"0 2 * * *\" \\\n  --uri=\"https://your-function-url.com/trigger\" \\\n  --http-method=POST \\\n  --headers=\"Content-Type=application/json\" \\\n  --message-body='{\"action\":\"run-pipeline\"}'\n```\n"
+        },
+        {
+          "id": 4,
+          "label": "Create your first pipeline",
+          "content": "# Create Your First Pipeline\n\nLet's create a simple data pipeline using Starlake and GCP.\n\n## Step 1: Define the Extract\n\nCreate `extract/gcp-sales.yml`:\n\n```yaml\nextract:\n  connectionRef: \"gcp\"\n  tables:\n    - name: \"sales_data\"\n      schema: \"public\"\n      incremental: true\n      timestamp: \"created_at\"\n      partitionColumn: \"sale_date\"\n      fetchSize: 1000\n      where: \"sale_date >= '2024-01-01'\"\n\n# Optional: Add transformations during extract\ntransform:\n  - name: \"clean_sales_data\"\n    sql: |\n      SELECT \n        order_id,\n        customer_id,\n        product_id,\n        amount,\n        sale_date,\n        created_at\n      FROM sales_data\n      WHERE amount > 0\n```\n\n## Step 2: Define the Load\n\nCreate `load/sales.yml`:\n\n```yaml\ntable:\n  pattern: \"sales_data.*.parquet\"\n  metadata:\n    mode: \"FILE\"\n    format: \"PARQUET\"\n    encoding: \"UTF-8\"\n    withHeader: true\n  writeStrategy:\n    type: \"UPSERT_BY_KEY_AND_TIMESTAMP\"\n    timestamp: \"created_at\"\n    key: [\"order_id\"]\n  attributes:\n    - name: \"order_id\"\n      type: \"string\"\n      required: true\n      privacy: \"NONE\"\n    - name: \"customer_id\"\n      type: \"string\"\n      required: true\n      privacy: \"HIDE\"\n    - name: \"product_id\"\n      type: \"string\"\n      required: true\n    - name: \"amount\"\n      type: \"float\"\n      required: true\n    - name: \"sale_date\"\n      type: \"timestamp\"\n      required: true\n    - name: \"created_at\"\n      type: \"timestamp\"\n      required: true\n```\n\n## Step 3: Create Sample Data\n\nCreate a sample CSV file `data/sales_sample.csv`:\n\n```csv\norder_id,customer_id,product_id,amount,sale_date,created_at\nORD001,CUST001,PROD001,150.50,2024-01-15,2024-01-15 10:30:00\nORD002,CUST002,PROD002,299.99,2024-01-16,2024-01-16 14:20:00\nORD003,CUST001,PROD003,75.25,2024-01-17,2024-01-17 09:15:00\n```\n\n## Step 4: Upload to Cloud Storage\n\n```bash\n# Upload sample data to Cloud Storage\ngsutil cp data/sales_sample.csv gs://$BUCKET_NAME/data/\n\n# Set appropriate permissions\ngsutil iam ch serviceAccount:$SA_EMAIL:objectViewer gs://$BUCKET_NAME\n```\n"
+        },
+        {
+          "id": 5,
+          "label": "Deploy and monitor",
+          "content": "# Deploy and Monitor\n\nNow let's deploy your pipeline and monitor its execution.\n\n## Deploy the Pipeline\n\n```bash\n# Extract data from source\nstarlake extract --config extract/gcp-sales.yml\n\n# Load data into BigQuery\nstarlake load --config load/sales.yml\n\n# Or run both in sequence\nstarlake run --extract-config extract/gcp-sales.yml --load-config load/sales.yml\n```\n\n## Monitor Execution\n\n### 1. Check Starlake Logs\n\n```bash\n# View recent logs\ntail -f logs/starlake.log\n\n# Check execution status\nstarlake status --job-id <job_id>\n```\n\n### 2. Monitor BigQuery Jobs\n\n```bash\n# List recent jobs\nbq ls --jobs --max_results=10\n\n# Get job details\nbq show --job=true <job_id>\n\n# Check query history\nbq query --use_legacy_sql=false \"\n  SELECT \n    job_type,\n    SUM(total_bytes_processed) as bytes_processed,\n    SUM(total_slot_ms) as slot_ms,\n    COUNT(*) as job_count\n  FROM \\`region-us\\`.INFORMATION_SCHEMA.JOBS_BY_PROJECT\n  WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 24 HOUR)\n  GROUP BY job_type\n  ORDER BY bytes_processed DESC;\n\"\n```\n\n### 3. Monitor Cloud Storage\n\n```bash\n# List objects in bucket\ngsutil ls gs://$BUCKET_NAME/data/\n\n# Check bucket usage\ngsutil du -sh gs://$BUCKET_NAME/\n\n# Monitor storage class\ngsutil ls -L gs://$BUCKET_NAME/\n```\n\n### 4. Verify Data in BigQuery\n\n```sql\n-- Check loaded data\nSELECT COUNT(*) as total_rows \nFROM `$PROJECT_ID.starlake_dataset.sales_data`;\n\n-- Sample data\nSELECT * \nFROM `$PROJECT_ID.starlake_dataset.sales_data` \nLIMIT 10;\n\n-- Data quality check\nSELECT \n  COUNT(*) as total_orders,\n  SUM(amount) as total_amount,\n  MIN(sale_date) as earliest_sale,\n  MAX(sale_date) as latest_sale\nFROM `$PROJECT_ID.starlake_dataset.sales_data`;\n```\n\n### 5. Set up Cloud Monitoring\n\n```bash\n# Create monitoring workspace\ngcloud monitoring workspaces create \\\n  --display-name=\"Starlake Monitoring\"\n\n# Create alerting policy\ngcloud alpha monitoring policies create \\\n  --policy-from-file=alert-policy.yaml\n```\n\n## Next Steps\n\n- Set up scheduling with Cloud Scheduler\n- Configure alerts and notifications\n- Scale your pipelines as needed\n- Implement data quality checks\n"
+        },
+        {
+          "id": 6,
+          "label": "Next steps",
+          "content": "# Next Steps\n\nCongratulations! You've successfully set up Starlake with Google Cloud Platform.\n\n## What's Next?\n\n### Advanced Configuration\n\n- **Data Quality**: Implement data validation rules\n- **Incremental Loading**: Set up efficient incremental updates\n- **Partitioning**: Optimize performance with table partitioning\n- **Clustering**: Improve query performance with clustering\n\n### Scheduling and Orchestration\n\n```bash\n# Create Cloud Scheduler job\ngcloud scheduler jobs create http starlake-daily \\\n  --schedule=\"0 2 * * *\" \\\n  --uri=\"https://your-function-url.com/trigger\" \\\n  --http-method=POST \\\n  --headers=\"Content-Type=application/json\" \\\n  --message-body='{\"action\":\"run-pipeline\"}'\n\n# Create Cloud Build trigger for CI/CD\ngcloud builds triggers create github \\\n  --name=\"starlake-pipeline\" \\\n  --repo-name=\"your-repo\" \\\n  --branch-pattern=\"main\" \\\n  --build-config=\"cloudbuild.yaml\"\n```\n\n### Monitoring and Alerting\n\n- Set up BigQuery alerts for job failures\n- Configure Cloud Monitoring dashboards\n- Monitor data quality metrics\n- Track pipeline performance and costs\n\n### Security Enhancements\n\n- Implement IAM policies\n- Set up VPC Service Controls\n- Use Cloud KMS for encryption\n- Configure Data Loss Prevention (DLP)\n\n## Resources\n\n- [Starlake Documentation](https://docs.starlake.ai)\n- [Google Cloud Documentation](https://cloud.google.com/docs)\n- [BigQuery Documentation](https://cloud.google.com/bigquery/docs)\n- [Cloud Storage Documentation](https://cloud.google.com/storage/docs)\n- [Community Support](https://github.com/starlake-ai/starlake)\n\n## Need Help?\n\nIf you encounter any issues:\n1. Check the troubleshooting guide\n2. Review the logs for error messages\n3. Verify GCP permissions\n4. Check billing and quotas\n5. Reach out to the community\n\n## Example Advanced Configuration\n\n```yaml\n# Advanced GCP configuration\nconnections:\n  gcp:\n    type: \"gcp\"\n    project: \"${GOOGLE_CLOUD_PROJECT}\"\n    credentials: \"${GOOGLE_APPLICATION_CREDENTIALS}\"\n    bucket: \"${GCP_BUCKET_NAME}\"\n    dataset: \"${BIGQUERY_DATASET}\"\n    location: \"${BIGQUERY_LOCATION}\"\n    options:\n      spark.sql.adaptive.enabled: true\n      spark.sql.adaptive.coalescePartitions.enabled: true\n      spark.sql.adaptive.skewJoin.enabled: true\n\n# Data quality rules\nquality:\n  rules:\n    - name: \"amount_positive\"\n      sql: \"amount > 0\"\n      severity: \"ERROR\"\n    - name: \"valid_dates\"\n      sql: \"sale_date <= CURRENT_DATE()\"\n      severity: \"WARNING\"\n\n# Performance optimization\nperformance:\n  partitionBy: [\"sale_date\"]\n  clusterBy: [\"customer_id\", \"product_id\"]\n  optimizeWrite: true\n  autoCompact: true\n```\n"
+        }
+      ]
+    },
+    {
+      "id": "snowflake_quickstart",
+      "title": "Quickstart for dbt and Snowflake",
+      "description": "Get started with Starlake and Snowflake in minutes",
+      "summary": "Quick start guide for using Starlake with Snowflake data warehouse",
+      "author": "Starlake Team",
+      "categories": [
+        "Snowflake",
+        "Data Warehouse",
+        "Cloud"
+      ],
+      "icon": "snowflake",
+      "iconSymbol": "❄️",
+      "status": "Published",
+      "tags": [
+        "Snowflake",
+        "dbt",
+        "Data Warehouse",
+        "Cloud",
+        "Quick Start"
+      ],
+      "content": "This is a comprehensive quick start guide for using Starlake with Snowflake data warehouse.",
+      "tabs": [
+        {
+          "id": 1,
+          "label": "Introduction",
+          "content": "# Introduction to Starlake with Snowflake\n\nWelcome to the Starlake Snowflake quick start guide! This guide will walk you through setting up Starlake with Snowflake data warehouse.\n\n## What you'll learn\n\n- How to set up Snowflake credentials and permissions\n- How to configure Starlake for Snowflake\n- How to create your first data pipeline\n- How to deploy and monitor your pipelines\n\n## Prerequisites\n\n- A Snowflake account (trial or paid)\n- Basic knowledge of SQL and data warehousing\n- Starlake CLI installed\n- Access to create databases and schemas\n\n## Why Snowflake + Starlake?\n\n- **Scalability**: Snowflake's elastic compute and storage\n- **Performance**: Optimized for large-scale data processing\n- **Security**: Built-in security features and compliance\n- **Cost-effective**: Pay-per-use pricing model\n\nLet's get started!\n"
+        },
+        {
+          "id": 2,
+          "label": "Set up Snowflake credentials",
+          "content": "# Set up Snowflake Credentials\n\nBefore you can use Starlake with Snowflake, you need to configure your Snowflake credentials and permissions.\n\n## Step 1: Create a Snowflake User\n\n1. Log in to your Snowflake account\n2. Navigate to **Admin** > **Users**\n3. Click **\"Create User\"**\n4. Enter username (e.g., `starlake_user`)\n5. Set a secure password\n6. Assign appropriate roles (e.g., `ACCOUNTADMIN` for setup)\n\n## Step 2: Create Database and Schema\n\nExecute these SQL commands in your Snowflake worksheet:\n\n```sql\n-- Create database for Starlake\nCREATE DATABASE starlake_db;\n\n-- Create schema for your data\nCREATE SCHEMA starlake_db.starlake_schema;\n\n-- Create warehouse for compute resources\nCREATE WAREHOUSE starlake_wh\n  WAREHOUSE_SIZE = 'X-SMALL'\n  AUTO_SUSPEND = 60\n  AUTO_RESUME = TRUE;\n```\n\n## Step 3: Grant Permissions\n\n```sql\n-- Grant usage on database\nGRANT USAGE ON DATABASE starlake_db TO ROLE your_role;\n\n-- Grant usage on schema\nGRANT USAGE ON SCHEMA starlake_db.starlake_schema TO ROLE your_role;\n\n-- Grant table creation permissions\nGRANT CREATE TABLE ON SCHEMA starlake_db.starlake_schema TO ROLE your_role;\n\n-- Grant warehouse usage\nGRANT USAGE ON WAREHOUSE starlake_wh TO ROLE your_role;\n\n-- Grant data loading permissions\nGRANT INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA starlake_db.starlake_schema TO ROLE your_role;\n```\n"
+        },
+        {
+          "id": 3,
+          "label": "Configure Starlake",
+          "content": "# Configure Starlake for Snowflake\n\nNow let's configure Starlake to work with your Snowflake environment.\n\n## Environment Variables\n\nSet the following environment variables in your shell:\n\n```bash\nexport SNOWFLAKE_ACCOUNT=your_account_identifier\nexport SNOWFLAKE_USER=starlake_user\nexport SNOWFLAKE_PASSWORD=your_secure_password\nexport SNOWFLAKE_DATABASE=starlake_db\nexport SNOWFLAKE_SCHEMA=starlake_schema\nexport SNOWFLAKE_WAREHOUSE=starlake_wh\nexport SNOWFLAKE_ROLE=your_role\n```\n\n**Note**: Replace `your_account_identifier` with your Snowflake account identifier (e.g., `xy12345.us-east-1`).\n\n## Starlake Configuration\n\nCreate a `starlake.conf` file in your project root:\n\n```yaml\nconnections:\n  snowflake:\n    type: \"snowflake\"\n    account: \"${SNOWFLAKE_ACCOUNT}\"\n    user: \"${SNOWFLAKE_USER}\"\n    password: \"${SNOWFLAKE_PASSWORD}\"\n    database: \"${SNOWFLAKE_DATABASE}\"\n    schema: \"${SNOWFLAKE_SCHEMA}\"\n    warehouse: \"${SNOWFLAKE_WAREHOUSE}\"\n    role: \"${SNOWFLAKE_ROLE}\"\n    options:\n      client_session_keep_alive: true\n      timezone: \"UTC\"\n\n# Global settings\nsettings:\n  default-connection: \"snowflake\"\n  default-format: \"PARQUET\"\n  default-mode: \"FILE\"\n```\n\n## Test Connection\n\nTest your connection with:\n\n```bash\nstarlake test-connection --connection snowflake\n```\n"
+        },
+        {
+          "id": 4,
+          "label": "Create your first pipeline",
+          "content": "# Create Your First Pipeline\n\nLet's create a simple data pipeline using Starlake and Snowflake.\n\n## Step 1: Define the Extract\n\nCreate `extract/snowflake-sales.yml`:\n\n```yaml\nextract:\n  connectionRef: \"snowflake\"\n  tables:\n    - name: \"sales_data\"\n      schema: \"public\"\n      incremental: true\n      timestamp: \"created_at\"\n      partitionColumn: \"sale_date\"\n      fetchSize: 1000\n      where: \"sale_date >= '2024-01-01'\"\n\n# Optional: Add transformations during extract\ntransform:\n  - name: \"clean_sales_data\"\n    sql: |\n      SELECT \n        order_id,\n        customer_id,\n        product_id,\n        amount,\n        sale_date,\n        created_at\n      FROM sales_data\n      WHERE amount > 0\n```\n\n## Step 2: Define the Load\n\nCreate `load/sales.yml`:\n\n```yaml\ntable:\n  pattern: \"sales_data.*.parquet\"\n  metadata:\n    mode: \"FILE\"\n    format: \"PARQUET\"\n    encoding: \"UTF-8\"\n    withHeader: true\n  writeStrategy:\n    type: \"UPSERT_BY_KEY_AND_TIMESTAMP\"\n    timestamp: \"created_at\"\n    key: [\"order_id\"]\n  attributes:\n    - name: \"order_id\"\n      type: \"string\"\n      required: true\n      privacy: \"NONE\"\n    - name: \"customer_id\"\n      type: \"string\"\n      required: true\n      privacy: \"HIDE\"\n    - name: \"product_id\"\n      type: \"string\"\n      required: true\n    - name: \"amount\"\n      type: \"float\"\n      required: true\n    - name: \"sale_date\"\n      type: \"timestamp\"\n      required: true\n    - name: \"created_at\"\n      type: \"timestamp\"\n      required: true\n```\n\n## Step 3: Create Sample Data\n\nCreate a sample CSV file `data/sales_sample.csv`:\n\n```csv\norder_id,customer_id,product_id,amount,sale_date,created_at\nORD001,CUST001,PROD001,150.50,2024-01-15,2024-01-15 10:30:00\nORD002,CUST002,PROD002,299.99,2024-01-16,2024-01-16 14:20:00\nORD003,CUST001,PROD003,75.25,2024-01-17,2024-01-17 09:15:00\n```\n"
+        },
+        {
+          "id": 5,
+          "label": "Deploy and monitor",
+          "content": "# Deploy and Monitor\n\nNow let's deploy your pipeline and monitor its execution.\n\n## Deploy the Pipeline\n\nRun the following commands to execute your pipeline:\n\n```bash\n# Extract data from source\nstarlake extract --config extract/snowflake-sales.yml\n\n# Load data into Snowflake\nstarlake load --config load/sales.yml\n\n# Or run both in sequence\nstarlake run --extract-config extract/snowflake-sales.yml --load-config load/sales.yml\n```\n\n## Monitor Execution\n\n### 1. Check Starlake Logs\n\n```bash\n# View recent logs\ntail -f logs/starlake.log\n\n# Check execution status\nstarlake status --job-id <job_id>\n```\n\n### 2. Monitor Snowflake Query History\n\nIn Snowflake worksheet:\n\n```sql\n-- View recent queries\nSELECT \n  query_id,\n  query_text,\n  start_time,\n  end_time,\n  total_elapsed_time,\n  status\nFROM table(information_schema.query_history())\nWHERE start_time >= dateadd(hour, -1, current_timestamp())\nORDER BY start_time DESC;\n\n-- Check warehouse usage\nSELECT \n  warehouse_name,\n  credits_used,\n  bytes_scanned,\n  percentage_scanned_from_cache\nFROM table(information_schema.warehouse_metering_history(\n  date_range_start=>dateadd(hour, -1, current_timestamp()),\n  date_range_end=>current_timestamp()\n));\n```\n\n### 3. Verify Data in Snowflake\n\n```sql\n-- Check loaded data\nSELECT COUNT(*) as total_rows FROM starlake_db.starlake_schema.sales_data;\n\n-- Sample data\nSELECT * FROM starlake_db.starlake_schema.sales_data LIMIT 10;\n\n-- Data quality check\nSELECT \n  COUNT(*) as total_orders,\n  SUM(amount) as total_amount,\n  MIN(sale_date) as earliest_sale,\n  MAX(sale_date) as latest_sale\nFROM starlake_db.starlake_schema.sales_data;\n```\n\n## Next Steps\n\n- Set up scheduling with cron or Airflow\n- Configure alerts and notifications\n- Scale your pipelines as needed\n- Implement data quality checks\n"
+        },
+        {
+          "id": 6,
+          "label": "Next steps",
+          "content": "# Next Steps\n\nCongratulations! You've successfully set up Starlake with Snowflake.\n\n## What's Next?\n\n### Advanced Configuration\n\n- **Data Quality**: Implement data validation rules\n- **Incremental Loading**: Set up efficient incremental updates\n- **Partitioning**: Optimize performance with table partitioning\n- **Clustering**: Improve query performance with clustering keys\n\n### Scheduling and Orchestration\n\n```bash\n# Set up cron job for daily execution\ncrontab -e\n\n# Add this line for daily execution at 2 AM\n0 2 * * * /path/to/starlake run --extract-config extract/snowflake-sales.yml --load-config load/sales.yml\n```\n\n### Monitoring and Alerting\n\n- Set up Snowflake alerts for warehouse usage\n- Configure Starlake notifications\n- Monitor data quality metrics\n- Track pipeline performance\n\n### Security Enhancements\n\n- Implement row-level security (RLS)\n- Set up column-level security\n- Use Snowflake's data masking features\n- Configure network policies\n\n## Resources\n\n- [Starlake Documentation](https://docs.starlake.ai)\n- [Snowflake Documentation](https://docs.snowflake.com)\n- [Snowflake Best Practices](https://docs.snowflake.com/en/user-guide/best-practices-overview)\n- [Community Support](https://github.com/starlake-ai/starlake)\n\n## Need Help?\n\nIf you encounter any issues:\n1. Check the troubleshooting guide\n2. Review the logs for error messages\n3. Verify Snowflake permissions\n4. Reach out to the community\n\n## Example Advanced Configuration\n\n```yaml\n# Advanced Snowflake configuration\nconnections:\n  snowflake:\n    type: \"snowflake\"\n    account: \"${SNOWFLAKE_ACCOUNT}\"\n    user: \"${SNOWFLAKE_USER}\"\n    password: \"${SNOWFLAKE_PASSWORD}\"\n    database: \"${SNOWFLAKE_DATABASE}\"\n    schema: \"${SNOWFLAKE_SCHEMA}\"\n    warehouse: \"${SNOWFLAKE_WAREHOUSE}\"\n    role: \"${SNOWFLAKE_ROLE}\"\n    options:\n      client_session_keep_alive: true\n      timezone: \"UTC\"\n      session_parameters:\n        USE_CACHED_RESULT: true\n        STATEMENT_TIMEOUT_IN_SECONDS: 3600\n```\n"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "AWS",
+    "Azure",
+    "BigQuery",
+    "Cloud",
+    "Data Engineering",
+    "Data Warehouse",
+    "Databricks",
+    "GCP",
+    "Snowflake"
+  ]
+}

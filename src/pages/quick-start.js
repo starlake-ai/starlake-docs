@@ -1,37 +1,31 @@
-import React, { useState, useEffect } from 'react';
 import Layout from '@theme/Layout';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import { FaStar, FaRegStar, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
+import React, { useEffect, useState } from 'react';
+import { FaArrowLeft, FaArrowRight, FaRegStar, FaStar } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import styles from './quick-start.module.css';
 
-// Import the generated data
 import quickstartData from '../data/quickstart-data.json';
 
 export default function QuickStart() {
-  const { siteConfig } = useDocusaurusContext();
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [filteredQuickstarts, setFilteredQuickstarts] = useState(quickstartData.quickstarts);
-  const [currentView, setCurrentView] = useState('list'); // 'list' or 'guide'
+  const [currentView, setCurrentView] = useState('list'); 
   const [selectedGuide, setSelectedGuide] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Get the ID from the URL
   const getQuickstartId = () => {
     const path = window.location.pathname;
     const match = path.match(/\/quick-start\/(.+)$/);
     return match ? match[1] : null;
   };
 
-  // Get step from URL params
   const getCurrentStep = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const step = urlParams.get('step');
     return step ? parseInt(step) : 1;
   };
 
-  // Update URL with step
   const updateURL = (step) => {
     if (selectedGuide) {
       const url = new URL(window.location);
@@ -40,7 +34,6 @@ export default function QuickStart() {
     }
   };
 
-  // Load favorites from localStorage
   useEffect(() => {
     const savedFavorites = localStorage.getItem('quickstart-favorites');
     if (savedFavorites) {
@@ -48,12 +41,10 @@ export default function QuickStart() {
     }
   }, []);
 
-  // Save favorites to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('quickstart-favorites', JSON.stringify(favorites));
   }, [favorites]);
 
-  // Check URL and set view accordingly
   useEffect(() => {
     const id = getQuickstartId();
     if (id) {
@@ -71,7 +62,6 @@ export default function QuickStart() {
     }
   }, []);
 
-  // Filter quickstarts based on selected categories
   useEffect(() => {
     if (selectedCategories.length === 0) {
       setFilteredQuickstarts(quickstartData.quickstarts);
@@ -83,7 +73,6 @@ export default function QuickStart() {
     }
   }, [selectedCategories]);
 
-  // Update URL when step changes
   useEffect(() => {
     if (selectedGuide && currentView === 'guide') {
       updateURL(currentStep);
@@ -118,7 +107,6 @@ export default function QuickStart() {
     setSelectedGuide(quickstart);
     setCurrentView('guide');
     setCurrentStep(1);
-    // Update URL
     const url = new URL(window.location);
     url.pathname = `/quick-start/${quickstart.id}`;
     url.searchParams.set('step', '1');
@@ -129,7 +117,6 @@ export default function QuickStart() {
     setCurrentView('list');
     setSelectedGuide(null);
     setCurrentStep(1);
-    // Update URL
     const url = new URL(window.location);
     url.pathname = '/quick-start';
     url.searchParams.delete('step');
@@ -154,7 +141,6 @@ export default function QuickStart() {
     }
   };
 
-  // Render the listing view
   const renderListingView = () => (
     <div className={styles.container}>
       <div className={styles.sidebar}>
@@ -231,7 +217,6 @@ export default function QuickStart() {
     </div>
   );
 
-  // Render the guide view
   const renderGuideView = () => {
     if (!selectedGuide) return null;
 
@@ -240,7 +225,6 @@ export default function QuickStart() {
 
     return (
       <div className={styles.guideContainer}>
-        {/* Header */}
         <div className={styles.guideHeader}>
           <div className={styles.guideHeaderLeft}>
             <button onClick={goBackToList} className={styles.backLink}>
@@ -268,7 +252,6 @@ export default function QuickStart() {
         </div>
 
         <div className={styles.guideContent}>
-          {/* Left Sidebar - Tabs */}
           <div className={styles.guideSidebar}>
             <h1 className={styles.guideTitle}>{selectedGuide.title}</h1>
             <div className={styles.tabs}>
@@ -285,7 +268,6 @@ export default function QuickStart() {
             </div>
           </div>
 
-          {/* Right Content - Step Content */}
           <div className={styles.stepContent}>
             {currentTab && (
               <>
@@ -300,7 +282,6 @@ export default function QuickStart() {
                   <ReactMarkdown>{currentTab.content}</ReactMarkdown>
                 </div>
 
-                {/* Navigation */}
                 <div className={styles.navigation}>
                   <button
                     onClick={goToPreviousStep}
@@ -337,7 +318,6 @@ export default function QuickStart() {
   );
 }
 
-// Quickstart Card Component
 function QuickstartCard({ quickstart, isFavorite, onToggleFavorite, onStartAction }) {
   return (
     <div className={styles.card}>
