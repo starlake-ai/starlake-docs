@@ -4,14 +4,15 @@
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
-    "start": "docusaurus start",
-    "build": "docusaurus build",
+    "start": "node scripts/generate-quickstart-data.js && docusaurus start",
+    "build": "node scripts/generate-quickstart-data.js && docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
-    "write-heading-ids": "docusaurus write-heading-ids"
+    "write-heading-ids": "docusaurus write-heading-ids",
+    "generate-quickstart-data": "node scripts/generate-quickstart-data.js"
   },
   "dependencies": {
     "@codemirror/lang-sql": "^6.6.4",
@@ -26,12 +27,15 @@
     "axios": "^1.7.2",
     "clsx": "^1.2.1",
     "docusaurus-plugin-image-zoom": "^2.0.0",
+    "gray-matter": "^4.0.3",
     "prism-react-renderer": "^2.3.1",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-icons": "^5.3.0",
     "react-lite-youtube-embed": "^2.5.1",
-    "react-player": "^2.16.0"
+    "react-markdown": "^10.1.0",
+    "react-player": "^2.16.0",
+    "react-router-dom": "6"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^3.8.1",

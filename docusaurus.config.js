@@ -238,6 +238,17 @@ const config = {
         filename: 'sitemap.xml',
       },
     ],
+    [
+      '@docusaurus/plugin-client-redirects',
+      {
+        redirects: [
+          {
+            from: '/quick-start/:id',
+            to: '/quick-start/:id',
+          },
+        ],
+      },
+    ],
   ].filter(Boolean),
   markdown: {
     mermaid: true,
