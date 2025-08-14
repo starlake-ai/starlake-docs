@@ -167,6 +167,8 @@ ORD003,CUST001,PROD003,75.25,2024-01-17,2024-01-17 09:15:00
 
 Now let's deploy your pipeline and monitor its execution.
 
+![Load Process](/img/quickstart/load.png)
+
 ### Deploy the Pipeline
 
 Run the following commands to execute your pipeline:

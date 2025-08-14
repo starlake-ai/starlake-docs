@@ -54,14 +54,21 @@ function parseMarkdownSections(content) {
 
 function parseQuickstartFiles() {
   const quickstartDir = path.join(process.cwd(), 'src/data/quickstart');
-  const files = fs.readdirSync(quickstartDir);
+  const folders = fs.readdirSync(quickstartDir, { withFileTypes: true })
+    .filter(dirent => dirent.isDirectory())
+    .map(dirent => dirent.name);
   
   const quickstarts = [];
   const categories = new Set();
   
-  files.forEach(file => {
-    if (file.endsWith('.md')) {
-      const filePath = path.join(quickstartDir, file);
+  folders.forEach(folder => {
+    const folderPath = path.join(quickstartDir, folder);
+    const files = fs.readdirSync(folderPath);
+    
+    const mdFile = files.find(file => file.endsWith('.md'));
+    
+    if (mdFile) {
+      const filePath = path.join(folderPath, mdFile);
       const fileContent = fs.readFileSync(filePath, 'utf8');
       const { data, content } = matter(fileContent);
       

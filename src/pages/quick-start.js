@@ -298,8 +298,17 @@ export default function QuickStart() {
 }
 
 function QuickstartCard({ quickstart, isFavorite, onToggleFavorite, onStartAction }) {
+  const handleCardClick = () => {
+    onStartAction(quickstart);
+  };
+
+  const handleFavoriteClick = (e) => {
+    e.stopPropagation();
+    onToggleFavorite(quickstart.id);
+  };
+
   return (
-    <div className={styles.card}>
+    <div className={styles.card} onClick={handleCardClick}>
       <div className={styles.cardHeader}>
         <div className={styles.cardIcon}>
           <img 
@@ -307,11 +316,10 @@ function QuickstartCard({ quickstart, isFavorite, onToggleFavorite, onStartActio
             alt={`${quickstart.title} icon`}
             width="32"
             height="32"
-            style={{ width: '32px', height: '32px' }}
           />
         </div>
         <button
-          onClick={() => onToggleFavorite(quickstart.id)}
+          onClick={handleFavoriteClick}
           className={styles.favoriteButton}
           aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
         >
@@ -331,10 +339,13 @@ function QuickstartCard({ quickstart, isFavorite, onToggleFavorite, onStartActio
       
       <div className={styles.cardFooter}>
         <button
-          onClick={() => onStartAction(quickstart)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onStartAction(quickstart);
+          }}
           className={styles.startButton}
         >
-          Start →
+          Start
         </button>
       </div>
     </div>

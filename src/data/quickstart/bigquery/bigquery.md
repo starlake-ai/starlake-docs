@@ -1,36 +1,36 @@
 ---
-title: "Quickstart for Starlake and GCP"
-id: "gcp"
+title: "Quickstart for Starlake and BigQuery"
+id: "bigquery"
 level: 'Beginner'
-icon: 'gcp'
-tags: ['GCP']
+icon: 'bigquery'
+tags: ['BigQuery']
 hide_table_of_contents: true
-description: "Get started with Starlake and Google Cloud Platform in minutes"
+description: "Get started with Starlake and BigQuery in minutes"
 ---
 
 <div style={{maxWidth: '900px'}}>
 
 ## Introduction
 
-In this quickstart guide, you'll learn how to use Starlake with Google Cloud Platform (GCP). It will show you how to: 
+In this quickstart guide, you'll learn how to use Starlake with Google BigQuery. It will show you how to: 
 
-- Set up GCP credentials and permissions
-- Configure Starlake for GCP services
+- Set up BigQuery credentials and permissions
+- Configure Starlake for BigQuery
 - Create your first data pipeline
 - Deploy and monitor your pipelines
 
 ### Prerequisites
 
 - A Google Cloud Platform account
-- Basic knowledge of GCP services
+- Basic knowledge of BigQuery and GCP
 - Starlake CLI installed
-- Access to create projects and resources
+- Access to create datasets and tables
 
 Let's get started!
 
-## Set up GCP credentials
+## Set up BigQuery credentials
 
-Before you can use Starlake with GCP, you need to configure your GCP credentials and permissions.
+Before you can use Starlake with BigQuery, you need to configure your BigQuery credentials and permissions.
 
 ### Step 1: Create a Google Cloud Project
 
@@ -39,21 +39,18 @@ Before you can use Starlake with GCP, you need to configure your GCP credentials
 3. Enter a project name (e.g., `starlake-project`)
 4. Click **"Create"**
 
-### Step 2: Enable Required APIs
+### Step 2: Enable BigQuery API
 
 1. In the Google Cloud Console, go to **APIs & Services** > **Library**
-2. Search for and enable the following APIs:
-   - **BigQuery API**
-   - **Cloud Storage API**
-   - **Cloud Dataproc API** (if using Dataproc)
-   - **Cloud Functions API** (if using Cloud Functions)
+2. Search for **"BigQuery API"**
+3. Click on it and click **"Enable"**
 
 ### Step 3: Create a Service Account
 
 1. Go to **IAM & Admin** > **Service Accounts**
 2. Click **"Create Service Account"**
 3. Enter a name (e.g., `starlake-service-account`)
-4. Add description: "Service account for Starlake GCP integration"
+4. Add description: "Service account for Starlake BigQuery integration"
 5. Click **"Create and Continue"**
 
 ### Step 4: Assign Permissions
@@ -61,7 +58,6 @@ Before you can use Starlake with GCP, you need to configure your GCP credentials
 1. Add the following roles:
    - **BigQuery Admin**
    - **Storage Admin**
-   - **Dataproc Admin** (if using Dataproc)
    - **Service Account User**
 2. Click **"Continue"**
 3. Click **"Done"**
@@ -77,7 +73,7 @@ Before you can use Starlake with GCP, you need to configure your GCP credentials
 
 ## Configure Starlake
 
-Now let's configure Starlake to work with your GCP environment.
+Now let's configure Starlake to work with your BigQuery environment.
 
 ### Environment Variables
 
@@ -85,9 +81,9 @@ Set the following environment variables in your shell:
 
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/service-account-key.json
-export GCP_PROJECT_ID=your-project-id
-export GCP_REGION=us-central1
-export GCP_BUCKET=your-data-bucket
+export BIGQUERY_PROJECT_ID=your-project-id
+export BIGQUERY_DATASET=starlake_dataset
+export BIGQUERY_LOCATION=US
 ```
 
 ### Starlake Configuration
@@ -96,19 +92,19 @@ Create a `starlake.conf` file in your project root:
 
 ```yaml
 connections:
-  gcp:
-    type: "gcp"
-    project_id: "${GCP_PROJECT_ID}"
-    region: "${GCP_REGION}"
-    bucket: "${GCP_BUCKET}"
+  bigquery:
+    type: "bigquery"
+    project_id: "${BIGQUERY_PROJECT_ID}"
+    dataset: "${BIGQUERY_DATASET}"
+    location: "${BIGQUERY_LOCATION}"
     credentials_file: "${GOOGLE_APPLICATION_CREDENTIALS}"
     options:
-      storage_class: "STANDARD"
-      location: "US"
+      useLegacySql: false
+      allowLargeResults: true
 
 # Global settings
 settings:
-  default-connection: "gcp"
+  default-connection: "bigquery"
   default-format: "PARQUET"
   default-mode: "FILE"
 ```
@@ -118,20 +114,20 @@ settings:
 Test your connection with:
 
 ```bash
-starlake test-connection --connection gcp
+starlake test-connection --connection bigquery
 ```
 
 ## Create your first pipeline
 
-Let's create a simple data pipeline using Starlake and GCP.
+Let's create a simple data pipeline using Starlake and BigQuery.
 
 ### Step 1: Define the Extract
 
-Create `extract/gcp-sales.yml`:
+Create `extract/bigquery-sales.yml`:
 
 ```yaml
 extract:
-  connectionRef: "gcp"
+  connectionRef: "bigquery"
   tables:
     - name: "sales_data"
       schema: "public"
@@ -210,19 +206,21 @@ ORD003,CUST001,PROD003,75.25,2024-01-17,2024-01-17 09:15:00
 
 Now let's deploy your pipeline and monitor its execution.
 
+![Load Process](/img/quickstart/load.png)
+
 ### Deploy the Pipeline
 
 Run the following commands to execute your pipeline:
 
 ```bash
 # Extract data from source
-starlake extract --config extract/gcp-sales.yml
+starlake extract --config extract/bigquery-sales.yml
 
-# Load data into GCP
+# Load data into BigQuery
 starlake load --config load/sales.yml
 
 # Or run both in sequence
-starlake run --extract-config extract/gcp-sales.yml --load-config load/sales.yml
+starlake run --extract-config extract/bigquery-sales.yml --load-config load/sales.yml
 ```
 
 ### Monitor Execution
@@ -237,23 +235,37 @@ tail -f logs/starlake.log
 starlake status --job-id <job_id>
 ```
 
-#### 2. Monitor GCP Services
+#### 2. Monitor BigQuery
 
-- Check Cloud Storage for uploaded files
-- Monitor Cloud Logging for execution logs
-- Review BigQuery for data processing
+In BigQuery console or using bq command:
 
-#### 3. Verify Data in GCP
+```sql
+-- Check loaded data
+SELECT COUNT(*) as total_rows 
+FROM `your-project-id.starlake_dataset.sales_data`;
+
+-- Sample data
+SELECT * 
+FROM `your-project-id.starlake_dataset.sales_data` 
+LIMIT 10;
+
+-- Data quality check
+SELECT 
+  COUNT(*) as total_orders,
+  SUM(amount) as total_amount,
+  MIN(sale_date) as earliest_sale,
+  MAX(sale_date) as latest_sale
+FROM `your-project-id.starlake_dataset.sales_data`;
+```
+
+#### 3. Monitor Job History
 
 ```bash
-# Check loaded data in Cloud Storage
-gsutil ls gs://your-data-bucket/sales_data/
+# List recent BigQuery jobs
+bq ls --jobs --max_results=10
 
-# Sample data from BigQuery
-bq query --use_legacy_sql=false "
-SELECT COUNT(*) as total_rows 
-FROM \`your-project-id.starlake_dataset.sales_data\`
-"
+# Get job details
+bq show --job=true your-project-id:US.job_id
 ```
 
 ### Next Steps
@@ -265,7 +277,7 @@ FROM \`your-project-id.starlake_dataset.sales_data\`
 
 ## Next steps
 
-Congratulations! You've successfully set up Starlake with GCP.
+Congratulations! You've successfully set up Starlake with BigQuery.
 
 ### What's Next?
 
@@ -297,15 +309,15 @@ gcloud scheduler jobs create http starlake-pipeline \
 #### Security Enhancements
 
 - Implement IAM roles and policies
-- Set up bucket-level permissions
+- Set up dataset-level permissions
 - Use customer-managed encryption keys
 - Configure VPC service controls
 
 ### Resources
 
 - [Starlake Documentation](https://docs.starlake.ai)
-- [GCP Documentation](https://cloud.google.com/docs)
-- [GCP Best Practices](https://cloud.google.com/architecture/best-practices)
+- [BigQuery Documentation](https://cloud.google.com/bigquery/docs)
+- [BigQuery Best Practices](https://cloud.google.com/bigquery/docs/best-practices)
 - [Community Support](https://github.com/starlake-ai/starlake)
 
 ### Need Help?
@@ -313,26 +325,25 @@ gcloud scheduler jobs create http starlake-pipeline \
 If you encounter any issues:
 1. Check the troubleshooting guide
 2. Review the logs for error messages
-3. Verify GCP permissions
+3. Verify BigQuery permissions
 4. Reach out to the community
 
 ### Example Advanced Configuration
 
 ```yaml
-# Advanced GCP configuration
+# Advanced BigQuery configuration
 connections:
-  gcp:
-    type: "gcp"
-    project_id: "${GCP_PROJECT_ID}"
-    region: "${GCP_REGION}"
-    bucket: "${GCP_BUCKET}"
+  bigquery:
+    type: "bigquery"
+    project_id: "${BIGQUERY_PROJECT_ID}"
+    dataset: "${BIGQUERY_DATASET}"
+    location: "${BIGQUERY_LOCATION}"
     credentials_file: "${GOOGLE_APPLICATION_CREDENTIALS}"
     options:
-      storage_class: "STANDARD"
-      location: "US"
-      encryption: "AES256"
-      lifecycle_policy: true
-      versioning: true
+      useLegacySql: false
+      allowLargeResults: true
+      maximumBytesBilled: "1000000000"
+      useQueryCache: true
 ```
 
 </div>
