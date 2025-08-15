@@ -1,5 +1,5 @@
 {
-  "quickstarts": [
+  "guides": [
     {
       "id": "aws",
       "title": "Quickstart for Starlake and AWS",

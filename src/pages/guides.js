@@ -2,21 +2,21 @@ import Layout from '@theme/Layout';
 import React, { useEffect, useState } from 'react';
 import { FaArrowLeft, FaArrowRight, FaRegStar, FaStar } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
-import styles from './quick-start.module.css';
+import styles from './guides.module.css';
 
-import quickstartData from '../data/quickstart-data.json';
+import guidesData from '../data/guides-data.json';
 
-export default function QuickStart() {
+export default function Guides() {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [favorites, setFavorites] = useState([]);
-  const [filteredQuickstarts, setFilteredQuickstarts] = useState(quickstartData.quickstarts);
+  const [filteredGuides, setFilteredGuides] = useState(guidesData.guides);
   const [currentView, setCurrentView] = useState('list'); 
   const [selectedGuide, setSelectedGuide] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
 
-  const getQuickstartId = () => {
+  const getGuideId = () => {
     const path = window.location.pathname;
-    const match = path.match(/\/quick-start\/(.+)$/);
+    const match = path.match(/\/guides\/(.+)$/);
     return match ? match[1] : null;
   };
 
@@ -35,20 +35,20 @@ export default function QuickStart() {
   };
 
   useEffect(() => {
-    const savedFavorites = localStorage.getItem('quickstart-favorites');
+    const savedFavorites = localStorage.getItem('guides-favorites');
     if (savedFavorites) {
       setFavorites(JSON.parse(savedFavorites));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('quickstart-favorites', JSON.stringify(favorites));
+    localStorage.setItem('guides-favorites', JSON.stringify(favorites));
   }, [favorites]);
 
   useEffect(() => {
-    const id = getQuickstartId();
+    const id = getGuideId();
     if (id) {
-      const guide = quickstartData.quickstarts.find(q => q.id === id);
+      const guide = guidesData.guides.find(q => q.id === id);
       if (guide) {
         setSelectedGuide(guide);
         setCurrentView('guide');
@@ -64,12 +64,12 @@ export default function QuickStart() {
 
   useEffect(() => {
     if (selectedCategories.length === 0) {
-      setFilteredQuickstarts(quickstartData.quickstarts);
+        setFilteredGuides(guidesData.guides);
     } else {
-      const filtered = quickstartData.quickstarts.filter(quickstart =>
-        quickstart.categories.some(category => selectedCategories.includes(category))
+      const filtered = guidesData.guides.filter(guide =>
+        guide.categories.some(category => selectedCategories.includes(category))
       );
-      setFilteredQuickstarts(filtered);
+      setFilteredGuides(filtered);
     }
   }, [selectedCategories]);
 
@@ -95,12 +95,12 @@ export default function QuickStart() {
     );
   };
 
-  const handleStartAction = (quickstart) => {
-    setSelectedGuide(quickstart);
+  const handleStartAction = (guide) => {
+    setSelectedGuide(guide);
     setCurrentView('guide');
     setCurrentStep(1);
     const url = new URL(window.location);
-    url.pathname = `/quick-start/${quickstart.id}`;
+    url.pathname = `/guides/${guide.id}`;
     url.searchParams.set('step', '1');
     window.history.pushState({}, '', url);
   };
@@ -110,7 +110,7 @@ export default function QuickStart() {
     setSelectedGuide(null);
     setCurrentStep(1);
     const url = new URL(window.location);
-    url.pathname = '/quick-start';
+    url.pathname = '/guides';
     url.searchParams.delete('step');
     window.history.pushState({}, '', url);
   };
@@ -141,7 +141,7 @@ export default function QuickStart() {
         <div className={styles.filterSection}>
           <h4 className={styles.filterSectionTitle}>Choose a category</h4>
           <div className={styles.filterOptions}>
-            {quickstartData.categories.map(category => (
+            {guidesData.categories.map(category => (
               <label key={category} className={styles.filterOption}>
                 <input
                   type="checkbox"
@@ -161,13 +161,13 @@ export default function QuickStart() {
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Favorites</h2>
             <div className={styles.cardGrid}>
-              {filteredQuickstarts
-                .filter(quickstart => favorites.includes(quickstart.id))
-                .map(quickstart => (
-                  <QuickstartCard
-                    key={quickstart.id}
-                    quickstart={quickstart}
-                    isFavorite={favorites.includes(quickstart.id)}
+                  {filteredGuides
+                .filter(guide => favorites.includes(guide.id))
+                .map(guide => (
+                  <GuideCard
+                    key={guide.id}
+                    guide={guide}
+                    isFavorite={favorites.includes(guide.id)}
                     onToggleFavorite={toggleFavorite}
                     onStartAction={handleStartAction}
                   />
@@ -181,11 +181,11 @@ export default function QuickStart() {
             {favorites.length > 0 ? 'Guides' : 'Guides'}
           </h2>
           <div className={styles.cardGrid}>
-            {filteredQuickstarts.map(quickstart => (
-              <QuickstartCard
-                key={quickstart.id}
-                quickstart={quickstart}
-                isFavorite={favorites.includes(quickstart.id)}
+            {filteredGuides.map(guide => (
+              <GuideCard  
+                key={guide.id}
+                guide={guide}
+                isFavorite={favorites.includes(guide.id)}
                 onToggleFavorite={toggleFavorite}
                 onStartAction={handleStartAction}
               />
@@ -288,8 +288,8 @@ export default function QuickStart() {
 
   return (
     <Layout
-      title={currentView === 'guide' && selectedGuide ? `${selectedGuide.title} - Quick Start Guide` : "Quick Start"}
-      description={currentView === 'guide' && selectedGuide ? selectedGuide.description : "Get started with Starlake quickly"}>
+          title={currentView === 'guide' && selectedGuide ? `${selectedGuide.title} - Guide` : "Guides"}
+      description={currentView === 'guide' && selectedGuide ? selectedGuide.description : "Get started with Starlake guides"}>
       <main className={styles.main}>
         {currentView === 'list' ? renderListingView() : renderGuideView()}
       </main>
@@ -297,14 +297,14 @@ export default function QuickStart() {
   );
 }
 
-function QuickstartCard({ quickstart, isFavorite, onToggleFavorite, onStartAction }) {
+function GuideCard({ guide, isFavorite, onToggleFavorite, onStartAction }) {
   const handleCardClick = () => {
-    onStartAction(quickstart);
+    onStartAction(guide);
   };
 
   const handleFavoriteClick = (e) => {
     e.stopPropagation();
-    onToggleFavorite(quickstart.id);
+    onToggleFavorite(guide.id);
   };
 
   return (
@@ -312,8 +312,8 @@ function QuickstartCard({ quickstart, isFavorite, onToggleFavorite, onStartActio
       <div className={styles.cardHeader}>
         <div className={styles.cardIcon}>
           <img 
-            src={quickstart.icon} 
-            alt={`${quickstart.title} icon`}
+            src={guide.icon} 
+            alt={`${guide.title} icon`}
             width="32"
             height="32"
           />
@@ -332,16 +332,16 @@ function QuickstartCard({ quickstart, isFavorite, onToggleFavorite, onStartActio
       </div>
       
       <div className={styles.cardContent}>
-        <h3 className={styles.cardTitle}>{quickstart.title}</h3>
-        <p className={styles.cardDescription}>{quickstart.description}</p>
-        <p className={styles.cardSummary}>{quickstart.summary}</p>
+        <h3 className={styles.cardTitle}>{guide.title}</h3>
+        <p className={styles.cardDescription}>{guide.description}</p>
+        <p className={styles.cardSummary}>{guide.summary}</p>
       </div>
       
       <div className={styles.cardFooter}>
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onStartAction(quickstart);
+            onStartAction(guide);
           }}
           className={styles.startButton}
         >

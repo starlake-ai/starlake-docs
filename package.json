@@ -4,15 +4,15 @@
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
-    "start": "node scripts/generate-quickstart-data.js && docusaurus start",
-    "build": "node scripts/generate-quickstart-data.js && docusaurus build",
+    "start": "node scripts/generate-guides-data.js && docusaurus start",
+    "build": "node scripts/generate-guides-data.js && docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "generate-quickstart-data": "node scripts/generate-quickstart-data.js"
+    "generate-guides-data": "node scripts/generate-guides-data.js"
   },
   "dependencies": {
     "@codemirror/lang-sql": "^6.6.4",

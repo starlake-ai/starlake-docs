@@ -52,17 +52,17 @@ function parseMarkdownSections(content) {
   return sections;
 }
 
-function parseQuickstartFiles() {
-  const quickstartDir = path.join(process.cwd(), 'src/data/quickstart');
-  const folders = fs.readdirSync(quickstartDir, { withFileTypes: true })
+function parseGuidesFiles() {
+  const guidesDir = path.join(process.cwd(), 'src/data/guides');
+  const folders = fs.readdirSync(guidesDir, { withFileTypes: true })
     .filter(dirent => dirent.isDirectory())
     .map(dirent => dirent.name);
   
-  const quickstarts = [];
+  const guides = [];
   const categories = new Set();
   
   folders.forEach(folder => {
-    const folderPath = path.join(quickstartDir, folder);
+    const folderPath = path.join(guidesDir, folder);
     const files = fs.readdirSync(folderPath);
     
     const mdFile = files.find(file => file.endsWith('.md'));
@@ -79,7 +79,7 @@ function parseQuickstartFiles() {
         tagList.forEach(tag => categories.add(tag));
       }
       
-      quickstarts.push({
+      guides.push({
         id: data.id,
         title: data.title,
         description: data.description || data.summary,
@@ -97,27 +97,27 @@ function parseQuickstartFiles() {
   });
   
   return {
-    quickstarts,
+    guides,
     categories: Array.from(categories).sort()
   };
 }
 
-function generateQuickstartJSON() {
-  const data = parseQuickstartFiles();
+function generateGuidesJSON() {
+  const data = parseGuidesFiles();
   
-  const outputPath = path.join(process.cwd(), 'src/data/quickstart-data.json');
+  const outputPath = path.join(process.cwd(), 'src/data/guides-data.json');
   fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
   
-  console.log('✅ Quickstart data generated successfully!');
+  console.log('✅ Guides data generated successfully!');
   console.log(`📁 Output: ${outputPath}`);
-  console.log(`📊 Found ${data.quickstarts.length} quickstarts`);
+  console.log(`📊 Found ${data.guides.length} guides`);
   console.log(`🏷️  Categories: ${data.categories.join(', ')}`);
   
   return data;
 }
 
 if (require.main === module) {
-  generateQuickstartJSON();
+  generateGuidesJSON();
 }
 
-module.exports = { generateQuickstartJSON, parseQuickstartFiles };
+module.exports = { generateGuidesJSON, parseGuidesFiles };

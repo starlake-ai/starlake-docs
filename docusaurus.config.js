@@ -99,6 +99,11 @@ const config = {
           to: "/",
         },
         !isBlog ? {
+          to: "/guides",
+          label: "Guides",
+          position: "left",
+        } : null,
+        !isBlog ? {
           href: "https://blog.starlake.ai",
           label: "Blog",
           position: "left",
