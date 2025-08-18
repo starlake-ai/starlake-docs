@@ -30,7 +30,6 @@ export default function Guides() {
     localStorage.setItem('guides-favorites', JSON.stringify(favorites));
   }, [favorites]);
 
-  // Parse URL parameters on component mount
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const guideId = urlParams.get('guide');
