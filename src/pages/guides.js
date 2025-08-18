@@ -2,6 +2,7 @@ import Layout from '@theme/Layout';
 import React, { useEffect, useState } from 'react';
 import { FaArrowLeft, FaArrowRight, FaRegStar, FaStar } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
+import { useHistory, useLocation } from '@docusaurus/router';
 import styles from './guides.module.css';
 
 import guidesData from '../data/guides-data.json';
@@ -10,29 +11,13 @@ export default function Guides() {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [filteredGuides, setFilteredGuides] = useState(guidesData.guides);
-  const [currentView, setCurrentView] = useState('list'); 
+  const [currentView, setCurrentView] = useState('list');
   const [selectedGuide, setSelectedGuide] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
+  const history = useHistory();
+  const location = useLocation();
 
-  const getGuideId = () => {
-    const path = window.location.pathname;
-    const match = path.match(/\/guides\/(.+)$/);
-    return match ? match[1] : null;
-  };
 
-  const getCurrentStep = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const step = urlParams.get('step');
-    return step ? parseInt(step) : 1;
-  };
-
-  const updateURL = (step) => {
-    if (selectedGuide) {
-      const url = new URL(window.location);
-      url.searchParams.set('step', step.toString());
-      window.history.pushState({}, '', url);
-    }
-  };
 
   useEffect(() => {
     const savedFavorites = localStorage.getItem('guides-favorites');
@@ -46,21 +31,24 @@ export default function Guides() {
   }, [favorites]);
 
   useEffect(() => {
-    const id = getGuideId();
-    if (id) {
-      const guide = guidesData.guides.find(q => q.id === id);
+    const urlParams = new URLSearchParams(location.search);
+    const guideId = urlParams.get('guide');
+    const step = urlParams.get('step');
+    
+    if (guideId) {
+      const guide = guidesData.guides.find(g => g.id === guideId);
       if (guide) {
         setSelectedGuide(guide);
         setCurrentView('guide');
-        const step = getCurrentStep();
-        setCurrentStep(step);
-      } else {
-        setCurrentView('list');
+        setCurrentStep(step ? parseInt(step) : 1);
+        return;
       }
-    } else {
-      setCurrentView('list');
     }
-  }, []);
+    
+    setCurrentView('list');
+    setSelectedGuide(null);
+    setCurrentStep(1);
+  }, [location.search]);
 
   useEffect(() => {
     if (selectedCategories.length === 0) {
@@ -72,12 +60,6 @@ export default function Guides() {
       setFilteredGuides(filtered);
     }
   }, [selectedCategories]);
-
-  useEffect(() => {
-    if (selectedGuide && currentView === 'guide') {
-      updateURL(currentStep);
-    }
-  }, [currentStep, selectedGuide, currentView]);
 
   const toggleCategory = (category) => {
     setSelectedCategories(prev =>
@@ -99,25 +81,20 @@ export default function Guides() {
     setSelectedGuide(guide);
     setCurrentView('guide');
     setCurrentStep(1);
-    const url = new URL(window.location);
-    url.pathname = `/guides/${guide.id}`;
-    url.searchParams.set('step', '1');
-    window.history.pushState({}, '', url);
+    history.push(`/guides?guide=${guide.id}&step=1`);
   };
 
   const goBackToList = () => {
     setCurrentView('list');
     setSelectedGuide(null);
     setCurrentStep(1);
-    const url = new URL(window.location);
-    url.pathname = '/guides';
-    url.searchParams.delete('step');
-    window.history.pushState({}, '', url);
+    history.push('/guides');
   };
 
   const goToStep = (step) => {
     if (selectedGuide && step >= 1 && step <= selectedGuide.tabs.length) {
       setCurrentStep(step);
+      history.push(`/guides?guide=${selectedGuide.id}&step=${step}`);
     }
   };
 
@@ -288,7 +265,7 @@ export default function Guides() {
 
   return (
     <Layout
-          title={currentView === 'guide' && selectedGuide ? `${selectedGuide.title} - Guide` : "Guides"}
+      title={currentView === 'guide' && selectedGuide ? `${selectedGuide.title} - Guide` : "Guides"}
       description={currentView === 'guide' && selectedGuide ? selectedGuide.description : "Get started with Starlake guides"}>
       <main className={styles.main}>
         {currentView === 'list' ? renderListingView() : renderGuideView()}
