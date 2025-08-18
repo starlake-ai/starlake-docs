@@ -9,6 +9,7 @@ const iconMap = {
   aws: '/img/icons/aws.svg',
   azure: '/img/icons/azure.svg',
   gcp: '/img/icons/gcp.svg',
+  starlake: '/img/icons/starlake.png',
   default: '/img/icons/default.svg'
 };
 
