@@ -2,6 +2,7 @@ import Layout from '@theme/Layout';
 import React, { useEffect, useState } from 'react';
 import { FaArrowLeft, FaArrowRight, FaRegStar, FaStar } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 import { useHistory, useLocation } from '@docusaurus/router';
 import styles from './guides.module.css';
 
@@ -235,7 +236,11 @@ export default function Guides() {
                 </div>
                 
                 <div className={styles.stepBody}>
-                  <ReactMarkdown>{currentTab.content}</ReactMarkdown>
+                  <ReactMarkdown 
+                    rehypePlugins={[rehypeRaw]}
+                  >
+                    {currentTab.content}
+                  </ReactMarkdown>
                 </div>
 
                 <div className={styles.navigation}>
