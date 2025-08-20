@@ -1,90 +1,6 @@
 {
   "guides": [
     {
-      "id": "starlake-load-csv-files",
-      "title": "Load CSV Files into your Database",
-      "description": "Learn how to load CSV files into your database.",
-      "categories": [
-        "Starlake",
-        "Load"
-      ],
-      "icon": "/img/icons/starlake.png",
-      "tags": [
-        "Starlake",
-        "Load"
-      ],
-      "level": "Beginner",
-      "content": "## Create a domain (Optional)\n\n__Prerequisites__\n\n- A Starlake account\n\nA domain is a logical grouping of your data assets in Starlake. It maps to a schema in your database also known as a dataset in BigQuery. If you don't have a domain yet, you can create one or use an existing one if you already created it in Starlake.\n\n1. In your Starlake project, navigate to the \"Load\" section.\n2. Click on \"Add Domain\" and enter a domain name. If this domain already exists in the database, it will be mapped to the existing schema. We'll name our domain, \"starbake\". \n3. You may optionally add a description your domain. This is useful for documentation purposes and for AI assistance. This description will be saved in the database as a comment.\n4. Click \"Create\" to finalize the domain creation.\n\n![](/img/guides/load-csv-files/step1.png)\n\nWe are now ready to load our CSV files into the schema \"starbake\" of our database.\n\n\n## Infer your table name from the CSV file\n\nPrepare a sample CSV file with a few rows of data that represent the structure you want to import and do not forget to include headers. Make sure the use use the correct data types for each column and the same delimiter as your CSV file.\n\n1. Click on \"Load\" and select \"CSV / JSON / XML\".\n2. Choose the CSV file you want to load.\n![](/img/guides/load-csv-files/step2.png)\nA preview of the file will be displayed.\nStarlake will also infer the table name from the filename. Update the table name if necessary.\nIf A.I. is enabled, you may request it to suggest a description for the table by clicking on the \"A.I.\" button inside the \"Description\" field.\n1. If you do not want to load the preview data, you can disable the \"Load Data\" option.\n2. Hit the \"Next\" button.\n\n## Infer table schema from the CSV file\n\nStarlake will automatically infer the table schema from the CSV file. You can review and modify the inferred schema if necessary.\n\n![](/img/guides/load-csv-files/step3.1.png)\n\nTo customize the inferred schema, you can edit the data types, and invoke the A.I. assistant to suggest descriptions as needed. This allows you to ensure that the schema matches your requirements before loading the data.\n\nYou can also define the primary key for the table by selecting one or more columns in the \"Primary Key\" section. This is important for optimizing query performance and improving A.I. suggestions when building transformations.\n\nHit the \"Finish\" button to complete the process.\n\nIf you kept the \"Load Data\" option enabled, Starlake will start loading the data from the CSV file into the specified table and display the results.\n\n![](/img/guides/load-csv-files/step3.2.png)\n\n\n## Going Further\n\nOnce you inferred the table schema and loaded the data, you can start building transformations on top of it. Starlake provides a powerful SQL editor and a visual transformation builder to help you create complex data pipelines with ease.\n\nYou can also:\n\n- define write strategies for your data loads, such as \"append\" or \"overwrite\", \"slow changing dimensions\" ..., to control how new data is integrated into your tables.\n- schedule regular data loads and define freshness criteria for your data to ensure it is up-to-date and relevant.\n- create expectations for your data to ensure quality and consistency.\n- Add new fields through SQL transformations during the load process.\n- Encrypt sensitive data to protect it at rest during the load process.\n- Add access controls to your data to ensure only authorized users can view or modify it.",
-      "tabs": [
-        {
-          "id": 1,
-          "label": "Create a domain (Optional)",
-          "content": "__Prerequisites__\n\n- A Starlake account\n\nA domain is a logical grouping of your data assets in Starlake. It maps to a schema in your database also known as a dataset in BigQuery. If you don't have a domain yet, you can create one or use an existing one if you already created it in Starlake.\n\n1. In your Starlake project, navigate to the \"Load\" section.\n2. Click on \"Add Domain\" and enter a domain name. If this domain already exists in the database, it will be mapped to the existing schema. We'll name our domain, \"starbake\". \n3. You may optionally add a description your domain. This is useful for documentation purposes and for AI assistance. This description will be saved in the database as a comment.\n4. Click \"Create\" to finalize the domain creation.\n\n![](/img/guides/load-csv-files/step1.png)\n\nWe are now ready to load our CSV files into the schema \"starbake\" of our database."
-        },
-        {
-          "id": 2,
-          "label": "Infer your table name from the CSV file",
-          "content": "Prepare a sample CSV file with a few rows of data that represent the structure you want to import and do not forget to include headers. Make sure the use use the correct data types for each column and the same delimiter as your CSV file.\n\n1. Click on \"Load\" and select \"CSV / JSON / XML\".\n2. Choose the CSV file you want to load.\n![](/img/guides/load-csv-files/step2.png)\nA preview of the file will be displayed.\nStarlake will also infer the table name from the filename. Update the table name if necessary.\nIf A.I. is enabled, you may request it to suggest a description for the table by clicking on the \"A.I.\" button inside the \"Description\" field.\n1. If you do not want to load the preview data, you can disable the \"Load Data\" option.\n2. Hit the \"Next\" button."
-        },
-        {
-          "id": 3,
-          "label": "Infer table schema from the CSV file",
-          "content": "Starlake will automatically infer the table schema from the CSV file. You can review and modify the inferred schema if necessary.\n\n![](/img/guides/load-csv-files/step3.1.png)\n\nTo customize the inferred schema, you can edit the data types, and invoke the A.I. assistant to suggest descriptions as needed. This allows you to ensure that the schema matches your requirements before loading the data.\n\nYou can also define the primary key for the table by selecting one or more columns in the \"Primary Key\" section. This is important for optimizing query performance and improving A.I. suggestions when building transformations.\n\nHit the \"Finish\" button to complete the process.\n\nIf you kept the \"Load Data\" option enabled, Starlake will start loading the data from the CSV file into the specified table and display the results.\n\n![](/img/guides/load-csv-files/step3.2.png)"
-        },
-        {
-          "id": 4,
-          "label": "Going Further",
-          "content": "Once you inferred the table schema and loaded the data, you can start building transformations on top of it. Starlake provides a powerful SQL editor and a visual transformation builder to help you create complex data pipelines with ease.\n\nYou can also:\n\n- define write strategies for your data loads, such as \"append\" or \"overwrite\", \"slow changing dimensions\" ..., to control how new data is integrated into your tables.\n- schedule regular data loads and define freshness criteria for your data to ensure it is up-to-date and relevant.\n- create expectations for your data to ensure quality and consistency.\n- Add new fields through SQL transformations during the load process.\n- Encrypt sensitive data to protect it at rest during the load process.\n- Add access controls to your data to ensure only authorized users can view or modify it."
-        }
-      ]
-    },
-    {
-      "id": "starlake-snowflake-project-setup",
-      "title": "Project Setup on Snowflake",
-      "description": "Learn how to connect Starlake with your Snowflake data sources.",
-      "categories": [
-        "Snowflake"
-      ],
-      "icon": "/img/icons/snowflake.svg",
-      "tags": [
-        "Snowflake"
-      ],
-      "level": "Beginner",
-      "content": "## Create a New Project\n\n__Prerequisites__\n\n- A Snowflake account\n- Basic knowledge of Snowflake services\n- Starlake installed and running\n\n![Step 1](/img/guides/starlake-snowflake-project-setup/step1.png \"Step 1\")\n\n1. Login to Starlake. If you don't have an account, you'll need to create one.\n2. Click on the \"New Project\" button. You'll be prompted to enter a name and description for your project.\n3. Hit the \"Next\" button to configure your database connection.\n\n## Configure Snowflake Connection\n\n1. Under \"Snowflake Configuration\", enter your Snowflake account details:\n![Step 2]( /img/guides/starlake-snowflake-project-setup/step2.1.png \"Step 2\")\n   - Account Name in the form <org_name>.<account_name> (e.g., qbuqrxc-or28007)\n   - Username: <your_username> as listed in Snowsight in the \"Admin / Users & roles\" section\n   - Password: you may here use a programmatic access token for authentication see [here](https://docs.snowflake.com/en/user-guide/programmatic-access-tokens#generating-a-programmatic-access-token))\n   - Warehouse: COMPUTE_WH by default\n   - Database: <your_database>\n   - Default schema (PUBLIC by default)\n  Any extra options required by your organization may be added by clicking the \"Advanced Options\" button.\n2. Test the connection to ensure Starlake can access your Snowflake account.\n![Step 2]( /img/guides/starlake-snowflake-project-setup/step2.2.png \"Step 2\")\n3. Hit the \"Next\" button to select your orchestrator.\n\n\n## Select Orchestrator (Optional)\n\n![Step 3]( /img/guides/starlake-snowflake-project-setup/step3.png \"Step 3\")\n\n1. Enable orchestration.\n2. Choose your preferred orchestrator from the list provided (Snowflake Task by default).\n3. Hit the \"Next\" button to proceed to the final step. Configure your Git integration settings as needed.\n\n\n## Configure Git Integration (Optional)\n\nBy default, Starlake uses an internal Git repository where you can commit your changes but not pushe them to an external Git repository.\nNote: You can always download later your project files and Git history to a local folder from inside Starlake.\n\nTo configure Git integration:\n\n![Step 4]( /img/guides/starlake-snowflake-project-setup/step4.png \"Step 4\")\n\n1. Deselect \"Use internal Git repository\" if you want to use an external Git provider.\n2. Select your Git provider (e.g., GitHub, GitLab, Bitbucket).\n3. Enter your Git repository details:\n   - Repository URL: <your_repository_url>\n   - Authentication Method: \"Personal Access Token\" is currently supported.\n   - Personal Access Token: <your_personal_access_token> (see [here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) for more details).\n4. Test your connection to ensure Starlake can access your Git repository.\n5. Hit the \"Next\" button to configure AI integration.\n\n\n## Configure AI Integration (Optional)\n\n![Step 5]( /img/guides/starlake-snowflake-project-setup/step5.png \"Step 5\")\n\n1. Enable AI integration if desired.\n2. Choose your preferred AI provider from the list provided (e.g., OpenAI).\n3. Enter your AI provider details:\n   - API Key: <your_api_key> (see [here](https://platform.openai.com/api-keys))\n4. Hit the \"Next\" button to proceed to the final step. Review your project settings and click \"Finish\" to complete the setup.\n\n## Review and Finish\n\n![Step 6]( /img/guides/starlake-snowflake-project-setup/step6.png \"Step 6\")\n\n1. Review all your project settings.\n2. Click \"Finish\" to complete the setup.",
-      "tabs": [
-        {
-          "id": 1,
-          "label": "Create a New Project",
-          "content": "__Prerequisites__\n\n- A Snowflake account\n- Basic knowledge of Snowflake services\n- Starlake installed and running\n\n![Step 1](/img/guides/starlake-snowflake-project-setup/step1.png \"Step 1\")\n\n1. Login to Starlake. If you don't have an account, you'll need to create one.\n2. Click on the \"New Project\" button. You'll be prompted to enter a name and description for your project.\n3. Hit the \"Next\" button to configure your database connection."
-        },
-        {
-          "id": 2,
-          "label": "Configure Snowflake Connection",
-          "content": "1. Under \"Snowflake Configuration\", enter your Snowflake account details:\n![Step 2]( /img/guides/starlake-snowflake-project-setup/step2.1.png \"Step 2\")\n   - Account Name in the form <org_name>.<account_name> (e.g., qbuqrxc-or28007)\n   - Username: <your_username> as listed in Snowsight in the \"Admin / Users & roles\" section\n   - Password: you may here use a programmatic access token for authentication see [here](https://docs.snowflake.com/en/user-guide/programmatic-access-tokens#generating-a-programmatic-access-token))\n   - Warehouse: COMPUTE_WH by default\n   - Database: <your_database>\n   - Default schema (PUBLIC by default)\n  Any extra options required by your organization may be added by clicking the \"Advanced Options\" button.\n2. Test the connection to ensure Starlake can access your Snowflake account.\n![Step 2]( /img/guides/starlake-snowflake-project-setup/step2.2.png \"Step 2\")\n3. Hit the \"Next\" button to select your orchestrator."
-        },
-        {
-          "id": 3,
-          "label": "Select Orchestrator (Optional)",
-          "content": "![Step 3]( /img/guides/starlake-snowflake-project-setup/step3.png \"Step 3\")\n\n1. Enable orchestration.\n2. Choose your preferred orchestrator from the list provided (Snowflake Task by default).\n3. Hit the \"Next\" button to proceed to the final step. Configure your Git integration settings as needed."
-        },
-        {
-          "id": 4,
-          "label": "Configure Git Integration (Optional)",
-          "content": "By default, Starlake uses an internal Git repository where you can commit your changes but not pushe them to an external Git repository.\nNote: You can always download later your project files and Git history to a local folder from inside Starlake.\n\nTo configure Git integration:\n\n![Step 4]( /img/guides/starlake-snowflake-project-setup/step4.png \"Step 4\")\n\n1. Deselect \"Use internal Git repository\" if you want to use an external Git provider.\n2. Select your Git provider (e.g., GitHub, GitLab, Bitbucket).\n3. Enter your Git repository details:\n   - Repository URL: <your_repository_url>\n   - Authentication Method: \"Personal Access Token\" is currently supported.\n   - Personal Access Token: <your_personal_access_token> (see [here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) for more details).\n4. Test your connection to ensure Starlake can access your Git repository.\n5. Hit the \"Next\" button to configure AI integration."
-        },
-        {
-          "id": 5,
-          "label": "Configure AI Integration (Optional)",
-          "content": "![Step 5]( /img/guides/starlake-snowflake-project-setup/step5.png \"Step 5\")\n\n1. Enable AI integration if desired.\n2. Choose your preferred AI provider from the list provided (e.g., OpenAI).\n3. Enter your AI provider details:\n   - API Key: <your_api_key> (see [here](https://platform.openai.com/api-keys))\n4. Hit the \"Next\" button to proceed to the final step. Review your project settings and click \"Finish\" to complete the setup."
-        },
-        {
-          "id": 6,
-          "label": "Review and Finish",
-          "content": "![Step 6]( /img/guides/starlake-snowflake-project-setup/step6.png \"Step 6\")\n\n1. Review all your project settings.\n2. Click \"Finish\" to complete the setup."
-        }
-      ]
-    },
-    {
       "id": "starlake-snowflake-native-app-install",
       "title": "Install Starlake Native App from Snowflake Marketplace",
       "description": "Learn how to install Starlake as a Snowflake Native App from the Snowflake Marketplace.",
@@ -119,11 +35,167 @@
           "content": "1. Once the app URL is generated, click on it to access Starlake.\n2. You may be prompted to log in with your Snowflake credentials.\n3. After logging in, you can start using Starlake for your data integration and analytics needs.\n4. The first time you access Starlake, you will be able to set the default root password for the root user (admin@localhost.localdomain)."
         }
       ]
+    },
+    {
+      "id": "project-setup-on-snowflake",
+      "title": "Project Setup on Snowflake",
+      "description": "Learn how to connect Starlake with your Snowflake data sources.",
+      "categories": [
+        "Snowflake"
+      ],
+      "icon": "/img/icons/snowflake.svg",
+      "tags": [
+        "Snowflake"
+      ],
+      "level": "Beginner",
+      "content": "## Create a New Project\n\n\n__Prerequisites__\n\n- A Snowflake account\n- Basic knowledge of Snowflake services\n- Starlake installed and running\n\n![Step 1](/img/guides/project-setup-on-snowflake/step1.png \"Step 1\")\n\n1. Login to Starlake. If you don't have an account, you'll need to create one.\n2. Click on the \"New Project\" button. You'll be prompted to enter a name and description for your project.\n3. Hit the \"Next\" button to configure your database connection.\n\n## Configure Snowflake Connection\n\n1. Under \"Snowflake Configuration\", enter your Snowflake account details:\n![Step 2]( /img/guides/project-setup-on-snowflake/step2.1.png \"Step 2\")\n   - Account Name in the form <org_name>.<account_name> (e.g., qbuqrxc-or28007)\n   - Username: <your_username> as listed in Snowsight in the \"Admin / Users & roles\" section\n   - Password: you may here use a programmatic access token for authentication see [here](https://docs.snowflake.com/en/user-guide/programmatic-access-tokens#generating-a-programmatic-access-token))\n   - Warehouse: COMPUTE_WH by default\n   - Database: <your_database>\n   - Default schema (PUBLIC by default)\n  Any extra options required by your organization may be added by clicking the \"Advanced Options\" button.\n2. Test the connection to ensure Starlake can access your Snowflake account.\n![Step 2]( /img/guides/project-setup-on-snowflake/step2.2.png \"Step 2\")\n3. Hit the \"Next\" button to select your orchestrator.\n\n\n## Select Orchestrator (Optional)\n\n![Step 3]( /img/guides/project-setup-on-snowflake/step3.png \"Step 3\")\n\n1. Enable orchestration.\n2. Choose your preferred orchestrator from the list provided (Snowflake Task by default).\n3. Hit the \"Next\" button to proceed to the final step. Configure your Git integration settings as needed.\n\n\n## Configure Git Integration (Optional)\n\nBy default, Starlake uses an internal Git repository where you can commit your changes but not pushe them to an external Git repository.\nNote: You can always download later your project files and Git history to a local folder from inside Starlake.\n\nTo configure Git integration:\n\n![Step 4]( /img/guides/project-setup-on-snowflake/step4.png \"Step 4\")\n\n1. Deselect \"Use internal Git repository\" if you want to use an external Git provider.\n2. Select your Git provider (e.g., GitHub, GitLab, Bitbucket).\n3. Enter your Git repository details:\n   - Repository URL: <your_repository_url>\n   - Authentication Method: \"Personal Access Token\" is currently supported.\n   - Personal Access Token: <your_personal_access_token> (see [here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) for more details).\n4. Test your connection to ensure Starlake can access your Git repository.\n5. Hit the \"Next\" button to configure AI integration.\n\n\n## Configure AI Integration (Optional)\n\n![Step 5]( /img/guides/project-setup-on-snowflake/step5.png \"Step 5\")\n\n1. Enable AI integration if desired.\n2. Choose your preferred AI provider from the list provided (e.g., OpenAI).\n3. Enter your AI provider details:\n   - API Key: <your_api_key> (see [here](https://platform.openai.com/api-keys))\n4. Hit the \"Next\" button to proceed to the final step. Review your project settings and click \"Finish\" to complete the setup.\n\n## Review and Finish\n\n![Step 6]( /img/guides/project-setup-on-snowflake/step6.png \"Step 6\")\n\n1. Review all your project settings.\n2. Click \"Finish\" to complete the setup.\n\n## Watch Video \n\n<div>\n<video width=\"100%\" height=\"100%\" controls>\n  <source src=\"/img/guides/project-setup-on-snowflake/project-setup-on-snowflake.mp4\" type=\"video/mp4\">\n  Your browser does not support the video tag.\n</video>\n</div>",
+      "tabs": [
+        {
+          "id": 1,
+          "label": "Create a New Project",
+          "content": "__Prerequisites__\n\n- A Snowflake account\n- Basic knowledge of Snowflake services\n- Starlake installed and running\n\n![Step 1](/img/guides/project-setup-on-snowflake/step1.png \"Step 1\")\n\n1. Login to Starlake. If you don't have an account, you'll need to create one.\n2. Click on the \"New Project\" button. You'll be prompted to enter a name and description for your project.\n3. Hit the \"Next\" button to configure your database connection."
+        },
+        {
+          "id": 2,
+          "label": "Configure Snowflake Connection",
+          "content": "1. Under \"Snowflake Configuration\", enter your Snowflake account details:\n![Step 2]( /img/guides/project-setup-on-snowflake/step2.1.png \"Step 2\")\n   - Account Name in the form <org_name>.<account_name> (e.g., qbuqrxc-or28007)\n   - Username: <your_username> as listed in Snowsight in the \"Admin / Users & roles\" section\n   - Password: you may here use a programmatic access token for authentication see [here](https://docs.snowflake.com/en/user-guide/programmatic-access-tokens#generating-a-programmatic-access-token))\n   - Warehouse: COMPUTE_WH by default\n   - Database: <your_database>\n   - Default schema (PUBLIC by default)\n  Any extra options required by your organization may be added by clicking the \"Advanced Options\" button.\n2. Test the connection to ensure Starlake can access your Snowflake account.\n![Step 2]( /img/guides/project-setup-on-snowflake/step2.2.png \"Step 2\")\n3. Hit the \"Next\" button to select your orchestrator."
+        },
+        {
+          "id": 3,
+          "label": "Select Orchestrator (Optional)",
+          "content": "![Step 3]( /img/guides/project-setup-on-snowflake/step3.png \"Step 3\")\n\n1. Enable orchestration.\n2. Choose your preferred orchestrator from the list provided (Snowflake Task by default).\n3. Hit the \"Next\" button to proceed to the final step. Configure your Git integration settings as needed."
+        },
+        {
+          "id": 4,
+          "label": "Configure Git Integration (Optional)",
+          "content": "By default, Starlake uses an internal Git repository where you can commit your changes but not pushe them to an external Git repository.\nNote: You can always download later your project files and Git history to a local folder from inside Starlake.\n\nTo configure Git integration:\n\n![Step 4]( /img/guides/project-setup-on-snowflake/step4.png \"Step 4\")\n\n1. Deselect \"Use internal Git repository\" if you want to use an external Git provider.\n2. Select your Git provider (e.g., GitHub, GitLab, Bitbucket).\n3. Enter your Git repository details:\n   - Repository URL: <your_repository_url>\n   - Authentication Method: \"Personal Access Token\" is currently supported.\n   - Personal Access Token: <your_personal_access_token> (see [here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) for more details).\n4. Test your connection to ensure Starlake can access your Git repository.\n5. Hit the \"Next\" button to configure AI integration."
+        },
+        {
+          "id": 5,
+          "label": "Configure AI Integration (Optional)",
+          "content": "![Step 5]( /img/guides/project-setup-on-snowflake/step5.png \"Step 5\")\n\n1. Enable AI integration if desired.\n2. Choose your preferred AI provider from the list provided (e.g., OpenAI).\n3. Enter your AI provider details:\n   - API Key: <your_api_key> (see [here](https://platform.openai.com/api-keys))\n4. Hit the \"Next\" button to proceed to the final step. Review your project settings and click \"Finish\" to complete the setup."
+        },
+        {
+          "id": 6,
+          "label": "Review and Finish",
+          "content": "![Step 6]( /img/guides/project-setup-on-snowflake/step6.png \"Step 6\")\n\n1. Review all your project settings.\n2. Click \"Finish\" to complete the setup."
+        },
+        {
+          "id": 7,
+          "label": "Watch Video ",
+          "content": "<div>\n<video width=\"100%\" height=\"100%\" controls>\n  <source src=\"/img/guides/project-setup-on-snowflake/project-setup-on-snowflake.mp4\" type=\"video/mp4\">\n  Your browser does not support the video tag.\n</video>\n</div>"
+        }
+      ]
+    },
+    {
+      "id": "starlake-load-csv-files",
+      "title": "Load CSV Files into your Database",
+      "description": "Learn how to load CSV files into your database.",
+      "categories": [
+        "Starlake",
+        "Load"
+      ],
+      "icon": "/img/icons/starlake.png",
+      "tags": [
+        "Starlake",
+        "Load"
+      ],
+      "level": "Beginner",
+      "content": "## Create a domain (Optional)\n\n\nA domain is a logical grouping of your data assets in Starlake. It maps to a schema in your database also known as a dataset in BigQuery. If you don't have a domain yet, you can create one or use an existing one if you already created it in Starlake.\n\n1. In your Starlake project, navigate to the \"Load\" section.\n2. Click on \"Add Domain\" and enter a domain name. If this domain already exists in the database, it will be mapped to the existing schema. We'll name our domain, \"starbake\". \n3. You may optionally add a description your domain. This is useful for documentation purposes and for AI assistance. This description will be saved in the database as a comment.\n4. Click \"Create\" to finalize the domain creation.\n\n![](/img/guides/load-csv-files/step1.png)\n\nWe are now ready to load our CSV files into the schema \"starbake\" of our database.\n\n\n## Infer your table name from the CSV file\n\nPrepare a sample CSV file with a few rows of data that represent the structure you want to import and do not forget to include headers. Make sure the use use the correct data types for each column and the same delimiter as your CSV file.\n\n1. Click on \"Load\" and select \"CSV / JSON / XML\".\n2. Choose the CSV file you want to load.\n![](/img/guides/load-csv-files/step2.png)\nA preview of the file will be displayed.\nStarlake will also infer the table name from the filename. Update the table name if necessary.\nIf A.I. is enabled, you may request it to suggest a description for the table by clicking on the \"A.I.\" button inside the \"Description\" field.\n1. If you do not want to load the preview data, you can disable the \"Load Data\" option.\n2. Hit the \"Next\" button.\n\n## Infer table schema from the CSV file\n\nStarlake will automatically infer the table schema from the CSV file. You can review and modify the inferred schema if necessary.\n\n![](/img/guides/load-csv-files/step3.1.png)\n\nTo customize the inferred schema, you can edit the data types, and invoke the A.I. assistant to suggest descriptions as needed. This allows you to ensure that the schema matches your requirements before loading the data.\n\nYou can also define the primary key for the table by selecting one or more columns in the \"Primary Key\" section. This is important for optimizing query performance and improving A.I. suggestions when building transformations.\n\nHit the \"Finish\" button to complete the process.\n\nIf you kept the \"Load Data\" option enabled, Starlake will start loading the data from the CSV file into the specified table and display the results.\n\n![](/img/guides/load-csv-files/step3.2.png)\n\n\n## Going Further\n\nOnce you inferred the table schema and loaded the data, you can start building transformations on top of it. Starlake provides a powerful SQL editor and a visual transformation builder to help you create complex data pipelines with ease.\n\nYou can also:\n\n- define write strategies for your data loads, such as \"append\" or \"overwrite\", \"slow changing dimensions\" ..., to control how new data is integrated into your tables.\n- schedule regular data loads and define freshness criteria for your data to ensure it is up-to-date and relevant.\n- create expectations for your data to ensure quality and consistency.\n- Add new fields through SQL transformations during the load process.\n- Encrypt sensitive data to protect it at rest during the load process.\n- Add access controls to your data to ensure only authorized users can view or modify it.",
+      "tabs": [
+        {
+          "id": 1,
+          "label": "Create a domain (Optional)",
+          "content": "A domain is a logical grouping of your data assets in Starlake. It maps to a schema in your database also known as a dataset in BigQuery. If you don't have a domain yet, you can create one or use an existing one if you already created it in Starlake.\n\n1. In your Starlake project, navigate to the \"Load\" section.\n2. Click on \"Add Domain\" and enter a domain name. If this domain already exists in the database, it will be mapped to the existing schema. We'll name our domain, \"starbake\". \n3. You may optionally add a description your domain. This is useful for documentation purposes and for AI assistance. This description will be saved in the database as a comment.\n4. Click \"Create\" to finalize the domain creation.\n\n![](/img/guides/load-csv-files/step1.png)\n\nWe are now ready to load our CSV files into the schema \"starbake\" of our database."
+        },
+        {
+          "id": 2,
+          "label": "Infer your table name from the CSV file",
+          "content": "Prepare a sample CSV file with a few rows of data that represent the structure you want to import and do not forget to include headers. Make sure the use use the correct data types for each column and the same delimiter as your CSV file.\n\n1. Click on \"Load\" and select \"CSV / JSON / XML\".\n2. Choose the CSV file you want to load.\n![](/img/guides/load-csv-files/step2.png)\nA preview of the file will be displayed.\nStarlake will also infer the table name from the filename. Update the table name if necessary.\nIf A.I. is enabled, you may request it to suggest a description for the table by clicking on the \"A.I.\" button inside the \"Description\" field.\n1. If you do not want to load the preview data, you can disable the \"Load Data\" option.\n2. Hit the \"Next\" button."
+        },
+        {
+          "id": 3,
+          "label": "Infer table schema from the CSV file",
+          "content": "Starlake will automatically infer the table schema from the CSV file. You can review and modify the inferred schema if necessary.\n\n![](/img/guides/load-csv-files/step3.1.png)\n\nTo customize the inferred schema, you can edit the data types, and invoke the A.I. assistant to suggest descriptions as needed. This allows you to ensure that the schema matches your requirements before loading the data.\n\nYou can also define the primary key for the table by selecting one or more columns in the \"Primary Key\" section. This is important for optimizing query performance and improving A.I. suggestions when building transformations.\n\nHit the \"Finish\" button to complete the process.\n\nIf you kept the \"Load Data\" option enabled, Starlake will start loading the data from the CSV file into the specified table and display the results.\n\n![](/img/guides/load-csv-files/step3.2.png)"
+        },
+        {
+          "id": 4,
+          "label": "Going Further",
+          "content": "Once you inferred the table schema and loaded the data, you can start building transformations on top of it. Starlake provides a powerful SQL editor and a visual transformation builder to help you create complex data pipelines with ease.\n\nYou can also:\n\n- define write strategies for your data loads, such as \"append\" or \"overwrite\", \"slow changing dimensions\" ..., to control how new data is integrated into your tables.\n- schedule regular data loads and define freshness criteria for your data to ensure it is up-to-date and relevant.\n- create expectations for your data to ensure quality and consistency.\n- Add new fields through SQL transformations during the load process.\n- Encrypt sensitive data to protect it at rest during the load process.\n- Add access controls to your data to ensure only authorized users can view or modify it."
+        }
+      ]
+    },
+    {
+      "id": "starlake-load-json-files",
+      "title": "Load JSON Files into your Database",
+      "description": "Learn how to load JSON files into your database.",
+      "categories": [
+        "Starlake",
+        "Load"
+      ],
+      "icon": "/img/icons/starlake.png",
+      "tags": [
+        "Starlake",
+        "Load"
+      ],
+      "level": "Beginner",
+      "content": "## Create a domain (Optional)\n\n\nA domain is a logical grouping of your data assets in Starlake. It maps to a schema in your database also known as a dataset in BigQuery. If you don't have a domain yet, you can create one or use an existing one if you already created it in Starlake.\n\n1. In your Starlake project, navigate to the \"Load\" section.\n2. Click on \"Add Domain\" and enter a domain name. If this domain already exists in the database, it will be mapped to the existing schema. We'll name our domain, \"starbake\". \n3. You may optionally add a description your domain. This is useful for documentation purposes and for AI assistance. This description will be saved in the database as a comment.\n4. Click \"Create\" to finalize the domain creation.\n\n![](/img/guides/load-json-files/step1.png)\n\nWe are now ready to load our JSON files into the schema \"starbake\" of our database.\n\n\n## Infer your table name from the JSON file\n\nPrepare a sample JSON file with a few rows of data that represent the structure you want to import. This may be an array of objects or newline-delimited JSON file (JSONL format).\n\n1. Click on \"Load\" and select \"CSV / JSON / XML\".\n2. Choose the JSON file you want to load.\n![](/img/guides/load-json-files/step2.png)\nA preview of the file will be displayed.\nStarlake will also infer the table name from the filename. Update the table name if necessary.\nIf A.I. is enabled, you may request it to suggest a description for the table by clicking on the \"A.I.\" button inside the \"Description\" field.\n\nWhen the JSON file contains nested and/or repeated structures, Starlake will automatically flatten them into separate columns. You can review and modify the inferred schema if necessary.\nThis is however only supported on BigQuery and Databricks.\n\nOn Snowflake, only single level JSON files are flattened to multiple columns. If you do not want to flatten the JSON file, you can choose to load it as a single column by enabling the \"Load as Single Column\" option.\n\n1. If you do not want to load the preview data, you can disable the \"Load Data\" option.\n2. Hit the \"Next\" button.\n\n## Infer table schema from the JSON file\n\nStarlake will automatically infer the table schema from the JSON file. You can review and modify the inferred schema if necessary.\n\n![](/img/guides/load-json-files/step3.1.png)\n\nTo customize the inferred schema, you can edit the data types, and invoke the A.I. assistant to suggest descriptions as needed. This allows you to ensure that the schema matches your requirements before loading the data.\n\nYou can also define the primary key for the table by selecting one or more columns in the \"Primary Key\" section. This is important for optimizing query performance and improving A.I. suggestions when building transformations.\n\nHit the \"Finish\" button to complete the process.\n\nIf you kept the \"Load Data\" option enabled, Starlake will start loading the data from the JSON file into the specified table and display the results.\n\n![](/img/guides/load-json-files/step3.2.png)\n\n\n## Going Further\n\nOnce you inferred the table schema and loaded the data, you can start building transformations on top of it. Starlake provides a powerful SQL editor and a visual transformation builder to help you create complex data pipelines with ease.\n\nYou can also:\n\n- define write strategies for your data loads, such as \"append\" or \"overwrite\", \"slow changing dimensions\" ..., to control how new data is integrated into your tables.\n- schedule regular data loads and define freshness criteria for your data to ensure it is up-to-date and relevant.\n- create expectations for your data to ensure quality and consistency.\n- Add new fields through SQL transformations during the load process.\n- Encrypt sensitive data to protect it at rest during the load process.\n- Add access controls to your data to ensure only authorized users can view or modify it.",
+      "tabs": [
+        {
+          "id": 1,
+          "label": "Create a domain (Optional)",
+          "content": "A domain is a logical grouping of your data assets in Starlake. It maps to a schema in your database also known as a dataset in BigQuery. If you don't have a domain yet, you can create one or use an existing one if you already created it in Starlake.\n\n1. In your Starlake project, navigate to the \"Load\" section.\n2. Click on \"Add Domain\" and enter a domain name. If this domain already exists in the database, it will be mapped to the existing schema. We'll name our domain, \"starbake\". \n3. You may optionally add a description your domain. This is useful for documentation purposes and for AI assistance. This description will be saved in the database as a comment.\n4. Click \"Create\" to finalize the domain creation.\n\n![](/img/guides/load-json-files/step1.png)\n\nWe are now ready to load our JSON files into the schema \"starbake\" of our database."
+        },
+        {
+          "id": 2,
+          "label": "Infer your table name from the JSON file",
+          "content": "Prepare a sample JSON file with a few rows of data that represent the structure you want to import. This may be an array of objects or newline-delimited JSON file (JSONL format).\n\n1. Click on \"Load\" and select \"CSV / JSON / XML\".\n2. Choose the JSON file you want to load.\n![](/img/guides/load-json-files/step2.png)\nA preview of the file will be displayed.\nStarlake will also infer the table name from the filename. Update the table name if necessary.\nIf A.I. is enabled, you may request it to suggest a description for the table by clicking on the \"A.I.\" button inside the \"Description\" field.\n\nWhen the JSON file contains nested and/or repeated structures, Starlake will automatically flatten them into separate columns. You can review and modify the inferred schema if necessary.\nThis is however only supported on BigQuery and Databricks.\n\nOn Snowflake, only single level JSON files are flattened to multiple columns. If you do not want to flatten the JSON file, you can choose to load it as a single column by enabling the \"Load as Single Column\" option.\n\n1. If you do not want to load the preview data, you can disable the \"Load Data\" option.\n2. Hit the \"Next\" button."
+        },
+        {
+          "id": 3,
+          "label": "Infer table schema from the JSON file",
+          "content": "Starlake will automatically infer the table schema from the JSON file. You can review and modify the inferred schema if necessary.\n\n![](/img/guides/load-json-files/step3.1.png)\n\nTo customize the inferred schema, you can edit the data types, and invoke the A.I. assistant to suggest descriptions as needed. This allows you to ensure that the schema matches your requirements before loading the data.\n\nYou can also define the primary key for the table by selecting one or more columns in the \"Primary Key\" section. This is important for optimizing query performance and improving A.I. suggestions when building transformations.\n\nHit the \"Finish\" button to complete the process.\n\nIf you kept the \"Load Data\" option enabled, Starlake will start loading the data from the JSON file into the specified table and display the results.\n\n![](/img/guides/load-json-files/step3.2.png)"
+        },
+        {
+          "id": 4,
+          "label": "Going Further",
+          "content": "Once you inferred the table schema and loaded the data, you can start building transformations on top of it. Starlake provides a powerful SQL editor and a visual transformation builder to help you create complex data pipelines with ease.\n\nYou can also:\n\n- define write strategies for your data loads, such as \"append\" or \"overwrite\", \"slow changing dimensions\" ..., to control how new data is integrated into your tables.\n- schedule regular data loads and define freshness criteria for your data to ensure it is up-to-date and relevant.\n- create expectations for your data to ensure quality and consistency.\n- Add new fields through SQL transformations during the load process.\n- Encrypt sensitive data to protect it at rest during the load process.\n- Add access controls to your data to ensure only authorized users can view or modify it."
+        }
+      ]
+    },
+    {
+      "id": "starlake-transform-data",
+      "title": "Transform data to insights",
+      "description": "Learn how to transform data into insights.",
+      "categories": [
+        "Starlake",
+        "Transform"
+      ],
+      "icon": "/img/icons/starlake.png",
+      "tags": [
+        "Starlake",
+        "Transform"
+      ],
+      "level": "Beginner",
+      "content": "## Create a domain (Optional)\n\n\nA domain is a logical grouping of your data assets in Starlake. It maps to a schema in your database also known as a dataset in BigQuery. If you don't have a domain yet, you can create one or use an existing one if you already created it in Starlake.\n\n1. In your Starlake project, navigate to the \"Load\" section.\n2. Click on \"Add Domain\" and enter a domain name. If this domain already exists in the database, it will be mapped to the existing schema. We'll name our domain, \"starbake\". \n3. You may optionally add a description your domain. This is useful for documentation purposes and for AI assistance. This description will be saved in the database as a comment.\n4. Click \"Create\" to finalize the domain creation.\n\n![](/img/guides/load-csv-files/step1.png)\n\nWe are now ready to load our CSV files into the schema \"starbake\" of our database.\n\n## Load files (Optional)\n\nIf you already have your tables loaded, simply go to the next step.\n\nFor new tables, you follow the Load guides to load the sample files below as a support for our transformation.\n\n- Load the ![customers](/img/guides/files/customers.csv) file\n- Load the ![orders](/img/guides/files/orders.json) file\n- Load the ![products](/img/guides/files/products.json) file",
+      "tabs": [
+        {
+          "id": 1,
+          "label": "Create a domain (Optional)",
+          "content": "A domain is a logical grouping of your data assets in Starlake. It maps to a schema in your database also known as a dataset in BigQuery. If you don't have a domain yet, you can create one or use an existing one if you already created it in Starlake.\n\n1. In your Starlake project, navigate to the \"Load\" section.\n2. Click on \"Add Domain\" and enter a domain name. If this domain already exists in the database, it will be mapped to the existing schema. We'll name our domain, \"starbake\". \n3. You may optionally add a description your domain. This is useful for documentation purposes and for AI assistance. This description will be saved in the database as a comment.\n4. Click \"Create\" to finalize the domain creation.\n\n![](/img/guides/load-csv-files/step1.png)\n\nWe are now ready to load our CSV files into the schema \"starbake\" of our database."
+        },
+        {
+          "id": 2,
+          "label": "Load files (Optional)",
+          "content": "If you already have your tables loaded, simply go to the next step.\n\nFor new tables, you follow the Load guides to load the sample files below as a support for our transformation.\n\n- Load the ![customers](/img/guides/files/customers.csv) file\n- Load the ![orders](/img/guides/files/orders.json) file\n- Load the ![products](/img/guides/files/products.json) file"
+        }
+      ]
     }
   ],
   "categories": [
     "Load",
     "Snowflake",
-    "Starlake"
+    "Starlake",
+    "Transform"
   ]
 }
