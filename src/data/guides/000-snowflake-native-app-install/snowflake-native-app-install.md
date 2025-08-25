@@ -40,6 +40,20 @@ Let's get started!
 ## Access Starlake
 
 1. Once the app URL is generated, click on it to access Starlake.
-2. You may be prompted to log in with your Snowflake credentials.
+2. You may be prompted to log in with the root user credentials (admin@localhost.localdomain).
 3. After logging in, you can start using Starlake for your data integration and analytics needs.
 4. The first time you access Starlake, you will be able to set the default root password for the root user (admin@localhost.localdomain).
+5. Click on your email in top bottom-left bar and select "My Profile". 
+6. In the "Update Password" tab enter the old password ("admin" by default) and enter your new password.
+
+
+## Enroll users
+
+Users are automatically enrolled through the "Sign Up" link on the Starlake login screen.
+
+You can however whitelist the users that are allowed to enroll.
+
+In the bottom left bar, click on your email and select "Admin" then on the "Platform whitelist" tab enter one valid user email address per line. To allow all users from a specific domain, enter the domain name only (e.g., `example.com`)
+
+Note that only users with a valid Snowflake account can access the app.
+

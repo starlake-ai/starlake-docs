@@ -15,6 +15,8 @@ description: "Learn how to load JSON files into your database."
 
 A domain is a logical grouping of your data assets in Starlake. It maps to a schema in your database also known as a dataset in BigQuery. If you don't have a domain yet, you can create one or use an existing one if you already created it in Starlake.
 
+This schema will be created when executing your load if it does not already exist.
+
 1. In your Starlake project, navigate to the "Load" section.
 2. Click on "Add Domain" and enter a domain name. If this domain already exists in the database, it will be mapped to the existing schema. We'll name our domain, "starbake". 
 3. You may optionally add a description your domain. This is useful for documentation purposes and for AI assistance. This description will be saved in the database as a comment.

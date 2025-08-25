@@ -45,6 +45,7 @@ Starlake will automatically infer the table schema from the CSV file. You can re
 ![](/img/guides/load-csv-files/step3.1.png)
 
 To customize the inferred schema, you can edit the data types, and invoke the A.I. assistant to suggest descriptions as needed. This allows you to ensure that the schema matches your requirements before loading the data.
+This schema will be created when executing your load if it does not already exist.
 
 You can also define the primary key for the table by selecting one or more columns in the "Primary Key" section. This is important for optimizing query performance and improving A.I. suggestions when building transformations.
 
