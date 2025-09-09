@@ -47,3 +47,27 @@ task:
 ```
 
 
+## Incremental modelling
+
+As data arrives periodically we have to build KPIs on that new data only. 
+For example, the daily_sales KPI does not need the whole input dataset but just the data
+for the day we are computing the KPI. The computed daily KPI are then appended 
+to the existing dataset, greatly reducing the amount of data processed.
+
+Starlake allows you to write your query as follows:
+
+
+![alt_text](/img/blog/incremental-models/query.png "image_tooltip")
+
+
+The `sl_start_date` and `sl_end_date` variables represent the start and end times for
+which the query is being executed. These are reserved environment variables that are automatically 
+passed to the transformation process by the orchestrator (e.g., Airflow, Dagster or Snowflake Tasks).
+
+You might wonder what happens if the job fails to run for a specific day.
+There's no need to worry—Starlake handles this seamlessly by leveraging Airflow's
+ **Catchup** mechanism. By configuration, Starlake requests the orchestrator 
+ to catch up on any missed intervals. To enable this, simply add the `catchup` flag
+ to your YAML DAG definition in Starlake, and as expected the orchestrator will run the missed intervals using 
+ the `sl_start_date` and `sl_end_date` variables valued accordingly.
+
