@@ -63,20 +63,21 @@ Starlake supports a comprehensive range of data sources:
 | **Databases & Warehouses** | Snowflake, BigQuery, Redshift, Databricks, PostgreSQL, MySQL, Oracle, SQL Server, DuckDB/Ducklake, any JDBC Databases                                                                                                                 |
 | **Streaming & Events**     | Apache Kafka, Amazon Kinesis, Google Pub/Sub, Azure Event Hubs                                                                                                                                                                        |
 
-For some warehouses or cloud providers, deep integration exists. For example, with Snowflake through Snowflake's Marketplace, you simply install: `install starlake -> native app` and get all the features inside Snowflake. This allows you to avoid sharing your Snowflake credentials with an external SaaS platform and avoid data exfiltration, as well as use your Snowflake compute credits to run Starlake and have a unified bill.
+For some warehouses or cloud providers, deep integration exists. For example, with Snowflake through Snowflake's Native App capability, you simply install: `install starlake -> native app` and get all the features inside Snowflake. This allows you to avoid sharing your Snowflake credentials with an external SaaS platform and avoid data exfiltration, as well as use your Snowflake compute credits to run Starlake and have a unified bill.
 
 You can use markup on top of Snowflake and avoid DevOps. With Starlake as a native app, it means no security headaches, credentials are never shared, and no data is exfiltrated. Everything is SQL, and the data is secure in Snowflake. You save a lot of time by not needing to do this work.
 
 :::note Organized by Domain
 
-In Starlake, the data is organized by domains, such as schemas or datasets. A domain is a database schema also called a dataset on BigQuery.
+In Starlake, the data is organized by domains. A domain is a database schema also called a dataset on BigQuery.
 :::
 
 #### Built-in Quality Features
-The loading capabilities enable powerful capabilities. For example, we can set data types and their format at the beginning when we load, which applies them for everyone at the very beginning of loading. We can set attributes and [write strategies](https://docs.starlake.ai/guides/load/write-strategies) such as `append`, `overwrite`, `UPSERT_BY_KEY`, `UPSERT_BY_TIMESTAMP`, `DELETE_THEN_INSERT`, `SCD2`, or even `ADAPTIVE`. These are all very powerful on their own, as typically you'd need to write your own extensive custom code, especially for incremental, [Slowly Changing Dimension (Type 2)](https://www.ssp.sh/brain/slowly-changing-dimension-type-2/), or UPSERTs. Having these integrated and switching quickly by just changing the *writing strategy* is handy and significant.
+The loading capabilities go beyond moving files. For example, we can set data types and their format at the beginning when we load, which applies them for everyone at the very beginning of loading. We can set attributes and [write strategies](https://docs.starlake.ai/guides/load/write-strategies) 
+such as `APPEND`, `OVERWRITE`, `UPSERT_BY_KEY`, `UPSERT_BY_TIMESTAMP`, `DELETE_THEN_INSERT`, `SCD2`, or even `ADAPTIVE`. These are all very powerful on their own, as typically you'd need to write your own extensive custom code, especially for incremental, [Slowly Changing Dimension (Type 2)](https://www.ssp.sh/brain/slowly-changing-dimension-type-2/), or UPSERTs. Having these integrated and switching quickly by just changing the *writing strategy* is handy and significant.
 
-![image](/img/blog/beyond-basic-etl/starlake-write-strategy.png "Example of how to load data and its configurations in Starlake")
-Example of how to load data and its configurations in Starlake
+![image](/img/blog/beyond-basic-etl/starlake-write-strategy.png "Example of how to load data and its configurations in Starlake GUI")
+Example of how to load data and its configurations in Starlake GUI
 
 :::info Dedup Strategy for Better Data Quality
 Write Strategies help you always make sure users won't see duplicated rows where specified. For example, you can specify that a customer data table should be deduped, and Starlake makes sure to upsert the data accordingly.
@@ -85,17 +86,16 @@ Write Strategies help you always make sure users won't see duplicated rows where
 
 **[Type Validations](https://docs.starlake.ai/guides/load/validate)** and **[expectations](https://docs.starlake.ai/guides/load/expectations)** are two features to improve data quality out of the box. It validates the types of the data you are loading by specifying the schema, and with expectations, allows you to test if the resulting table contains the expected data.
 
-**[Transform on Load](https://docs.starlake.ai/guides/load/transformj)** to quickly add columns you need but are not provided by the source database, such as load-timestamp or formatted timestamp.
+**[Transform on Load](https://docs.starlake.ai/guides/load/transformj)** to quickly add columns you need but are not provided by the source database, such as load-time or locally formatted timestamp.
 
 For `BigQuery` and `Databricks`, there is a feature that supports their user-defined **[clustering and partitioning](https://docs.starlake.ai/guides/load/sink)** to improve the performance of queries on large datasets.
 
-**[Access Control](https://docs.starlake.ai/guides/load/security)** with ACL or row-level security for BigQuery or Spark is built in. This is pretty cool.
+**[Access Control](https://docs.starlake.ai/guides/load/security)** with ACL or row-level security for Snowflake, BigQuery or Spark is built in. This is pretty cool.
 
-```
-TODO: It would be interesting to display the access rights graph. Will share one
-```
+![image](/img/blog/beyond-basic-etl/starlake-acl.png "Starlake GUI to configure ACLs.")
 
-All of these configurations have one place to configure all your data needs, and they will be propagated downstream to all your consumers. With Starlake being declarative, all of this can be automated and generated through configuration files.
+
+All of these configurations have one place to configure all your data needs, and they will be propagated downstream to all your consumers. 
 
 Other powerful and advanced enterprise features that you'd spend much time and effort to build otherwise are:
 
@@ -141,6 +141,16 @@ These transformations can be stacked upon each other, building your data applica
 
 ![image](/img/blog/beyond-basic-etl/starlake-lineage.png "An example of column-level lineage with its dependencies and an overview of your data assets in the web UI. Hovering with the mouse will reveal the transformation applied (see `SUM()` above).")
 An example of column-level lineage with its dependencies and an overview of your data assets in the web UI. Hovering with the mouse will reveal the transformation applied (see `SUM()` above).
+
+:::info Lineage from plain SQL
+Thanks to its deep integration with open-source projects like JSQLParser and JSQLTranspiler (both funded by Starlake), 
+the platform can automatically infer data lineage directly from your SQL statements. 
+This enables Starlake to generate orchestrator DAGs and manage dependencies without requiring manual Jinja references 
+or explicit dependency declarations. 
+As a result, orchestration order and lineage tracking are handled by the platform, freeing developers from boilerplate and reducing the risk of errors.
+
+This also makes it easy to copy and share queries with other team members, streamlining collaboration and reducing friction in your workflow.
+:::
 
 ### Tests: Ensuring Data Quality at Scale
 The next step is to test, orchestrate, and deploy. Testing is most important in data engineering and data analytics platforms because if we have false key performance indicators (KPI) or get inconsistent data, business consumers of the data won't trust the data anymore.
