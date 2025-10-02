@@ -19,4 +19,5 @@ Parameter|Cardinality|Description
 --tables:`table1,table2,table3 ...`|*Optional*|Tables to watch
 --clean:`<value>`|*Optional*|Overwrite existing mapping files before starting
 --accessToken:`<value>`|*Optional*|Access token to use for authentication
+--scheduledDate:`<value>`|*Optional*|Scheduled date for the job, in format yyyy-MM-dd'T'HH:mm:ss.SSSZ
 --options:`k1=v1,k2=v2...`|*Optional*|Watch arguments to be used as substitutions
