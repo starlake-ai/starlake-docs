@@ -27,7 +27,7 @@ __Prerequisites__
 
 1. Under "Snowflake Configuration", enter your Snowflake account details:
 ![Step 2]( /img/guides/project-setup-on-snowflake/step2.1.png "Step 2")
-   - Account Name in the form <org_name>.<account_name> (e.g., qbuqrxc-or28007)
+   - Account identifier in the form <org_name>-<account_name> (e.g., qbuqrxc-or28007)
    - Username: <your_username> as listed in Snowsight in the "Admin / Users & roles" section
    - Password: you may here use a programmatic access token for authentication see [here](https://docs.snowflake.com/en/user-guide/programmatic-access-tokens#generating-a-programmatic-access-token))
    - Warehouse: COMPUTE_WH by default
