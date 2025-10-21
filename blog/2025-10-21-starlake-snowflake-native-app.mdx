@@ -32,7 +32,7 @@ The Native App framework fundamentally shifts the security burden by leveraging 
 
 * **Smooth User Experience (UX):** Traditional external apps require manual setup involving API keys, service accounts, or external OAuth flows. Native Apps eliminate this friction. 
 
-They automatically inherit the existing session, meaning there is **no need to connect to your account manually again** and **no need to create a consumer key/secret that could be compromised.** All interactions are managed securely via Snowflake's trusted authentication flows.
+    They automatically inherit the existing session, meaning there is **no need to connect to your account manually again** and **no need to create a consumer key/secret that could be compromised.** All interactions are managed securely via Snowflake's trusted authentication flows.
 
 * **Avoid Service Account Files:** Say goodbye to security risks inherent in managing private keys. There is **no need to manage service account files that could be leaked or lost**, as the application runs under Snowflake's controlled identity system.
 
@@ -40,7 +40,7 @@ They automatically inherit the existing session, meaning there is **no need to c
 
 * **Applicative Security (Restricted Call Rights):** This is perhaps the most powerful security benefit. By using Snowflake's restricted call rights for applications, you can ensure that only authorized applications can access specific resources. 
 
-For instance, you can restrict an an application to only access certain databases or schemas, irrespective of the user's broader permissions. This minimizes the risk of unauthorized data access.
+    For instance, you can restrict an an application to only access certain databases or schemas, irrespective of the user's broader permissions. This minimizes the risk of unauthorized data access.
 
     **Scenario:** Imagine a developer who has access to your dev and production databases. If the user by mistake runs the ETL application against the production database, it could lead to data corruption or loss.
 
