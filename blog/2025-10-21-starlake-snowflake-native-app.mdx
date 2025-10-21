@@ -24,13 +24,13 @@ Deploying Starlake directly within the consumer's Snowflake account—using the 
 ## The Pillars of Native App Advantage
 
 
-### 1. Unprecedented Security & Compliance
+### 1. Security & Compliance
 
 The Native App framework fundamentally shifts the security burden by leveraging Snowflake's existing perimeter, minimizing attack surfaces, and eliminating manual credential management.
 
 
 
-* **Smooth User Experience (UX) & OAuth Security:** Traditional external apps require manual setup involving API keys, service accounts, or external OAuth flows. Native Apps eliminate this friction. They automatically inherit the existing session, meaning there is **no need to connect to your account manually again** and **no need to create a consumer key/secret that could be compromised.** All interactions are managed securely via Snowflake's trusted authentication flows.
+* **Smooth User Experience (UX):** Traditional external apps require manual setup involving API keys, service accounts, or external OAuth flows. Native Apps eliminate this friction. They automatically inherit the existing session, meaning there is **no need to connect to your account manually again** and **no need to create a consumer key/secret that could be compromised.** All interactions are managed securely via Snowflake's trusted authentication flows.
 
 * **Avoid Service Account Files:** Say goodbye to security risks inherent in managing private keys. There is **no need to manage service account files that could be leaked or lost**, as the application runs under Snowflake's controlled identity system.
 
@@ -60,7 +60,7 @@ By keeping the application logic and data processing close to the data itself, N
 * **Cost Efficiency:** There is a potential for **lower costs by consolidating workloads within Snowflake**, avoiding additional setup, maintenance, and compute charges from external cloud services.
 
 
-### 3. Seamless Maintenance & Operational Simplicity
+### 3. Operational Simplicity
 
 Starlake chose the Native App route to drastically reduce the operational burden for users. Like applications downloaded from the Apple App Store or Google Play Store, Snowflake Native Apps are **updated automatically without user intervention or knowledge**. Once you've installed Starlake, you are always running the latest version. This eliminates complex version control, manual patching, and coordination of updates across different environments, ensuring users benefit immediately from new features, performance optimizations, and critical security patches without lifting a finger.
 
