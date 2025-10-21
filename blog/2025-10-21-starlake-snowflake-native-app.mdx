@@ -30,19 +30,21 @@ The Native App framework fundamentally shifts the security burden by leveraging 
 
 
 
-* **Smooth User Experience (UX):** Traditional external apps require manual setup involving API keys, service accounts, or external OAuth flows. Native Apps eliminate this friction. They automatically inherit the existing session, meaning there is **no need to connect to your account manually again** and **no need to create a consumer key/secret that could be compromised.** All interactions are managed securely via Snowflake's trusted authentication flows.
+* **Smooth User Experience (UX):** Traditional external apps require manual setup involving API keys, service accounts, or external OAuth flows. Native Apps eliminate this friction. 
+
+They automatically inherit the existing session, meaning there is **no need to connect to your account manually again** and **no need to create a consumer key/secret that could be compromised.** All interactions are managed securely via Snowflake's trusted authentication flows.
 
 * **Avoid Service Account Files:** Say goodbye to security risks inherent in managing private keys. There is **no need to manage service account files that could be leaked or lost**, as the application runs under Snowflake's controlled identity system.
 
 * **Network Security (Zero Egress Risk):** When data leaves a secure network, it is vulnerable. With Native Apps, **no egress/ingress rules are opened to the world.** Your data and transformations stay inside Snowflake's secure network, mitigating the risk of **data exfiltration**.
 
-* **Applicative Security (Restricted Call Rights):** This is perhaps the most powerful security benefit. By using Snowflake's restricted call rights for applications, you can ensure that only authorized applications can access specific resources. For instance, you can restrict an an application to only access certain databases or schemas, irrespective of the user's broader permissions. This minimizes the risk of unauthorized data access.
+* **Applicative Security (Restricted Call Rights):** This is perhaps the most powerful security benefit. By using Snowflake's restricted call rights for applications, you can ensure that only authorized applications can access specific resources. 
 
-    **Scenario:** Imagine a developer who has access to your dev and production databases. If the user by mistake runs the ETL application against the production database, it could lead to data corruption or loss. However, if the ETL application is configured with grant caller rights and restricted to only access the dev database, the application will not be able to interact with the production database, even if the developer has access to production. This adds an extra layer of protection against accidental misuse of privileges.
+For instance, you can restrict an an application to only access certain databases or schemas, irrespective of the user's broader permissions. This minimizes the risk of unauthorized data access.
 
+    **Scenario:** Imagine a developer who has access to your dev and production databases. If the user by mistake runs the ETL application against the production database, it could lead to data corruption or loss.
 
-This security model makes the Native App architecture indispensable for core data pipeline tools, such as ETL/ELT frameworks like Starlake. When an ETL process runs externally, it requires broad, high-privilege credentials to perform massive reads and writes, creating a significant security risk. By migrating the core processing engine into a Native App, the ETL tool inherits all the security and performance benefits. Critically, the Applicative Security (Restricted Call Rights) ensures that the application—the ETL workflow—can be hard-coded to only interact with specific, necessary schemas (e.g., only read from RAW, only write to STAGING). This provides an absolute safeguard against accidental privilege misuse, dramatically lowering the operational risk associated with managing sensitive data flows and eliminating the need for complex, external network and authentication layers.
-
+    However, if the ETL application is configured with grant caller rights and restricted to only access the dev database, the application will not be able to interact with the production database, even if the developer has access to production. This adds an extra layer of protection against accidental misuse of privileges.
 
 
 * **Simplified Compliance:** All your data access and processing happens within Snowflake's compliance boundaries. This makes it easier to adhere to regulations like GDPR, HIPAA, etc., as you are not introducing a new external environment to audit.
@@ -55,16 +57,28 @@ By keeping the application logic and data processing close to the data itself, N
 
 
 * **Optimized Performance:** You **leverage Snowflake's infrastructure to run AI/ML workloads close to your data**, reducing latency and improving performance, as data movement is virtually eliminated.
+ 
 * **Seamless Integration:** Benefit from tight integration between Snowflake and AI/ML services, enabling smoother workflows and robust data pipelines without complex external orchestration.
+
 * **Financial Control:** Consumers gain immediate transparency. They can monitor and control the usage of services via Snowflake's resource monitors and usage tracking. This eliminates the risk of unexpected bills from 3rd party cloud providers.
+
 * **Cost Efficiency:** There is a potential for lower costs by consolidating workloads within Snowflake, avoiding additional setup, maintenance, and compute charges from external cloud services.
 
 
 ### 3. Operational Simplicity
 
-Starlake chose the Native App route to drastically reduce the operational burden for users. Like applications downloaded from the Apple App Store or Google Play Store, Snowflake Native Apps are updated automatically without user intervention or knowledge. Once you've installed Starlake, you are always running the latest version. This eliminates complex version control, manual patching, and coordination of updates across different environments, ensuring users benefit immediately from new features, performance optimizations, and critical security patches without lifting a finger.
+Starlake chose the Native App route to drastically reduce the operational burden for users. 
+Like applications downloaded from the Apple App Store or Google Play Store, Snowflake Native Apps are updated automatically without user intervention or knowledge. 
+
+Once you've installed Starlake, you are always running the latest version. This eliminates complex version control, manual patching, and coordination of updates across different environments, ensuring users benefit immediately from new features, performance optimizations, and critical security patches without lifting a finger.
 
 
 ## Conclusion: The Best of Both Worlds
 
-By choosing the Snowflake Native App framework, Starlake delivers the best of both worlds. Users gain the operational simplicity and modern user experience of a true cloud application, including the seamless maintenance and automatic updates that eliminate version management headaches. Crucially, they get this without the typical drawbacks of external tools: no complex network security configurations, no external service account management, and no surprise bills from third-party cloud providers. Starlake running natively inside Snowflake means you get the power and convenience of a cloud app, coupled with the unprecedented security and financial control of the Snowflake Data Cloud.
+By choosing the Snowflake Native App framework, Starlake delivers the best of both worlds. 
+
+1. Users gain the operational simplicity and modern user experience of a true cloud application, including the seamless maintenance and automatic updates that eliminate version management headaches. 
+
+2. Crucially, they get this without the typical drawbacks of external tools: no complex network security configurations, no external service account management, and no surprise bills from third-party cloud providers. 
+ 
+Starlake running natively inside Snowflake means you get the power and convenience of a cloud app, coupled with the unprecedented security and financial control of the Snowflake Data Cloud.
