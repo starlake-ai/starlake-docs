@@ -65,7 +65,7 @@ Starlake embraces a **local-first philosophy** thanks to transparent transpilati
 
 
 * **Develop Locally, Deploy Globally:** Develop and debug your entire pipeline using **DuckDB** on your laptop. DuckDB offers lightning-fast, zero-cost execution on your sample data.
-* **Transparent Transpilation:** Starlake automatically converts your written **Snowflake SQL** dialect into the **DuckDB dialect** when running locally. When you deploy, the original Snowflake SQL is used.
+* **Transparent Transpilation:** Starlake automatically converts your written **datawarehouse’s SQL** dialect (Snowflake, BigQuery, Spark ...) into the **DuckDB dialect** when running locally. When you deploy, the original datawarehouse’s SQL is used.
 * **Faster CI/CD:** You can run full Continuous Integration tests on your SQL transformations without ever hitting your data warehouse, dramatically reducing CI/CD costs and iteration time.
 
 **The Benefit:** Achieve **faster development cycles** and **reduced costs** by decoupling the development environment from the costly production warehouse.
