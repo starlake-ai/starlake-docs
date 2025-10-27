@@ -42,3 +42,7 @@ When the PR is merged, the cloudflare pages will automatically build and deploy 
 
 ## Card Component
 https://docusaurus.community/knowledge/component-library/new/Card/
+
+
+## Versions
+Update to node 24.5.0
