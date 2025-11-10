@@ -1,0 +1,104 @@
+---
+title: "Starlake + DuckLake: Enabling the Post-Modern Data Stack"
+date: 2025-11-10
+description: "Exploring how Starlake and DuckLake together form the foundation for the Post-Modern Data Stack, emphasizing openness, declarative configuration, and developer-friendliness."
+tags: ["Starlake", "DuckLake", "Post-Modern Data Stack", "Data Engineering", "Open Source"]
+---
+
+# Starlake + DuckLake: Start Small, Scale Big
+
+The Post-Modern Data Stack is not about more tools, it's about less friction.
+It's about building end-to-end data systems that are declarative, open, and composable, without the complexity and lock-in that defined the Modern Data era.
+
+That's where Starlake and DuckLake fit naturally together.
+Both embrace simplicity as a strength: Starlake unifies ingestion, transformation, and orchestration through declarative YAML, 
+while DuckLake brings a lightweight, SQL-backed lake format with ACID transactions, schema evolution, and time travel, all on open Parquet files.
+
+Together, they form the foundation of the Post-Modern Data Stack: one where you can start small, locally or in a notebook, 
+and scale effortlessly to the cloud without changing your model or your mindset.
+
+The era of the "Modern Data Stack" (MDS) brought cloud agility, but with it came fragmentation, hidden complexity, vendor lock-in and brittle pipelines. 
+As we argued in our "Post Modern Data Stack" piece, it's time to pivot to something more declarative, unified and developer-friendly.  ￼
+
+In that light, Starlake and DuckLake form a natural pairing. 
+Together they enable the Post-Modern Data Stack in a way that honours the principles of openness, declarative configuration, minimal friction and full control.
+
+
+## Why the Post-Modern Data Stack Matters
+
+In our earlier post we outlined how the MDS often falls short: focusing on movement of data rather than quality, embedding logic in templated SQL, coupling development to production warehouses, branching data becoming expensive, orchestration tied to a vendor, 
+and semantic modelling locked to one BI gateway.  ￼
+
+By contrast, Starlake defines the Post-Modern stack as:
+* Quality-first ingestion (not "move everything then clean")
+* SQL only transformations (no templating, no DSL entanglement)
+* Local-first development / global deployment
+* Git-style branching of data
+* Orchestration-agnostic pipelines
+* Semantic modelling agnostic of any one BI
+* Unified CLI + GUI interfaces  ￼
+
+This becomes the foundation for data engineering that truly behaves like software engineering: versioned, auditable, transparent, composable.
+
+
+## Enter DuckLake: A Format Built for the Post-Modern Stack
+
+DuckLake introduces a next-generation lake format built on Parquet, but with the coordination layer living in a real SQL database (PostgreSQL, MySQL, SQLite, or even DuckDB).
+This small design choice changes everything.
+* Multi-user collaboration, natively supported
+Unlike local-only formats or single-process metadata layers, DuckLake’s SQL-based catalog allows multiple users, data engineers, analysts, applications to read and write concurrently with transactional guarantees.
+Teams can work on shared datasets safely, without file locks or version conflicts.
+
+* ACID transactions and snapshots
+DuckLake delivers full transactional integrity across datasets, with snapshot isolation, time travel, and schema evolution,
+ the kind of reliability historically reserved for data warehouses.
+
+* Open and composable
+Because it’s based on open standards (SQL + Parquet), you can query your data with your favorite engine and plug it into any orchestration or visualization layer.
+No proprietary runtime, no hidden metadata formats.
+
+* Local-to-cloud consistency
+You can develop locally with a lightweight DuckDB catalog, then deploy the same datasets on a shared PostgreSQL-backed DuckLake in the cloud, 
+no rewrites, no migrations, no friction.
+
+## Why Starlake + DuckLake = The Right Pairing
+
+Here's how the two reinforce each other in the Post-Modern stack:
+
+|Need in Post-Modern Stack| How Starlake addresses it | How DuckLake enables it
+|-------------------------|---------------------------|-------------------------|
+|Quality-first ingestion	|Starlake enables validation/quality checks at ingestion.  ￼	|DuckLake's metadata enables lineage, versioning and auditing, supporting trusted ingestion.
+|SQL-only, portable transformations	|Starlake keeps transformation logic as plain SQL, no templating.  ￼	|With DuckLake you're working on Parquet + catalog via SQL, ensuring transformations remain portable and engine-agnostic.
+|Local dev, global deployment	|Starlake supports DuckDB local development, then transpiles/deploys.  ￼	|DuckLake supports DuckDB locally and scales to larger catalogs/storage; the same data format persists.
+|Git-style data branching	|Starlake includes snapshot/branching semantics for datasets.  ￼	|DuckLake snapshots/time-travel provide the required mechanism to treat data versions like code branches.
+|Orchestration-agnostic pipelines	|Starlake analyzes SQL lineage, generates DAGs for any orchestrator.  ￼	|DuckLake provides unified metadata so orchestration tools can reliably reference dataset versions, dependencies and snapshots.
+|Semantic modelling agnostic	|Starlake can output semantic layer models for multiple BI platforms.  ￼	|DuckLake ensures the underlying dataset format remains open and portable so semantic models aren't locked to one tool.
+
+
+
+What This Means in Practice
+* You can define your pipeline in YAML (Starlake) including ingestion rules, transformations, semantics.
+* You use plain SQL for transformations that run locally (DuckDB) or scale (DuckLake).
+* Your datasets live in DuckLake: Parquet files + catalog database → providing versioning, branching, time-travel.
+* Your orchestration is generated by Starlake and agnostic (Airflow, Dagster, Snowflake Tasks, etc.).
+* Your semantic layer is defined once and then output to Looker, Power BI, etc via Starlake.
+* You retain full transparency, versioning, auditability — both for pipelines and data.
+* You avoid vendor-lock and heavy, monolithic lakehouse stacks.
+
+
+# Start Small, Scale Big
+
+The Post-Modern Data Stack is not about chasing the biggest tools, it's about starting simple, staying open, and scaling naturally.
+
+With Starlake and DuckLake, you can build the full lifecycle of a data platform: ingestion, transformation, lineage, orchestration and semantics, 
+with nothing more than open formats and declarative YAML.
+
+You can start today, locally or in the cloud, by simply running:
+
+```docker compose up```
+
+
+From there, Starlake's UI and declarative engine are ready to orchestrate your pipelines, manage your data, 
+and connect seamlessly with DuckLake's open lakehouse format.
+
+``` Because in data engineering, he who can do the least, can also do more: the power lies in doing things simply, transparently, and well. ```
