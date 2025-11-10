@@ -1,5 +1,5 @@
 ---
-sidebar_position: 90
+sidebar_position: 100
 title: dag-generate
 ---
 
@@ -20,3 +20,4 @@ Parameter|Cardinality|Description
 --tags:`<value>`|*Optional*|Generate for these tags only
 --tasks:`<value>`|*Optional*|Whether to generate DAG file(s) for tasks or not
 --domains:`<value>`|*Optional*|Whether to generate DAG file(s) for domains or not
+--withRoles:`<value>`|*Optional*|Generate role definitions
