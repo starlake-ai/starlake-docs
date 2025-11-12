@@ -18,9 +18,19 @@ while DuckLake brings a lightweight, SQL-backed lake format with ACID transactio
 Together, they form the foundation of the Post-Modern Data Stack: one where you can start small, locally, 
 and scale effortlessly to the cloud without changing your model or your mindset.
 
+
 The era of the "Modern Data Stack" (MDS) brought cloud agility, but with it came fragmentation, hidden complexity, vendor lock-in 
 and brittle pipelines. 
-As we argued in our "Post Modern Data Stack" piece, it's time to pivot to something more declarative, unified and developer-friendly.  ￼
+
+**Performance matters just as much as openness.**
+
+For example, in an independent TPC-H SF100 benchmark on Parquet files, 
+DuckDB delivered sub-second query times across most queries [DuckDB Benchmark Results](https://www.architecture-performance.fr/ap_blog/tpc-h-benchmark-of-hyper-duckdb-and-datafusion-on-parquet-files/),
+demonstrating that open file formats plus a high-performance engine can match many traditional analytics platforms at the fraction of the cost.
+With DuckLake adopting the same Parquet + SQL-catalog foundation, and Starlake driving the transformations on top, you’re 
+grounded not just in a principled architecture but in real-world, production-scale speed
+
+As we argued in our "Post Modern Data Stack" piece, it's time to pivot to something more declarative, unified and developer-friendly.
 
 
 ## Enter DuckLake: A Format Built for the Post-Modern Stack
@@ -29,21 +39,17 @@ DuckLake introduces a next-generation lake format built on Parquet,
 but with the coordination layer living in a real SQL database (PostgreSQL, MySQL, SQLite, or even DuckDB).
 This small design choice changes everything.
 
-* Multi-user collaboration, natively supported
-Unlike local-only formats or single-process metadata layers, DuckLake’s SQL-based catalog allows multiple users, data engineers, analysts, 
+* **Multi-user collaboration**: Unlike local-only formats or single-process metadata layers, DuckLake’s SQL-based catalog allows multiple users, data engineers, analysts, 
 applications to read and write concurrently with transactional guarantees.
 
-* ACID transactions and snapshots
-DuckLake delivers full transactional integrity across datasets, with snapshot isolation, time travel, and schema evolution,
+* **ACID transactions and snapshots**: DuckLake delivers full transactional integrity across datasets, with snapshot isolation, time travel, and schema evolution,
 the kind of reliability historically reserved for data warehouses.
 
-* Open and composable
-Because it’s based on open standards (SQL + Parquet), 
+* **Open and composable**: Because it’s based on open standards (SQL + Parquet), 
 you can query your data with your favorite engine and plug it into any orchestration or visualization layer.
 No proprietary runtime, no hidden metadata formats.
 
-* Local-to-cloud consistency
-You can develop locally with a lightweight DuckDB catalog, then deploy the same datasets on a shared PostgreSQL-backed DuckLake in the cloud, 
+* **Local-to-cloud consistency**: You can develop locally with a lightweight DuckDB catalog, then deploy the same datasets on a shared PostgreSQL-backed DuckLake in the cloud, no rewrites, no migrations, no friction.
 no rewrites, no migrations, no friction.
 
 ## Start Small, Scale Big
