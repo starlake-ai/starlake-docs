@@ -106,16 +106,14 @@ Set `ACTIVE_CONNECTION=ducklake_cloud` for cloud deployment. You can now transit
 
 ## Why DuckLake is a Strong Alternative to Cloud Data Warehouses
 
-DuckLake stands out compared to cloud-based data warehouse solutions like BigQuery, Snowflake, and Databricks:
+DuckLake offers a unique set of advantages over cloud-based data warehouse solutions like BigQuery, Snowflake, and Databricks:
 
-- **Cost Efficiency:** Open source, deployable on your infrastructure—no recurring cloud fees or vendor lock-in.
-- **Data Control & Privacy:** Data stays in your environment, ensuring compliance and custom security.
-- **Flexibility & Customization:** Integrate and extend as needed; control upgrades and modifications.
-- **Performance:** Tune for your workloads; supports on-premises and hybrid deployments.
-- **Transparency:** Fully auditable, modifiable open source codebase.
-- **Community & Ecosystem:** Active community, open standards, easy migration and integration.
+- **Lower and Predictable Costs:** DuckLake minimizes costs by allowing you to store data directly in open Parquet files on affordable object storage (like S3, GCS, or on-premises solutions), without requiring expensive proprietary compute or storage layers. You avoid per-query or per-user fees, and only pay for the storage and compute you actually use, making budgeting straightforward and cost-efficient.
+- **Full Data Control and Privacy:** With DuckLake, your data never leaves your environment. This makes it easier to comply with privacy regulations and internal security policies, and lets you implement custom security measures as needed.
+- **Optimized Performance:** DuckLake achieves high performance by leveraging the efficiency of the Parquet file format and the power of embedded analytical engines like DuckDB. By operating directly on columnar storage and minimizing data movement, DuckLake delivers fast query execution and analytics, even on large datasets, without the overhead of traditional data warehouses.
+- **Open and Transparent:** The open source codebase means you can audit, modify, and extend DuckLake as you see fit. There are no hidden operations or proprietary formats.
+- **Vibrant Community and Ecosystem:** DuckLake benefits from an active open source community that continuously improves the platform, provides support, and shares best practices. Its foundation on open standards ensures compatibility with a wide range of tools and platforms, making data migration and integration straightforward as your requirements change.
 
-These advantages make DuckLake a compelling choice for organizations seeking cost-effective, flexible, and privacy-focused data warehousing—without the constraints of proprietary cloud platforms.
 
 ## Conclusion
 
