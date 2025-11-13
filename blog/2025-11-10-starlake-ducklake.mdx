@@ -7,26 +7,26 @@ tags: ["Starlake", "DuckLake", "Post-Modern Data Stack", "Data Engineering", "Op
 
 # Starlake + DuckLake: Start Small, Scale Big
 
-The Post-Modern Data Stack is about reducing friction, not adding tools. It’s about building end-to-end data systems that are declarative, open, and composable—without the complexity and lock-in of the Modern Data era.
+The Post-Modern Data Stack is about reducing friction, not adding tools. It’s about building end-to-end data systems that are declarative, open, and composable, without the complexity and lock-in of the Modern Data era.
 
-Starlake and DuckLake embody this philosophy. Starlake unifies ingestion, transformation, and orchestration through declarative YAML, while DuckLake delivers a lightweight, SQL-backed lake format with ACID transactions, schema evolution, and time travel—all on open Parquet files.
+Starlake and DuckLake embody this philosophy. Starlake unifies ingestion, transformation, and orchestration through declarative YAML, while DuckLake delivers a lightweight, SQL-backed lake format with ACID transactions, schema evolution, and time travel, all on open Parquet files.
 
-Together, they let you start small, develop locally, and scale seamlessly to the cloud—without changing your model or mindset.
+Together, they let you start small, develop locally, and scale seamlessly to the cloud, without changing your model or mindset.
 
 ## Why Move Beyond the Modern Data Stack?
 
 The "Modern Data Stack" (MDS) brought cloud agility, but also fragmentation, hidden complexity, vendor lock-in, and brittle pipelines. Performance and openness are equally critical.
 
-For example, in an independent TPC-H SF100 benchmark on Parquet files, [DuckDB delivered sub-second query times](https://www.architecture-performance.fr/ap_blog/tpc-h-benchmark-of-hyper-duckdb-and-datafusion-on-parquet-files/) for most queries. This proves that open file formats plus a high-performance engine can match traditional analytics platforms at a fraction of the cost. DuckLake builds on this foundation, with Starlake orchestrating transformations for real-world, production-scale speed.
+For example, in an independent TPC-H SF100 benchmark on Parquet files, [DuckDB delivered sub-second query times](https://www.architecture-performance.fr/ap_blog/tpc-h-benchmark-of-hyper-duckdb-and-datafusion-on-parquet-files/) for most queries. This proves that open file formats plus a high-performance engine can match traditional analytics platforms at a fraction of the cost.
 
 ## DuckLake: A Lake Format for the Post-Modern Stack
 
 DuckLake introduces a next-generation lake format built on Parquet, coordinated by a real SQL database (PostgreSQL, MySQL, SQLite, or DuckDB). This design unlocks:
 
 - **Multi-user collaboration:** SQL-based catalog enables concurrent reads and writes with transactional guarantees.
-- **ACID transactions & snapshots:** Full transactional integrity, snapshot isolation, time travel, and schema evolution—reliability once reserved for data warehouses.
+- **ACID transactions & snapshots:** Full transactional integrity, snapshot isolation, time travel, and schema evolution, reliability once reserved for data warehouses.
 - **Open & composable:** Based on open standards (SQL + Parquet), so you can use your favorite engines and orchestration tools. No proprietary runtimes or hidden metadata.
-- **Local-to-cloud consistency:** Develop locally with DuckDB, then deploy to a shared PostgreSQL-backed DuckLake in the cloud—no rewrites, no migrations, no friction.
+- **Local-to-cloud consistency:** Develop locally with DuckDB, then deploy to a shared PostgreSQL-backed DuckLake in the cloud, no rewrites, no migrations, no friction.
 
 ## Getting Started: Local to Cloud in Minutes
 
@@ -114,6 +114,20 @@ DuckLake offers a unique set of advantages over cloud-based data warehouse solut
 - **Open and Transparent:** The open source codebase means you can audit, modify, and extend DuckLake as you see fit. There are no hidden operations or proprietary formats.
 - **Vibrant Community and Ecosystem:** DuckLake benefits from an active open source community that continuously improves the platform, provides support, and shares best practices. Its foundation on open standards ensures compatibility with a wide range of tools and platforms, making data migration and integration straightforward as your requirements change.
 
+
+## Added Value of Cloud Data Warehouses
+
+While solutions like DuckLake offer many advantages, cloud data warehouses such as BigQuery, Snowflake, and Databricks also provide significant added value:
+
+- **Fully Managed Service:** Cloud data warehouses handle infrastructure, scaling, maintenance, and updates automatically, reducing operational overhead for your team.
+- **Elastic Scalability:** Instantly scale compute and storage resources up or down to match workload demands, paying only for what you use.
+- **Integrated Ecosystem:** Seamless integration with a wide range of cloud-native tools for analytics, machine learning, data ingestion, and visualization.
+- **High Availability & Disaster Recovery:** Built-in redundancy, backup, and failover capabilities ensure data durability and business continuity.
+- **Global Accessibility:** Access your data securely from anywhere in the world, supporting distributed teams and global operations.
+- **Advanced Security & Compliance:** Enterprise-grade security features, compliance certifications, and fine-grained access controls are managed by the provider.
+- **Performance Optimization:** Providers continuously optimize performance behind the scenes, leveraging the latest hardware and software advancements.
+
+These features make cloud data warehouses an attractive choice for organizations seeking minimal operational burden, rapid scaling, and access to a rich ecosystem of managed services.
 
 ## Conclusion
 
