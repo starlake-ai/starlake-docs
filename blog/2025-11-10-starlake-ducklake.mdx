@@ -1,71 +1,44 @@
 ---
 title: "Starlake + DuckLake: Start Small, Scale Big"
 date: 2025-11-10
-description: "Explore how Starlake and DuckLake together form the foundation of the Post-Modern Data Stack, enabling quality-first ingestion, SQL-only transformations, local-first development, and open, scalable data management."
+description: "How Starlake and DuckLake form the foundation of the Post-Modern Data Stack: quality-first ingestion, SQL-only transformations, local-first development, and open, scalable data management."
 tags: ["Starlake", "DuckLake", "Post-Modern Data Stack", "Data Engineering", "Open Source"]
 ---
 
-## Starlake + DuckLake: Start Small, Scale Big
+# Starlake + DuckLake: Start Small, Scale Big
 
-The Post-Modern Data Stack is not about more tools, it's about less friction.
-It's about building end-to-end data systems that are declarative, open, and composable, 
-without the complexity and lock-in that defined the Modern Data era.
+The Post-Modern Data Stack is about reducing friction, not adding tools. It’s about building end-to-end data systems that are declarative, open, and composable—without the complexity and lock-in of the Modern Data era.
 
-That's where Starlake and DuckLake fit naturally together.
-Both embrace simplicity as a strength: Starlake unifies ingestion, transformation, and orchestration through declarative YAML, 
-while DuckLake brings a lightweight, SQL-backed lake format with ACID transactions, schema evolution, and time travel, all on open Parquet files.
+Starlake and DuckLake embody this philosophy. Starlake unifies ingestion, transformation, and orchestration through declarative YAML, while DuckLake delivers a lightweight, SQL-backed lake format with ACID transactions, schema evolution, and time travel—all on open Parquet files.
 
-Together, they form the foundation of the Post-Modern Data Stack: one where you can start small, locally, 
-and scale effortlessly to the cloud without changing your model or your mindset.
+Together, they let you start small, develop locally, and scale seamlessly to the cloud—without changing your model or mindset.
 
+## Why Move Beyond the Modern Data Stack?
 
-The era of the "Modern Data Stack" (MDS) brought cloud agility, but with it came fragmentation, hidden complexity, vendor lock-in 
-and brittle pipelines. 
+The "Modern Data Stack" (MDS) brought cloud agility, but also fragmentation, hidden complexity, vendor lock-in, and brittle pipelines. Performance and openness are equally critical.
 
-**Performance matters just as much as openness.**
+For example, in an independent TPC-H SF100 benchmark on Parquet files, [DuckDB delivered sub-second query times](https://www.architecture-performance.fr/ap_blog/tpc-h-benchmark-of-hyper-duckdb-and-datafusion-on-parquet-files/) for most queries. This proves that open file formats plus a high-performance engine can match traditional analytics platforms at a fraction of the cost. DuckLake builds on this foundation, with Starlake orchestrating transformations for real-world, production-scale speed.
 
-For example, in an independent TPC-H SF100 benchmark on Parquet files, 
-DuckDB delivered sub-second query times across most queries [DuckDB Benchmark Results](https://www.architecture-performance.fr/ap_blog/tpc-h-benchmark-of-hyper-duckdb-and-datafusion-on-parquet-files/),
-demonstrating that open file formats plus a high-performance engine can match many traditional analytics platforms at the fraction of the cost.
-With DuckLake adopting the same Parquet + SQL-catalog foundation, and Starlake driving the transformations on top, you’re 
-grounded not just in a principled architecture but in real-world, production-scale speed
+## DuckLake: A Lake Format for the Post-Modern Stack
 
-As we argued in our "Post Modern Data Stack" piece, it's time to pivot to something more declarative, unified and developer-friendly.
+DuckLake introduces a next-generation lake format built on Parquet, coordinated by a real SQL database (PostgreSQL, MySQL, SQLite, or DuckDB). This design unlocks:
 
+- **Multi-user collaboration:** SQL-based catalog enables concurrent reads and writes with transactional guarantees.
+- **ACID transactions & snapshots:** Full transactional integrity, snapshot isolation, time travel, and schema evolution—reliability once reserved for data warehouses.
+- **Open & composable:** Based on open standards (SQL + Parquet), so you can use your favorite engines and orchestration tools. No proprietary runtimes or hidden metadata.
+- **Local-to-cloud consistency:** Develop locally with DuckDB, then deploy to a shared PostgreSQL-backed DuckLake in the cloud—no rewrites, no migrations, no friction.
 
-## Enter DuckLake: A Format Built for the Post-Modern Stack
+## Getting Started: Local to Cloud in Minutes
 
-DuckLake introduces a next-generation lake format built on Parquet, 
-but with the coordination layer living in a real SQL database (PostgreSQL, MySQL, SQLite, or even DuckDB).
-This small design choice changes everything.
-
-* **Multi-user collaboration**: Unlike local-only formats or single-process metadata layers, DuckLake’s SQL-based catalog allows multiple users, data engineers, analysts, 
-applications to read and write concurrently with transactional guarantees.
-
-* **ACID transactions and snapshots**: DuckLake delivers full transactional integrity across datasets, with snapshot isolation, time travel, and schema evolution,
-the kind of reliability historically reserved for data warehouses.
-
-* **Open and composable**: Because it’s based on open standards (SQL + Parquet), 
-you can query your data with your favorite engine and plug it into any orchestration or visualization layer.
-No proprietary runtime, no hidden metadata formats.
-
-* **Local-to-cloud consistency**: You can develop locally with a lightweight DuckDB catalog, then deploy the same datasets on a shared PostgreSQL-backed DuckLake in the cloud, no rewrites, no migrations, no friction.
-no rewrites, no migrations, no friction.
-
-## Start Small, Scale Big
-
-Let's start building our data pipeline with Starlake and DuckLake. Full source code is available on [GitHub](https://github.com/starlake-ai/starlake/tree/master/samples/ducklake).
-
-First, install Starlake by following the instructions in the [Starlake documentation](https://starlake.ai/docs/installation).
-
-Bootstrap a project using a sample command line:
+1. **Install Starlake** ([docs](https://starlake.ai/docs/installation))
+2. **Bootstrap your project:**
 
 ```bash
-$ cd /my/project/folder
-$ starlake bootstrap
+cd /my/project/folder
+starlake bootstrap
 ```
 
-In the metadata section of your `application.sl.yml`, configure DuckLake as your catalog:
+3. **Configure DuckLake in `application.sl.yml`:**
 
 ```yaml title="application.sl.yml for local development"
 version: 1
@@ -83,33 +56,17 @@ application:
             ATTACH IF NOT EXISTS 'ducklake:/local/path/metadata.ducklake' As my_ducklake
                 (DATA_PATH '/local/path/');
             USE my_ducklake;
-
 ```
 
-where the environment variable `ACTIVE_CONNECTION` is set to `ducklake_local` for local development.
+Set `ACTIVE_CONNECTION=ducklake_local` for local development.
 
-That's it you're ready to use DuckLake as your lake format and start developing locally!
+4. **Scale to the cloud:** Change your DuckLake catalog connection to PostgreSQL or MySQL, and update `DATA_PATH` to your cloud storage (e.g., GCS, S3):
 
-When you're ready to scale to the cloud, simply change your DuckLake catalog connection to point to a PostgreSQL or MySQL instance, 
-and update the DATA_PATH to point to your cloud storage bucket (e.g., GCS, S3).
-For example, to connect to a DuckLake catalog in PostgreSQL with data stored in GCS:
-
-```yaml {15-37} title="application.sl.yml for local and cloud deployment"
+```yaml title="application.sl.yml for cloud deployment"
 version: 1
 application:
-  connectionRef: "{{ACTIVE_CONNECTION}}"
+  connectionRef: "ducklake_cloud"
   connections:
-    ducklake_local:
-      type: jdbc
-      options:
-        url: "jdbc:duckdb:"
-        driver: "org.duckdb.DuckDBDriver"
-        preActions: >
-            INSTALL ducklake;
-            LOAD ducklake;
-            ATTACH IF NOT EXISTS 'ducklake:/local/path/metadata.ducklake' As my_ducklake
-                (DATA_PATH '/local/path/');
-            USE my_ducklake;
     ducklake_cloud:
       type: jdbc
       options:
@@ -132,47 +89,43 @@ application:
                     user=dbuser 
                     password={{DUCKLAKE_PASSWORD}}' AS my_ducklake
                 (DATA_PATH 'gs://ducklake_bucket/data_files/');
-
 ```
 
+Set `ACTIVE_CONNECTION=ducklake_cloud` for cloud deployment. You can now transition from local to cloud without changing your data models or transformation logic.
 
-where the environment variable `ACTIVE_CONNECTION` is set to `ducklake_postgres` for cloud deployment.
+## Starlake + DuckLake: The Perfect Pair
 
+| Need in Post-Modern Stack         | How Starlake addresses it                                 | How DuckLake enables it                                                                 |
+|-----------------------------------|----------------------------------------------------------|----------------------------------------------------------------------------------------|
+| Quality-first ingestion           | Validation/quality checks at ingestion                   | Metadata enables lineage, versioning, auditing for trusted ingestion                   |
+| SQL-only, portable transformations| Transformation logic as plain SQL, no templating         | Parquet + catalog via SQL keeps transformations portable and engine-agnostic           |
+| Local dev, global deployment      | DuckDB local dev, deploys with no changes                | Supports DuckDB locally, scales to larger catalogs/storage; same data format persists  |
+| Git-style data branching          | Snapshot/branching semantics for datasets                | Snapshots/time-travel provide data versioning like code branches                       |
+| Orchestration-agnostic pipelines  | SQL lineage, DAGs for any orchestrator                   | Unified metadata for referencing dataset versions, dependencies, and snapshots         |
+| Semantic modelling agnostic       | Outputs semantic layer models for multiple BI platforms  | Open, portable dataset format; semantic models not locked to one tool                  |
 
-With this setup, you can seamlessly transition from local development to cloud deployment without changing your data models or transformation logic.
+## Why DuckLake is a Strong Alternative to Cloud Data Warehouses
 
+DuckLake stands out compared to cloud-based data warehouse solutions like BigQuery, Snowflake, and Databricks:
 
-## Why Starlake + DuckLake == The Right Pairing
+- **Cost Efficiency:** Open source, deployable on your infrastructure—no recurring cloud fees or vendor lock-in.
+- **Data Control & Privacy:** Data stays in your environment, ensuring compliance and custom security.
+- **Flexibility & Customization:** Integrate and extend as needed; control upgrades and modifications.
+- **Performance:** Tune for your workloads; supports on-premises and hybrid deployments.
+- **Transparency:** Fully auditable, modifiable open source codebase.
+- **Community & Ecosystem:** Active community, open standards, easy migration and integration.
 
-Here's how the two reinforce each other in the Post-Modern stack:
-
-|Need in Post-Modern Stack| How Starlake addresses it | How DuckLake enables it
-|-------------------------|---------------------------|-------------------------|
-|Quality-first ingestion	|Starlake enables validation/quality checks at ingestion.  ￼	|DuckLake's metadata enables lineage, versioning and auditing, supporting trusted ingestion.
-|SQL-only, portable transformations	|Starlake keeps transformation logic as plain SQL, no templating.  ￼	|With DuckLake you're working on Parquet + catalog via SQL, ensuring transformations remain portable and engine-agnostic.
-|Local dev, global deployment	|Starlake supports DuckDB local development, then deploys with no changes.  ￼	|DuckLake supports DuckDB locally and scales to larger catalogs/storage; the same data format persists.
-|Git-style data branching	|Starlake includes snapshot/branching semantics for datasets.  ￼	|DuckLake snapshots/time-travel provide the required mechanism to treat data versions like code branches.
-|Orchestration-agnostic pipelines	|Starlake analyzes SQL lineage, generates DAGs for any orchestrator.  ￼	|DuckLake provides unified metadata so orchestration tools can reliably reference dataset versions, dependencies and snapshots.
-|Semantic modelling agnostic	|Starlake can output semantic layer models for multiple BI platforms.  ￼	|DuckLake ensures the underlying dataset format remains open and portable so semantic models aren't locked to one tool.
-
+These advantages make DuckLake a compelling choice for organizations seeking cost-effective, flexible, and privacy-focused data warehousing—without the constraints of proprietary cloud platforms.
 
 ## Conclusion
-The combination of Starlake and DuckLake represents a decisive shift toward the Post-Modern Data Stack,
-one where openness, simplicity, and scalability coexist. Instead of assembling a tangle of incompatible tools, 
-data teams can now build pipelines that are declarative, SQL-driven, and environment-agnostic from day one.
 
-With Starlake, you define your data flow once: ingestion, transformation, validation, orchestration, all in YAML and SQL. 
-With DuckLake, you store and query your data in an open, transactional lake format that scales seamlessly from a local DuckDB setup 
-to a cloud-backed PostgreSQL catalog. 
-The result is a development experience that feels as simple as working on your laptop, 
-yet scales to enterprise-grade reliability and performance.
+Starlake and DuckLake represent a decisive shift toward the Post-Modern Data Stack, where openness, simplicity, and scalability coexist. Instead of assembling a tangle of incompatible tools, data teams can now build pipelines that are declarative, SQL-driven, and environment-agnostic from day one.
 
-In recent performance tests, DuckLake processed 600 million TPC-H records in under 1 second for most queries,
-proof that you don’t need heavyweight infrastructure to achieve warehouse-class performance.
+With Starlake, you define your data flow once: ingestion, transformation, validation, orchestration, all in YAML and SQL. With DuckLake, you store and query your data in an open, transactional lake format that scales from a local DuckDB setup to a cloud-backed PostgreSQL catalog. The result: a development experience as simple as working on your laptop, yet scalable to enterprise-grade reliability and performance.
 
-The future of data engineering is declarative, composable, and open.
-With Starlake + DuckLake, you can truly start small and scale big, without ever compromising on speed, quality, or control.
+Recent performance tests show DuckLake processing 600 million TPC-H records in under 1 second for most queries, proving you don’t need heavyweight infrastructure for warehouse-class performance.
 
+The future of data engineering is declarative, composable, and open. With Starlake + DuckLake, you can truly start small and scale big, without ever compromising on speed, quality, or control.
 
 
 
