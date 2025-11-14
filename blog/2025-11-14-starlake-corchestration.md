@@ -1,11 +1,11 @@
 ---
-title: "Orchestrating Data Pipelines Is Hard. Here's How Starlake Makes It Simple (Across Airflow, Dagster, and Snowflake Tasks)"
+title: "Orchestrating Data Pipelines Is Hard."
 date: 2025-11-14
 tags: [starlake, orchestration, airflow, dagster, snowflake-tasks, data-pipelines]
 ---
 
 
-## Orchestrating Data Pipelines Is Hard. Here's How Starlake Makes It Simple (Across Airflow, Dagster, and Snowflake Tasks)
+## Here's How Starlake Makes It Simple (Across Airflow, Dagster, and Snowflake Tasks)
 
 Orchestrating data pipelines is one of the most demanding, and often underestimated, parts of a data engineer's job. Between:
 - handling dependencies, 
