@@ -117,6 +117,12 @@ graph TD
     REGIONS --> DAILY_SALES_FOR_ALL_PRODUCTS_BY_REGION
     DAILY_SALES_FOR_ALL_PRODUCTS --> DAILY_SALES_FOR_ALL_PRODUCTS_BY_REGION
 
+    style REGIONS fill:#FFD700,stroke:#FF8C00,stroke-width:3px,color:#000
+    style DAILY_SALES_FOR_ALL_PRODUCTS_BY_REGION fill:#FFD700,stroke:#FF8C00,stroke-width:3px,color:#000
+
+    %% Highlight the links to and from DAILY_SALES_FOR_ALL_PRODUCTS
+    linkStyle 3 stroke:#FF8C00,stroke-width:3px,color:#FF8C00
+    linkStyle 4 stroke:#FF8C00,stroke-width:3px,color:#FF8C00
 ```
 
 If only the REGIONS table is updated, Starlake run a DAG that only reprocesses the DAILY_SALES_FOR_ALL_PRODUCTS_BY_REGION table, skipping the other tables that are unaffected by the change. This selective execution ensures that resources are used efficiently and that the data pipeline remains responsive to changes in the data landscape.
@@ -140,4 +146,4 @@ Starlake simplifies this process by:
 
 By leveraging Starlake, data teams can focus on defining their data transformations in SQL, while Starlake handles the orchestration complexities, ensuring robust, efficient, and maintainable data pipelines.
 
-That's how Starlake makes orchestrating data pipelines simple and effective.
+That's how Starlake makes orchestrating data pipelines simple and effective, all this on your existing orchestrator of choice!
