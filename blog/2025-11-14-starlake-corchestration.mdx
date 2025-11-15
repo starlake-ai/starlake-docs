@@ -134,6 +134,78 @@ Starlake supports backfilling data pipelines by running DAGs that can reprocess 
 
 In our example, if we need to backfill the DAILY_SALES_BY_PRODUCT table for a specific date range due to data corrections in the SALES table, Starlake can generate a DAG that reprocesses only the affected dates. This targeted backfilling ensures that we maintain data integrity without having to reprocess the entire dataset, saving time and computational resources.
 
+
+# DAG Generation: One Codebase, Any Orchestrator
+
+Write the config file below:
+```yaml
+---
+version: 1
+dag:
+  comment: "dag for loading all {{domain}} tables"
+  template: "load/airflow__scheduled_table__shell.py.j2"
+  filename: "airflow_{{domain}}_tables.py"
+  options:
+    sl_env_var: "{\"SL_ROOT\": \"{{SL_ROOT}}\", \"SL_ENV\": \"PG\"}"
+    SL_STARLAKE_PATH: "starlake"
+    tags: "{{domain}}"
+    pre_load_strategy: "imported"
+    incoming_path: "{{SL_ROOT}}/datasets/incoming"
+    global_ack_file_path: "{{SL_ROOT}}/datasets/incoming/{{domain}}/ack"
+    ack_wait_timeout: "60"
+```
+
+The example below demonstrates how Starlake automatically generates a DAG to orchestrate your data pipelines, seamlessly adapting to the orchestrator you use—whether Airflow, Dagster, or Snowflake Tasks:
+
+```python
+with OrchestrationFactory.create_orchestration(job=sl_job) as orchestration:
+    with orchestration.sl_create_pipeline(dependencies=dependencies) as pipeline:
+
+        graphs: Set[TreeNode] = pipeline.graphs
+
+        start = pipeline.start_task()
+        pre_tasks = pipeline.pre_tasks()
+        if pre_tasks:
+            start >> pre_tasks
+
+        end = pipeline.end_task()
+        post_tasks = pipeline.post_tasks()
+        all_done = None
+        if post_tasks:
+            all_done = pipeline.sl_dummy_op(task_id="all_done")
+            all_done >> post_tasks >> end
+
+        def generate_tasks_for_graph(graph: TreeNode):
+          parent_tasks: List[AbstractTask] = list()
+          for parent in graph.parents:
+              parent_task = pipeline.dependency_to_task(parent.node)
+              parent_tasks.append(parent_task)
+          task = pipeline.dependency_to_task(graph.node)
+          if pre_tasks:
+              if len(parent_tasks) > 0:
+                  task << parent_tasks
+                  pre_tasks >> parent_tasks
+              else:
+                  pre_tasks >> task
+          else:
+              if len(parent_tasks) > 0:
+                  start >> parent_tasks
+                  task << parent_tasks
+              else:
+                  start >> task
+          if all_done:
+              task >> all_done
+          else:
+              task >> end
+        
+        for graph in graphs:
+            generate_tasks_for_graph(graph)
+
+pipelines = [pipeline]
+```
+
+
+
 ## Conclusion
 Orchestrating data pipelines is a complex task that requires careful management of dependencies, retries, and lineage. 
 
