@@ -250,7 +250,15 @@ To start on a different port set the `SL_API_HTTP_PORT` environment variable:
 
 ```bash
 SL_API_HTTP_PORT=11000 starlake serve
+```
 
+To access the GUI from a remote machine, set the `SL_API_DOMAIN` environment variable to your server's domain or IP address:
+
+```bash
+SL_API_DOMAIN=your.domain.com starlake serve
+```
+
+The exhaustive list of configuration options can be found in the [api-env-vars.md](https://github.com/starlake-ai/starlake/blob/master/api-env-vars.md) file.
 or continue with the CLI by following the tutorials below:
 
 - [Create your first project](/guides/project-setup/starlake-project-setup)
