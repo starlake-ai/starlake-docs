@@ -17,5 +17,5 @@ Create a new project optionally based on a specific template eq. quickstart / us
 
 Parameter|Cardinality|Description
 ---|---|---
---no-exit:`<value>`|*Optional*|Should we exit after project creation ?
---template:`<value>`|*Optional*|Template to use to bootstrap project
+--no-exit `<value>`|*Optional*|Should we exit after project creation ?
+--template `<value>`|*Optional*|Template to use to bootstrap project

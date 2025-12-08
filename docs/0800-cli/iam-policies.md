@@ -15,4 +15,4 @@ title: iam-policies
 
 Parameter|Cardinality|Description
 ---|---|---
---accessToken:`<value>`|*Optional*|Access token to use for authentication
+--accessToken `<value>`|*Optional*|Access token to use for authentication

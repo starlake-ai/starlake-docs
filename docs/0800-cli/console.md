@@ -15,4 +15,4 @@ title: console
 
 Parameter|Cardinality|Description
 ---|---|---
---options:`k1=v1,k2=v2...`|*Optional, Unbounded*|Options(ignored)
+--options `k1=v1,k2=v2...`|*Optional, Unbounded*|Options(ignored)

@@ -15,4 +15,4 @@ title: validate
 
 Parameter|Cardinality|Description
 ---|---|---
---reload:`<value>`|*Optional*|Reload all files from disk before starting validation. Always true regardless of the value set here.
+--reload `<value>`|*Optional*|Reload all files from disk before starting validation. Always true regardless of the value set here.
