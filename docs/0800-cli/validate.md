@@ -1,5 +1,5 @@
 ---
-sidebar_position: 350
+sidebar_position: 370
 title: validate
 ---
 
@@ -15,4 +15,4 @@ title: validate
 
 Parameter|Cardinality|Description
 ---|---|---
---reload:`<value>`|*Optional*|Reload all files from disk before starting validation. Always true regardless of the value set here.
+--reload `<value>`|*Optional*|Reload all files from disk before starting validation. Always true regardless of the value set here.

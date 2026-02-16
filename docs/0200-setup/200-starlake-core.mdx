@@ -244,13 +244,40 @@ You may start the GUI with:
 starlake serve
 ```
 
-and point your browser to `http://localhost:9000`.
+and point your browser to `http://localhost:9900`.
 
 To start on a different port set the `SL_API_HTTP_PORT` environment variable:
 
 ```bash
 SL_API_HTTP_PORT=11000 starlake serve
+```
 
+To access the GUI from a remote machine, set the `SL_API_DOMAIN` environment variable to your server's domain or IP address:
+
+```bash
+SL_API_DOMAIN=your.domain.com starlake serve
+```
+
+## Upgrading Starlake
+
+You can upgrade your Starlake installation to a newer version using the `upgrade` command. This command fetches the latest available versions from Maven Central and Sonatype Snapshots and allows you to choose which one to install.
+
+On Unix-like systems:
+```bash
+starlake upgrade
+```
+
+On Windows:
+```cmd
+starlake upgrade
+```
+
+The upgrade process performs the following steps:
+1. **Version Selection**: It retrieves the latest snapshot version and the five most recent release versions.
+2. **Configuration Update**: It updates the `SL_VERSION` in your `versions.sh` (or `versions.bat`) file.
+3. **Artifact Download**: It deletes the old versions and downloads the new `starlake-core` (regular and assembly) and `starlake-api` JAR files to their respective locations (`./bin/sl/` and `./bin/api/lib/`).
+
+The exhaustive list of configuration options can be found in the [api-env-vars.md](https://github.com/starlake-ai/starlake/blob/master/api-env-vars.md) file.
 or continue with the CLI by following the tutorials below:
 
 - [Create your first project](/guides/project-setup/starlake-project-setup)

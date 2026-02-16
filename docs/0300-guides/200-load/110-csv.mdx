@@ -52,7 +52,7 @@ table:
 |separator| the separator used in the file. Default is `;`|
 |quote| the quote character used in the file. Default is `"`|
 |escape| the escape character used in the file. Default is `\`|
-|ignore| a regex to filter lines to ignore. All lines matching the regex will be ignored. Default is None|
+|filter| a condition / regex to filter lines. All lines matching the condition will be loaded. All others will be discarded. Default is None|
 |ack| load file only if a file with the same name and with this extension exist in the same directory.|
 |options| a map of options to pass to the parser. Available options are defined in the [Apache Spark CSV documentation](https://spark.apache.org/docs/latest/sql-data-sources-csv.html#data-source-option)|
 |emptyIsNull| if empty column values should be considered as null. Default is `false`|

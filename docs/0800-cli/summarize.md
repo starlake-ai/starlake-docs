@@ -1,12 +1,12 @@
 ---
-sidebar_position: 180
-title: iam-policies
+sidebar_position: 330
+title: summarize
 ---
 
 
 ## Synopsis
 
-**starlake iam-policies [options]**
+**starlake summarize [options]**
 
 ## Description
 
@@ -15,4 +15,6 @@ title: iam-policies
 
 Parameter|Cardinality|Description
 ---|---|---
+--domain `domain1`|*Required*|Domain Name
+--table `table`|*Required*|Tables Name
 --accessToken `<value>`|*Optional*|Access token to use for authentication
