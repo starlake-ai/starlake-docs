@@ -1,3 +1,26 @@
-# Orchestration
-A few lines of YAML to orchestrate the whole thing.
+---
+title: "Orchestrate Transform Jobs"
+description: "Run Starlake SQL and Python transforms with Airflow, Dagster or Snowflake Tasks using automatic DAG generation and dependency resolution."
+keywords: [starlake transform orchestration, sql transform dag, airflow transform, dagster transform]
+---
 
+# Orchestrate Transform Jobs
+
+Starlake automatically resolves dependencies between your SQL transforms and generates execution DAGs for your orchestrator.
+
+## How Dependency Resolution Works
+
+Starlake analyzes the `FROM` and `JOIN` clauses in your SQL transforms to build a dependency graph. This graph determines the execution order so that upstream tables are always computed before downstream ones.
+
+## Generate DAGs for Transform
+
+```bash
+starlake dag-generate
+```
+
+The generated DAGs include both load and transform jobs in the correct execution order.
+
+## Next Steps
+
+- See the [Orchestration Tutorial](/docs/guides/orchestrate/tutorial) for a complete walkthrough.
+- See [Customizing DAG Generation](/docs/guides/orchestrate/customization) for per-orchestrator configuration.

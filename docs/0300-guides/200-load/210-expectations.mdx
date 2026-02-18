@@ -9,8 +9,8 @@ They are defined using the `expectations` attribute as follows:
 table:
     ...
     attributes:
-       - name: id
-        type: integer
+        - name: id
+          type: integer
         ...
     expectations:
       - expect: "is_col_value_not_unique('id') => result(0) == 1"
@@ -60,10 +60,10 @@ Expectation queries are mainly jinja macro templates that are used to generate S
     from {{table_name}}
 {%- endmacro %}
 
-{% macro col_value_count_greater_than(col, table_name='SL_THIS') %}
+{% macro col_value_count_greater_than(col, min_count, table_name='SL_THIS') %}
     SELECT {{ col }}, count(*) FROM {{ table_name }}
     GROUP BY {{ col }}
-    HAVING count(*) > {{ count }}
+    HAVING count(*) > {{ min_count }}
 {% endmacro %}
 
 

@@ -1,2 +1,24 @@
-# Orchestration
+---
+title: "Orchestrate Load Jobs"
+description: "Run Starlake load jobs with Airflow, Dagster or Snowflake Tasks using automatic DAG generation."
+keywords: [starlake load orchestration, airflow load, dagster load, dag generation]
+---
 
+# Orchestrate Load Jobs
+
+Once your load configurations are ready, Starlake can generate orchestration DAGs automatically based on your YAML definitions.
+
+## Generate DAGs for Load
+
+Run the following command to generate DAGs that include your load jobs:
+
+```bash
+starlake dag-generate
+```
+
+This analyzes dependencies between your load and transform jobs and produces DAG files for your orchestrator.
+
+## Next Steps
+
+- See the [Orchestration Tutorial](/docs/guides/orchestrate/tutorial) for a complete walkthrough of DAG generation and deployment.
+- See [Customizing DAG Generation](/docs/guides/orchestrate/customization) for advanced configuration per orchestrator (Airflow, Dagster, Snowflake Tasks).

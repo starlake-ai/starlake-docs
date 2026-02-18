@@ -39,7 +39,7 @@ the folder name (`<domain>` in this case).
 
 You can change this by specifying a different name in the `name` field of the transform configuration file:
 
-```yaml tile="metadata/transform/<domain>/custom.sl.yml"
+```yaml title="metadata/transform/<domain>/custom.sl.yml"
 task:
   domain: mydomain # will write to the mydomain schema whatever the name of the <domain> folder
   table: mytable # will write to the mytable table whatever the name of the <table> in the filename
@@ -52,7 +52,7 @@ task:
 If not specified, the result of the `SELECT`statement contained in the SQL file will be appended to the `<table>` located in `<domain>`.
 You may use any of these strategies. Below is an example of using the `overwrite` strategy.
 
-```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
+```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 task:
   writeStrategy:
     type: overwrite ## or any of the strategies defined [here](../load/write-strategies)
@@ -65,7 +65,7 @@ Transform strategies work exactly like the load [write strategies](../load/write
 
 You can specify the clustering and partitioning of the table in the transform configuration file.
 
-```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
+```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 task:
   ...
   sink:
@@ -84,7 +84,7 @@ Detailed explanation of the clustering and partitioning can be found [here](../l
 
 You can specify the access control of the table in the transform configuration file similar to the load configuration file [acccess control section](../load/security).
 
-```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
+```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 
 task:
     ...
@@ -111,7 +111,7 @@ task:
 By default, the transform runs against the database referenced in the connectionRef in the `metadata/application.sl.yml` file.
 You can override this by specifying the `connectionRef` in the transform configuration file.
 
-```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
+```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 
 task:
     ...
@@ -126,7 +126,7 @@ You can even specify a different target database in the sink section of the tran
 
 This allows you to transform data from one database and write it to another database.
 
-```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
+```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 
 task:
     ...
@@ -141,7 +141,7 @@ task:
 
 You can specify the expectations of the table in the transform configuration file.
 
-```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
+```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 task:
   ...
   expectations:
