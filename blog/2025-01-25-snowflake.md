@@ -15,25 +15,25 @@ Specifically, this article tackles the challenges of loading files into Snowflak
 
 Although Starlake supports transformation activities, the scope of this article is limited to data loading.
 
-{/* truncate */}
+{/_ truncate _/}
 
 ## Data Loading Challenges
 
 Data loading might seem straightforward, but in reality, it comes with numerous challenges. Over the course of my data loading activities, I’ve encountered several obstacles, including:
 
-- __File Format Diversity__: Working with traditional formats like CSV, JSON, and XML, as well as handling mainframe-generated files with fixed-width records and no attribute delimiters—a common scenario in the banking industry.
+- **File Format Diversity**: Working with traditional formats like CSV, JSON, and XML, as well as handling mainframe-generated files with fixed-width records and no attribute delimiters—a common scenario in the banking industry.
 
-- __Inconsistent Date and Time Formats__: Dealing with varying formats, which are rarely in the standard U.S. format and often differ between files or even within the same file.
+- **Inconsistent Date and Time Formats**: Dealing with varying formats, which are rarely in the standard U.S. format and often differ between files or even within the same file.
 
-- __Compliance Requirements__: Addressing legal and regulatory requirements by encrypting sensitive attributes or discarding certain data elements before loading. In my case, I had to hash credit card numbers to avoid having them accessible inside the data warehouse.
+- **Compliance Requirements**: Addressing legal and regulatory requirements by encrypting sensitive attributes or discarding certain data elements before loading. In my case, I had to hash credit card numbers to avoid having them accessible inside the data warehouse.
 
-- __Data Warehouse Constraints__: Adapting input data to fit the limitations of data warehouses. For instance, Snowflake does not support nested and repeated fields, which are frequently present in Apache Parquet files, requiring pre-transformation of the data.
+- **Data Warehouse Constraints**: Adapting input data to fit the limitations of data warehouses. For instance, Snowflake does not support nested and repeated fields, which are frequently present in Apache Parquet files, requiring pre-transformation of the data.
 
-- __Semantic typing__:
-How can you ensure the content of a file is semantically correct? For instance, validating that the email field contains a valid email address or that the credit card number is a numeric value with 15 to 19 digits?
+- **Semantic typing**:
+  How can you ensure the content of a file is semantically correct? For instance, validating that the email field contains a valid email address or that the credit card number is a numeric value with 15 to 19 digits?
 
-- __Custom Materialization Strategy__: 
-When loading data, selecting the right materialization strategy is crucial. Common strategies like APPEND and OVERWRITE are straightforward, but what if your use case requires handling incoming data using a Slowly Changing Dimension Type 2 (SCD Type 2) approach ?
+- **Custom Materialization Strategy**:
+  When loading data, selecting the right materialization strategy is crucial. Common strategies like APPEND and OVERWRITE are straightforward, but what if your use case requires handling incoming data using a Slowly Changing Dimension Type 2 (SCD Type 2) approach ?
 
 Additionally, it’s critical to validate incoming data to ensure its quality and integrity before loading it into a data warehouse—never trust the source blindly. Robust validation processes are key to maintaining high-quality data pipelines.
 
@@ -62,8 +62,8 @@ CREATE TABLE credit_card_user (
 ```
 
 3. Stage the Files
-Use Snowflake’s internal or external stage for file uploads. To leverage external cloud storage like Amazon S3, Google Cloud Storage, or Azure Blob Storage.
-Set up an external stage linked to your storage and use __COPY INTO__ command to load the data from the stage into your Snowflake table.
+   Use Snowflake’s internal or external stage for file uploads. To leverage external cloud storage like Amazon S3, Google Cloud Storage, or Azure Blob Storage.
+   Set up an external stage linked to your storage and use **COPY INTO** command to load the data from the stage into your Snowflake table.
 
 ```sql
 CREATE OR REPLACE STAGE external_stage
@@ -98,7 +98,7 @@ QUEUE_NAME = 'queue_name'
 COMMENT = 'Integration for Snowpipe notifications';
 ```
 
-Grant permissions to Snowflake’s service account on the queue and replace __cloud_provider__ with AWS, GCP, or AZURE, and __queue_name__ with your cloud provider’s queue name
+Grant permissions to Snowflake’s service account on the queue and replace **cloud_provider** with AWS, GCP, or AZURE, and **queue_name** with your cloud provider’s queue name
 
 6. Update your Snowpipe to use the notification integration.
 
@@ -112,7 +112,7 @@ However, we are still far from fully addressing the [challenges outlined above](
 
 ### Achieving the same results with Starlake
 
-We need to first bootstrap a new project 
+We need to first bootstrap a new project
 
 ```shell
 $ mkdir star1 && cd star1
@@ -148,7 +148,6 @@ That's it!
 Starlake generated the schema description file below for your target table and even loaded the data into our datawarehouse.
 
 ```yaml title='metadata/load/hr/credit_card_user.sl.yml gnerated file'
-
 version: 1
 table:
   name: "credit_card_user"
@@ -162,8 +161,7 @@ table:
       type: date
   metadata:
     format: DSV
-
-``` 
+```
 
 Let’s now address the challenges we need to tackle.
 
@@ -212,7 +210,6 @@ table:
 
 2. Hash the credit card number and remove the orginal value
 
-
 ```yaml {12,17-19}
 version: 1
 table:
@@ -238,8 +235,7 @@ table:
 ```
 
 3. Apply the SCD2 materialization strategy on load
-To understand what SCD Type 2 is and why it is commonly used, refer to [this article](https://medium.com/@SaiKarthikaPuttha/understanding-slowly-changing-dimension-scd-type-2-ea1563714bd7)
-
+   To understand what SCD Type 2 is and why it is commonly used, refer to [this article](https://medium.com/@SaiKarthikaPuttha/understanding-slowly-changing-dimension-scd-type-2-ea1563714bd7)
 
 ```yaml {22-25}
 version: 1
@@ -264,9 +260,9 @@ table:
   metadata:
     format: DSV
     writeStrategy:
-        type: SCD2
-        key: email
-        timestamp: delivered_on
+      type: SCD2
+      key: email
+      timestamp: delivered_on
 ```
 
 That’s it! Starlake will take care of updating the table schema and metadata whenever our changes require it.
@@ -288,21 +284,21 @@ This command requires a configuration file, which differs based on the orchestra
 ```yaml title = 'if you are using the Airflow orchestrator'
 version: 1
 dag:
-    comment: "default Airflow DAG configuration for load"
-    template: "load/airflow_scheduled_table_bash.py.j2"
-    filename: "airflow_all_tables.py"
-    options:
-        load_dependencies: "true"
+  comment: "default Airflow DAG configuration for load"
+  template: "load/airflow_scheduled_table_bash.py.j2"
+  filename: "airflow_all_tables.py"
+  options:
+    run_dependencies_first: "true"
 ```
 
-```yaml  title = 'if you are using the Dagster orchestrator'
+```yaml title = 'if you are using the Dagster orchestrator'
 version: 1
 dag:
-    comment: "default Dagster pipeline configuration for load"
-    template: "load/dagster_scheduled_table_shell.py.j2"
-    filename: "dagster_all_load.py"
-    options:
-        load_dependencies: "true"
+  comment: "default Dagster pipeline configuration for load"
+  template: "load/dagster_scheduled_table_shell.py.j2"
+  filename: "dagster_all_load.py"
+  options:
+    run_dependencies_first: "true"
 ```
 
 Your DAG files have been successfully generated and are ready to be deployed to your preferred orchestrator.
@@ -310,6 +306,3 @@ Your DAG files have been successfully generated and are ready to be deployed to 
 The sample below illustrates how your DAGs look like on Airflow:
 
 ![Airflow Load](/img/blog/snowflake/orchestration.jpg "Airflow Load")
-
-
-

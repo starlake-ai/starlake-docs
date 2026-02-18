@@ -19,3 +19,5 @@ Parameter|Cardinality|Description
 ---|---|---
 --outputDir `<value>`|*Optional*|Output Directory
 --template `<value>`|*Optional*|Template name or template path to use
+--format `<value>`|*Optional*|json / docusaurus MDX
+--clean `<value>`|*Optional*|Whether to clean the output directory before generating the site

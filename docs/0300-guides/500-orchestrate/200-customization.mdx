@@ -317,12 +317,12 @@ dag:
 
 ##### Load dependencies
 
-**load_dependencies** defines wether or not we want to **generate recursively** all the **dependencies** associated to each task for which the transformation DAG was generated (*False* by default).
+**run_dependencies_first** defines wether or not we want to **generate recursively** all the **dependencies** associated to each task for which the transformation DAG was generated (*False* by default).
 
 ```yaml
 dag:
   options:
-    load_dependencies: True
+    run_dependencies_first: True
  #...
 ```
 
@@ -844,7 +844,7 @@ dag:
     cloud_run_async: False # whether or not to use asynchronous cloud run job execution
 # retry_on_failure: True # when asynchronous job execution has been selected, it specifies whether or not we want to use a bash sensor with automatic retry for a specific exit code (implies airflow v2.6+)
     tags: "{\{domain\}} {\{domain\}}_CLOUD_RUN" # tags that will be added to the dag
-    load_dependencies: False # whether or not to add all dependencies as airflow tasks within the resulting dag
+    run_dependencies_first: False # whether or not to add all dependencies as airflow tasks within the resulting dag
     default_pool: "custom_default_pool" # pool to use for all tasks defined within the dag
 ```
 
@@ -868,7 +868,7 @@ resource "google_storage_bucket_object" "composer_storage_objects" {
 
 For any transformation, Starlake is able to calculate all its dependencies towards other tasks or loads thanks to the **analysis** of **SQL queries**.
 
-As seen previously, the **load_dependencies** option defines whether or not we wish to recursively **generate all the dependencies** associated with each task for which the transformation DAG must be generated (False by default). If we choose to not generate those dependencies, the corresponding DAG will be scheduled using the **Airflow's data-aware scheduling mechanism**.
+As seen previously, the **run_dependencies_first** option defines whether or not we wish to recursively **generate all the dependencies** associated with each task for which the transformation DAG must be generated (False by default). If we choose to not generate those dependencies, the corresponding DAG will be scheduled using the **Airflow's data-aware scheduling mechanism**.
 
 All **dependencies** for data transformation are **available** in the generated DAG via the **Python** dictionary **variable** **task_deps**.
 
@@ -914,7 +914,7 @@ task_deps=json.loads("""[ {
 
 ### Inline
 
-In this strategy (**load_dependencies** = *True*), all the dependencies related to the transformation will be generated.
+In this strategy (**run_dependencies_first** = *True*), all the dependencies related to the transformation will be generated.
 
 <Tabs groupId="schedulers">
 <TabItem value="airflow" label="Airflow">
@@ -931,7 +931,7 @@ In this strategy (**load_dependencies** = *True*), all the dependencies related 
 
 ### External state change
 
-In this strategy (**load_dependencies** = *False*), the default strategy, the scheduler will **launch** a **run** for the corresponding **transform DAG** if its **dependencies** are **met**.
+In this strategy (**run_dependencies_first** = *False*), the default strategy, the scheduler will **launch** a **run** for the corresponding **transform DAG** if its **dependencies** are **met**.
 
 #### Airflow Data-aware scheduling
 
@@ -959,7 +959,7 @@ def _load_datasets(task: dict):
             datasets.append(keep_ascii_only(child['data']['name']).lower())
             _load_datasets(child)
 
-if load_dependencies.lower() != 'true':
+if run_dependencies_first.lower() != 'true':
     for task in task_deps:
         _load_datasets(task)
     schedule = list(map(lambda dataset: Dataset(dataset + _extra_dataset_parameters), datasets))
@@ -1043,15 +1043,15 @@ In this strategy, a **sensor** will be created to **check** if the **dependencie
 #...
 from dagster import AssetKey, MultiAssetSensorDefinition, MultiAssetSensorEvaluationContext, SkipReason, Definitions
 
-# if you want to load dependencies, set load_dependencies to True in the options
-load_dependencies: bool = StarlakeDagsterJob.get_context_var(var_name='load_dependencies', default_value='False', options=options).lower() == 'true'
+# if you want to load dependencies, set run_dependencies_first to True in the options
+run_dependencies_first: bool = StarlakeDagsterJob.get_context_var(var_name='run_dependencies_first', default_value='False', options=options).lower() == 'true'
 
 # highlight-next-line
 sensor = None
 
 # if you choose to not load the dependencies, a sensor will be created to check if the dependencies are met
 # highlight-next-line
-if not load_dependencies:
+if not run_dependencies_first:
     assets: Set[str] = []
 
     def load_assets(task: dict):

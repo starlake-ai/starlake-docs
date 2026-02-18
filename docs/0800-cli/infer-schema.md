@@ -25,3 +25,4 @@ Parameter|Cardinality|Description
 --variant `<value>`|*Optional*|Infer schema as a single variant attribute
 --clean `<value>`|*Optional*|Delete previous YML before writing
 --encoding `<value>`|*Optional*|Input file encoding. Default to UTF-8
+--from-json-schema `<value>`|*Optional*|Input file is a valid JSON Schema

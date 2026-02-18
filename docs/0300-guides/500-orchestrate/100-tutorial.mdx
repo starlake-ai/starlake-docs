@@ -107,7 +107,7 @@ dag:
     template: "transform/airflow_scheduled_task_bash.py.j2"
     filename: "airflow_all_tasks.py"
     options:
-        load_dependencies: "true"
+        run_dependencies_first: "true"
 
 ```
 
@@ -131,7 +131,7 @@ dag:
     template: "transform/airflow_scheduled_task_bash.py.j2"
     filename: "airflow_all_tasks.py"
     options:
-        load_dependencies: "true"
+        run_dependencies_first: "true"
 
 ```
 
@@ -153,7 +153,7 @@ dag:
     template: "transform/snowflake_scheduled_transform_sql.py.j2"
     filename: "snowflake_{{domain}}_tasks.py"
     options:
-        load_dependencies: "true"
+        run_dependencies_first: "true"
 
 ```
 
@@ -174,7 +174,7 @@ It simply checks for the presence of files based on the selected strategy.
 If no matching files are found, the process exits silently—without raising an error or consuming additional resources.
 
 
-`load_dependencies: "true"` is a flag that tells the DAG generator to include for transformations, the dependent tables or tasks in the DAG file.
+`run_dependencies_first: "true"` is a flag that tells the DAG generator to include for transformations, the dependent tables or tasks in the DAG file.
 
 `template` is the template file that will be used to generate the DAG file. This ay reference :
 
