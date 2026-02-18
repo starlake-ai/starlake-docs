@@ -8,23 +8,82 @@ description: "Discover how Starlake revolutionizes data pipelines with its decla
 
 # Starlake: Open Source Data Loading & Transformation Platform
 
-Starlake is an enterprise-grade data pipeline tool that transforms how organizations handle data integration. Using a declarative approach with YAML and SQL, it eliminates complex coding while ensuring robust data governance and quality.
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake is an enterprise-grade, open-source data pipeline tool that uses a declarative approach (YAML + SQL) to automate data loading, transformation, and orchestration, effectively replacing imperative coding with configuration."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is Declarative Data Engineering?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Declarative Data Engineering is a methodology where you define the 'what' (desired data state and schema) rather than the 'how' (imperative code). Starlake implements this by allowing users to describe pipelines in YAML, automatically generating the execution code."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Starlake extract data?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake extracts data through a zero-code, YAML-based configuration system that supports any ODBC/JDBC database. It handles parallel extraction, incremental loads, and schema evolution automatically without custom scripts."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Starlake load data?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake loads data by inferring schemas and orchestration logic from declarative YAML files. It supports formats like CSV, JSON, Parquet, and Avro, and automatically handles quality validation, encryption, and loading into major data warehouses."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+**Starlake** is an enterprise-grade data pipeline tool that transforms how organizations handle data integration. It allows Data Engineers to build robust pipelines using **YAML and SQL** instead of complex Python or Scala code.
+
+> "Starlake is to Data Pipelines what Terraform is to Infrastructure."
+
+## Why Choose Starlake?
+
+- **100% Declarative**: No Orchestration code to write.
+- **Automated Quality**: schema validation and data quality checks are built-in.
+- **Cross-Platform**: Run on Spark, Snowflake, BigQuery, Databricks, Redshift, DuckDB, PostgreSQL and more
 
 ![](/img/starlake-perimeter.png)
 
-## Declarative Data Engineering
+## What is Declarative Data Engineering?
 
-Starlake is to Data Pipelines what Terraform is to Infrastructure.
+**Declarative Data Engineering** is a paradigm shift where you describe _what_ you want your data pipeline to do, rather than writing the code for _how_ to do it.
+
+Starlake implements this by allowing you to define your load and transform tasks in **YAML**, and then automatically generating the necessary orchestration code. This acts like "Terraform for Data Pipelines."
 
 Using an YAML declarative syntax, describe your load and transform tasks and let Starlake automatically generate your orchestration code.
 
+### How does Starlake extract data?
 
-### 1. [Declarative Extract](guides/extract/tutorial)
+Starlake provides a **zero-code extraction** capability. You define your data sources in YAML, and Starlake handles the complexity.
 
-- Zero-code data extraction with YAML configurations
-- Support any ODBC/JDBC compliant database
-- Support for incremental and full loads
-- Automated schema evolution handling
+Key extraction features:
+
+- **Universal Connectivity**: Support for any ODBC/JDBC compliant database.
+- **Smart Loading**: Native support for incremental and full loads.
+- **Auto-Evolution**: Automated handling of schema changes in source data.
+
+[Learn more about Declarative Extract](guides/extract/tutorial)
 
 How it works:
 Let's say we want to extract data from a Postgres Server database on a daily basis
@@ -35,7 +94,7 @@ extract:
   jdbcSchemas:
     - schema: "sales"
       tables:
-        - name: "order_lines"                          # table name or simple "*" to extract all tables
+        - name: "order_lines" # table name or simple "*" to extract all tables
           #partitionColumn: "salesorderdetailid"  # (optional)  you may parallelize the extraction based on this field
           #fetchSize: 100                         # (optional)  the number of rows to fetch at a time
           #timestamp: salesdatetime               # (optional) the timestamp field to use for incremental extraction
@@ -53,16 +112,17 @@ That's it, we have defined our extraction pipeline.
 
 Visit our [extraction user guide](guides/extract/tutorial) to learn more
 
-### 2. [Declarative Load](guides/load/tutorial)
+### How does Starlake load data?
 
-Transform data ingestion into a declarative process:
+Starlake transforms data ingestion into a purely configuration-based process.
 
-- Zero-code data loading with YAML configurations
-- Support CSV, TSV, JSON, XML, Fixed width, Parquet, Avro file formats
-- Automated data quality validation
-- Built-in privacy and security controls
-- Support for all major data warehouses
-- Apply Column and row level security
+Key loading features:
+
+- **Multi-Format Support**: CSV, TSV, JSON, XML, Fixed width, Parquet, Avro.
+- **Quality & Security**: Automated data quality validation and privacy/encryption controls.
+- **Warehouse Native**: Optimized loading for all major data warehouses with row-level security.
+
+[Learn more about Declarative Load](guides/load/tutorial)
 
 Let's say we want to load the data extracted from the previous example into a datawarehouse
 
@@ -100,14 +160,17 @@ That's it, we have defined our loading pipeline.
 
 Visit our [load tutorial](guides/load/tutorial) to learn more.
 
-### 3. [Declarative Transform](guides/transform/tutorial)
+### How does Starlake transform data?
 
-Simplify transformations with SQL and YAML:
+Simplify transformations by combining **YAML** configuration with standard **SQL**.
 
-- Write jinja free SQL SELECT statements, no more jinja `refs` in your code.
-- Automatic column and table level lineage
-- Built-in support for incremental processing
-- Apply Column and row level security
+Key transformation features:
+
+- **Jinja-Free SQL**: Write standard SELECT statements without complex templating logic.
+- **Auto-Lineage**: Automatic detection of column and table-level lineage.
+- **Incremental Processing**: Built-in support for processing only new or changed data.
+
+[Learn more about Declarative Transform](guides/transform/tutorial)
 
 Let's say we want to build aggregates from the previously loaded data
 
@@ -137,14 +200,11 @@ Starlake will automatically apply the right merge strategy (INSERT OVERWRITE or 
 
 Visit our [transform tutorial](guides/transform/tutorial) to learn more
 
-### 4. [Declarative Tests](guides/unit-tests/concepts)
+### 4. How does Starlake test data?
 
-Run your load and transorm on a embedded locally DuckDB database
-to reduce costs thanks to Starlake SQL transpiler.
+Starlake allows you to run your production load and transform logic on a local **DuckDB** instance, enabling fast, cost-effective unit testing.
 
-Without any modification toyour original query, Starlake on the fly transpile your queries to DuckDB SQL during the testing phase.
-
-To write your test, simply pour in the folder named after your load or transform task, the expected result to an expected query.
+[Learn more about Declarative Tests](guides/unit-tests/concepts)
 
 In the example below, we run a test to validate the load task on the table sales.order_lines.
 
@@ -163,7 +223,7 @@ In the example below, we run a test to validate the load task on the table sales
 
 Visit our [test tutorial](guides/unit-tests/concepts) to learn more
 
-### 5. [Declarative Orchestration](guides/orchestrate/tutorial)
+### 5. Does Starlake support orchestration?
 
 Automate your entire data pipeline:
 
