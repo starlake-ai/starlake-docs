@@ -1,13 +1,111 @@
 ---
 title: "Load XML Files"
-description: "Load XML files with nested child nodes and node attributes into your data warehouse using Starlake. Configure row tags and attribute mapping."
-keywords: [starlake, XML, load, nested attributes, node attributes, row tag, data warehouse]
+description: "Load XML files into BigQuery, Snowflake, or Databricks using Starlake. Configure rowTag, attribute prefixes, XSD validation, and nested element mapping in YAML."
+keywords: [starlake, XML, load, nested attributes, node attributes, row tag, XSD validation, data warehouse]
 ---
 
-# Load XML files
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does Starlake distinguish XML node attributes from child elements?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake prefixes node attributes with _ (underscore) by default. For example, <country name=\"France\"> produces a column _name. This avoids naming collisions with child elements."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the rowTag in Starlake XML configuration?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The rowTag specifies which XML element represents a single record (row). For example, if your XML has <data><country>...</country></data>, the rowTag is country."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I validate XML files against an XSD schema?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Set the rowValidationXSDPath option in the metadata section to point to your XSD file. Starlake validates each record against the schema during loading."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which data warehouses support nested XML attributes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "BigQuery and Databricks support nested and repeated attributes natively. Redshift does not support nested types. For unsupported warehouses, flatten the XML structure before loading."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I change the attribute prefix for XML node attributes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Set the attributePrefix option in the metadata section. The default is _. You can change it to any string."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can Starlake load XML files with multiple levels of nesting?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Nested child elements are mapped to STRUCT types, and repeated elements to ARRAY types, similar to JSON loading."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Load an XML File into a Data Warehouse with Starlake",
+      "description": "Load XML files with node attributes and nested elements into your data warehouse using Starlake.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "Infer the XML schema",
+          "text": "Run 'starlake infer-schema --input-path incoming/<domain>' to detect the XML structure and generate a YAML configuration."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "Set the rowTag",
+          "text": "In the generated YAML, set the rowTag option to the XML element that represents a single record."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "Configure attribute prefix and XSD validation",
+          "text": "Optionally set attributePrefix (default '_') and rowValidationXSDPath to validate records against an XSD schema."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 4,
+          "name": "Run the load command",
+          "text": "Execute 'starlake load' to parse, validate, and load the XML data into the target warehouse table."
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# Load XML Files with Node Attributes and Nested Elements
 
 Loading XML files is similar to loading JSON files where attributes may have nested or repeated attributes.
-the difference is that in XML, child nodes and __node attributes__ are used to represent the nested attributes.
+The difference is that in XML, child nodes and __node attributes__ are used to represent the nested attributes.
 
 Consider the following XML file:
 
@@ -31,6 +129,8 @@ Consider the following XML file:
 
 ```
 
+## How Starlake Maps XML Elements to Table Columns
+
 The parser needs to detect what tag identifies a row. In the example above, the tag `country` identifies a row.
 
 Child nodes and node attributes are used to represent the nested attributes. In the example above, the `country` tag will have the following attributes in the database table:
@@ -53,7 +153,7 @@ Also note that the target datawarehouse need to support nested and repeated attr
 
 
 
-## Infer schema
+## Infer XML Schema Automatically
 
 The very first step is to infer the schema of the file from a data file as described in the [autoload section](autoload#how-autoload-detects-the-format-of-the-files) before you start customizing your configuration. This is done using the `infer-schema` command. This will bootstrap the configuration file for the table.
 
@@ -63,7 +163,7 @@ starlake infer-schema --input-path incoming/starbake
 
 ```
 
-## Parsing XML
+## XML Parsing Options: rowTag, attributePrefix, XSD Validation
 
 You may need to customize the configuration file to parse the XML file.
 The main options to consider are:
@@ -73,6 +173,25 @@ The main options to consider are:
 
 Other options are available to customize the parsing of the XML file. You can find the full list of options in the [Spark XML reference](https://github.com/databricks/spark-xml?tab=readme-ov-file#features).
 
+## Frequently Asked Questions
 
+### How does Starlake distinguish XML node attributes from child elements?
+Starlake prefixes node attributes with `_` (underscore) by default. For example, `<country name="France">` produces a column `_name`. This avoids naming collisions with child elements.
 
+### What is the rowTag in Starlake XML configuration?
+The `rowTag` specifies which XML element represents a single record (row). For example, if your XML has `<data><country>...</country></data>`, the rowTag is `country`.
 
+### Can I validate XML files against an XSD schema?
+Yes. Set the `rowValidationXSDPath` option in the metadata section to point to your XSD file. Starlake validates each record against the schema during loading.
+
+### Which data warehouses support nested XML attributes?
+BigQuery and Databricks support nested and repeated attributes natively. Redshift does not support nested types. For unsupported warehouses, flatten the XML structure before loading.
+
+### How do I change the attribute prefix for XML node attributes?
+Set the `attributePrefix` option in the metadata section. The default is `_`. You can change it to any string.
+
+### Can Starlake load XML files with multiple levels of nesting?
+Yes. Nested child elements are mapped to STRUCT types, and repeated elements to ARRAY types, similar to JSON loading.
+
+### Where can I find all XML parsing options?
+Starlake uses the Spark XML library. The full list of options is available in the [Spark XML GitHub repository](https://github.com/databricks/spark-xml?tab=readme-ov-file#features) documentation.

@@ -1,8 +1,61 @@
 ---
-title: "Clustering and Partitioning"
-description: "Configure clustering and partitioning in Starlake for BigQuery and Databricks to optimize query performance on large datasets."
-keywords: [starlake, clustering, partitioning, BigQuery, Databricks, sink, query optimization]
+title: "Clustering and Partitioning in Starlake — BigQuery, Databricks, Spark"
+description: "Configure clustering, partitioning, materialized views and expiration in Starlake for BigQuery and Spark/Databricks. YAML-based sink configuration for query optimization."
+keywords: [starlake, clustering, partitioning, BigQuery, Databricks, sink, query optimization, materialized view, Spark]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I configure clustering in Starlake for BigQuery?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Add a sink.clustering section in the table YAML file with the list of clustering columns. BigQuery supports multiple clustering columns."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the difference between clustering and partitioning?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Partitioning physically divides the table into segments based on a column value (e.g. date). Clustering sorts data within each partition by one or more columns, speeding up queries that filter on those columns."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I enable a materialized view in Starlake for BigQuery?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Set sink.materializedView: true in the table configuration. Optionally enable automatic refresh with enableRefresh: true and set the interval via refreshIntervalMs."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I partition on multiple columns in BigQuery via Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. BigQuery supports only a single partition field. Starlake respects this constraint: sink.partition.field accepts only one column. However, with Spark (Databricks), multiple partition columns are supported."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What Spark options are available in the sink section?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The sink.options section allows passing key-value pairs to the Spark writer, for example compression: snappy. You can also define the format (delta, parquet), coalesce, and clustering/partition columns."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # Clustering and Partitioning
 

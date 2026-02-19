@@ -1,10 +1,108 @@
 ---
 title: "Load Fixed-Width Files"
-description: "Load fixed-width positional files into your data warehouse with Starlake. Define column widths, infer schemas and validate field positions."
-keywords: [starlake, fixed-width, positional, load, column width, schema inference]
+description: "Load fixed-width positional files into BigQuery, Snowflake, Databricks, or DuckDB using Starlake. Define column positions in YAML, infer schemas automatically, and validate data during loading."
+keywords: [starlake, fixed-width, positional, load, column width, schema inference, COBOL, mainframe]
 ---
 
-# Load fixed width files
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does Starlake load fixed-width (positional) files?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake uses the FIXED format and position properties (first and last) on each attribute to define character positions. No delimiter is needed."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I infer the schema of a fixed-width file?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Create a reference file with one field per line in name:value format. Run 'starlake infer-schema --input-path <file> --format FIXED --output-dir <dir>'. Starlake detects column widths from the value lengths."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What does the position property look like in the YAML schema?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Each attribute has a position block with first (0-based start index) and last (0-based end index, inclusive). Example: first: 0, last: 4 reads the first 5 characters."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are positions zero-indexed in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The first and last values are 0-based. A column spanning characters 1 to 5 has first: 0 and last: 4."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use fixed-width loading for mainframe COBOL file exports?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Fixed-width is the standard format for mainframe exports. Define column positions matching your COBOL copybook layout."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What write strategies work with fixed-width files?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "All Starlake write strategies (APPEND, OVERWRITE, UPSERT_BY_KEY, SCD2, etc.) work with fixed-width files, configured the same way as for CSV or JSON."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Load a Fixed-Width File into a Data Warehouse with Starlake",
+      "description": "Load fixed-width positional files into your data warehouse using Starlake by defining column positions in YAML.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "Create a reference file",
+          "text": "Create a text file with one field per line in 'name:value' format, where each value has the exact width of the column."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "Infer the schema",
+          "text": "Run 'starlake infer-schema --input-path <file> --format FIXED --output-dir metadata/load/<domain>' to generate the YAML configuration."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "Review column positions",
+          "text": "Check the generated YAML. Each attribute has position.first and position.last (0-based). Adjust types from string to int, date, etc."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 4,
+          "name": "Load the data",
+          "text": "Execute 'starlake load' to parse the fixed-width file and load validated records into the target warehouse."
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# Load Fixed-Width Positional Files into Your Data Warehouse
 
 To load fixed width files, you need to know the width of each column.
 The example below is an example of how a fixed width file may be used to represent orders.
@@ -25,12 +123,12 @@ In the file above the columns are as follows:
 - timestamp: 24 characters
 - status: 10 characters
 
-## Infer schema
+## Infer Schema from a Fixed-Width Reference File
 
 The width of each column is fixed, but the columns are not separated by a delimiter.
 We just need to provide the `infer-schema` command with a file that contains a single record where each field is placed on a separate line prefixed by its name followed by a colon.
 
-to infer the schema of the fixed width file above, we can submit the following file to the `infer_schema` command:
+To infer the schema of the fixed width file above, we can submit the following file to the `infer-schema` command:
 
 ```plaintext
 order_id:00001
@@ -42,10 +140,13 @@ status:Cancelled
 After calling the infer-schema command below, the schema will be inferred and printed to the console.
 
 ```bash
-$ starlake infer-schema -inputPath /my/path/fixed_width_file.txt --format FIXED --outputDir $SL_ROOT/metadata/load/starbake
+$ starlake infer-schema --input-path /my/path/fixed_width_file.txt --format FIXED --output-dir $SL_ROOT/metadata/load/starbake
 ```
 
-The schema will be saved in the directory specified by the `outputDir` parameter.
+The schema will be saved in the directory specified by the `output-dir` parameter.
+
+## Column Position Configuration (first / last)
+
 The starlake YAML schema will look like the one below:
 
 ```yaml
@@ -78,11 +179,9 @@ load:
           last: 43
 ```
 
+The `first` and `last` values are 0-based. A column spanning the first 5 characters has `first: 0` and `last: 4`.
 
-
-
-
-## Load data
+## Run the Load Command
 
 After inferring the schema, we can use the `load` command to load the data into the datawarehouse.
 
@@ -90,6 +189,25 @@ After inferring the schema, we can use the `load` command to load the data into 
 $ starlake load
 ```
 
+## Frequently Asked Questions
 
+### How does Starlake load fixed-width (positional) files?
+Starlake uses the `FIXED` format and `position` properties (`first` and `last`) on each attribute to define character positions. No delimiter is needed.
 
+### How do I infer the schema of a fixed-width file?
+Create a reference file with one field per line in `name:value` format. Run `starlake infer-schema --input-path <file> --format FIXED --output-dir <dir>`. Starlake detects column widths from the value lengths.
 
+### What does the position property look like in the YAML schema?
+Each attribute has a `position` block with `first` (0-based start index) and `last` (0-based end index, inclusive). Example: `first: 0, last: 4` reads the first 5 characters.
+
+### Are positions zero-indexed in Starlake?
+Yes. The `first` and `last` values are 0-based. A column spanning characters 1 to 5 has `first: 0` and `last: 4`.
+
+### Can I use fixed-width loading for mainframe COBOL file exports?
+Yes. Fixed-width is the standard format for mainframe exports. Define column positions matching your COBOL copybook layout.
+
+### What write strategies work with fixed-width files?
+All Starlake write strategies (APPEND, OVERWRITE, UPSERT_BY_KEY, SCD2, etc.) work with fixed-width files, configured the same way as for CSV or JSON.
+
+### Can I change column types after inferring a fixed-width schema?
+Yes. The inferred schema defaults all columns to `string`. Edit the `.sl.yml` file to set appropriate types (`int`, `date`, `timestamp`, etc.).

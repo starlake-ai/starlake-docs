@@ -1,9 +1,63 @@
 ---
 id: starlake-dev
-title: "Starlake with Airflow / Dagster"
-description: "Set up Starlake with pre-configured Airflow or Dagster orchestration using Docker Compose for integrated data pipeline development."
-keywords: [airflow setup, dagster setup, starlake orchestration, docker compose, data pipeline orchestration]
+title: "Set Up Starlake with Airflow or Dagster (Docker Compose)"
+description: "Deploy Starlake with Airflow or Dagster using Docker Compose. Clone, run docker compose up, and access the Starlake UI. Kubernetes and cloud deployments also available."
+keywords: [airflow setup, dagster setup, starlake orchestration, docker compose, data pipeline orchestration, starlake airflow, starlake dagster]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I set up Starlake with Airflow?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Clone the starlake-docker repository, navigate to the docker folder, and run 'docker compose up'. Airflow is automatically installed and configured. Access the Starlake UI at http://localhost."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I set up Starlake with Dagster instead of Airflow?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the Dagster-specific compose file: 'docker compose -f docker-compose-dagster.yml up'. Dagster replaces Airflow as the orchestrator in this configuration."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I deploy Starlake on Kubernetes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Kubernetes deployment is available. Contact the Starlake engineering team on Slack to get the latest Helm chart."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What orchestration tools does Starlake support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports Airflow and Dagster. Both are pre-configured in the Docker Compose setup."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I mount external projects in the Starlake Docker setup?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "On macOS, run setup_mac_nfs.sh to expose your folder via NFS. Then modify the docker-compose.yml to use the NFS volume mount instead of the default volume. External project folders must contain the Starlake project structure (metadata/ etc.)."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
@@ -117,3 +171,20 @@ Please contact our engineering team on [Slack](https://starlakeai.slack.com) to 
 
 </TabItem>
 </Tabs>
+
+## Frequently Asked Questions
+
+### How do I set up Starlake with Airflow?
+Clone the `starlake-docker` repository, navigate to the `docker` folder, and run `docker compose up`. Airflow is automatically installed and configured. Access the Starlake UI at `http://localhost`.
+
+### How do I set up Starlake with Dagster instead of Airflow?
+Use the Dagster-specific compose file: `docker compose -f docker-compose-dagster.yml up`. Dagster replaces Airflow as the orchestrator in this configuration.
+
+### Can I deploy Starlake on Kubernetes?
+Kubernetes deployment is available. Contact the Starlake engineering team on Slack to get the latest Helm chart.
+
+### What orchestration tools does Starlake support?
+Starlake supports Airflow and Dagster. Both are pre-configured in the Docker Compose setup.
+
+### How do I mount external projects in the Starlake Docker setup?
+On macOS, run `setup_mac_nfs.sh` to expose your folder via NFS. Then modify the `docker-compose.yml` to use the NFS volume mount instead of the default volume. External project folders must contain the Starlake project structure (`metadata/` etc.).

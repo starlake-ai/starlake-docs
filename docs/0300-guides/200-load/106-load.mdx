@@ -1,14 +1,108 @@
 ---
 title: "Manual Load Configuration"
-description: "Configure Starlake load manually for custom separators, non-standard folder layouts and per-environment incoming paths."
-keywords: [starlake, manual load, load configuration, custom separator, incoming path]
+description: "Configure Starlake manual load for multi-character delimiters, custom folder layouts, and per-environment incoming paths. Define domain and table settings in YAML."
+keywords: [starlake, manual load, load configuration, custom separator, incoming path, multi-character delimiter, environment]
 ---
 
-# Load
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "When should I use manual load instead of autoload?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use manual load when your files have a multi-character separator that autoload cannot detect, or when your files are not stored in the standard incoming/<domain>/ directory structure."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I set a custom incoming directory in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Set the application.area.incoming property in metadata/application.sl.yml. You can use an environment variable (e.g., {{incoming_path}}) and define its value per environment in metadata/env.<env>.sl.yml."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use different incoming paths for dev, test, and prod?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Define the incoming_path variable in environment-specific files such as metadata/env.dev.sl.yml and reference it with {{incoming_path}} in application.sl.yml."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is a domain configuration file in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The _config.sl.yml file under metadata/load/<domain>/ defines domain-level settings, including the directory where the load command looks for incoming files."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What file formats are supported for manual load?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Manual load supports CSV/DSV, JSON, XML, and fixed-width (positional) files. Each format has its own configuration page with parsing options."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Configure Manual Data Loading in Starlake",
+      "description": "Configure custom separators, non-standard folder layouts and per-environment incoming paths for Starlake manual load.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "Define the incoming directory",
+          "text": "Set application.area.incoming in metadata/application.sl.yml. Use an environment variable like {{incoming_path}} for per-environment paths."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "Create the domain configuration",
+          "text": "Create metadata/load/<domain>/_config.sl.yml and set the load.metadata.directory property to point to your incoming folder."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "Create the table configuration",
+          "text": "Create a <table>.sl.yml file for each table, defining the file pattern, format, separator, and attribute schema."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 4,
+          "name": "Run the load command",
+          "text": "Execute 'starlake load' to load files matching the configured patterns into the target warehouse."
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# Manual Load: Configure Custom Separators and Incoming Paths
+
+## When to Use Manual Load Instead of Autoload
 
 You'll use Load instead of Autoload when:
 - You want to load data from a file when the separator cannot be detected easily (e.g. a file with a multichar separator)
 - You want to load the data from a folders that are not in the standard `incoming` folder or that are not named after the domain name
+
+## Set a Custom Incoming Directory
 
 You may use a different folder location for your incoming files by setting the `application.incoming`  variable in the `metadata/application.sl.yml` file.
 <br/>
@@ -22,6 +116,8 @@ application:
 ```
 <br/>
 
+### Per-Environment Incoming Path Configuration
+
 You may also use a different incoming location per environment by setting the `incoming_path` variable in the `metadata/env.<env>.yml` file.
 
 ```yaml title="metadata/env.<env>.yml"
@@ -32,13 +128,13 @@ incoming_path: /path/to/incoming
 ```yaml title="metadata/application.sl.yml"
 application:
   area:
-    incoming: {{incoming_path}}
+    incoming: "{{incoming_path}}"
 ```
 
 
 
 
-## Domain configuration
+## Domain Configuration (_config.sl.yml)
 
 We first need to define for each domain where the files will be loaded from.
 This is done by creating a domain configuration file that describe where the `load` command should look for the files to load
@@ -59,7 +155,7 @@ load:
 
 Since the directory is set at the domain level, this means that all files loaded for this domain, will be loaded from this directory.
 
-## Table configuration
+## Table Configuration by File Format
 
 We then need to define for each table the file format and the file name pattern that the `load` command should look for:
 - [Load CSV files](csv)
@@ -67,3 +163,19 @@ We then need to define for each table the file format and the file name pattern 
 - [Load XML files](xml)
 - [Load fixed position files](position)
 
+## Frequently Asked Questions
+
+### When should I use manual load instead of autoload?
+Use manual load when your files have a multi-character separator that autoload cannot detect, or when your files are not stored in the standard `incoming/<domain>/` directory structure.
+
+### How do I set a custom incoming directory in Starlake?
+Set the `application.area.incoming` property in `metadata/application.sl.yml`. You can use an environment variable (e.g., `{{incoming_path}}`) and define its value per environment in `metadata/env.<env>.sl.yml`.
+
+### Can I use different incoming paths for dev, test, and prod?
+Yes. Define the `incoming_path` variable in environment-specific files such as `metadata/env.dev.sl.yml` and reference it with `{{incoming_path}}` in `application.sl.yml`.
+
+### What is a domain configuration file in Starlake?
+The `_config.sl.yml` file under `metadata/load/<domain>/` defines domain-level settings, including the directory where the `load` command looks for incoming files.
+
+### What file formats are supported for manual load?
+Manual load supports CSV/DSV, JSON, XML, and fixed-width (positional) files. Each format has its own configuration page with parsing options.

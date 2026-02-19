@@ -1,8 +1,61 @@
 ---
 title: "Extract Data Using Custom SQL Queries"
-description: "Use Starlake query-based extraction to pull data and schemas from databases with custom SQL. Full YAML config and CLI examples included."
+description: "Extract data from JDBC databases using custom SQL queries in Starlake. Configure joins, filters, and aggregations in YAML. Includes CLI examples for extract-data and extract-schema."
 keywords: [starlake, query extraction, custom SQL, JDBC extraction, data export]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the difference between table extraction and query extraction in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Table extraction extracts all columns and rows from a table. Query extraction uses the 'sql' field to execute a custom SQL query: filters, joins, aggregations, and column selection."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does query extraction infer primary keys and foreign keys?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Query extraction does not infer primary keys or foreign keys. All attributes are considered not required."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which connection types support query-based extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Query-based extraction is available only on JDBC connections."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you specify the SQL query in the YAML configuration?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In the 'tables' section, add a 'sql' field with the full SQL query. The 'name' field serves as the logical name for the output file."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can you mix table extraction and query extraction in the same config file?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Each entry in 'tables' can have or omit a 'sql' field. Entries without 'sql' extract the entire table."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # Extract Data Using Custom SQL Queries
 
@@ -66,3 +119,23 @@ To also extract the schema description (useful for loading into a data warehouse
 ```shell
 $ starlake extract-schema --config custom_query_extract
 ```
+
+## Frequently Asked Questions
+
+### What is the difference between table extraction and query extraction in Starlake?
+Table extraction extracts all columns and rows from a table. Query extraction uses the `sql` field to execute a custom SQL query: filters, joins, aggregations, and column selection.
+
+### Does query extraction infer primary keys and foreign keys?
+No. Query extraction does not infer primary keys or foreign keys. All attributes are considered not required.
+
+### Which connection types support query-based extraction?
+Query-based extraction is available only on JDBC connections.
+
+### How do you specify the SQL query in the YAML configuration?
+In the `tables` section, add a `sql` field with the full SQL query. The `name` field serves as the logical name for the output file.
+
+### Can you mix table extraction and query extraction in the same config file?
+Yes. Each entry in `tables` can have or omit a `sql` field. Entries without `sql` extract the entire table.
+
+### Can you extract the schema at the same time as data?
+Yes. Schema extraction (`extract-schema`) tries to retrieve remarks based on the table name if they exist. Both commands (`extract-data` and `extract-schema`) use the same configuration file.

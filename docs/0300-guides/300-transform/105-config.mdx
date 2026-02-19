@@ -1,8 +1,61 @@
 ---
-title: "Customize Transform Configuration"
-description: "Configure Starlake transform tasks with write strategies, partitioning, access control, and YAML settings for SQL and Python pipelines."
-keywords: [starlake, transform configuration, write strategy, partitioning, yaml config, data pipeline]
+title: "Starlake Transform YAML Configuration: Write Strategies, Partitioning, ACL"
+description: "Complete YAML configuration reference for Starlake transforms. Set write strategies (overwrite, upsert, append), table partitioning, clustering, row-level security, expectations, and cross-database writes."
+keywords: [starlake, transform configuration, write strategy, partitioning, yaml config, data pipeline, clustering, row-level security, expectations]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the default write strategy for a Starlake transform?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "By default, the result of the SELECT statement is appended to the target table. You can change this with the writeStrategy.type property in the YAML file (overwrite, upsert, etc.)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you partition a table created by a Starlake transform?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Add a sink.partition section in the transform YAML file listing the partition columns. Clustering is configured similarly with sink.clustering."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can Starlake transform read from one database and write to another?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Use connectionRef at the task level to change the source database, and sink.connectionRef to change the target database."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What are expectations in a Starlake transform?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Expectations are data quality assertions evaluated after the transform runs. If failOnError is set to true, the job fails when the assertion is not satisfied."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the difference between domain, schema, catalog and dataset in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake uses the term 'domain' as an abstraction. Depending on the data warehouse, it maps to a schema (PostgreSQL, Snowflake), a dataset (BigQuery), or a catalog (Databricks)."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # Customize the Transform
 
@@ -29,7 +82,7 @@ The YAML file and the SQL file are named, by default, after the table they are t
 The transform directory looks like this:
 ```plaintext title="transform directory structure"
 metadata/transform
-└── <domain>>
+└── <domain>
     ├── _config.sl.yml
     ├── <table>.sl.yml
     └── <table>.sql
@@ -88,7 +141,7 @@ Detailed explanation of the clustering and partitioning can be found [here](../l
 
 ##  Access control
 
-You can specify the access control of the table in the transform configuration file similar to the load configuration file [acccess control section](../load/security).
+You can specify the access control of the table in the transform configuration file similar to the load configuration file [access control section](../load/security).
 
 ```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 

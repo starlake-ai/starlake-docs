@@ -1,8 +1,69 @@
 ---
 title: "Incremental Data Extraction with Starlake"
-description: "Configure incremental extraction in Starlake to pull only new or changed data. Learn partitionColumn, fullExport settings, and CLI usage."
+description: "Configure incremental extraction in Starlake to pull only new rows from a database. Set partitionColumn and fullExport in YAML. State is tracked in the SL_LAST_EXPORT audit table."
 keywords: [starlake, incremental extraction, partitionColumn, fullExport, CDC, data sync]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the difference between fullExport true and false in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "With fullExport: true (default), Starlake extracts the entire table on every run. With fullExport: false, only rows where the partitionColumn value exceeds the last exported value are extracted."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What column types are suitable for partitionColumn?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The column must be monotonically increasing and never updated after insertion. Typical choices are: auto-increment keys (order_id), timestamps (created_at, updated_at), or sequence numbers."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where does Starlake store the last extraction state?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The state is stored in the SL_LAST_EXPORT audit table. Starlake records the maximum value of the partitionColumn after each extraction."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens during the first incremental extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Since no prior state exists, Starlake extracts all rows from the table. It then records the maximum partitionColumn value for subsequent runs."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are updated rows detected in incremental mode?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Incremental mode only detects new rows (partitionColumn value greater than the last export). Modified rows are not re-extracted unless the partition column is an updated_at timestamp."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can you combine incremental and parallel extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. When fullExport: false and numPartitions > 1 are configured, the same partitionColumn is used for both parallel partitioning and incremental tracking."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # Incremental Data Extraction
 
