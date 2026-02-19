@@ -4,6 +4,51 @@ description: "Configure Starlake database connections for BigQuery, Snowflake, D
 keywords: [starlake, database connections, bigquery, snowflake, databricks, redshift, duckdb, ducklake]
 ---
 
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I configure a BigQuery connection in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Define a connection of type 'bigquery' in the connections section of application.sl.yml. Set the location, authType (APPLICATION_DEFAULT, SERVICE_ACCOUNT_JSON_KEYFILE, or ACCESS_TOKEN), and optionally enable the Spark BigQuery connector by setting sparkFormat to 'bigquery'."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Starlake support Snowflake OAuth (SSO)?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Starlake supports Snowflake OAuth for Single Sign-On. You need to create an OAuth security integration in Snowflake, then configure the account, client ID, and client secret in the Starlake UI admin page under the Snowflake SSO tab."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which databases can Starlake connect to?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports BigQuery, Snowflake, Databricks/Spark, Amazon Redshift, DuckDB, DuckLake, PostgreSQL, and any JDBC-compliant database. Connections are configured in the application.sl.yml file."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use Starlake with DuckDB or DuckLake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Starlake supports DuckDB as a JDBC connection. Configure it with the DuckDB JDBC URL and driver in application.sl.yml. DuckLake is also supported by adding a preActions setting to attach the DuckLake metadata catalog."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Database Connections
 
 import Tabs from '@theme/Tabs';
@@ -320,12 +365,26 @@ application:
     postgresql:
       type: jdbc
       # Uncomment the line below to use the spark postgres connector instead of the native one.
-      # sparkFormat: jdbc 
+      # sparkFormat: jdbc
       options:
         url: "jdbc:postgresql://{{POSTGRES_HOST}}:{{POSTGRES_PORT}}/{{POSTGRES_DATABASE}}"
         driver: "org.postgresql.Driver"
         user: "{{DATABASE_USER}}"
         password: "{{DATABASE_PASSWORD}}"
         quoteIdentifiers: false
-```  
+```
+
+## Frequently Asked Questions
+
+### How do I configure a BigQuery connection in Starlake?
+Define a connection of type `bigquery` in the `connections` section of `application.sl.yml`. Set the `location`, `authType` (APPLICATION_DEFAULT, SERVICE_ACCOUNT_JSON_KEYFILE, or ACCESS_TOKEN), and optionally enable the Spark BigQuery connector by setting `sparkFormat` to `bigquery`.
+
+### Does Starlake support Snowflake OAuth (SSO)?
+Yes, Starlake supports Snowflake OAuth for Single Sign-On. You need to create an OAuth security integration in Snowflake, then configure the account, client ID, and client secret in the Starlake UI admin page under the Snowflake SSO tab.
+
+### Which databases can Starlake connect to?
+Starlake supports BigQuery, Snowflake, Databricks/Spark, Amazon Redshift, DuckDB, DuckLake, PostgreSQL, and any JDBC-compliant database. Connections are configured in the `application.sl.yml` file.
+
+### Can I use Starlake with DuckDB or DuckLake?
+Yes, Starlake supports DuckDB as a JDBC connection. Configure it with the DuckDB JDBC URL and driver in `application.sl.yml`. DuckLake is also supported by adding a `preActions` setting to attach the DuckLake metadata catalog.
 
