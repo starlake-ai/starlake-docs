@@ -37,7 +37,7 @@ import Head from '@docusaurus/Head';
           "name": "How does Starlake extract data?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Starlake extracts data through a zero-code, YAML-based configuration system that supports any ODBC/JDBC database. It handles parallel extraction, incremental loads, and schema evolution automatically without custom scripts."
+            "text": "Starlake extracts data through a zero-code, YAML-based configuration system that supports any JDBC database. It handles parallel extraction, incremental loads, and schema evolution automatically without custom scripts."
           }
         },
         {
@@ -79,7 +79,7 @@ Starlake provides a **zero-code extraction** capability. You define your data so
 
 Key extraction features:
 
-- **Universal Connectivity**: Support for any ODBC/JDBC compliant database.
+- **Universal Connectivity**: Support for any JDBC compliant database.
 - **Smart Loading**: Native support for incremental and full loads.
 - **Auto-Evolution**: Automated handling of schema changes in source data.
 
