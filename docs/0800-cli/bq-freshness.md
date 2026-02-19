@@ -9,10 +9,13 @@ keywords:
   - table monitoring
 ---
 
+:::warning Deprecated
+The `bq-freshness` command has been replaced by [`freshness`](/cli/freshness), which works across all supported warehouses (not just BigQuery). Please use `starlake freshness` instead.
+:::
 
 ## Synopsis
 
-**starlake bq-freshness [options]**
+**starlake freshness [options]**
 
 ## Description
 
