@@ -224,8 +224,8 @@ dag:
 ```yaml title="Transform configuration: metadata/dags/dagster_scheduled_task_shell.sl.yml"
 dag:
     comment: "default Dagster pipeline configuration for transform"
-    template: "transform/airflow_scheduled_task_bash.py.j2"
-    filename: "airflow_all_tasks.py"
+    template: "transform/dagster_scheduled_task_shell.py.j2"
+    filename: "dagster_all_tasks.py"
     options:
         run_dependencies_first: "true"
 
@@ -239,7 +239,7 @@ dag:
 dag:
     comment: "default Snowflake pipeline configuration for load"
     template: "load/snowflake_load_sql.py.j2"
-    filename: snowflake_{{domain}}_{{table}}.py"
+    filename: "snowflake_{{domain}}_{{table}}.py"
 
 ```
 
