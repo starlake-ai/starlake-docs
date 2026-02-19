@@ -76,7 +76,7 @@ import Head from '@docusaurus/Head';
           "name": "What options are available for the dag-generate command?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "--outputDir (output directory), --clean (remove old files), --domains (generate for schemas), --tasks (generate for tasks), --tags (filter by tags)."
+            "text": "--outputDir (output directory), --clean (remove old files), --domains (generate for schemas), --tasks (generate for tasks), --tags (filter by tags), --withRoles (include roles), --reportFormat (text or html)."
           }
         }
       ]
@@ -176,6 +176,8 @@ Available options:
 | --domains               | optional    | Generate DAG file(s) to load schemas (*true* by default if *--tasks* option has not been specified). |
 | --tasks                 | optional    | Generate DAG file(s) for tasks (*true* by default if *--domains* option has not been specified).     |
 | --tags `<value>`      | optional    | Generate DAG file(s) for the specified tags only (no tags by default).                                           |
+| --withRoles           | optional    | Include roles in the generated DAG file(s) (*false* by default).                                                 |
+| --reportFormat `<value>` | optional | Format of the generated report: `text` or `html` (*text* by default).                                            |
 
 ## Configuration
 
@@ -507,4 +509,4 @@ It is the generic Python factory interface responsible for generating tasks for 
 
 ### What options are available for the dag-generate command?
 
-`--outputDir` (output directory), `--clean` (remove old files), `--domains` (generate for schemas), `--tasks` (generate for tasks), `--tags` (filter by tags).
+`--outputDir` (output directory), `--clean` (remove old files), `--domains` (generate for schemas), `--tasks` (generate for tasks), `--tags` (filter by tags), `--withRoles` (include roles), `--reportFormat` (text or html).
