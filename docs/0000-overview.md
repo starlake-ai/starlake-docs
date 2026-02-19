@@ -194,7 +194,7 @@ Starlake will automatically apply the right merge strategy (INSERT OVERWRITE or 
 
 Visit our [transform tutorial](guides/transform/tutorial) to learn more
 
-### 4. How does Starlake test data?
+### How does Starlake test data?
 
 Starlake allows you to run your production load and transform logic on a local **DuckDB** instance, enabling fast, cost-effective unit testing.
 
@@ -217,7 +217,7 @@ In the example below, we run a test to validate the load task on the table sales
 
 Visit our [test tutorial](guides/unit-tests/concepts) to learn more
 
-### 5. Does Starlake support orchestration?
+### Does Starlake support orchestration?
 
 Automate your entire data pipeline:
 
