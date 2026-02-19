@@ -1,8 +1,69 @@
 ---
-title: "Python Transforms"
-description: "Run Python transforms in Starlake pipelines using DataFrame functions with YAML configuration, command-line options, and output tables."
-keywords: [starlake, python transforms, dataframe, python pipeline, data transformation, spark]
+title: "Python Transforms in Starlake: PySpark DataFrame Pipelines"
+description: "Run Python transforms in Starlake with PySpark. Pass arguments via --options, return a DataFrame as SL_THIS temporary view, and materialize results to any table. Same YAML config as SQL transforms."
+keywords: [starlake, python transforms, dataframe, python pipeline, data transformation, spark, pyspark, SL_THIS]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "When should you use a Python transform instead of SQL in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Python transforms are useful for complex operations that are difficult to express in SQL, such as machine learning, text transformations, or API calls. They require a Spark or Databricks runtime."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you pass parameters to a Python script in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the --options key1=value1,key2=value2 flag in the starlake transform command. The parameters are passed as command-line arguments to the Python script."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is SL_THIS in a Starlake Python transform?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "SL_THIS is the name of the temporary view that the Python script must create before returning. Starlake reads this view to materialize the result into the target table."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do Starlake Python transforms work with DuckDB?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Python transforms require a Spark runtime (standalone, Databricks, or EMR). For DuckDB, use SQL transforms."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can you use the same YAML file for a Python and SQL transform?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The YAML format is identical. Only the source file changes: .sql for SQL, .py for Python."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the returned DataFrame need a specific schema?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The DataFrame must match the target table schema if it exists. Otherwise, Starlake infers the schema. The DataFrame must be registered as the SL_THIS temporary view."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # Python Transforms
 
@@ -70,3 +131,23 @@ if __name__ == "__main__":
     df.createOrReplaceTempView("SL_THIS")
 
 ```
+
+## Frequently Asked Questions
+
+### When should you use a Python transform instead of SQL in Starlake?
+Python transforms are useful for complex operations that are difficult to express in SQL, such as machine learning, text transformations, or API calls. They require a Spark or Databricks runtime.
+
+### How do you pass parameters to a Python script in Starlake?
+Use the `--options key1=value1,key2=value2` flag in the `starlake transform` command. The parameters are passed as command-line arguments to the Python script.
+
+### What is SL_THIS in a Starlake Python transform?
+`SL_THIS` is the name of the temporary view that the Python script must create before returning. Starlake reads this view to materialize the result into the target table.
+
+### Do Starlake Python transforms work with DuckDB?
+No. Python transforms require a Spark runtime (standalone, Databricks, or EMR). For DuckDB, use SQL transforms.
+
+### Can you use the same YAML file for a Python and SQL transform?
+Yes. The YAML format is identical. Only the source file changes: `.sql` for SQL, `.py` for Python.
+
+### Does the returned DataFrame need a specific schema?
+The DataFrame must match the target table schema if it exists. Otherwise, Starlake infers the schema. The DataFrame must be registered as the `SL_THIS` temporary view.

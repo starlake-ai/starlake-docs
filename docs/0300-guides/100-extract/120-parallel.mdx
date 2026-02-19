@@ -1,10 +1,63 @@
 ---
-title: "Parallel Data Extraction with Starlake"
-description: "Speed up database extraction using Starlake parallel mode. Configure numPartitions and partitionColumn for concurrent data reads."
+title: "Parallel Data Extraction with Starlake (numPartitions)"
+description: "Speed up Starlake database extraction using parallel mode. Configure numPartitions and partitionColumn for concurrent JDBC reads. Compatible with incremental extraction."
 keywords: [starlake, parallel extraction, numPartitions, partitionColumn, performance, JDBC]
 ---
 
-# Parallel extraction
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does parallel extraction work in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Parallel extraction divides the reading of a table into multiple partitions executed simultaneously. The column specified in partitionColumn is used to split the data, and numPartitions defines the number of concurrent reads."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is the numPartitions parameter required?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. The default value is 1 (no parallelism). Increasing this value activates parallel extraction."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What are the prerequisites for parallel extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The database must support concurrent read-write connections. The partitionColumn parameter must be defined."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use parallel and incremental extraction at the same time?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. When fullExport: false and numPartitions > 1, the same partitionColumn is used for both parallel partitioning and incremental tracking."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What type of column should I use for partitionColumn in parallel mode?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A monotonically increasing numeric column (auto-increment ID, sequence) is recommended. Timestamps can also work."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# Parallel Data Extraction with Starlake (numPartitions)
 
 :::info
 
@@ -53,3 +106,20 @@ extract:
           numPartitions: 4            # Level of parallelism (defaults to 1 aka no parallelism)
   ...
 ```
+
+## Frequently Asked Questions
+
+### How does parallel extraction work in Starlake?
+Parallel extraction divides the reading of a table into multiple partitions executed simultaneously. The column specified in `partitionColumn` is used to split the data, and `numPartitions` defines the number of concurrent reads.
+
+### Is the numPartitions parameter required?
+No. The default value is 1 (no parallelism). Increasing this value activates parallel extraction.
+
+### What are the prerequisites for parallel extraction?
+The database must support concurrent read-write connections. The `partitionColumn` parameter must be defined.
+
+### Can I use parallel and incremental extraction at the same time?
+Yes. When `fullExport: false` and `numPartitions > 1`, the same `partitionColumn` is used for both parallel partitioning and incremental tracking.
+
+### What type of column should I use for partitionColumn in parallel mode?
+A monotonically increasing numeric column (auto-increment ID, sequence) is recommended. Timestamps can also work.

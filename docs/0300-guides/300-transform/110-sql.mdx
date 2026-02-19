@@ -1,8 +1,77 @@
 ---
-title: "SQL Transforms — Syntax and Patterns"
-description: "Write SQL transforms in Starlake using SELECT statements with materialization strategies, Jinja templating, and column documentation."
-keywords: [starlake, sql transforms, select statement, materialization, jinja templating, data pipeline]
+title: "SQL Transform Syntax: SELECT, Incremental Models, and Custom SQL in Starlake"
+description: "Write SQL transforms in Starlake using standard SELECT statements. Configure incremental models with sl_start_date/sl_end_date, document calculated columns, and use custom MERGE/INSERT with parseSQL: false."
+keywords: [starlake, sql transforms, select statement, materialization, incremental model, data pipeline, parseSQL]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Does the SELECT result have to match the target table schema?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "If the target table already exists, the SELECT result must match its schema. Otherwise, Starlake automatically infers the schema from the result."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you document calculated columns in a SQL transform?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the attributesDesc property in the transform YAML file to add a name and comment for each calculated column."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can you write custom MERGE or INSERT instead of a SELECT?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Set parseSQL: false in the YAML configuration. Starlake will then execute the SQL as-is without converting it into a write statement."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What are the sl_start_date and sl_end_date variables?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "They are reserved environment variables representing the current time interval. They are automatically passed by the orchestrator (Airflow, Dagster, or Snowflake Tasks) for incremental executions."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens if an incremental job fails for a day?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake integrates with Airflow's Catchup mechanism. Missed intervals are automatically replayed with the correct sl_start_date and sl_end_date values."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Starlake support Jinja templating in SQL files?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Starlake SQL files use standard SQL. Environment variables are injected directly without a Jinja layer."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does schema inference work when the target table does not exist?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake executes the SELECT and infers the schema (types, column names) from the result. Source column documentation is automatically propagated."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 #  SQL Transforms
 
@@ -76,4 +145,27 @@ There's no need to worry—Starlake handles this seamlessly by leveraging Airflo
  to catch up on any missed intervals. To enable this, simply add the `catchup` flag
  to your YAML DAG definition in Starlake, and as expected the orchestrator will run the missed intervals using 
  the `sl_start_date` and `sl_end_date` variables valued accordingly.
+
+## Frequently Asked Questions
+
+### Does the SELECT result have to match the target table schema?
+If the target table already exists, the SELECT result must match its schema. Otherwise, Starlake automatically infers the schema from the result.
+
+### How do you document calculated columns in a SQL transform?
+Use the `attributesDesc` property in the transform YAML file to add a name and comment for each calculated column.
+
+### Can you write custom MERGE or INSERT instead of a SELECT?
+Yes. Set `parseSQL: false` in the YAML configuration. Starlake will then execute the SQL as-is without converting it into a write statement.
+
+### What are the sl_start_date and sl_end_date variables?
+They are reserved environment variables representing the current time interval. They are automatically passed by the orchestrator (Airflow, Dagster, or Snowflake Tasks) for incremental executions.
+
+### What happens if an incremental job fails for a day?
+Starlake integrates with Airflow's Catchup mechanism. Missed intervals are automatically replayed with the correct `sl_start_date` and `sl_end_date` values.
+
+### Does Starlake support Jinja templating in SQL files?
+No. Starlake SQL files use standard SQL. Environment variables are injected directly without a Jinja layer.
+
+### How does schema inference work when the target table does not exist?
+Starlake executes the SELECT and infers the schema (types, column names) from the result. Source column documentation is automatically propagated.
 

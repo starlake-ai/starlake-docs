@@ -1,8 +1,77 @@
 ---
-title: "Data Quality Expectations"
-description: "Define data quality expectations in Starlake to validate loaded data. Write assertion queries that run against target tables after ingestion."
-keywords: [starlake, expectations, data quality, assertions, validation, post-load checks]
+title: "Data Quality Expectations — Post-Load Assertions in Starlake"
+description: "Define post-load data quality expectations in Starlake using Jinja SQL macros. Assert uniqueness, row counts and custom conditions on target tables with failOnError support."
+keywords: [starlake, expectations, data quality, assertions, validation, post-load checks, Jinja, SQL, failOnError]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is an expectation in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "An expectation is an assertion executed after data loading. It consists of a SQL query evaluated on the target table, whose result is compared to an expected condition."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I define an expectation in the table YAML file?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Add an expectations section with a list of entries. Each entry contains expect (query name + condition) and optionally failOnError: true to halt the pipeline on failure."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the format of an expectation expression?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The format is <query_name>(<params>) => <condition>. The query_name references a Jinja template defined in the expectations directory. The condition uses the variables count, result or results."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I write an expectation query template?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Templates are Jinja2 macros with a .j2 extension placed in the expectations directory. They generate SQL. The SL_THIS placeholder represents the target table."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What variables are available in an expectation condition?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Three variables: count (number of rows in the result), result (first row as a collection of values), and results (all rows as a collection of collections)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I stop the pipeline if an expectation fails?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Set failOnError: true on the expectation. If the condition is not satisfied, the pipeline halts with an error."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What built-in expectation macros does Starlake provide?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake documents: is_col_value_not_unique, is_row_count_to_be_between, col_value_count_greater_than, count_by_value and column_occurs. They are customizable and extensible."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # Expectations
 
@@ -93,4 +162,27 @@ Expectation queries are mainly jinja macro templates that are used to generate S
 
 Put the queries in the `expectations` directory and use the `.j2` extension.
 You may organize your queries in subdirectories.
+
+## Frequently Asked Questions
+
+### What is an expectation in Starlake?
+An expectation is a post-load assertion executed after data loading. It consists of a SQL query evaluated on the target table, whose result is compared to an expected condition.
+
+### How do I define an expectation in the table YAML file?
+Add an `expectations` section with a list of entries. Each entry contains `expect` (query name + condition) and optionally `failOnError: true` to halt the pipeline on failure.
+
+### What is the format of an expectation expression?
+The format is `<query_name>(<params>) => <condition>`. The `query_name` references a Jinja template defined in the `expectations` directory. The condition uses the variables `count`, `result` or `results`.
+
+### How do I write an expectation query template?
+Templates are Jinja2 macros with a `.j2` extension placed in the `expectations` directory. They generate SQL. The `SL_THIS` placeholder represents the target table.
+
+### What variables are available in an expectation condition?
+Three variables: `count` (number of rows in the result), `result` (first row as a collection of values), and `results` (all rows as a collection of collections).
+
+### Can I stop the pipeline if an expectation fails?
+Yes. Set `failOnError: true` on the expectation. If the condition is not satisfied, the pipeline halts with an error.
+
+### What built-in expectation macros does Starlake provide?
+Starlake documents: `is_col_value_not_unique`, `is_row_count_to_be_between`, `col_value_count_greater_than`, `count_by_value` and `column_occurs`. They are customizable and extensible.
 

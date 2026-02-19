@@ -1,7 +1,7 @@
 ---
 title: "Customize Airflow DAGs"
-description: "Customize Starlake DAG generation for Apache Airflow, including concrete factory classes, templates, data-aware scheduling, user-defined macros, and Terraform integration."
-keywords: [starlake, airflow, dag customization, cloud run, bash operator, data-aware scheduling, jinja2, orchestration]
+description: "Customize Starlake DAG generation for Apache Airflow: BashOperator and Cloud Run factory classes, Jinja2 templates, data-aware scheduling with Datasets, user-defined macros, and Terraform integration. Includes inline and dependency-based DAG strategies."
+keywords: [starlake, airflow, dag customization, cloud run, bash operator, data-aware scheduling, jinja2, orchestration, terraform, airflow datasets]
 toc_min_heading_level: 2
 toc_max_heading_level: 4
 ---
@@ -9,6 +9,82 @@ toc_max_heading_level: 4
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does Starlake generate Airflow tasks?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake uses concrete factory classes that inherit from StarlakeAirflowJob. The StarlakeAirflowBashJob class generates BashOperator tasks for on-premise execution. The StarlakeAirflowCloudRunJob class generates Cloud Run tasks."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What version of Airflow is required?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Apache Airflow 2.4.0 minimum. Airflow 2.6.0 or higher is recommended for Cloud Run integration."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does data-aware scheduling work with Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "When run_dependencies_first is False (default), Starlake generates Airflow Datasets for each load and transform. The transformation DAG only executes when all its dependencies have been materialized."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the difference between inline and data-aware scheduling?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In inline mode (run_dependencies_first=True), all dependencies are included in the same DAG. In data-aware mode (run_dependencies_first=False), the DAG is triggered by Airflow when dependent Datasets are updated."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How to pass dynamic SQL parameters at runtime?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Define a Python variable 'jobs' in a custom Jinja2 template. Each key represents a transformation name and its value contains the parameters to pass."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How to integrate Starlake DAGs with Terraform?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use Terraform variables to inject the 'jobs' parameters into templates via templatefile(). Deploy the DAG files to the Composer bucket with google_storage_bucket_object."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I define a specific Airflow pool?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The default_pool option in the DAG configuration defines the Airflow pool used for all tasks in the DAG."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does asynchronous Cloud Run execution work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "If cloud_run_async is True (default), a CloudRunJobCompletionSensor is instantiated to wait for the completion of the Cloud Run job execution."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 This page covers Airflow-specific customization for Starlake DAG generation. For general DAG configuration concepts (references, properties, options), see the [Customizing DAG Generation](./200-customization.mdx) hub page.
 
@@ -512,4 +588,38 @@ All the **outlets** that have been **recorded** are **available** in the *outlet
 
 ![](/img/orchestration/airflow/transformWithoutDependencies.png)
 
-In conjonction with the Starlake dag generation, the outlets property can be used to **schedule** **effortless** **DAGs** that will run the transform commands.
+In conjunction with the Starlake dag generation, the outlets property can be used to **schedule** **effortless** **DAGs** that will run the transform commands.
+
+## Frequently Asked Questions
+
+### How does Starlake generate Airflow tasks?
+
+Starlake uses concrete factory classes that inherit from `StarlakeAirflowJob`. The `StarlakeAirflowBashJob` class generates `BashOperator` tasks for on-premise execution. The `StarlakeAirflowCloudRunJob` class generates Cloud Run tasks.
+
+### What version of Airflow is required?
+
+Apache Airflow 2.4.0 minimum. Airflow 2.6.0 or higher is recommended for Cloud Run integration.
+
+### How does data-aware scheduling work with Starlake?
+
+When `run_dependencies_first` is `False` (default), Starlake generates Airflow Datasets for each load and transform. The transformation DAG only executes when all its dependencies have been materialized.
+
+### What is the difference between inline and data-aware scheduling?
+
+In inline mode (`run_dependencies_first=True`), all dependencies are included in the same DAG. In data-aware mode (`run_dependencies_first=False`), the DAG is triggered by Airflow when dependent Datasets are updated.
+
+### How to pass dynamic SQL parameters at runtime?
+
+Define a Python variable `jobs` in a custom Jinja2 template. Each key represents a transformation name and its value contains the parameters to pass.
+
+### How to integrate Starlake DAGs with Terraform?
+
+Use Terraform variables to inject the `jobs` parameters into templates via `templatefile()`. Deploy the DAG files to the Composer bucket with `google_storage_bucket_object`.
+
+### Can I define a specific Airflow pool?
+
+Yes. The `default_pool` option in the DAG configuration defines the Airflow pool used for all tasks in the DAG.
+
+### How does asynchronous Cloud Run execution work?
+
+If `cloud_run_async` is `True` (default), a `CloudRunJobCompletionSensor` is instantiated to wait for the completion of the Cloud Run job execution.

@@ -1,8 +1,69 @@
 ---
-title: "Orchestrate Transform Jobs"
-description: "Run Starlake SQL and Python transforms with Airflow, Dagster or Snowflake Tasks using automatic DAG generation and dependency resolution."
-keywords: [starlake transform orchestration, sql transform dag, airflow transform, dagster transform]
+title: "Orchestrate Starlake Transforms: Automatic DAG Generation for Airflow, Dagster, Snowflake Tasks"
+description: "Generate execution DAGs for Starlake SQL and Python transforms. Automatic dependency resolution from SQL analysis. Supports Airflow, Dagster, and Snowflake Tasks. Includes load and transform jobs in correct order."
+keywords: [starlake transform orchestration, sql transform dag, airflow transform, dagster transform, dag-generate, dependency resolution, snowflake tasks]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does Starlake resolve dependencies between SQL transforms?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake analyzes the FROM and JOIN clauses of each SQL file to build a dependency graph. Upstream tables are always executed before downstream ones."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which orchestrators are supported by Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake generates DAGs for Airflow, Dagster, and Snowflake Tasks. Other orchestrators can be integrated via CLI commands."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What does the starlake dag-generate command do?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "It analyzes all SQL and Python transforms in the project and generates the corresponding DAG files for the configured orchestrator (Airflow, Dagster, or Snowflake Tasks)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do generated DAGs include load jobs as well?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The generated DAGs include both load and transform jobs in the correct execution order."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you need to regenerate DAGs after every SQL change?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. After any change that modifies dependencies (adding a table, modifying a JOIN), re-run starlake dag-generate to update the DAGs."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can you customize the generated DAGs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. See the DAG customization page to configure scheduling, retries, parallelism, and other orchestrator-specific parameters."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # Orchestrate Transform Jobs
 
@@ -24,3 +85,23 @@ The generated DAGs include both load and transform jobs in the correct execution
 
 - See the [Orchestration Tutorial](/docs/guides/orchestrate/tutorial) for a complete walkthrough.
 - See [Customizing DAG Generation](/docs/guides/orchestrate/customization) for per-orchestrator configuration.
+
+## Frequently Asked Questions
+
+### How does Starlake resolve dependencies between SQL transforms?
+Starlake analyzes the `FROM` and `JOIN` clauses of each SQL file to build a dependency graph. Upstream tables are always executed before downstream ones.
+
+### Which orchestrators are supported by Starlake?
+Starlake generates DAGs for Airflow, Dagster, and Snowflake Tasks. Other orchestrators can be integrated via CLI commands.
+
+### What does the starlake dag-generate command do?
+It analyzes all SQL and Python transforms in the project and generates the corresponding DAG files for the configured orchestrator (Airflow, Dagster, or Snowflake Tasks).
+
+### Do generated DAGs include load jobs as well?
+Yes. The generated DAGs include both load and transform jobs in the correct execution order.
+
+### Do you need to regenerate DAGs after every SQL change?
+Yes. After any change that modifies dependencies (adding a table, modifying a JOIN), re-run `starlake dag-generate` to update the DAGs.
+
+### Can you customize the generated DAGs?
+Yes. See the DAG customization page to configure scheduling, retries, parallelism, and other orchestrator-specific parameters.

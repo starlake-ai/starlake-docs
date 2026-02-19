@@ -1,8 +1,69 @@
 ---
-title: "Export Transform Results"
-description: "Export Starlake transform results to CSV, JSON, Parquet, Avro files or to external databases using sink configuration in YAML files."
-keywords: [starlake, export data, csv export, parquet, data sink, transform output, data pipeline]
+title: "Export Starlake Transform Results to CSV, Parquet, or Another Database"
+description: "Export Starlake transform results to CSV, JSON, Parquet, or Avro files. Write to cloud storage (GCS, S3) or another database using sink.connectionRef. YAML configuration examples included."
+keywords: [starlake, export data, csv export, parquet, data sink, transform output, data pipeline, cloud storage, connectionRef]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What file formats are supported for export in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports export to CSV, JSON, Parquet, Avro, and any format supported by Apache Spark via the sink.format property."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where are exported files stored by default?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Files are saved in the datasets/<domain>/ folder of the project, named after the transform and the extension configured in the YAML file."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you export to a custom path or a cloud bucket?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the sink.path property to specify a path relative to the root defined in application.sl.yml. On cloud storage, the bucket name is automatically prepended."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you export to another database?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Specify the connection name in sink.connectionRef of the transform YAML file. The connection must be defined in application.sl.yml."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can you export to both a file and a database at the same time?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A single transform writes to one destination. To write to two targets, create two transforms that read the same source."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does CSV export produce a single file or multiple files?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The behavior depends on the engine. With Spark, multiple partitioned files may be generated. With DuckDB or a single-node engine, a single file is produced."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # Export Transform Results
 
@@ -10,7 +71,7 @@ You may export your data to files or to another database.
 
 
 ## Export to files
-You may export to CSV / JSON / Parquet / Avro or whatever file formt supported by Apache Spark.
+You may export to CSV / JSON / Parquet / Avro or whatever file format supported by Apache Spark.
 You can export the data to a CSV file using by specifying the csv format in the sink attribute of your transform.
 
 ```yaml title="metadata/transform/<domain>/<transform>.sl.yml"
@@ -56,4 +117,24 @@ task:
     ...
 
 ```
+
+## Frequently Asked Questions
+
+### What file formats are supported for export in Starlake?
+Starlake supports export to CSV, JSON, Parquet, Avro, and any file format supported by Apache Spark via the `sink.format` property.
+
+### Where are exported files stored by default?
+Files are saved in the `datasets/<domain>/` folder of the project, named after the transform and the extension configured in the YAML file.
+
+### How do you export to a custom path or a cloud bucket?
+Use the `sink.path` property to specify a path relative to the `root` defined in `application.sl.yml`. On cloud storage, the bucket name is automatically prepended.
+
+### How do you export to another database?
+Specify the connection name in `sink.connectionRef` of the transform YAML file. The connection must be defined in `application.sl.yml`.
+
+### Can you export to both a file and a database at the same time?
+A single transform writes to one destination. To write to two targets, create two transforms that read the same source.
+
+### Does CSV export produce a single file or multiple files?
+The behavior depends on the engine. With Spark, multiple partitioned files may be generated. With DuckDB or a single-node engine, a single file is produced.
 

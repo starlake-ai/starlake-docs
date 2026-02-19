@@ -1,8 +1,77 @@
 ---
-title: "Extract Schemas from OpenAPI Definitions"
-description: "Map OpenAPI routes and schemas to Starlake domains and tables. Configure extraction with YAML including route filtering and explosion strategies."
-keywords: [starlake, OpenAPI, schema extraction, API, YAML configuration, REST API]
+title: "Extract Starlake Schemas from OpenAPI Definitions (REST API to Tables)"
+description: "Map OpenAPI routes and schemas to Starlake domains and tables using YAML configuration. Supports route filtering, schema exclusion, explode strategies, and name normalization."
+keywords: [starlake, OpenAPI, schema extraction, API, YAML configuration, REST API, sanitizeAttributeName]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What OpenAPI operations does Starlake extract?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "By default, Starlake extracts GET operations. POST operations can be configured via the operations field in the routes section. Schemas that are not objects or arrays of objects are filtered out."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How are table names generated from OpenAPI paths?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake removes path parameters, removes accents, replaces non-alphanumeric characters with underscores, adds underscores before capitals preceded by lowercase, and lowercases everything."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What does the basePath field do in OpenAPI extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The basePath is removed from the beginning of the path before generating the table name. This avoids unnecessary prefixes in the names. It can be defined at root level or at domain level."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I exclude schemas or routes in Starlake OpenAPI extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use schemas.exclude to exclude schemas by name (regex supported) and routes.exclude to exclude paths. schemas.include allows keeping only certain schemas."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the explode strategy work in Starlake OpenAPI extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The explode.on field defines how Starlake treats complex properties: ALL keeps objects and arrays, ARRAY keeps objects but does not dive into arrays, OBJECT keeps arrays but dives deeper into objects."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is sanitizeAttributeName in Starlake OpenAPI extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Two modes: ON_EXTRACT (default) sanitizes the name and stores it directly as the field name. ON_LOAD sanitizes the name and stores it as a rename property when it differs from the original name."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What type of connection is required for OpenAPI extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A connection of type fs (filesystem) pointing to the OpenAPI definition file (JSON). The file is by convention placed in metadata/extract/openapi/."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # OpenAPI Schema Extraction
 
@@ -11,10 +80,10 @@ The instructions provide a comprehensive explanation of how to map OpenAPI route
 
 ## Overview
 The schema extraction process leverages YAML configuration to define relations between Starlake's domains and tables with OpenAPI definitions.
-These configuration support advanced features like excluding routes or fields, and handling explosion strategies for complex data structures.
+This configuration supports advanced features like excluding routes or fields, and handling explosion strategies for complex data structures.
 Table names are deduced from paths and normalized. Attribute names are normalized as well in order for them to be compatible with databases.
 
-Generally speaking, what we are interested in an OpenAPI definition are GET operations and their schema. Starlake filters out schema's that are not objects or array of object. Furthermore, the extraction flatten root array and consider the output to match JSON Lines.
+Generally speaking, what we are interested in an OpenAPI definition are GET operations and their schema. Starlake filters out schemas that are not objects or arrays of objects. Furthermore, the extraction flattens root arrays and considers the output to match JSON Lines.
 
 ## Extract step-by-step
 
@@ -106,14 +175,37 @@ Table names are deduced from path. This is how they are normalized:
 - remove all accents
 - replace non alpha numeric with underscore
 - replace consecutive/trailing underscores
-- add underscore before capitals preceeded by lowercase
+- add underscore before capitals preceded by lowercase
 - add underscore after a group of capitals
 - lower all
 
 ### Attribute name
-Attribute names are normalized as follow:
+Attribute names are normalized as follows:
 - remove all accents
 - replace non alpha numeric with underscore
 - replace consecutive/trailing underscores
-- add underscore before capitals preceeded by lowercase
+- add underscore before capitals preceded by lowercase
 - add underscore after a group of capitals
+
+## Frequently Asked Questions
+
+### What OpenAPI operations does Starlake extract?
+By default, Starlake extracts GET operations. POST operations can be configured via the `operations` field in the `routes` section. Schemas that are not objects or arrays of objects are filtered out.
+
+### How are table names generated from OpenAPI paths?
+Starlake removes path parameters, removes accents, replaces non-alphanumeric characters with underscores, adds underscores before capitals preceded by lowercase, and lowercases everything.
+
+### What does the basePath field do in OpenAPI extraction?
+The `basePath` is removed from the beginning of the path before generating the table name. This avoids unnecessary prefixes in the names. It can be defined at root level or at domain level.
+
+### How do I exclude schemas or routes in Starlake OpenAPI extraction?
+Use `schemas.exclude` to exclude schemas by name (regex supported) and `routes.exclude` to exclude paths. `schemas.include` allows keeping only certain schemas.
+
+### How does the explode strategy work in Starlake OpenAPI extraction?
+The `explode.on` field defines how Starlake treats complex properties: `ALL` keeps objects and arrays, `ARRAY` keeps objects but does not dive into arrays, `OBJECT` keeps arrays but dives deeper into objects.
+
+### What is sanitizeAttributeName in Starlake OpenAPI extraction?
+Two modes: `ON_EXTRACT` (default) sanitizes the name and stores it directly as the field name. `ON_LOAD` sanitizes the name and stores it as a `rename` property when it differs from the original name.
+
+### What type of connection is required for OpenAPI extraction?
+A connection of type `fs` (filesystem) pointing to the OpenAPI definition file (JSON). The file is by convention placed in `metadata/extract/openapi/`.

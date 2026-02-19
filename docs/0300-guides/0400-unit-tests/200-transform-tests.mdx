@@ -1,8 +1,77 @@
 ---
 title: "Test Transform Tasks"
-description: "Write and run unit tests for Starlake SQL transforms locally using DuckDB transpilation, with expected output comparison and reports."
-keywords: [starlake, transform test, unit test, duckdb, sql transpilation, data validation, test reports]
+description: "Write and run unit tests for Starlake SQL transformations locally on DuckDB. Automatic SQL transpilation from BigQuery, Snowflake, or Databricks. Compare transform results against expected CSV or SQL output with detailed test reports."
+keywords: [starlake, transform test, unit test, duckdb, sql transpilation, data validation, test reports, bigquery, snowflake, databricks]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Where to place transform tests in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Transform tests are in metadata/tests/transform. Each test is a directory in the domain/table subdirectory."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What files make up a transform test?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "CSV or JSONL files containing initial source data (named domain.table.csv or .json), and a _expected.csv or _expected.sql file containing the expected data after transformation."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Starlake handle SQL dialect differences?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake automatically transpiles SQL queries from the target dialect (BigQuery, Snowflake, etc.) to the DuckDB dialect before execution. No query modification is needed."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use a SQL file as expected output?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The expected file can be _expected.csv (static data) or _expected.sql (a SQL query whose result is compared to the actual data)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where to find transform test reports?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In test-reports/transform/test-name/. The report contains the DuckDB database (testname.db), unexpected data (not_expected.csv), and missing data (missing.csv)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How to run only transform tests?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the command starlake test --transform. For a specific test: starlake test --name domain.table.test-name."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do tests generate a visual report?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Running tests generates a complete website in the test-reports directory."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # Test Transform Tasks
 
@@ -22,7 +91,7 @@ These files should be named after the domain and table names. For example, the f
 
 
 Before running the transform, starlake will transpile your SQL statements to the Duckdb dialect before running it.
-After running the transpiled SQL staement using the `starlake transform` task against local duckdb database populated by starlake using the data files present in the test directory,
+After running the transpiled SQL statement using the `starlake transform` task against local duckdb database populated by starlake using the data files present in the test directory,
 Starlake will compare the schema of the table with the schema of the expected data file and will raise an error if they do not match.
 
 The test will pass if the transform task succeeds and the data in the table matches the data in the `_expected.csv` file.
@@ -64,7 +133,33 @@ Running tests will also generate a complete website report in the `test-reports`
 
 ![](/img/tests/report.png)
 
+## Frequently Asked Questions
 
+### Where to place transform tests in Starlake?
 
+Transform tests are in `metadata/tests/transform`. Each test is a directory in the `domain/table` subdirectory.
 
+### What files make up a transform test?
+
+CSV or JSONL files containing initial source data (named `domain.table.csv` or `.json`), and a `_expected.csv` or `_expected.sql` file containing the expected data after transformation.
+
+### How does Starlake handle SQL dialect differences?
+
+Starlake automatically transpiles SQL queries from the target dialect (BigQuery, Snowflake, etc.) to the DuckDB dialect before execution. No query modification is needed.
+
+### Can I use a SQL file as expected output?
+
+Yes. The expected file can be `_expected.csv` (static data) or `_expected.sql` (a SQL query whose result is compared to the actual data).
+
+### Where to find transform test reports?
+
+In `test-reports/transform/test-name/`. The report contains the DuckDB database (`testname.db`), unexpected data (`not_expected.csv`), and missing data (`missing.csv`).
+
+### How to run only transform tests?
+
+Use the command `starlake test --transform`. For a specific test: `starlake test --name domain.table.test-name`.
+
+### Do tests generate a visual report?
+
+Yes. Running tests generates a complete website in the `test-reports` directory.
 

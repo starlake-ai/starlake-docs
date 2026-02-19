@@ -1,7 +1,7 @@
 ---
 title: "Deploy Starlake Pipelines"
-description: "Deploy Starlake data pipelines to cloud environments by copying metadata to cloud storage and running load and transform commands."
-keywords: [starlake, deploy, cloud deployment, docker, orchestration, data pipeline, production]
+description: "Step-by-step guide to deploying Starlake data pipelines to production: configure environment variables, copy metadata to cloud storage, and deploy generated DAGs to your orchestrator using the Starlake Docker container."
+keywords: [starlake, deploy, cloud deployment, docker, orchestration, data pipeline, production, SL_ENV, SL_ROOT, GCP, AWS, Azure]
 ---
 
 import Head from '@docusaurus/Head';
@@ -35,6 +35,62 @@ import Head from '@docusaurus/Head';
       ]
     })}
   </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How to deploy a Starlake project to production?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Copy the metadata folder to a cloud storage bucket, then run load/transform commands from the Starlake Docker container on any cloud provider."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What environment variables need to be configured?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "SL_ENV (target environment) and SL_ROOT (project root directory) must be defined in the Starlake Docker container."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How to deploy DAGs to the orchestrator?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Copy the contents of the metadata/dags/generated folder to your orchestrator's DAGs folder."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Starlake work with any cloud provider?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The Starlake Docker container can run on GCP, AWS, Azure, or on-premise."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How to abstract differences between environments?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use environment variables to parameterize your project. Environment configuration is described in the Environment section of the documentation."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the typical deployment flow?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "1. Configure SL_ENV and SL_ROOT. 2. Copy metadata to cloud storage. 3. Copy the generated DAGs to the orchestrator. 4. The orchestrator runs Starlake commands via the Docker container."
+          }
+        }
+      ]
+    })}
+  </script>
 </Head>
 
 # Deploy Starlake Pipelines
@@ -57,4 +113,31 @@ In your starlake docker container make the SL_ENV and SL_ROOT env variables are 
 
 To run on your orchestrator, just copy the contents of the `metadata/dags/generated` folder to your orchestrator's DAGs folder.
 
+## Frequently Asked Questions
 
+### How to deploy a Starlake project to production?
+
+Copy the metadata folder to a cloud storage bucket, then run load/transform commands from the Starlake Docker container on any cloud provider.
+
+### What environment variables need to be configured?
+
+`SL_ENV` (target environment) and `SL_ROOT` (project root directory) must be defined in the Starlake Docker container.
+
+### How to deploy DAGs to the orchestrator?
+
+Copy the contents of the `metadata/dags/generated` folder to your orchestrator's DAGs folder.
+
+### Does Starlake work with any cloud provider?
+
+Yes. The Starlake Docker container can run on GCP, AWS, Azure, or on-premise.
+
+### How to abstract differences between environments?
+
+Use environment variables to parameterize your project. Environment configuration is described in the [Environment](../../configuration/environment) section of the documentation.
+
+### What is the typical deployment flow?
+
+1. Configure `SL_ENV` and `SL_ROOT`.
+2. Copy metadata to cloud storage.
+3. Copy the generated DAGs to the orchestrator.
+4. The orchestrator runs Starlake commands via the Docker container.

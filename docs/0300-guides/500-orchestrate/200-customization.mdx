@@ -1,11 +1,89 @@
 ---
 title: "Customizing DAG Generation"
-description: "Customize Starlake DAG templates for Airflow, Dagster, or Snowflake Tasks using Jinja2 templating and Python configuration files."
-keywords: [starlake, dag customization, airflow dag, dagster, snowflake tasks, jinja2, orchestration]
+description: "Complete guide to customizing Starlake DAG generation: YAML configuration, dagRef references, Jinja2 templates, pre-load strategies, and the IStarlakeJob Python factory interface for Airflow, Dagster, and Snowflake Tasks."
+keywords: [starlake, dag customization, airflow dag, dagster, snowflake tasks, jinja2, orchestration, dagRef, pre-load strategy, IStarlakeJob]
 # Display h2 to h5 headings
 toc_min_heading_level: 2
 toc_max_heading_level: 4
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does DAG generation work in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake uses a framework composed of: the dag-generate command, YAML configuration files in metadata/dags, Jinja2 templates, and the starlake-orchestration framework that dynamically generates the tasks."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where to define the dagRef reference for data loading?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "At the project level in application.sl.yml (application.dagRef.load property), at the domain level in _config.sl.yml (load.metadata.dagRef property), or at the table level in the table's .sl.yml file."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where to define the dagRef reference for transformations?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "At the project level in application.sl.yml (application.dagRef.transform property) or at the transformation level in the .sl.yml file (task.dagRef property)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What are the available pre-load strategies?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Four strategies: NONE (no condition), IMPORTED (file present in the landing area), PENDING (file in the pending zone), ACK (acknowledgment file present)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How to generate a DAG per domain or per table?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The filename property in the YAML configuration controls granularity. Use {{domain}} for one DAG per domain, {{domain}}_{{table}} for one DAG per table."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How to pass Starlake environment variables to the DAG?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the sl_env_var option in the YAML configuration. It accepts an encoded JSON string containing the environment variables."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the IStarlakeJob interface?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "It is the generic Python factory interface responsible for generating tasks for the stage, load, and transform commands. Each orchestrator has concrete classes that implement the sl_job method."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What options are available for the dag-generate command?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "--outputDir (output directory), --clean (remove old files), --domains (generate for schemas), --tasks (generate for tasks), --tags (filter by tags)."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Customizing DAG generation
 
 Starlake comes with out of the box DAG templates. These templates can be customized to fit your specific needs for any scheduler of your choice.
@@ -201,7 +279,7 @@ dag:
 
 ##### Pre-load strategy
 
-**pre_load_strategy** defines the strategy that can be used to conditionaly load the tables of a domain within the DAG.
+**pre_load_strategy** defines the strategy that can be used to conditionally load the tables of a domain within the DAG.
 
 Four possible strategies:
 
@@ -351,3 +429,37 @@ For orchestrator-specific concrete factory classes, templates, dependencies hand
 - [Customize Airflow DAGs](./210-airflow.mdx)
 - [Customize Dagster DAGs](./220-dagster.mdx)
 - [Customize Snowflake Task DAGs](./230-snowflake-tasks.mdx)
+
+## Frequently Asked Questions
+
+### How does DAG generation work in Starlake?
+
+Starlake uses a framework composed of: the `dag-generate` command, YAML configuration files in `metadata/dags`, Jinja2 templates, and the `starlake-orchestration` framework that dynamically generates the tasks.
+
+### Where to define the dagRef reference for data loading?
+
+At the **project** level in `application.sl.yml` (`application.dagRef.load` property), at the **domain** level in `_config.sl.yml` (`load.metadata.dagRef` property), or at the **table** level in the table's `.sl.yml` file.
+
+### Where to define the dagRef reference for transformations?
+
+At the **project** level in `application.sl.yml` (`application.dagRef.transform` property) or at the **transformation** level in the `.sl.yml` file (`task.dagRef` property).
+
+### What are the available pre-load strategies?
+
+Four strategies: `NONE` (no condition), `IMPORTED` (file present in the landing area), `PENDING` (file in the pending zone), `ACK` (acknowledgment file present).
+
+### How to generate a DAG per domain or per table?
+
+The `filename` property in the YAML configuration controls granularity. Use `{{domain}}` for one DAG per domain, `{{domain}}_{{table}}` for one DAG per table.
+
+### How to pass Starlake environment variables to the DAG?
+
+Use the `sl_env_var` option in the YAML configuration. It accepts an encoded JSON string containing the environment variables.
+
+### What is the IStarlakeJob interface?
+
+It is the generic Python factory interface responsible for generating tasks for the `stage`, `load`, and `transform` commands. Each orchestrator has concrete classes that implement the `sl_job` method.
+
+### What options are available for the dag-generate command?
+
+`--outputDir` (output directory), `--clean` (remove old files), `--domains` (generate for schemas), `--tasks` (generate for tasks), `--tags` (filter by tags).

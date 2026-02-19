@@ -1,10 +1,80 @@
 ---
 title: "Customize Dagster DAGs"
-description: "Customize Starlake DAG generation for Dagster, including concrete factory classes, templates, and multi-asset sensors for dependency management."
-keywords: [starlake, dagster, dag customization, cloud run, shell job, multi-asset sensor, orchestration]
+description: "Complete guide to customizing Starlake DAG generation for Dagster: Shell and Cloud Run factory classes, Jinja2 templates, Multi Asset Sensor for dependency management, and asset materialization for data loading and transformation."
+keywords: [starlake, dagster, dag customization, cloud run, shell job, multi-asset sensor, orchestration, asset materialization]
 toc_min_heading_level: 2
 toc_max_heading_level: 4
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does Starlake generate Dagster ops?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake uses concrete factory classes that inherit from StarlakeDagsterJob. StarlakeDagsterShellJob generates ops via the dagster-shell library. StarlakeDagsterCloudRunJob generates ops that execute Cloud Run jobs."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What version of Dagster is required?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Dagster 1.6.0 minimum and starlake-dagster 0.1.2 minimum."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Starlake manage dependencies in Dagster?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "With run_dependencies_first=True, all dependencies are included inline in the same job. With run_dependencies_first=False (default), a Multi Asset Sensor monitors the materialization of dependent assets before triggering the job."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the Starlake Multi Asset Sensor work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The sensor checks that all dependent assets have been materialized. If so, it triggers a RunRequest. Otherwise, it returns a SkipReason indicating the missing assets."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How are assets materialized?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Each sl_import, sl_load, and sl_transform command registers a corresponding AssetKey. The materialization is performed at execution time via AssetMaterialization in the sl_job method."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What additional options are needed for Cloud Run?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "cloud_run_project_id (optional), cloud_run_job_name (required), and cloud_run_region (optional, defaults to europe-west1)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use Dagster locally with Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The StarlakeDagsterShellJob template executes Starlake commands locally via shell. You just need to specify the SL_STARLAKE_PATH option."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Customize Dagster DAGs
 
 This page covers Dagster-specific customization for Starlake DAG generation. For general DAG configuration concepts (references, properties, options), see the [Customizing DAG Generation](./200-customization.mdx) hub page.
@@ -308,3 +378,33 @@ def sl_job(self, task_id: str, arguments: list, spark_config: StarlakeSparkConfi
 ```
 
 ![](/img/orchestration/dagster/transformWithoutDependencies.png)
+
+## Frequently Asked Questions
+
+### How does Starlake generate Dagster ops?
+
+Starlake uses concrete factory classes that inherit from `StarlakeDagsterJob`. `StarlakeDagsterShellJob` generates ops via the dagster-shell library. `StarlakeDagsterCloudRunJob` generates ops that execute Cloud Run jobs.
+
+### What version of Dagster is required?
+
+Dagster 1.6.0 minimum and starlake-dagster 0.1.2 minimum.
+
+### How does Starlake manage dependencies in Dagster?
+
+With `run_dependencies_first=True`, all dependencies are included inline in the same job. With `run_dependencies_first=False` (default), a Multi Asset Sensor monitors the materialization of dependent assets before triggering the job.
+
+### How does the Starlake Multi Asset Sensor work?
+
+The sensor checks that all dependent assets have been materialized. If so, it triggers a `RunRequest`. Otherwise, it returns a `SkipReason` indicating the missing assets.
+
+### How are assets materialized?
+
+Each `sl_import`, `sl_load`, and `sl_transform` command registers a corresponding `AssetKey`. The materialization is performed at execution time via `AssetMaterialization` in the `sl_job` method.
+
+### What additional options are needed for Cloud Run?
+
+`cloud_run_project_id` (optional), `cloud_run_job_name` (required), and `cloud_run_region` (optional, defaults to `europe-west1`).
+
+### Can I use Dagster locally with Starlake?
+
+Yes. The `StarlakeDagsterShellJob` template executes Starlake commands locally via shell. You just need to specify the `SL_STARLAKE_PATH` option.

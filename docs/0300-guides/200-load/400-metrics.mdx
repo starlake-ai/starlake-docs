@@ -1,8 +1,77 @@
 ---
-title: "Ingestion Metrics"
-description: "Compute continuous and discrete metrics on ingested data with Starlake. Track statistics like mean, variance, percentiles and category frequency."
-keywords: [starlake, metrics, ingestion, continuous metrics, discrete metrics, data quality, statistics]
+title: "Ingestion Metrics in Starlake — Continuous and Discrete Data Profiling"
+description: "Compute continuous and discrete metrics during data ingestion with Starlake. Track mean, variance, percentiles, skewness, kurtosis, category frequency and more. Compare metrics across loads."
+keywords: [starlake, metrics, ingestion, continuous metrics, discrete metrics, data quality, statistics, data profiling, skewness, kurtosis]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What types of metrics does Starlake compute during ingestion?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Two types: continuous (min, max, mean, median, variance, standard deviation, skewness, kurtosis, percentiles 25/75, missing values, row count) and discrete (count distinct, category frequency, category count, row count)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I enable metrics on an attribute?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Set the metric property on the attribute in the table YAML file. Use continuous for numeric metrics or discrete for categorical metrics."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where are ingestion metrics stored?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Metrics are stored in dedicated tables in the data warehouse, with an ingestion timestamp allowing you to compare values between successive loads."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I compute metrics on nested attributes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Currently, only top-level attributes are supported for metric computation."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What continuous metrics are computed?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Minimum, maximum, sum, mean, median, variance, standard deviation, missing values, skewness, kurtosis, percentile 25, percentile 75 and row count."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What discrete metrics are computed?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Count distinct, category frequency (percentage), category count (number of occurrences per distinct value) and row count."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are metrics computed on all data or only the incoming batch?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Only on the incoming batch. Each computation is associated with the ingestion timestamp, enabling tracking over time."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # About Metrics
 
@@ -90,3 +159,26 @@ The following tables would be generated:
 |city     |.............. |...  |.....    |local-1650471634299|yelp  |business|1650471642737|UNIT      |
 +---------+---------------+-----+---------+-------------------+------+--------+-------------+----------+
 ```
+
+## Frequently Asked Questions
+
+### What types of metrics does Starlake compute during ingestion?
+Two types: **continuous** (min, max, mean, median, variance, standard deviation, skewness, kurtosis, percentiles 25/75, missing values, row count) and **discrete** (count distinct, category frequency, category count, row count).
+
+### How do I enable metrics on an attribute?
+Set the `metric` property on the attribute in the table YAML file. Use `continuous` for numeric metrics or `discrete` for categorical metrics.
+
+### Where are ingestion metrics stored?
+Metrics are stored in dedicated tables in the data warehouse, with an ingestion timestamp allowing you to compare values between successive loads.
+
+### Can I compute metrics on nested attributes?
+No. Currently, only top-level attributes are supported for metric computation.
+
+### What continuous metrics are computed?
+Minimum, maximum, sum, mean, median, variance, standard deviation, missing values, skewness, kurtosis, percentile 25, percentile 75 and row count.
+
+### What discrete metrics are computed?
+Count distinct, category frequency (percentage), category count (number of occurrences per distinct value) and row count.
+
+### Are metrics computed on all data or only the incoming batch?
+Only on the incoming batch. Each computation is associated with the ingestion timestamp, enabling tracking over time.

@@ -1,10 +1,71 @@
 ---
-title: "Database-Specific Extraction Settings"
-description: "Configure Starlake extraction for DB2, Oracle, and SQL Server. Learn how to extract table and column comments for each database platform."
-keywords: [starlake, DB2, Oracle, SQL Server, schema extraction, column remarks, database comments]
+title: "Database-Specific Extraction Settings: DB2, Oracle, SQL Server"
+description: "Configure Starlake schema extraction for DB2, Oracle, and SQL Server. Extract column and table comments using columnRemarks and tableRemarks SQL queries with template placeholders."
+keywords: [starlake, DB2, Oracle, SQL Server, schema extraction, column remarks, database comments, columnRemarks, tableRemarks]
 ---
 
-# Database Specifics
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Which databases require special configuration for comment extraction in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "DB2, Oracle, and SQL Server require configuring columnRemarks and tableRemarks in the extraction YAML file. MySQL and PostgreSQL retrieve comments via standard JDBC metadata without extra configuration."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do the {{schema}} and {{table}} placeholders work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "These are substitution variables. Starlake automatically replaces them with the schema name and table name being extracted at runtime when executing the SQL query."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where are column comments stored in DB2?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "DB2 stores column descriptions in SYSIBM.SQLCOLUMNS (COLUMN_TEXT field) and table descriptions in QSYS2.SYSTABLES (TABLE_TEXT field)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where are column comments stored in Oracle?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oracle uses ALL_COL_COMMENTS for column comments and ALL_TAB_COMMENTS for table comments. Schema and table names are typically uppercase."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where are column comments stored in SQL Server?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "SQL Server uses sys.extended_properties with the MS_Description property for column and table descriptions."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is it mandatory to configure columnRemarks and tableRemarks?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. These fields are optional. They are only needed if you want to extract comments/descriptions in addition to the table schema."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# Database-Specific Extraction Settings: DB2, Oracle, SQL Server
 
 For some databases, when extracting table schemas, we need to specify the location of the table and column comments.
 This applies to databases like DB2, SQL Server, or Oracle when you want to extract comments in addition to the schemas.
@@ -81,3 +142,23 @@ extract:
 
 </TabItem>
 </Tabs>
+
+## Frequently Asked Questions
+
+### Which databases require special configuration for comment extraction in Starlake?
+DB2, Oracle, and SQL Server require configuring `columnRemarks` and `tableRemarks` in the extraction YAML file. MySQL and PostgreSQL retrieve comments via standard JDBC metadata without extra configuration.
+
+### How do the {{schema}} and {{table}} placeholders work?
+These are substitution variables. Starlake automatically replaces them with the schema name and table name being extracted at runtime when executing the SQL query.
+
+### Where are column comments stored in DB2?
+DB2 stores column descriptions in `SYSIBM.SQLCOLUMNS` (`COLUMN_TEXT` field) and table descriptions in `QSYS2.SYSTABLES` (`TABLE_TEXT` field).
+
+### Where are column comments stored in Oracle?
+Oracle uses `ALL_COL_COMMENTS` for column comments and `ALL_TAB_COMMENTS` for table comments. Schema and table names are typically uppercase.
+
+### Where are column comments stored in SQL Server?
+SQL Server uses `sys.extended_properties` with the `MS_Description` property for column and table descriptions.
+
+### Is it mandatory to configure columnRemarks and tableRemarks?
+No. These fields are optional. They are only needed if you want to extract comments/descriptions in addition to the table schema.

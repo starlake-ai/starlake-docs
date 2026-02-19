@@ -1,13 +1,74 @@
 ---
-title: "Native Load Mode"
-description: "Bypass Spark validation and load files directly into your data warehouse using Starlake native load mode at table, domain or project level."
-keywords: [starlake, native load, bypass validation, direct load, Spark, performance]
+title: "Native Load Mode — Skip Spark Validation in Starlake"
+description: "Bypass Spark validation and load files directly into BigQuery, Snowflake or Databricks using Starlake native load mode. Configure at table, domain or project level with YAML."
+keywords: [starlake, native load, bypass validation, direct load, Spark, performance, BigQuery, Snowflake, Databricks]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is native load mode in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Native load mode lets you load files directly into the data warehouse without Spark validation. This can improve performance when validation is not needed."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I enable native load for a single table?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Add loader: native in the metadata section of the table YAML file (metadata/load/<domain>/<table>.sl.yml)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I enable native load mode for an entire domain?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Set loader: native in the _config.sl.yml file of the domain. All tables in the domain will use the native loader unless overridden at the table level."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I enable native load for the whole project?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Set loader: native in application.sl.yml. All tables in the project will use the native loader unless overridden at the domain or table level."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the configuration priority order for the loader?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Table > Domain > Project. The most specific configuration wins."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "When should I avoid native load mode?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "When you need type validation, on-the-fly transformations (attribute scripts), or rejection of invalid rows. Native load mode skips all Spark-side validation."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # Native load
 
-When loading files into your datawarehouse, starlake uses Spark for advanced data validation and
-then uses you datawarehouse's engine to append or overwrite the data.
+When loading files into your data warehouse, Starlake uses Spark for advanced data validation and
+then uses your data warehouse's engine to append or overwrite the data.
 
 This is done to ensure that the data is fully validated and  is loaded in the most efficient way possible.
 
@@ -58,4 +119,24 @@ application:
 ```
 
 In this case, all the tables in the project will be loaded using the native loader if not otherwise specified at the domain or table level.
+
+## Frequently Asked Questions
+
+### What is native load mode in Starlake?
+Native load mode lets you load files directly into the data warehouse without Spark validation. This can improve performance when validation is not needed.
+
+### How do I enable native load for a single table?
+Add `loader: native` in the `metadata` section of the table YAML file (`metadata/load/<domain>/<table>.sl.yml`).
+
+### Can I enable native load mode for an entire domain?
+Yes. Set `loader: native` in the `_config.sl.yml` file of the domain. All tables in the domain will use the native loader unless overridden at the table level.
+
+### How do I enable native load for the whole project?
+Set `loader: native` in `application.sl.yml`. All tables in the project will use the native loader unless overridden at the domain or table level.
+
+### What is the configuration priority order for the loader?
+Table > Domain > Project. The most specific configuration wins.
+
+### When should I avoid native load mode?
+When you need type validation, on-the-fly transformations (attribute scripts), or rejection of invalid rows. Native load mode skips all Spark-side validation.
 

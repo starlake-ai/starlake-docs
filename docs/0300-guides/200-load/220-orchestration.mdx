@@ -1,8 +1,61 @@
 ---
-title: "Orchestrate Load Jobs"
-description: "Run Starlake load jobs with Airflow, Dagster or Snowflake Tasks using automatic DAG generation."
-keywords: [starlake load orchestration, airflow load, dagster load, dag generation]
+title: "Orchestrate Load Jobs with Starlake — Airflow, Dagster, Snowflake Tasks"
+description: "Generate orchestration DAGs automatically for Starlake load jobs. Supports Airflow, Dagster and Snowflake Tasks. Run starlake dag-generate to analyze dependencies and produce DAG files."
+keywords: [starlake load orchestration, airflow load, dagster load, dag generation, snowflake tasks, dag-generate]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I generate DAGs for load jobs in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run the starlake dag-generate command. It analyzes dependencies between load and transform jobs and produces DAG files for the configured orchestrator."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which orchestrators does Starlake support for load jobs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports Airflow, Dagster and Snowflake Tasks for load job orchestration."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need to write Airflow DAGs manually for Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. The starlake dag-generate command automatically generates DAGs from the YAML definitions in your project."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are dependencies between load and transform jobs handled automatically?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. DAG generation analyzes the dependencies declared in YAML files and produces a correct execution graph."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where can I find the full orchestration documentation for Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In the orchestration tutorial and DAG customization page, accessible from the Next Steps links on this page."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # Orchestrate Load Jobs
 
@@ -22,3 +75,20 @@ This analyzes dependencies between your load and transform jobs and produces DAG
 
 - See the [Orchestration Tutorial](/docs/guides/orchestrate/tutorial) for a complete walkthrough of DAG generation and deployment.
 - See [Customizing DAG Generation](/docs/guides/orchestrate/customization) for advanced configuration per orchestrator (Airflow, Dagster, Snowflake Tasks).
+
+## Frequently Asked Questions
+
+### How do I generate DAGs for load jobs in Starlake?
+Run the `starlake dag-generate` command. It analyzes dependencies between load and transform jobs and produces DAG files for the configured orchestrator.
+
+### Which orchestrators does Starlake support for load jobs?
+Starlake supports Airflow, Dagster and Snowflake Tasks for load job orchestration.
+
+### Do I need to write Airflow DAGs manually for Starlake?
+No. The `starlake dag-generate` command automatically generates DAGs from the YAML definitions in your project.
+
+### Are dependencies between load and transform jobs handled automatically?
+Yes. DAG generation analyzes the dependencies declared in YAML files and produces a correct execution graph.
+
+### Where can I find the full orchestration documentation for Starlake?
+In the [Orchestration Tutorial](/docs/guides/orchestrate/tutorial) and [DAG Customization](/docs/guides/orchestrate/customization) pages.

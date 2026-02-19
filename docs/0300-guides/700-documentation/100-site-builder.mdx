@@ -2,11 +2,79 @@
 id: starlake-site-builder
 title: Starlake Site Builder
 sidebar_label: Site Builder
-description: A modern documentation portal for Starlake load domains and transform tasks.
+description: "Generate a documentation portal for your Starlake data pipelines. Browse load domains, table schemas, transform tasks with interactive ERD and lineage visualizations. Built with Next.js. Open source."
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Starlake Site Builder?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A documentation portal built with Next.js that automatically generates a navigable interface for load domains, table definitions, and transformation tasks from Starlake metadata."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How to generate data for the Site Builder?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run 'starlake site --outputDir /path/to/json_data --format json'. This command produces the JSON files needed by the portal."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What visualizations are available?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The Site Builder provides ERD views (foreign key relationships between tables) and interactive lineage diagrams (upstream dependencies for transformation tasks)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What technologies are used?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Next.js 16, TypeScript, Tailwind CSS 4, React Flow (lineage diagrams), CodeMirror (SQL highlighting), and shadcn/ui (UI components)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the Site Builder include search?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. A global search is accessible via Cmd+K / Ctrl+K."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What directory structure is expected?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The SITE_BASE_PATH must contain a tables/ folder (with domains.json and per-table files) and a tasks/ folder (with tasks.json and per-task files)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can the Site Builder be deployed to production?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Build with 'npm run build' then launch with 'SITE_BASE_PATH=/path/to/data npm run start'."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # Starlake Site Builder
 
@@ -111,3 +179,33 @@ The `starlake-site-builder` leverages a modern stack to deliver a fast and inter
 | [React Flow](https://reactflow.dev/) | Interactive Lineage Diagrams |
 | [CodeMirror](https://codemirror.net/) | SQL Syntax Highlighting |
 | [shadcn/ui](https://ui.shadcn.com/) | Accessible UI Components |
+
+## Frequently Asked Questions
+
+### What is Starlake Site Builder?
+
+A documentation portal built with Next.js that automatically generates a navigable interface for load domains, table definitions, and transformation tasks from Starlake metadata.
+
+### How to generate data for the Site Builder?
+
+Run `starlake site --outputDir /path/to/json_data --format json`. This command produces the JSON files needed by the portal.
+
+### What visualizations are available?
+
+The Site Builder provides ERD views (foreign key relationships between tables) and interactive lineage diagrams (upstream dependencies for transformation tasks).
+
+### What technologies are used?
+
+Next.js 16, TypeScript, Tailwind CSS 4, React Flow (lineage diagrams), CodeMirror (SQL highlighting), and shadcn/ui (UI components).
+
+### Does the Site Builder include search?
+
+Yes. A global search is accessible via `Cmd+K` / `Ctrl+K`.
+
+### What directory structure is expected?
+
+The `SITE_BASE_PATH` must contain a `tables/` folder (with `domains.json` and per-table files) and a `tasks/` folder (with `tasks.json` and per-task files).
+
+### Can the Site Builder be deployed to production?
+
+Yes. Build with `npm run build` then launch with `SITE_BASE_PATH=/path/to/data npm run start`.

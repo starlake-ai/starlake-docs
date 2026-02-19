@@ -1,8 +1,77 @@
 ---
-title: "Access Control — Row and Column Security"
-description: "Define table-level, row-level and column-level access control in Starlake for BigQuery and Databricks using ACL and RLS policies."
-keywords: [starlake, access control, ACL, row-level security, column-level security, BigQuery, Databricks]
+title: "Access Control in Starlake — Table, Row and Column Level Security for BigQuery and Databricks"
+description: "Define table ACL, row-level security (RLS) with SQL predicates, and column-level access policies (PII) in Starlake. YAML configuration for BigQuery and Databricks."
+keywords: [starlake, access control, ACL, row-level security, column-level security, BigQuery, Databricks, RLS, PII]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I define access rights on a table in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the acl section in the table YAML definition. Specify a role (permission) and a list of grants (users, groups or service accounts)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I configure Row Level Security (RLS) in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Add an rls section in the table definition. Each RLS policy contains a name, a predicate (SQL expression evaluated for each row) and grants defining the beneficiaries."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Column Level Security supported on all warehouses?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Column Level Security is supported on BigQuery only. It uses BigQuery access policies to restrict access to specific columns."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I protect a column containing PII in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Add the accessPolicy: PII property on the attribute in the table definition. This feature uses BigQuery access policies."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the ACL syntax for BigQuery in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The role uses the BigQuery format (e.g., role/bigQueryViewer). Grants use the format user:, group: or serviceAccount: followed by the identifier."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the ACL syntax for Spark/Databricks in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The role corresponds to a SQL permission (e.g., SELECT). Grants are user or group identifiers without a type prefix."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I combine ACL, RLS and Column Level Security on the same table?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. All three security levels can be combined in the same table YAML definition."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # Access control
 
@@ -108,4 +177,27 @@ table:
           type: "string"
     ...
 ```
+
+## Frequently Asked Questions
+
+### How do I define access rights on a table in Starlake?
+Use the `acl` section in the table YAML definition. Specify a `role` (permission) and a list of `grants` (users, groups or service accounts).
+
+### How do I configure Row Level Security (RLS) in Starlake?
+Add an `rls` section in the table definition. Each RLS policy contains a `name`, a `predicate` (SQL expression evaluated for each row) and `grants` defining the beneficiaries.
+
+### Is Column Level Security supported on all warehouses?
+No. Column Level Security is supported on BigQuery only. It uses BigQuery access policies to restrict access to specific columns.
+
+### How do I protect a column containing PII in Starlake?
+Add the `accessPolicy: PII` property on the attribute in the table definition. This feature uses BigQuery access policies.
+
+### What is the ACL syntax for BigQuery in Starlake?
+The role uses the BigQuery format (e.g., `role/bigQueryViewer`). Grants use the format `user:`, `group:` or `serviceAccount:` followed by the identifier.
+
+### What is the ACL syntax for Spark/Databricks in Starlake?
+The role corresponds to a SQL permission (e.g., `SELECT`). Grants are user or group identifiers without a type prefix.
+
+### Can I combine ACL, RLS and Column Level Security on the same table?
+Yes. All three security levels can be combined in the same table YAML definition.
 
