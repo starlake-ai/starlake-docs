@@ -45,7 +45,7 @@ import Head from '@docusaurus/Head';
           "name": "How does Starlake load data?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Starlake loads data by inferring schemas and orchestration logic from declarative YAML files. It supports formats like CSV, JSON, Parquet, and Avro, and automatically handles quality validation, encryption, and loading into major data warehouses."
+            "text": "Starlake loads data by inferring schemas and orchestration logic from declarative YAML files. It supports formats like CSV, JSON, XML, Fixed-width, and Parquet, and automatically handles quality validation, encryption, and loading into major data warehouses."
           }
         }
       ]
@@ -118,7 +118,7 @@ Starlake transforms data ingestion into a purely configuration-based process.
 
 Key loading features:
 
-- **Multi-Format Support**: CSV, TSV, JSON, XML, Fixed width, Parquet, Avro.
+- **Multi-Format Support**: CSV, TSV, JSON, XML, Fixed-width, Parquet.
 - **Quality & Security**: Automated data quality validation and privacy/encryption controls.
 - **Warehouse Native**: Optimized loading for all major data warehouses with row-level security.
 
