@@ -71,11 +71,54 @@ import Head from '@docusaurus/Head';
       ]
     })}
   </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to configure row-level security in Starlake",
+      "description": "Define row-level security policies with SQL predicates in the table YAML definition for BigQuery or Databricks.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Open the table YAML file",
+          "text": "Edit metadata/load/<domain>/<table>.sl.yml."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Add an rls section",
+          "text": "Under the table key, define one or more RLS policies."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Set a name and predicate",
+          "text": "The predicate is a SQL expression evaluated for each row, for example country = 'USA'."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Define grants",
+          "text": "List the users or groups that should see only the rows matching the predicate, for example group:mygroup."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the load",
+          "text": "Execute starlake load to apply the security configuration to the target table."
+        }
+      ]
+    })}
+  </script>
 </Head>
 
 # Access control
 
+Starlake provides three levels of security that you can combine in a single table YAML definition: table-level ACL (grant roles to users, groups or service accounts), row-level security (filter rows with SQL predicates per grantee) and column-level access policies (restrict PII columns on BigQuery). All settings are declarative and applied automatically during load.
 
+## How to configure row-level security
+
+1. **Open the table YAML file** -- Edit `metadata/load/<domain>/<table>.sl.yml`.
+2. **Add an `rls` section** -- Under the `table` key, define one or more RLS policies.
+3. **Set a `name` and `predicate`** -- The predicate is a SQL expression evaluated for each row (e.g., `"country = 'USA'"`).
+4. **Define `grants`** -- List the users or groups that should see only the rows matching the predicate (e.g., `"group:mygroup"`).
+5. **Run the load** -- Execute `starlake load` to apply the security configuration to the target table.
 
 ## Table Level Security
 Security on a table is defined by the ACL section of the table definition. The ACL section defines the role and the grants for the role. The role is the permission that is granted to the grants. The grants can be users, groups or service accounts.

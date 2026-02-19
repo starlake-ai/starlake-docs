@@ -49,7 +49,46 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Load CSV and DSV Files with Starlake",
+      "description": "Load CSV and delimiter-separated files into your data warehouse using Starlake by inferring the schema and configuring parsing options.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "Infer the schema",
+          "text": "Run 'starlake infer-schema --input-path incoming/<domain>' to auto-detect column names, types, and separator from a sample file."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "Configure parsing options",
+          "text": "Edit the generated <table>.sl.yml file to set format, separator, encoding, withHeader, quote, and escape properties."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "Define attribute validation",
+          "text": "Review the attributes section and set column types (int, double, date, etc.), required constraints, and trim strategies."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 4,
+          "name": "Run the load command",
+          "text": "Execute 'starlake load' to parse, validate, and load CSV data into the target warehouse table."
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Load DSV files
+
+Starlake loads CSV and delimiter-separated value (DSV) files into your data warehouse with automatic schema inference and data validation. It supports configurable separators, encodings, and write strategies. Rejected records are stored separately in an audit table for review.
 
 
 ## File load configuration
@@ -171,6 +210,13 @@ table:
   - name: "sale_price"
     type: "double"
 ```
+
+## How to Load CSV/DSV Files with Starlake
+
+1. **Infer the schema** -- Run `starlake infer-schema --input-path incoming/<domain>` to auto-detect column names, types, and separator from a sample file.
+2. **Configure parsing options** -- Edit the generated `<table>.sl.yml` file to set `format`, `separator`, `encoding`, `withHeader`, `quote`, and `escape` properties.
+3. **Define attribute validation** -- Review the `attributes` section and set column types (`int`, `double`, `date`, etc.), required constraints, and trim strategies.
+4. **Run the load command** -- Execute `starlake load` to parse, validate, and load CSV data into the target warehouse table.
 
 ## Frequently Asked Questions
 

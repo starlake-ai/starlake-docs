@@ -67,6 +67,8 @@ import Head from '@docusaurus/Head';
 
 # Native load
 
+Native load mode bypasses the Spark validation layer and sends files directly to the data warehouse engine (BigQuery, Snowflake or Databricks). This improves ingestion speed when type validation and attribute scripts are not required. The loader can be configured at the table, domain or project level, with the most specific setting taking precedence.
+
 When loading files into your data warehouse, Starlake uses Spark for advanced data validation and
 then uses your data warehouse's engine to append or overwrite the data.
 

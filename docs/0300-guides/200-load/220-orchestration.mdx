@@ -59,6 +59,8 @@ import Head from '@docusaurus/Head';
 
 # Orchestrate Load Jobs
 
+Starlake automatically generates orchestration DAGs from your YAML load and transform definitions. Supported orchestrators include Airflow, Dagster and Snowflake Tasks. The `starlake dag-generate` command analyzes job dependencies and produces ready-to-deploy DAG files.
+
 Once your load configurations are ready, Starlake can generate orchestration DAGs automatically based on your YAML definitions.
 
 ## Generate DAGs for Load

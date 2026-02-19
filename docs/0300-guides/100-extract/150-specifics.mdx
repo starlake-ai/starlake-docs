@@ -67,9 +67,7 @@ import Head from '@docusaurus/Head';
 
 # Database-Specific Extraction Settings: DB2, Oracle, SQL Server
 
-For some databases, when extracting table schemas, we need to specify the location of the table and column comments.
-This applies to databases like DB2, SQL Server, or Oracle when you want to extract comments in addition to the schemas.
-Other databases like MySQL or PostgreSQL handle remarks through standard JDBC metadata and do not require this extra configuration.
+Starlake schema extraction can retrieve table and column comments from databases that store them outside standard JDBC metadata. DB2, Oracle, and SQL Server each require custom SQL queries configured via the `columnRemarks` and `tableRemarks` fields in the extraction YAML. MySQL and PostgreSQL do not need this extra configuration because their JDBC drivers expose comments through standard metadata calls.
 
 You can specify the location of the comments in the `columnRemarks` and `tableRemarks` sections of the configuration file.
 These fields accept SQL queries with `{{schema}}` and `{{table}}` placeholders that Starlake substitutes at runtime.

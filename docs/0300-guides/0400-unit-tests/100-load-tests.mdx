@@ -10,6 +10,49 @@ import Head from '@docusaurus/Head';
   <script type="application/ld+json">
     {JSON.stringify({
       "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to write load tests in Starlake",
+      "description": "Write and run unit tests for Starlake data loading tasks locally on DuckDB, comparing loaded data against expected CSV results.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Create the test directory",
+          "text": "Create a test directory under metadata/tests/load/{domain}/{table}/test-name.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Add initial data",
+          "text": "Add a CSV or JSONL file named domain.table.csv or domain.table.json containing initial data to preload into the table.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Add input data files",
+          "text": "Add one or more data files matching the file pattern expected by the loader for this table.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Define expected output",
+          "text": "Add a _expected.csv file containing the expected data in the table after the load task runs.",
+          "position": 4
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the test",
+          "text": "Run 'starlake test --load' to execute all load tests, or 'starlake test --name domain.table.test-name' for a specific test.",
+          "position": 5
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
       "@type": "FAQPage",
       "mainEntity": [
         {
@@ -74,6 +117,16 @@ import Head from '@docusaurus/Head';
 </Head>
 
 # Test Load Tasks
+
+Starlake load tests let you validate data loading pipelines locally on DuckDB without cloud access. You provide sample input files and expected CSV output, and Starlake compares schema and data automatically. Test reports include the DuckDB database, unexpected rows, and missing rows for debugging.
+
+## How to write load tests
+
+1. **Create the test directory** -- Add a directory under `metadata/tests/load/{domain}/{table}/test-name`.
+2. **Add initial data** -- Place a CSV or JSONL file named `domain.table.csv` (or `.json`) with data to preload.
+3. **Add input data files** -- Add files matching the pattern expected by the loader for this table.
+4. **Define expected output** -- Add a `_expected.csv` file with the expected table data after loading.
+5. **Run the test** -- Execute `starlake test --load` or `starlake test --name domain.table.test-name`.
 
 Test your load task locally before deploying to production.
 

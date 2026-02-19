@@ -65,7 +65,62 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Generate Transform DAGs in Starlake",
+      "description": "Use Starlake to analyze SQL transform dependencies and generate execution DAGs for Airflow, Dagster, or Snowflake Tasks.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Write your SQL transforms",
+          "text": "Place SQL files in metadata/transform/<domain>/. Starlake will parse FROM and JOIN clauses to detect dependencies automatically.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Configure your orchestrator",
+          "text": "Set the target orchestrator (Airflow, Dagster, or Snowflake Tasks) and scheduling parameters in the DAG configuration YAML.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run starlake dag-generate",
+          "text": "Execute 'starlake dag-generate' to analyze all transforms and produce DAG files with the correct execution order for both load and transform jobs.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Deploy the generated DAGs",
+          "text": "Copy the generated DAG files to your orchestrator's DAG directory (e.g., Airflow's dags/ folder) and trigger or schedule the workflow.",
+          "position": 4
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Regenerate after dependency changes",
+          "text": "After adding or modifying SQL transforms that change table references, re-run starlake dag-generate to keep DAGs in sync.",
+          "position": 5
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Orchestrate Transform Jobs
+
+Starlake analyzes the `FROM` and `JOIN` clauses in your SQL transforms to build a dependency graph and generates ready-to-use DAGs for Airflow, Dagster, or Snowflake Tasks. The generated DAGs include both load and transform jobs in the correct execution order. After any SQL change that modifies table references, re-run `starlake dag-generate` to keep the DAGs in sync.
+
+## How to Generate Transform DAGs
+
+1. **Write your SQL transforms** -- Place SQL files in `metadata/transform/<domain>/`. Starlake parses `FROM` and `JOIN` clauses to detect dependencies automatically.
+2. **Configure your orchestrator** -- Set the target orchestrator (Airflow, Dagster, or Snowflake Tasks) and scheduling parameters in the DAG configuration YAML.
+3. **Run `starlake dag-generate`** -- This analyzes all transforms and produces DAG files with the correct execution order for both load and transform jobs.
+4. **Deploy the generated DAGs** -- Copy the generated DAG files to your orchestrator's DAG directory (e.g., Airflow's `dags/` folder).
+5. **Regenerate after dependency changes** -- After adding or modifying SQL transforms that change table references, re-run `starlake dag-generate`.
+
+---
 
 Starlake automatically resolves dependencies between your SQL transforms and generates execution DAGs for your orchestrator.
 

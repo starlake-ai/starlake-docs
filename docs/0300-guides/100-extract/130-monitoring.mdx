@@ -59,7 +59,7 @@ import Head from '@docusaurus/Head';
 
 # Monitor Starlake Data Extractions
 
-Starlake keeps track of the successive extractions in the table `SL_LAST_EXPORT` located in the audit schema (`audit` by default).
+Starlake records the result of every extraction run in the `SL_LAST_EXPORT` audit table, including the schema name, table name, row count, success status, and the last exported partition column value. This table is stored in the audit schema (named `audit` by default) and its connection is configured in `metadata/application.sl.yml`. You can query it directly with SQL to detect failures, track volumes, and monitor incremental extraction progress.
 
 The connection to the audit schema is defined in the `metadata/application.sl.yml` file.
 

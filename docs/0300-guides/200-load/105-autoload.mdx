@@ -104,6 +104,7 @@ import Head from '@docusaurus/Head';
 
 # Autoload: Zero-Config File Loading into Your Data Warehouse
 
+Starlake autoload is a zero-configuration command that detects CSV, JSON, and XML file formats, infers target table schemas, and loads data into your warehouse in a single step. It uses file naming conventions and directory structure to determine the target domain and table. Autoload handles file staging, validation, and archiving automatically.
 
 :::note
 Datawarehouses are organized around schemas where tables are grouped.
@@ -210,6 +211,13 @@ datasets/
 │   ├── audit
 │   └── rejected
 ```
+
+## How to Use Starlake Autoload
+
+1. **Place files in the incoming directory** -- Copy your CSV, JSON, or XML files into `$SL_ROOT/incoming/<domain>/`. The folder name becomes the database schema (domain).
+2. **Name files according to conventions** -- Name each file after its target table. Add a date suffix (e.g., `order_20240228.csv`) for incremental APPEND loading. Files without a suffix are loaded in OVERWRITE mode.
+3. **Run the autoload command** -- Execute `starlake autoload`. Starlake detects formats, infers schemas, stages files, and loads them into the target warehouse.
+4. **Review inferred schemas** -- Check generated YAML files in `metadata/load/<domain>/` and customize column types, validation rules, or write strategies as needed.
 
 ## Frequently Asked Questions
 

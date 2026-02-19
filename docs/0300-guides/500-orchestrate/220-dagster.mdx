@@ -12,6 +12,43 @@ import Head from '@docusaurus/Head';
   <script type="application/ld+json">
     {JSON.stringify({
       "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to configure Dagster assets for Starlake",
+      "description": "Configure and customize Starlake DAG generation for Dagster using Shell and Cloud Run factory classes, templates, and Multi Asset Sensors.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Install prerequisites",
+          "text": "Install Dagster 1.6.0 or higher, starlake-dagster 0.1.2 or higher, and starlake 1.0.1 or higher.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Choose a factory class",
+          "text": "Select StarlakeDagsterShellJob for local/on-premise execution or StarlakeDagsterCloudRunJob for GCP Cloud Run execution.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Configure DAG YAML",
+          "text": "Create a DAG configuration YAML file in metadata/dags specifying the Dagster template, filename, and options such as run_dependencies_first.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Generate and deploy",
+          "text": "Run 'starlake dag-generate --clean' to produce Dagster job files, then deploy them to your Dagster repository.",
+          "position": 4
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
       "@type": "FAQPage",
       "mainEntity": [
         {
@@ -77,7 +114,16 @@ import Head from '@docusaurus/Head';
 
 # Customize Dagster DAGs
 
-This page covers Dagster-specific customization for Starlake DAG generation. For general DAG configuration concepts (references, properties, options), see the [Customizing DAG Generation](./200-customization.mdx) hub page.
+This guide covers Dagster-specific customization for Starlake DAG generation, including Shell and Cloud Run factory classes, Jinja2 templates for data loading and transformation, and the Multi Asset Sensor mechanism for dependency-driven execution. It details how Dagster asset materialization integrates with Starlake commands.
+
+## How to configure Dagster assets for Starlake
+
+1. **Install prerequisites** -- Dagster 1.6.0+, starlake-dagster 0.1.2+, and starlake 1.0.1+.
+2. **Choose a factory class** -- Use `StarlakeDagsterShellJob` for local/on-premise or `StarlakeDagsterCloudRunJob` for GCP Cloud Run.
+3. **Configure DAG YAML** -- Create a configuration file in `metadata/dags` with the Dagster template, filename, and options (`run_dependencies_first`).
+4. **Generate and deploy** -- Run `starlake dag-generate --clean`, then deploy the generated files to your Dagster repository.
+
+For general DAG configuration concepts (references, properties, options), see the [Customizing DAG Generation](./200-customization.mdx) hub page.
 
 ## Prerequisites
 

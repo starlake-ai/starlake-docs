@@ -75,6 +75,8 @@ import Head from '@docusaurus/Head';
 
 # About Metrics
 
+Starlake computes statistical metrics on each incoming batch during ingestion. Two metric types are available: **continuous** (min, max, mean, variance, percentiles, skewness, kurtosis) for numeric attributes and **discrete** (count distinct, category frequency) for categorical attributes. Metrics are stored with an ingestion timestamp, enabling data profiling comparisons across loads.
+
 During ingestion, Starlake may produce metrics for any attribute in the dataset. Currently, only top level attributes are supported.
 One of the two available metric type may be specified on an attribute: continuous and discrete.
 When the `metric` property is set to `continuous`, Starlake will compute for this attribute the following metrics:

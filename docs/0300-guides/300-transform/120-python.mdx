@@ -65,7 +65,62 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Write a Python Transform in Starlake",
+      "description": "Create a PySpark-based Python transform in Starlake that reads data, processes it, and registers the result as the SL_THIS temporary view for materialization.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Create a Python file in the transform directory",
+          "text": "Add a .py file in the metadata/transform/<domain>/ directory. The file name determines the task name.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Write the PySpark logic",
+          "text": "Use SparkSession to read source tables, apply transformations, and produce a result DataFrame.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Register the result as SL_THIS",
+          "text": "Call df.createOrReplaceTempView('SL_THIS') on your result DataFrame so Starlake can materialize it to the target table.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Add an optional YAML configuration",
+          "text": "Create a .sl.yml file with the same name to set write strategy, partitioning, or expectations -- the format is identical to SQL transforms.",
+          "position": 4
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the transform",
+          "text": "Execute 'starlake transform --name <domain>.<task>' with optional '--options key1=value1,key2=value2' to pass parameters.",
+          "position": 5
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Python Transforms
+
+Starlake supports Python transforms for operations that go beyond what SQL can express, such as machine learning inference, text processing, or external API calls. Python transforms require a Spark runtime (standalone, Databricks, or EMR) and follow the same YAML configuration format as SQL transforms. The script must register its output DataFrame as the `SL_THIS` temporary view so Starlake can materialize the result.
+
+## How to Write a Python Transform
+
+1. **Create a Python file** -- Add a `.py` file in the `metadata/transform/<domain>/` directory. The file name determines the task name.
+2. **Write the PySpark logic** -- Use `SparkSession` to read source tables, apply transformations, and produce a result DataFrame.
+3. **Register the result as SL_THIS** -- Call `df.createOrReplaceTempView("SL_THIS")` on your result DataFrame.
+4. **Add an optional YAML configuration** -- Create a `.sl.yml` file with the same name to set write strategy, partitioning, or expectations.
+5. **Run the transform** -- Execute `starlake transform --name <domain>.<task>` with optional `--options key1=value1,key2=value2` to pass parameters.
+
+---
 
 In addition to SQL transforms, you may run Python transforms in your pipeline.
 Python transforms are defined by a Python function that takes a DataFrame as input and returns a DataFrame as output.

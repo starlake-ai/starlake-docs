@@ -10,6 +10,43 @@ import Head from '@docusaurus/Head';
   <script type="application/ld+json">
     {JSON.stringify({
       "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to write transform tests in Starlake",
+      "description": "Write and run unit tests for Starlake SQL transformations locally on DuckDB with automatic SQL transpilation from BigQuery, Snowflake, or Databricks.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Create the test directory",
+          "text": "Create a test directory under metadata/tests/transform/{domain}/{table}/test-name.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Add source data files",
+          "text": "Add CSV or JSONL files named domain.table.csv or domain.table.json containing the source data for all tables referenced by the transformation.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Define expected output",
+          "text": "Add a _expected.csv file with static expected data or a _expected.sql file with a SQL query whose result is compared to actual output.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the test",
+          "text": "Run 'starlake test --transform' to execute all transform tests, or 'starlake test --name domain.table.test-name' for a specific test.",
+          "position": 4
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
       "@type": "FAQPage",
       "mainEntity": [
         {
@@ -74,6 +111,15 @@ import Head from '@docusaurus/Head';
 </Head>
 
 # Test Transform Tasks
+
+Starlake transform tests validate SQL transformations locally on DuckDB with automatic dialect transpilation from BigQuery, Snowflake, or Databricks. You provide source data files and expected output (CSV or SQL), and Starlake compares schema and results. Test reports include the DuckDB database, unexpected rows, and missing rows.
+
+## How to write transform tests
+
+1. **Create the test directory** -- Add a directory under `metadata/tests/transform/{domain}/{table}/test-name`.
+2. **Add source data files** -- Place CSV or JSONL files named `domain.table.csv` (or `.json`) for each table referenced by the transformation.
+3. **Define expected output** -- Add `_expected.csv` (static data) or `_expected.sql` (SQL query whose result is compared).
+4. **Run the test** -- Execute `starlake test --transform` or `starlake test --name domain.table.test-name`.
 
 Test your transform locally before deploying to production.
 

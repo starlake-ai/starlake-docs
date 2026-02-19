@@ -68,10 +68,33 @@ import TabItem from '@theme/TabItem';
       ]
     })}
   </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to create a new Starlake project",
+      "step": [
+        {"@type": "HowToStep", "name": "Create an empty project directory", "text": "Create a new folder (e.g., mkdir $HOME/userguide) and navigate into it. This folder will contain the Starlake project structure."},
+        {"@type": "HowToStep", "name": "Run starlake bootstrap", "text": "Execute 'starlake bootstrap' from the CLI, or use Docker: 'docker run -v $(pwd):/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap'."},
+        {"@type": "HowToStep", "name": "Review the generated project structure", "text": "The command creates a metadata/ directory with application.sl.yml, environment files, type mappings, and sample data in datasets/incoming/."},
+        {"@type": "HowToStep", "name": "Configure your data warehouse connection", "text": "Edit metadata/application.sl.yml to define connections (DuckDB, BigQuery, Snowflake, etc.). Set SL_ENV to switch between environments."}
+      ]
+    })}
+  </script>
 </Head>
 
 # Create a New Starlake Project with Bootstrap
 
+The `starlake bootstrap` command initializes a new Starlake project with a standard directory structure. It generates the `metadata/` folder containing configuration files (`application.sl.yml`, environment overrides), type mappings, and sample data in `datasets/incoming/`. The bootstrapped project supports DuckDB, BigQuery, Snowflake, and other connections out of the box.
+
+## How to Create a New Starlake Project (Step-by-Step)
+
+1. **Create an empty project directory** — Run `mkdir $HOME/userguide && cd $HOME/userguide`. This folder will contain the full project structure.
+2. **Run starlake bootstrap** — Execute `starlake bootstrap` from the CLI. For Docker: `docker run -v $(pwd):/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap`.
+3. **Review the generated project structure** — The command creates `metadata/` with `application.sl.yml`, environment files, type mappings, and sample data in `datasets/incoming/`.
+4. **Configure your data warehouse connection** — Edit `metadata/application.sl.yml` to define connections. Set `SL_ENV` to switch between environments (e.g., `SL_ENV=DUCKDB`).
+
+---
 
 To create a new project, first create an empty folder and run the starlake bootstrap CLI command:
 

@@ -55,9 +55,54 @@ import Head from '@docusaurus/Head';
       ]
     })}
   </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to configure partitioning and clustering in Starlake",
+      "description": "Set up partitioning and clustering in the table YAML sink section for BigQuery or Spark/Databricks.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Open the table YAML file",
+          "text": "Edit metadata/load/<domain>/<table>.sl.yml."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Add a sink section",
+          "text": "Under the table key, add a sink section with clustering and partition properties."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Define clustering columns",
+          "text": "List one or more columns under sink.clustering. Both BigQuery and Spark support multiple clustering columns."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Define a partition field",
+          "text": "Set sink.partition.field (BigQuery, single column) or sink.partition (Spark, multiple columns)."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the load",
+          "text": "Execute starlake load. The target table will be created or updated with the configured partitioning and clustering."
+        }
+      ]
+    })}
+  </script>
 </Head>
 
 # Clustering and Partitioning
+
+Starlake lets you configure partitioning and clustering directly in the table YAML definition to optimize query performance on large datasets. Both BigQuery and Spark/Databricks are supported, with additional options for materialized views, table expiration and Spark writer settings. This page details every sink property available for each platform.
+
+## How to configure partitioning and clustering
+
+1. **Open the table YAML file** -- Edit `metadata/load/<domain>/<table>.sl.yml`.
+2. **Add a `sink` section** -- Under the `table` key, add a `sink` section with clustering and partition properties.
+3. **Define clustering columns** -- List one or more columns under `sink.clustering`. Both BigQuery and Spark support multiple clustering columns.
+4. **Define a partition field** -- Set `sink.partition.field` (BigQuery, single column) or `sink.partition` (Spark, multiple columns).
+5. **Run the load** -- Execute `starlake load`. The target table will be created or updated with the configured partitioning and clustering.
 
 Some datawarehouses are designed to store data in a way that makes it easy to perform clustering and partitioning.
 Clustering and partitioning are two techniques that can be used to improve the performance of queries on large datasets.

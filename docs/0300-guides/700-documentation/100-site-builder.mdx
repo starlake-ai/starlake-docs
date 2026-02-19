@@ -13,6 +13,43 @@ import Head from '@docusaurus/Head';
   <script type="application/ld+json">
     {JSON.stringify({
       "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to generate a documentation site with Starlake Site Builder",
+      "description": "Generate and deploy a documentation portal for your Starlake data pipelines with ERD and lineage visualizations.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Generate JSON metadata",
+          "text": "Run 'starlake site --outputDir /path/to/json_data --format json' to produce the JSON files needed by the portal.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Clone the Site Builder repository",
+          "text": "Run 'git clone https://github.com/starlake-ai/starlake-site-builder.git' and cd into the project directory.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Configure the data path",
+          "text": "Set the SITE_BASE_PATH environment variable or create a .env.local file pointing to your generated JSON data directory.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Install dependencies and run",
+          "text": "Run 'npm install' then 'SITE_BASE_PATH=/path/to/json_data npm run dev' for development or 'npm run build && npm run start' for production.",
+          "position": 4
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
       "@type": "FAQPage",
       "mainEntity": [
         {
@@ -77,6 +114,15 @@ import Head from '@docusaurus/Head';
 </Head>
 
 # Starlake Site Builder
+
+Starlake Site Builder generates a documentation portal from your pipeline metadata, providing navigable views of load domains, table schemas, and transform tasks with interactive ERD and lineage visualizations. Built with Next.js 16, it supports dark/light mode and global search, and can be deployed as a static or server-rendered site.
+
+## How to generate a documentation site
+
+1. **Generate JSON metadata** -- Run `starlake site --outputDir /path/to/json_data --format json`.
+2. **Clone the repository** -- `git clone https://github.com/starlake-ai/starlake-site-builder.git`.
+3. **Configure the data path** -- Set `SITE_BASE_PATH` in `.env.local` or as an environment variable.
+4. **Install and run** -- `npm install`, then `npm run dev` (development) or `npm run build && npm run start` (production).
 
 **Starlake Site Builder** is a modern documentation portal designed for data teams using Starlake. It provides a clear, navigable interface for exploring load domains, table definitions, and transformation tasks.
 

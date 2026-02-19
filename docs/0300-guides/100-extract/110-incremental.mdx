@@ -65,10 +65,60 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Set Up Incremental Extraction in Starlake",
+      "description": "Configure Starlake to extract only new rows from a database table by setting fullExport to false and defining a partitionColumn.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Choose a partition column",
+          "text": "Select a monotonically increasing column (auto-increment ID, timestamp, or sequence) that is never updated after insertion.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Set fullExport to false",
+          "text": "In the extraction YAML, set fullExport: false on the table entry to enable incremental mode.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Set the partitionColumn",
+          "text": "Add partitionColumn with the name of the chosen column. Starlake uses it to track the last exported value.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the first extraction",
+          "text": "Execute starlake extract-data. Since no prior state exists, all rows are extracted. Starlake records the max partitionColumn value in SL_LAST_EXPORT.",
+          "position": 4
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run subsequent extractions",
+          "text": "On subsequent runs, Starlake reads the last exported value from SL_LAST_EXPORT and only fetches rows where the partitionColumn exceeds that value.",
+          "position": 5
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Incremental Data Extraction
 
-Incremental extraction is useful when you want to extract only the data that has changed since the last extraction.
-This is especially valuable when you have a large dataset and only a small portion of the data changes frequently.
+Starlake incremental extraction pulls only new rows from a database table by tracking the maximum value of a partition column between runs. The extraction state is persisted in the `SL_LAST_EXPORT` audit table. This mode is configured by setting `fullExport: false` and specifying a `partitionColumn` in the extraction YAML.
+
+## How to Set Up Incremental Extraction
+
+1. **Choose a partition column** -- Select a monotonically increasing column (auto-increment ID, timestamp, or sequence) that is never updated after insertion.
+2. **Set `fullExport` to `false`** -- In the extraction YAML, set `fullExport: false` on the table entry to enable incremental mode.
+3. **Set the `partitionColumn`** -- Add `partitionColumn` with the name of the chosen column. Starlake uses it to track the last exported value.
+4. **Run the first extraction** -- Execute `starlake extract-data`. Since no prior state exists, all rows are extracted. The max value is recorded in `SL_LAST_EXPORT`.
+5. **Run subsequent extractions** -- On each subsequent run, only rows where the partition column exceeds the last exported value are fetched.
 
 ## Key Configuration Options
 

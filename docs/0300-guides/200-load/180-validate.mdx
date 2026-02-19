@@ -51,7 +51,7 @@ import Head from '@docusaurus/Head';
 
 # Type validation
 
-
+Starlake validates every incoming record against a type schema before loading it into the data warehouse. Built-in types cover common SQL primitives (int, double, boolean, timestamp, etc.), and you can define custom types with regex patterns for domain-specific formats such as email, phone or zip code. Records that fail validation are routed to a rejected table for audit.
 
 starlake allows you to validate the types of the data you are loading.
 This is done by specifying the schema of the data you are writing.

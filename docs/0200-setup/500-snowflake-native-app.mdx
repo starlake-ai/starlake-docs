@@ -65,7 +65,29 @@ import Head from '@docusaurus/Head';
       ]
     })}
   </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to configure Snowflake Native App permissions for Starlake",
+      "step": [
+        {"@type": "HowToStep", "name": "Grant account-level operational rights", "text": "Execute GRANT CALLER CREATE DATABASE, EXECUTE TASK, EXECUTE MANAGED TASK, and READ SESSION ON ACCOUNT TO APPLICATION starlake_app."},
+        {"@type": "HowToStep", "name": "Grant data interaction rights", "text": "Choose Option A (all databases in account) or Option B (restricted to a single database). Grant inherited caller privileges on databases, schemas, tables, views, functions, and procedures."},
+        {"@type": "HowToStep", "name": "Grant warehouse usage", "text": "Execute GRANT CALLER USAGE ON WAREHOUSE COMPUTE_WH TO APPLICATION starlake_app to allow the app to run queries."},
+        {"@type": "HowToStep", "name": "Grant ownership rights", "text": "Execute GRANT INHERITED CALLER OWNERSHIP on tables and schemas to allow the app to manage objects it creates."}
+      ]
+    })}
+  </script>
 </Head>
+
+The Starlake Snowflake Native App runs under Snowflake's caller's rights model, meaning it can only perform actions the calling user is already authorized to do. After installing the app from the Snowflake Marketplace, you must execute a set of GRANT commands to delegate your existing privileges to the application. These grants cover account-level operations, data access (full account or restricted to a single database), and warehouse usage.
+
+## How to Configure Snowflake Native App Permissions (Step-by-Step)
+
+1. **Grant account-level operational rights** — Execute `GRANT CALLER CREATE DATABASE`, `EXECUTE TASK`, `EXECUTE MANAGED TASK`, and `READ SESSION ON ACCOUNT TO APPLICATION starlake_app`.
+2. **Grant data interaction rights** — Choose Option A (all databases) or Option B (single database). Grant `INHERITED CALLER PRIVILEGES` on databases, schemas, tables, views, functions, and procedures.
+3. **Grant warehouse usage** — Execute `GRANT CALLER USAGE ON WAREHOUSE COMPUTE_WH TO APPLICATION starlake_app`.
+4. **Grant ownership rights** — Execute `GRANT INHERITED CALLER OWNERSHIP` on tables and schemas so the app can manage objects it creates.
 
 ## Grant Permissions After Installing the Starlake Snowflake App
 

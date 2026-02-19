@@ -91,6 +91,8 @@ import Head from '@docusaurus/Head';
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+Starlake automates DAG generation for Apache Airflow, Dagster, and Snowflake Tasks directly from your load and transform pipeline definitions. A single `dag-generate` command produces ready-to-deploy DAG files with correct task dependencies, and you can dry-run or backfill them before going to production.
+
 :::note
 Starlake is not an orchestrator. It generates DAGs for you to run on your orchestrator of choice.
 :::

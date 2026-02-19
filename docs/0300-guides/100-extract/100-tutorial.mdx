@@ -94,8 +94,15 @@ import Head from '@docusaurus/Head';
 
 # Extract Data from Databases
 
-Extract tables in one shot or incrementally from a database as a set of files.
+Starlake extracts tables from any JDBC-compliant database (PostgreSQL, MySQL, Oracle, SQL Server, DuckDB, etc.) and writes them as CSV files ready for warehouse loading. Extraction supports full and incremental modes, parallel reads, and wildcard table selection. Configuration is declarative via YAML files under the `metadata/extract/` directory.
 
+## How to Extract Data from a Database with Starlake
+
+1. **Install prerequisites** -- Install DuckDB and download the sample `duckdb.db` database into `$SL_ROOT/datasets`.
+2. **Configure the database connection** -- Edit `metadata/application.sl.yml` to add a JDBC connection entry with the database URL and driver class.
+3. **Configure the extraction YAML** -- Create `metadata/extract/my_extract_config.sl.yml` specifying `connectionRef`, schema name, tables to extract, and table types.
+4. **Run the extract-data command** -- Execute `starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming/` to extract tables as CSV files.
+5. **Verify the output files** -- Check the `$SL_ROOT/incoming/starbake` folder for the extracted CSV files, ready to be loaded into a data warehouse.
 
 ## Prerequisites
 

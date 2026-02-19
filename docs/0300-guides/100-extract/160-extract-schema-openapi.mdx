@@ -73,10 +73,53 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Extract Schemas from OpenAPI Definitions with Starlake",
+      "description": "Map OpenAPI routes and schemas to Starlake domains and tables using a YAML configuration, then run extract-schema to generate load-ready table definitions.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Define the OpenAPI-Starlake mapping",
+          "text": "Create a YAML configuration file in metadata/extract/ specifying connectionRef, basePath, domains, route filters, schema exclusions, and explode strategies.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Configure the filesystem connection",
+          "text": "In metadata/application.sl.yml, add a connection of type 'fs' pointing to the OpenAPI JSON definition file.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Place the OpenAPI definition file",
+          "text": "Drop the OpenAPI JSON file into metadata/extract/openapi/ (or the path specified in the connection).",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the extract-schema command",
+          "text": "Execute 'starlake extract-schema --config my_openapi_extract_config' to generate Starlake table definitions in the load folder.",
+          "position": 4
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # OpenAPI Schema Extraction
 
-This documentation outlines the process to extract Starlake schemas from OpenAPI definitions using a YAML configuration map.
-The instructions provide a comprehensive explanation of how to map OpenAPI routes and schemas to Starlake.
+Starlake can generate table schemas from OpenAPI definitions by mapping API routes and response schemas to Starlake domains and tables. The mapping is configured in a YAML file that supports route filtering, schema exclusion, explode strategies for nested structures, and attribute name normalization. By default, Starlake processes GET operations and filters out schemas that are not objects or arrays of objects.
+
+## How to Extract Schemas from OpenAPI Definitions
+
+1. **Define the OpenAPI-Starlake mapping** -- Create a YAML config in `metadata/extract/` specifying `connectionRef`, `basePath`, domains, route filters, schema exclusions, and explode strategies.
+2. **Configure the filesystem connection** -- In `metadata/application.sl.yml`, add a connection of type `fs` pointing to the OpenAPI JSON definition file.
+3. **Place the OpenAPI definition file** -- Drop the OpenAPI JSON file into `metadata/extract/openapi/` (or the path specified in the connection).
+4. **Run the extract-schema command** -- Execute `starlake extract-schema --config my_openapi_extract_config` to generate Starlake table definitions in the load folder.
 
 ## Overview
 The schema extraction process leverages YAML configuration to define relations between Starlake's domains and tables with OpenAPI definitions.

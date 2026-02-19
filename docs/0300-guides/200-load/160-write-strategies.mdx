@@ -51,6 +51,8 @@ import Head from '@docusaurus/Head';
 
 # Write strategies
 
+Starlake provides multiple write strategies that control how incoming data is merged into target tables. Whether you need simple appends, full overwrites, key-based upserts or SCD2 history tracking, the `metadata.writeStrategy` property lets you declare the behavior in YAML. Adaptive mode even allows switching strategies at runtime based on file size, date or file name patterns.
+
 When loading a file to a database table you can specify how to data is written to the table.
 That's what the `metadata.writeStrategy` property is for.
 

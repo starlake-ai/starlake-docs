@@ -57,7 +57,62 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Configure a SQL Transform in Starlake",
+      "description": "Set up a YAML configuration file for a Starlake SQL transform with write strategy, partitioning, clustering, access control, and expectations.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Create the YAML configuration file",
+          "text": "Create a file named <table>.sl.yml in the metadata/transform/<domain>/ directory next to your SQL file.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Set the write strategy",
+          "text": "Add a writeStrategy.type property (overwrite, append, upsert, etc.) to control how results are materialized into the target table.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Configure partitioning and clustering",
+          "text": "Add sink.partition and sink.clustering arrays listing the columns to use for table partitioning and clustering.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Define access control rules",
+          "text": "Set acl for table-level grants, rls for row-level security predicates, and attributesDesc for column-level access policies.",
+          "position": 4
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Add data quality expectations",
+          "text": "Use the expectations array to define assertions that are evaluated after the transform runs. Set failOnError: true to abort on failure.",
+          "position": 5
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Customize the Transform
+
+Every Starlake SQL transform can be fine-tuned through a companion YAML configuration file placed next to the SQL file. This configuration controls how results are written (append, overwrite, upsert), how the target table is partitioned and clustered, and who can access the data. You can also add data quality expectations and route output to a different database.
+
+## How to Configure a SQL Transform
+
+1. **Create the YAML configuration file** -- Create a file named `<table>.sl.yml` in the `metadata/transform/<domain>/` directory next to your SQL file.
+2. **Set the write strategy** -- Add a `writeStrategy.type` property (`overwrite`, `append`, `upsert`, etc.) to control how results are materialized into the target table.
+3. **Configure partitioning and clustering** -- Add `sink.partition` and `sink.clustering` arrays listing the columns to use.
+4. **Define access control rules** -- Set `acl` for table-level grants, `rls` for row-level security predicates, and `attributesDesc` for column-level access policies.
+5. **Add data quality expectations** -- Use the `expectations` array to define assertions evaluated after the transform runs. Set `failOnError: true` to abort on failure.
+
+---
 
 Add write strategies, partitioning, access control, and more to your transform tasks.
 

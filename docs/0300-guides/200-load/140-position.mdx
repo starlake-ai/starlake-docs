@@ -104,6 +104,8 @@ import Head from '@docusaurus/Head';
 
 # Load Fixed-Width Positional Files into Your Data Warehouse
 
+Starlake loads fixed-width (positional) files into BigQuery, Snowflake, Databricks, DuckDB, and other warehouses. Column boundaries are defined using zero-based `first` and `last` position properties in YAML. Schema inference is supported via a reference file with `name:value` pairs. This format is commonly used for mainframe COBOL file exports.
+
 To load fixed width files, you need to know the width of each column.
 The example below is an example of how a fixed width file may be used to represent orders.
 
@@ -188,6 +190,13 @@ After inferring the schema, we can use the `load` command to load the data into 
 ```bash
 $ starlake load
 ```
+
+## How to Load Fixed-Width Data with Starlake
+
+1. **Create a reference file** -- Create a text file with one field per line in `name:value` format, where each value has the exact width of the column.
+2. **Infer the schema** -- Run `starlake infer-schema --input-path <file> --format FIXED --output-dir metadata/load/<domain>` to generate the YAML configuration with position offsets.
+3. **Review column positions** -- Check the generated YAML. Each attribute has `position.first` and `position.last` (0-based, inclusive). Adjust types from `string` to `int`, `date`, etc.
+4. **Load the data** -- Execute `starlake load` to parse the fixed-width file and load validated records into the target warehouse.
 
 ## Frequently Asked Questions
 

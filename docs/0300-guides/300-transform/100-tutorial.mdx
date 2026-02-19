@@ -94,7 +94,7 @@ import Head from '@docusaurus/Head';
 
 # Transform Data with SQL
 
-Use SELECT statements to create insights from the data in the database.
+Starlake transforms turn raw loaded data into business insights using standard SQL SELECT statements. Each SQL file produces one target table, and Starlake automatically detects dependencies between tasks to run them in the correct order. This tutorial walks through creating revenue, product, and order summaries from the Starbake sample dataset using DuckDB.
 
 ## Prerequisites
 Make sure you run the [Load step](../load/tutorial) first to get the data in the database.

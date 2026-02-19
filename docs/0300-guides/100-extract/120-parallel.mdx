@@ -57,18 +57,59 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Enable Parallel Extraction in Starlake",
+      "description": "Configure Starlake to read a database table in parallel by setting numPartitions and partitionColumn in the extraction YAML.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Choose a partition column",
+          "text": "Select a monotonically increasing numeric column (auto-increment ID or sequence). Timestamps can also work.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Set partitionColumn in the YAML",
+          "text": "Add partitionColumn with the column name in the table entry of the extraction YAML.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Set numPartitions",
+          "text": "Add numPartitions with the desired level of parallelism (e.g., 4). The default is 1 (no parallelism).",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the extraction",
+          "text": "Execute starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming/. Starlake splits the read into numPartitions concurrent JDBC queries.",
+          "position": 4
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Parallel Data Extraction with Starlake (numPartitions)
+
+Starlake parallel extraction splits a table read into multiple concurrent JDBC queries to reduce extraction time. It requires setting `numPartitions` (the number of concurrent reads) and `partitionColumn` (the column used to split the data). Parallel extraction can be combined with incremental mode by also setting `fullExport: false`.
+
+## How to Enable Parallel Extraction
+
+1. **Choose a partition column** -- Select a monotonically increasing numeric column (auto-increment ID or sequence). Timestamps can also work.
+2. **Set `partitionColumn`** -- Add `partitionColumn` with the column name in the table entry of the extraction YAML.
+3. **Set `numPartitions`** -- Add `numPartitions` with the desired level of parallelism (e.g., 4). The default is 1 (no parallelism).
+4. **Run the extraction** -- Execute `starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming/`. Starlake splits the read into `numPartitions` concurrent JDBC queries.
 
 :::info
 
 Parallel extraction is available only on databases that support concurrent read-write connections.
 
 :::
-
-
-
-To make extraction faster, we can parallelize the extraction process.
-This is done by setting the `numPartitions` attribute.
 
 
 ```yaml {8,9,10} title="metadata/extract/my_extract_config.sl.yml"

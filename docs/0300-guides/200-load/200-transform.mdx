@@ -79,10 +79,54 @@ import Head from '@docusaurus/Head';
       ]
     })}
   </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to add computed columns on load in Starlake",
+      "description": "Enrich records during ingestion by adding computed columns using Spark SQL functions in the table YAML definition.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Open the table YAML file",
+          "text": "Edit metadata/load/<domain>/<table>.sl.yml."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Add an attribute with a script property",
+          "text": "The script accepts any Spark SQL expression and can reference other columns or _metadata properties (file_name, file_path, file_size, file_modification_time)."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Optionally ignore source columns",
+          "text": "Set ignore: true on any attribute you want to exclude from the target table while still using it in scripts."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Optionally declare foreign keys",
+          "text": "Add foreignKey: \"<table>.<column>\" on an attribute to create a relationship."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the load",
+          "text": "Execute starlake load to ingest files with the computed columns applied."
+        }
+      ]
+    })}
+  </script>
 </Head>
 
 # Transform on load
 
+Starlake can enrich records during ingestion by adding computed columns, ignoring sensitive fields and declaring foreign keys -- all from the table YAML definition. Computed columns use Spark SQL functions and can reference file metadata (name, path, size, modification time). The `ignore` attribute supports GDPR compliance by preventing selected columns from reaching the target table.
+
+## How to add computed columns on load
+
+1. **Open the table YAML file** -- Edit `metadata/load/<domain>/<table>.sl.yml`.
+2. **Add an attribute with a `script` property** -- The script accepts any Spark SQL expression and can reference other columns or `_metadata` properties (`file_name`, `file_path`, `file_size`, `file_modification_time`).
+3. **Optionally ignore source columns** -- Set `ignore: true` on any attribute you want to exclude from the target table while still using it in scripts.
+4. **Optionally declare foreign keys** -- Add `foreignKey: "<table>.<column>"` on an attribute to create a relationship.
+5. **Run the load** -- Execute `starlake load` to ingest files with the computed columns applied.
 
 ## Add new attributes
 You may add extra attributes during load. This is useful to add extra columns that are not present in the source file such as the current timestamp or the file name

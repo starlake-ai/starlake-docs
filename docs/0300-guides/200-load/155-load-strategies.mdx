@@ -112,6 +112,8 @@ import Head from '@docusaurus/Head';
 
 # Load Strategies: Control File Processing Order
 
+Starlake load strategies control the order in which files are processed during `starlake load` or `starlake autoload`. Two built-in strategies are available: `IngestionTimeStrategy` (chronological order by modification time, the default) and `IngestionNameStrategy` (alphabetical order by file name). You can also implement a custom strategy in Scala by extending the `LoadStrategy` interface.
+
 :::note
 This page covers **load strategies** which control the **order in which files are processed**. This is different from **write strategies** (APPEND, OVERWRITE, UPSERT_BY_KEY, SCD2) which control how data is written to target tables.
 :::

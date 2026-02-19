@@ -95,6 +95,14 @@ import Head from '@docusaurus/Head';
 
 # Deploy Starlake Pipelines
 
+Deploying a Starlake project to production involves three steps: setting environment variables (`SL_ENV`, `SL_ROOT`), copying the metadata folder to a cloud storage bucket, and deploying the generated DAGs to your orchestrator. The Starlake Docker container runs on GCP, AWS, Azure, or on-premise with no vendor lock-in.
+
+## How to deploy Starlake pipelines
+
+1. **Set environment variables** -- Configure `SL_ENV` and `SL_ROOT` in your Starlake Docker container to match the target environment.
+2. **Copy metadata to cloud storage** -- Upload your `metadata` folder to a cloud storage bucket so the Docker container can access it.
+3. **Deploy DAGs to your orchestrator** -- Copy the contents of `metadata/dags/generated` to your orchestrator's DAGs folder.
+
 ## Running your project
 Deploying your project is as simple as copying your metadata folder to a cloud storage bucket
 and run any of the load / transform command from the `starlake` docker container running on any cloud provider.

@@ -75,7 +75,7 @@ import Head from '@docusaurus/Head';
 
 #  SQL Transforms
 
-SQL transforms are used to materialize SELECT statements using a user defined strategy.
+Starlake SQL transforms let you materialize any SELECT statement into a target table using a configurable write strategy. This page covers SELECT syntax, column documentation with `attributesDesc`, custom MERGE/INSERT via `parseSQL: false`, and incremental modelling with the `sl_start_date` / `sl_end_date` environment variables. All SQL is standard -- no Jinja templating is involved.
 
 ## SELECT statements
 [SQL transforms](../transform/tutorial#the-select-statements) are SELECT statements materialized using a user defined strategy.

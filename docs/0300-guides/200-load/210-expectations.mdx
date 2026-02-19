@@ -71,9 +71,60 @@ import Head from '@docusaurus/Head';
       ]
     })}
   </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to add data quality expectations in Starlake",
+      "description": "Define post-load assertions using Jinja SQL macros to validate data quality during ingestion.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Create or reuse an expectation macro",
+          "text": "Place a .j2 Jinja2 template in the expectations directory. Use SL_THIS as a placeholder for the target table name."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Open the table YAML file",
+          "text": "Edit metadata/load/<domain>/<table>.sl.yml."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Add an expectations section",
+          "text": "Under the table key, define a list of expectation entries."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Write the expectation expression",
+          "text": "Use the format <query_name>(<params>) => <condition>. Available condition variables are count, result and results."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Set failOnError",
+          "text": "Set to true to halt the pipeline on failure, or false to log and continue."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the load",
+          "text": "Execute starlake load. Expectations are evaluated after the data has been written to the target table."
+        }
+      ]
+    })}
+  </script>
 </Head>
 
 # Expectations
+
+Starlake expectations are post-load assertions that validate the data written to the target table. Each expectation references a Jinja2 SQL macro, passes parameters and evaluates a condition on the query result. You can halt the pipeline on failure with `failOnError: true`, making expectations a lightweight data quality gate built into the ingestion process.
+
+## How to add data quality expectations
+
+1. **Create or reuse an expectation macro** -- Place a `.j2` Jinja2 template in the `expectations` directory. Use `SL_THIS` as a placeholder for the target table name.
+2. **Open the table YAML file** -- Edit `metadata/load/<domain>/<table>.sl.yml`.
+3. **Add an `expectations` section** -- Under the `table` key, define a list of entries.
+4. **Write the expectation expression** -- Use the format `<query_name>(<params>) => <condition>`. Available condition variables are `count`, `result` and `results`.
+5. **Set `failOnError`** -- Set to `true` to halt the pipeline on failure, or `false` to log and continue.
+6. **Run the load** -- Execute `starlake load`. Expectations are evaluated after the data has been written.
 
 Expectations allow to test if the resulting table contains the expected data.
 

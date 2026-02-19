@@ -15,6 +15,49 @@ import Head from '@docusaurus/Head';
   <script type="application/ld+json">
     {JSON.stringify({
       "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to configure Airflow DAGs for Starlake",
+      "description": "Configure and customize Starlake DAG generation for Apache Airflow using factory classes, Jinja2 templates, and data-aware scheduling.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Install prerequisites",
+          "text": "Install Apache Airflow 2.4.0 or higher, starlake-airflow 0.1.2.1 or higher, and starlake 1.0.1 or higher.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Choose a factory class",
+          "text": "Select StarlakeAirflowBashJob for on-premise execution or StarlakeAirflowCloudRunJob for GCP Cloud Run execution.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Configure DAG YAML",
+          "text": "Create a DAG configuration YAML file in metadata/dags specifying the template, filename, and options such as pre_load_strategy and run_dependencies_first.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Customize templates if needed",
+          "text": "Extend built-in Jinja2 templates with custom code for transform parameters, user-defined macros, or Terraform variable injection.",
+          "position": 4
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Generate and deploy DAGs",
+          "text": "Run 'starlake dag-generate --clean' to produce DAG files, then deploy them to your Airflow DAGs folder.",
+          "position": 5
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
       "@type": "FAQPage",
       "mainEntity": [
         {
@@ -86,7 +129,17 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
-This page covers Airflow-specific customization for Starlake DAG generation. For general DAG configuration concepts (references, properties, options), see the [Customizing DAG Generation](./200-customization.mdx) hub page.
+This guide explains how to configure Starlake DAG generation for Apache Airflow, including BashOperator and Cloud Run factory classes, Jinja2 template customization, data-aware scheduling with Airflow Datasets, user-defined macros, and Terraform integration. It covers both inline dependency and data-aware scheduling strategies.
+
+## How to configure Airflow DAGs for Starlake
+
+1. **Install prerequisites** -- Apache Airflow 2.4.0+, starlake-airflow 0.1.2.1+, and starlake 1.0.1+.
+2. **Choose a factory class** -- Use `StarlakeAirflowBashJob` for on-premise or `StarlakeAirflowCloudRunJob` for GCP Cloud Run.
+3. **Configure DAG YAML** -- Create a configuration file in `metadata/dags` with template, filename, and options (`pre_load_strategy`, `run_dependencies_first`).
+4. **Customize templates if needed** -- Extend Jinja2 templates for transform parameters, user-defined macros, or Terraform variable injection.
+5. **Generate and deploy** -- Run `starlake dag-generate --clean`, then copy DAG files to your Airflow DAGs folder.
+
+For general DAG configuration concepts (references, properties, options), see the [Customizing DAG Generation](./200-customization.mdx) hub page.
 
 ## Prerequisites
 

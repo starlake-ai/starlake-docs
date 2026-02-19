@@ -104,6 +104,7 @@ import Head from '@docusaurus/Head';
 
 # Load JSON Files with Nested and Repeated Attributes
 
+Starlake loads JSON files into BigQuery, Snowflake, Databricks, and other warehouses with support for nested and repeated attributes. It supports three JSON formats: `JSON` (one object per line), `JSON_FLAT` (flat objects, faster parsing), and `JSON_ARRAY` (a single array). Schema inference automatically detects nested structures and generates the corresponding YAML configuration.
 
 Loading a JSON file is similar to loading a CSV file except that JSON attributes may have nested attributes.
 
@@ -198,6 +199,13 @@ table:
         - name: "quantity"
           type: "integer"
 ```
+
+## How to Load JSON Data with Starlake
+
+1. **Infer the JSON schema** -- Run `starlake infer-schema --input-path incoming/<domain>` to detect nested structures and generate a YAML configuration.
+2. **Choose the JSON format** -- Set `metadata.format` to `JSON`, `JSON_FLAT` (for flat objects), or `JSON_ARRAY` (for files containing a single array).
+3. **Define nested attributes** -- For nested objects, set `type` to `struct`. For arrays, add `array: true`. Define child attributes under the `attributes` key.
+4. **Run the load command** -- Execute `starlake load` to parse, validate, and load the JSON data into the target warehouse table.
 
 ## Frequently Asked Questions
 

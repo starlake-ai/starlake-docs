@@ -48,10 +48,32 @@ import Head from '@docusaurus/Head';
       ]
     })}
   </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to install Starlake CLI",
+      "step": [
+        {"@type": "HowToStep", "name": "Choose an installation method", "text": "Select Docker, Linux/macOS, or Windows as your installation method. Docker requires only Docker installed. Linux/macOS and Windows require Java 17 or higher."},
+        {"@type": "HowToStep", "name": "Run the installation command", "text": "For Linux/macOS, run the setup.sh script via curl. For Windows, run setup.ps1 via PowerShell as administrator. For Docker, pull the starlakeai/starlake:latest image."},
+        {"@type": "HowToStep", "name": "Verify the installation", "text": "Run 'starlake --version' to confirm the CLI is installed correctly. You should see the Starlake version number."},
+        {"@type": "HowToStep", "name": "Start the Starlake UI (optional)", "text": "Run 'starlake serve' to launch the web UI, then open http://localhost:9900 in your browser."}
+      ]
+    })}
+  </script>
 </Head>
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+
+Starlake CLI is the command-line interface for the Starlake data pipeline platform. It runs on Linux, macOS, and Windows, and is also available as a Docker image. The CLI requires Java 17 or higher (except for the Docker installation, which is self-contained). Once installed, the CLI provides commands to bootstrap projects, load data, run transformations, and start the web UI.
+
+## How to Install Starlake CLI (Step-by-Step)
+
+1. **Choose an installation method** — Select Docker (fastest, no Java needed), Linux/macOS (requires Java 17+), or Windows (requires Java 17+ and PowerShell 5.0+).
+2. **Run the installation command** — For Linux/macOS: `bash <(curl https://raw.githubusercontent.com/starlake-ai/starlake/master/distrib/setup.sh)`. For Windows: run `setup.ps1` in PowerShell as administrator. For Docker: `docker pull starlakeai/starlake:latest`.
+3. **Verify the installation** — Run `starlake --version` to confirm the CLI is installed. The output should display the version number.
+4. **Start the Starlake UI (optional)** — Run `starlake serve` and open `http://localhost:9900` in your browser.
 
 ## Installation Methods
 

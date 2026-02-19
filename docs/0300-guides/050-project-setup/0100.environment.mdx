@@ -56,9 +56,32 @@ import Head from '@docusaurus/Head';
       ]
     })}
   </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to configure environment variables in Starlake",
+      "step": [
+        {"@type": "HowToStep", "name": "Define global variables in env.sl.yml", "text": "Create or edit metadata/env.sl.yml to define variables that apply across all environments. Use the env: key to list variable names and default values."},
+        {"@type": "HowToStep", "name": "Create environment-specific override files", "text": "Create env.DEV.sl.yml and env.PROD.sl.yml in the metadata/ folder. Variables defined here override the global defaults for the corresponding environment."},
+        {"@type": "HowToStep", "name": "Reference variables in YAML configuration", "text": "Use {{variable_name}} or ${variable_name} syntax in domain and job YAML files. Example: directory: '{{root_path}}/sales'."},
+        {"@type": "HowToStep", "name": "Set the active environment", "text": "Export SL_ENV=DEV or SL_ENV=PROD before running Starlake commands. The corresponding env.<ENV>.sl.yml file will be loaded automatically."}
+      ]
+    })}
+  </script>
 </Head>
 
 # Starlake Environment Variables
+
+Starlake uses YAML-based environment files to manage configuration variables across environments. Global variables are defined in `metadata/env.sl.yml`, while environment-specific overrides are stored in files like `env.DEV.sl.yml` and `env.PROD.sl.yml`. Variables are referenced using `${}` or `{{}}` syntax and resolved at runtime based on the `SL_ENV` setting. Starlake also provides predefined date/time variables (`sl_date`, `sl_datetime`, etc.).
+
+## How to Configure Environment Variables (Step-by-Step)
+
+1. **Define global variables in env.sl.yml** — Create or edit `metadata/env.sl.yml` to set default variable values that apply across all environments.
+2. **Create environment-specific override files** — Add `env.DEV.sl.yml` and `env.PROD.sl.yml` in the `metadata/` folder. Variables here override the global defaults.
+3. **Reference variables in YAML configuration** — Use `{{variable_name}}` or `${variable_name}` in domain and job files. Example: `directory: "{{root_path}}/sales"`.
+4. **Set the active environment** — Export `SL_ENV=DEV` or `SL_ENV=PROD` before running Starlake. The matching override file is loaded automatically.
+
 ## Define Environment-Specific Variables (DEV, PROD)
 
 Starlake allows you to use variables almost everywhere in the domain and job files.

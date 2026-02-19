@@ -96,6 +96,15 @@ import Head from '@docusaurus/Head';
 
 # Manual Load: Configure Custom Separators and Incoming Paths
 
+Starlake manual load gives you full control over file parsing, directory layout, and per-environment configuration. Use it when autoload cannot detect your file format (e.g., multi-character delimiters) or when files are stored outside the standard `incoming/<domain>/` directory structure. Configuration is defined in YAML files at the domain and table level.
+
+## How to Configure Manual Load
+
+1. **Define the incoming directory** -- Set `application.area.incoming` in `metadata/application.sl.yml`. Use an environment variable like `{{incoming_path}}` for per-environment paths.
+2. **Create the domain configuration** -- Create `metadata/load/<domain>/_config.sl.yml` and set `load.metadata.directory` to point to your incoming folder.
+3. **Create the table configuration** -- Create a `<table>.sl.yml` file for each table, defining the file pattern, format, separator, and attribute schema.
+4. **Run the load command** -- Execute `starlake load` to load files matching the configured patterns into the target warehouse.
+
 ## When to Use Manual Load Instead of Autoload
 
 You'll use Load instead of Autoload when:
