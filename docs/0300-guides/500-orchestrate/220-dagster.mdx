@@ -159,7 +159,7 @@ Additional options for the Cloud Run job:
 
 | Name                             | Type | Description                                                                                               |
 | -------------------------------- | ---- | --------------------------------------------------------------------------------------------------------- |
-| **cloud_run_project_id**   | str  | The optional Cloud Run project id (defaults to the Composer project id) |
+| **cloud_run_project_id**   | str  | The optional Cloud Run project id (defaults to the current GCP project id) |
 | **cloud_run_job_name**     | str  | The required name of the Cloud Run job                                                                    |
 | **cloud_run_region**       | str  | The optional region (`europe-west1` by default)                                                         |
 
@@ -197,7 +197,7 @@ Three Dagster concrete templates extend it using **include statements**:
 # This template executes individual shell jobs and requires the following dag generation options set:
 # - SL_STARLAKE_PATH: the path to the starlake executable [OPTIONAL]
 # ...
-{% include 'templates/dags/__starlake_dahster_shell_job.py.j2' %}
+{% include 'templates/dags/__starlake_dagster_shell_job.py.j2' %}
 {% include 'templates/dags/load/__dagster_scheduled_table_tpl.py.j2' %}
 ```
 
@@ -205,12 +205,12 @@ Three Dagster concrete templates extend it using **include statements**:
 
 ```python title="src/main/resources/templates/dags/load/dagster_scheduled_table_cloud_run.py.j2"
 # This template executes individual cloud run jobs and requires the following dag generation options set:
-# - cloud_run_project_id: the project id where the job is located (if not set, the project id of the composer environment will be used) [OPTIONAL]
-# - cloud_run_job_region: the region where the job is located (if not set, europe-west1 will be used) [OPTIONAL]
+# - cloud_run_project_id: the project id where the job is located (if not set, the current GCP project id will be used) [OPTIONAL]
+# - cloud_run_region: the region where the job is located (if not set, europe-west1 will be used) [OPTIONAL]
 # - cloud_run_job_name: the name of the job to execute [REQUIRED]
 # ...
 {% include 'templates/dags/__starlake_dagster_cloud_run_job.py.j2' %}
-{% include 'templates/dags/load/__airflow_scheduled_table_tpl.py.j2' %}
+{% include 'templates/dags/load/__dagster_scheduled_table_tpl.py.j2' %}
 ```
 
 ### Data transformation templates
@@ -224,7 +224,7 @@ Three Dagster concrete templates exist:
 ```python title="src/main/resources/templates/dags/transform/dagster_scheduled_task_shell.py.j2"
 # ...
 {% include 'templates/dags/__starlake_dagster_shell_job.py.j2' %}
-{% include 'templates/dags/load/__dagster_scheduled_task_tpl.py.j2' %}
+{% include 'templates/dags/transform/__dagster_scheduled_task_tpl.py.j2' %}
 ```
 
 - *dagster_scheduled_task_cloud_run.py.j2* -- Instantiates `StarlakeDagsterCloudRunJob`:
@@ -232,7 +232,7 @@ Three Dagster concrete templates exist:
 ```python title="src/main/resources/templates/dags/transform/dagster_scheduled_task_cloud_run.py.j2"
 # ...
 {% include 'templates/dags/__starlake_dagster_cloud_run_job.py.j2' %}
-{% include 'templates/dags/load/__dagster_scheduled_table_tpl.py.j2' %}
+{% include 'templates/dags/transform/__dagster_scheduled_task_tpl.py.j2' %}
 ```
 
 ## Dependencies
