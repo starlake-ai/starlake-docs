@@ -115,7 +115,7 @@ import Head from '@docusaurus/Head';
 
 # Data Quality Expectations
 
-Expectations are post-load data quality assertions that run automatically after Starlake writes data to the target table. They complement [pre-load type validation](/docs/guides/load/validate) by checking business rules on the loaded dataset: uniqueness, row count ranges, value distributions and custom conditions.
+Expectations are post-load data quality assertions that run automatically after Starlake writes data to the target table. They complement [pre-load type validation](/guides/load/validate) by checking business rules on the loaded dataset: uniqueness, row count ranges, value distributions and custom conditions.
 
 Each expectation references a reusable Jinja2 SQL macro, passes parameters and evaluates a condition on the query result. Set `failOnError: true` to halt the pipeline on failure, turning expectations into a lightweight data quality gate.
 
@@ -220,14 +220,14 @@ Create a `.j2` file in the `expectations` directory. Define a Jinja2 macro that 
 
 ## Expectations vs type validation
 
-| Aspect | [Type validation](/docs/guides/load/validate) | Expectations |
+| Aspect | [Type validation](/guides/load/validate) | Expectations |
 |---|---|---|
 | When it runs | Before load (pre-load) | After load (post-load) |
 | What it checks | Individual field format (regex) | Business rules on the full dataset |
 | Failed records | Rejected to audit table | Pipeline halted or warning logged |
 | Engine | Spark only | All engines |
 
-Use both for comprehensive data quality: type validation catches format errors at the record level, and expectations verify aggregate conditions on the loaded data. You can also base expectations on [ingestion metrics](/docs/guides/load/metrics).
+Use both for comprehensive data quality: type validation catches format errors at the record level, and expectations verify aggregate conditions on the loaded data. You can also base expectations on [ingestion metrics](/guides/load/metrics).
 
 ## Frequently Asked Questions
 

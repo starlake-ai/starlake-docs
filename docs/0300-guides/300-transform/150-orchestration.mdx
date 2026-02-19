@@ -161,8 +161,8 @@ After any SQL modification that changes table references (adding a table, modify
 
 ## Next Steps
 
-- [Orchestration Tutorial](/docs/guides/orchestrate/tutorial) -- complete walkthrough for setting up orchestration
-- [Customizing DAG Generation](/docs/guides/orchestrate/customization) -- configure scheduling, retries, parallelism, and orchestrator-specific parameters
+- [Orchestration Tutorial](/guides/orchestrate/tutorial) -- complete walkthrough for setting up orchestration
+- [Customizing DAG Generation](/guides/orchestrate/customization) -- configure scheduling, retries, parallelism, and orchestrator-specific parameters
 - [SQL Transform Tutorial](./tutorial) -- end-to-end transform walkthrough with lineage visualization
 
 ## Frequently Asked Questions
@@ -183,4 +183,4 @@ Yes. The generated DAGs include both load and transform jobs in the correct exec
 Yes. After any change that modifies dependencies (adding a table, modifying a JOIN), re-run `starlake dag-generate` to update the DAGs.
 
 ### Can you customize the generated DAGs?
-Yes. See the [DAG customization page](/docs/guides/orchestrate/customization) to configure scheduling, retries, parallelism, and other orchestrator-specific parameters.
+Yes. See the [DAG customization page](/guides/orchestrate/customization) to configure scheduling, retries, parallelism, and other orchestrator-specific parameters.

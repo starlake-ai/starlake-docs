@@ -123,7 +123,7 @@ Starlake provides eight write strategies that control how incoming data merges i
 | OVERWRITE | Replace all existing rows with the incoming rows. |
 | UPSERT_BY_KEY | Merge by key: update existing rows, insert new ones. |
 | UPSERT_BY_KEY_AND_TIMESTAMP | Merge by key. Overwrite only when the incoming timestamp is newer. |
-| OVERWRITE_BY_PARTITION | Overwrite only the partitions present in the incoming data. Other partitions remain intact. Requires a partition in the [sink configuration](/docs/guides/load/sink). |
+| OVERWRITE_BY_PARTITION | Overwrite only the partitions present in the incoming data. Other partitions remain intact. Requires a partition in the [sink configuration](/guides/load/sink). |
 | DELETE_THEN_INSERT | Delete target rows matching the incoming keys, then insert all incoming rows. |
 | SCD2 | Slowly Changing Dimension Type 2. Preserves the full history of each record with start/end timestamps. |
 | ADAPTATIVE | Selects the strategy at runtime based on file size, date, day of week or file name pattern. |
@@ -199,7 +199,7 @@ table:
 
 Creates the table if it does not exist. Overwrites only the partitions present in the incoming data. All other partitions remain untouched. New partitions are appended.
 
-This strategy requires a partition configuration in the [`sink` section](/docs/guides/load/sink).
+This strategy requires a partition configuration in the [`sink` section](/guides/load/sink).
 
 ```yaml title="Overwrite by partition. Requires the partition property in metadata.sink."
 table:
@@ -348,7 +348,7 @@ The `ADAPTATIVE` write strategy allows you to change the write mode at runtime b
 Use `UPSERT_BY_KEY_AND_TIMESTAMP` when the source can send multiple versions of the same record. Only the most recent version (based on the timestamp column) overwrites the existing row.
 
 ### How does OVERWRITE_BY_PARTITION work?
-Only the partitions present in the incoming data are overwritten. Partitions absent from the incoming batch remain untouched. This strategy requires a partition configured in the [`sink` section](/docs/guides/load/sink).
+Only the partitions present in the incoming data are overwritten. Partitions absent from the incoming batch remain untouched. This strategy requires a partition configured in the [`sink` section](/guides/load/sink).
 
 ### Can the write strategy be defined at the domain level?
 Yes. The strategy defined in `_config.sl.yml` at the domain level propagates to all tables in the domain, unless a table overrides it locally.

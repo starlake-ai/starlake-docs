@@ -110,7 +110,7 @@ Starlake validates every incoming record against a type schema before loading it
 Built-in types cover common SQL primitives (int, double, boolean, timestamp, date, etc.). You can also define custom types with domain-specific regex patterns for formats like email, phone number or zip code.
 
 :::tip
-Type validation runs in Spark mode only. [Native load mode](/docs/guides/load/native) skips this step entirely. Use post-load [expectations](/docs/guides/load/expectations) as an alternative quality gate when running in native mode.
+Type validation runs in Spark mode only. [Native load mode](/guides/load/native) skips this step entirely. Use post-load [expectations](/guides/load/expectations) as an alternative quality gate when running in native mode.
 :::
 
 ## How type validation works

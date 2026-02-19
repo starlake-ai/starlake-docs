@@ -213,7 +213,7 @@ extract:
 ### Which databases require special configuration for comment extraction in Starlake?
 DB2, Oracle, and SQL Server require configuring `columnRemarks` and `tableRemarks` in the extraction YAML file. MySQL and PostgreSQL retrieve comments via standard JDBC metadata without extra configuration.
 
-### How do the {{schema}} and {{table}} placeholders work?
+### How do the `{{schema}}` and `{{table}}` placeholders work?
 These are substitution variables. Starlake automatically replaces them with the schema name and table name being extracted at runtime when executing the SQL query.
 
 ### Where are column comments stored in DB2?

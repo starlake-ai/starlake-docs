@@ -211,7 +211,7 @@ Slowly Changing Dimension Type 2 -- a write strategy that preserves the full his
 
 A dynamic write strategy determined at runtime based on criteria such as the day of the week, file size, or patterns in the file name. Allows switching between strategies (e.g., APPEND on weekdays, OVERWRITE on Sundays) without changing the pipeline code.
 
-[Learn more about Adaptive Write Strategy](guides/load/write-strategies#adaptive-write-strategy)
+[Learn more about Adaptive Write Strategy](guides/load/write-strategies)
 
 ## Orchestration
 
@@ -253,13 +253,13 @@ Automatic tracking of data dependencies between tables and transforms. Starlake 
 
 Configuration values that vary between deployment environments (development, staging, production). Starlake supports environment-specific files (e.g., `env.sl.yml`) that override default settings, enabling the same pipeline code to run across different environments with different database URLs, credentials, or warehouse targets.
 
-[Learn more about Environment Variables](guides/configuration/environment)
+[Learn more about Environment Variables](guides/project-setup/environment)
 
 ## Bootstrap
 
 A CLI command (`starlake bootstrap`) that creates a new Starlake project with the standard directory structure (`metadata/`, `datasets/`, `incoming/`) and default configuration files. Bootstrap is the recommended starting point for any new Starlake project.
 
-[Learn more about Bootstrap](guides/getting-started/bootstrap)
+[Learn more about Bootstrap](guides/project-setup/starlake-project-setup)
 
 ## Partition Column
 

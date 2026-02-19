@@ -97,7 +97,7 @@ import Head from '@docusaurus/Head';
 
 # Native Load Mode
 
-Native load mode bypasses the Spark validation layer and sends files directly to the data warehouse engine (BigQuery, Snowflake, Databricks or DuckDB). This improves ingestion speed when [type validation](/docs/guides/load/validate) and attribute scripts are not required.
+Native load mode bypasses the Spark validation layer and sends files directly to the data warehouse engine (BigQuery, Snowflake, Databricks or DuckDB). This improves ingestion speed when [type validation](/guides/load/validate) and attribute scripts are not required.
 
 ## How Starlake loads data
 
@@ -119,7 +119,7 @@ Native load mode skips the Spark validation step entirely. The data warehouse's 
 | Ingestion speed | Standard | Faster |
 | File metadata columns | Yes | No |
 
-When you need validation features, keep the default Spark mode. See [Type Validation](/docs/guides/load/validate) for details on what native mode disables.
+When you need validation features, keep the default Spark mode. See [Type Validation](/guides/load/validate) for details on what native mode disables.
 
 ## Configuration priority
 
