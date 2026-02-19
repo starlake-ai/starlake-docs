@@ -122,7 +122,7 @@ By default, the SELECT result appends to the target table. Override this with `w
 ```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 task:
   writeStrategy:
-    type: overwrite ## or any strategy defined in the write strategies reference
+    type: OVERWRITE ## or any strategy defined in the write strategies reference
 ```
 
 Transform write strategies work the same way as load [write strategies](../load/write-strategies). Available types include `append`, `overwrite`, `upsert`, and others documented in that reference.
