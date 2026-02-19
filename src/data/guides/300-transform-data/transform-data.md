@@ -22,7 +22,7 @@ This schema will be created when executing your transform if it does not already
 3. You may optionally add a description your domain. This is useful for documentation purposes and for AI assistance. This description will be saved in the database as a comment.
 4. Click "Create" to finalize the domain creation.
 
-![](/img/guides/transform-data/step1.png)
+![Starlake UI creating a new analytics domain for data transformations](/img/guides/transform-data/step1.png)
 
 We are now ready to write our first insight in the schema "starbake_analytics" of our database.
 
@@ -36,7 +36,7 @@ We are now ready to write our first insight in the schema "starbake_analytics" o
 6. Click "Run" to execute your query and view the results.
 7. Review the results and make any necessary adjustments to your query.
 
-![](/img/guides/transform-data/step2.png)
+![Starlake SQL code editor running a transform query with result preview](/img/guides/transform-data/step2.png)
 
 
 ## Materialize your insights
@@ -49,7 +49,7 @@ In the "Write Strategy" section, select one of the following options:
 - SCD2 (Slow Changing Dimension) : Data will be merged into the target table based on a key column and timestamps columns to keep historical data
 - ...
 
-![](/img/guides/transform-data/step3.1.png)
+![Starlake write strategy options: append, overwrite, and SCD2 for materializing insights](/img/guides/transform-data/step3.1.png)
 
 1. In the "Code Editor", click the "Run" drop-down and "Materialize" option.
 2. Starlake will execute your query and store the results in the table named after your transform.
@@ -58,7 +58,7 @@ In the "Write Strategy" section, select one of the following options:
 
 The bottom panel will also show you the query lineage as it will be handled by the orchestrator
 
-![](/img/guides/transform-data/step3.2.png)
+![Starlake query lineage view showing transform dependencies for orchestration](/img/guides/transform-data/step3.2.png)
 
 
 

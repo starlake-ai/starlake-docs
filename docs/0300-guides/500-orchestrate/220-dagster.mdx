@@ -145,7 +145,7 @@ Each concrete factory class extends `ai.starlake.dagster.StarlakeDagsterJob` and
 
 An additional **SL_STARLAKE_PATH** option specifies the path to the Starlake executable.
 
-![](/img/orchestration/dagster/shell.png)
+![Starlake Dagster job using shell operator for on-premise execution](/img/orchestration/dagster/shell.png)
 
 ### StarlakeDagsterCloudRunJob
 
@@ -169,19 +169,19 @@ The pre-load strategy options (NONE, IMPORTED, PENDING, ACK) are described in th
 
 ### NONE
 
-![](/img/orchestration/dagster/none.png)
+![Dagster job visualization for NONE pre-load strategy](/img/orchestration/dagster/none.png)
 
 ### IMPORTED
 
-![](/img/orchestration/dagster/imported.png)
+![Dagster job visualization for IMPORTED pre-load strategy](/img/orchestration/dagster/imported.png)
 
 ### PENDING
 
-![](/img/orchestration/dagster/pending.png)
+![Dagster job visualization for PENDING pre-load strategy](/img/orchestration/dagster/pending.png)
 
 ### ACK
 
-![](/img/orchestration/dagster/ack.png)
+![Dagster job visualization for ACK pre-load strategy](/img/orchestration/dagster/ack.png)
 
 ## Templates
 
@@ -287,7 +287,7 @@ task_deps=json.loads("""[ {
 
 With **run_dependencies_first** = *True*, all dependencies are included in the same Dagster job.
 
-![](/img/orchestration/dagster/transformWithDependencies.png)
+![Dagster job with inline transform dependencies in a single job](/img/orchestration/dagster/transformWithDependencies.png)
 
 ### Multi Asset Sensor
 
@@ -422,7 +422,7 @@ def sl_job(self, task_id: str, arguments: list, spark_config: StarlakeSparkConfi
 
 ```
 
-![](/img/orchestration/dagster/transformWithoutDependencies.png)
+![Dagster job with multi-asset sensor scheduling for transform triggers](/img/orchestration/dagster/transformWithoutDependencies.png)
 
 ## Frequently Asked Questions
 

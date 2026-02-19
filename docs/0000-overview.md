@@ -98,7 +98,7 @@ import Head from '@docusaurus/Head';
 - **Automated Quality**: schema validation and data quality checks are built-in.
 - **Cross-Platform**: Run on Spark, Snowflake, BigQuery, Databricks, DuckDB, PostgreSQL and more
 
-![](/img/starlake-perimeter.png)
+![Starlake declarative data pipeline perimeter covering extract, load, transform, and orchestrate](/img/starlake-perimeter.png)
 
 ## What is Declarative Data Engineering?
 
@@ -288,7 +288,7 @@ For example, in load tasks, you can choose to use the native data warehouse engi
 Starlake is also cross-engine capable: it enables transformations that query one data warehouse and write results to another. This is especially useful for export tasks to formats like CSV, Parquet, or Excel, as well as for integrations with external analytical or operational databases.
 
 <center>
-<img src="/img/multi-cross-engine.png" alt="drawing" width="600"/>
+<img src="/img/multi-cross-engine.png" alt="Starlake multi-engine and cross-engine support for Spark, BigQuery, Snowflake, and DuckDB" width="600"/>
 </center>
 
 ## Code-free Orchestration
@@ -305,5 +305,5 @@ With Starlake develop and test your load and transform tasks locally on DuckDB u
 4. Share and publish unit-test reports
 
 <center>
-<img src="/img/duckdb-dual-mode.png" alt="drawing" width="600"/>
+<img src="/img/duckdb-dual-mode.png" alt="Starlake DuckDB dual mode: develop locally, deploy to any data warehouse" width="600"/>
 </center>

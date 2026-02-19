@@ -176,7 +176,7 @@ dag:
 
 An additional **SL_STARLAKE_PATH** option specifies the path to the Starlake executable.
 
-![](/img/orchestration/airflow/bash.png)
+![Starlake Airflow DAG using BashOperator for on-premise execution](/img/orchestration/airflow/bash.png)
 
 ### StarlakeAirflowCloudRunJob
 
@@ -197,11 +197,11 @@ Additional options for the Cloud Run job:
 | **retry_on_failure**       | bool | Retry the Cloud Run job on failure (`False` by default)|
 | **retry_delay_in_seconds** | int  | Delay in seconds before retrying (`10` by default)|
 
-![](/img/orchestration/airflow/cloudRunSynchronous.png)
+![Starlake Airflow DAG with synchronous Cloud Run job execution](/img/orchestration/airflow/cloudRunSynchronous.png)
 
 When the execution is **asynchronous**, an `ai.starlake.airflow.gcp.CloudRunJobCompletionSensor` (extending `airflow.sensors.bash.BashSensor`) waits for the Cloud Run job to complete.
 
-![](/img/orchestration/airflow/cloudRunAsynchronous.png)
+![Starlake Airflow DAG with asynchronous Cloud Run job and completion sensor](/img/orchestration/airflow/cloudRunAsynchronous.png)
 
 ## Pre-load strategy visualizations
 
@@ -209,19 +209,19 @@ The pre-load strategy options (NONE, IMPORTED, PENDING, ACK) are described in th
 
 ### NONE
 
-![](/img/orchestration/airflow/none.png)
+![Airflow DAG visualization for NONE pre-load strategy](/img/orchestration/airflow/none.png)
 
 ### IMPORTED
 
-![](/img/orchestration/airflow/imported.png)
+![Airflow DAG visualization for IMPORTED pre-load strategy](/img/orchestration/airflow/imported.png)
 
 ### PENDING
 
-![](/img/orchestration/airflow/pending.png)
+![Airflow DAG visualization for PENDING pre-load strategy](/img/orchestration/airflow/pending.png)
 
 ### ACK
 
-![](/img/orchestration/airflow/ack.png)
+![Airflow DAG visualization for ACK pre-load strategy](/img/orchestration/airflow/ack.png)
 
 ## Templates
 
@@ -547,7 +547,7 @@ task_deps=json.loads("""[ {
 
 With **run_dependencies_first** = *True*, all dependencies are included in the same DAG.
 
-![](/img/orchestration/airflow/transformWithDependencies.png)
+![Airflow DAG with inline transform dependencies in a single DAG](/img/orchestration/airflow/transformWithDependencies.png)
 
 ### Data-aware scheduling
 
@@ -642,7 +642,7 @@ All recorded outlets are used at the last step of the DAG to update the Datasets
     end = sl_job.dummy_op(task_id="end", outlets=[Dataset(keep_ascii_only(dag.dag_id))]+list(map(lambda x: Dataset(x.uri + _extra_dataset_parameters), sl_job.outlets)))
 ```
 
-![](/img/orchestration/airflow/transformWithoutDependencies.png)
+![Airflow DAG with data-aware scheduling using Datasets for transform triggers](/img/orchestration/airflow/transformWithoutDependencies.png)
 
 The outlets property enables **effortless scheduling** of transform DAGs in conjunction with Starlake DAG generation.
 

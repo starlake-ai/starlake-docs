@@ -26,10 +26,10 @@ If you ask to coalesce to a single partition, the offloader will store the data 
 argument.
 
 The figure below describes the batch offloading process
-![](/img/cli/kafka-offload.png)
+![Starlake Kafka batch offloading process diagram from topics to files](/img/cli/kafka-offload.png)
 
 The figure below describes the batch offloading process with `comet-offsets-mode = "FILE"`
-![](/img/cli/kafka-offload-fs.png)
+![Starlake Kafka batch offloading with FILE offset mode for single partition output](/img/cli/kafka-offload-fs.png)
 
 ### Streaming mode
 

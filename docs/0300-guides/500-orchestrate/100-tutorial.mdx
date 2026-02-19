@@ -149,20 +149,20 @@ This pushes the DAGs to your target orchestrator.
 <Tabs groupId="schedulers">
 <TabItem value="airflow" label="Airflow">
 
-![](/img/orchestration/airflow/airflow-dags.png)
+![Starlake-generated Airflow DAGs list in the Airflow web UI](/img/orchestration/airflow/airflow-dags.png)
 
-![](/img/orchestration/airflow/transformWithDependencies2.png)
+![Airflow DAG graph view showing Starlake transform task dependencies](/img/orchestration/airflow/transformWithDependencies2.png)
 
 </TabItem>
 
 <TabItem value="dagster" label="Dagster">
 
-![](/img/orchestration/dagster/dagster-dags.jpeg)
+![Starlake-generated Dagster job graph with asset dependencies](/img/orchestration/dagster/dagster-dags.jpeg)
 
 </TabItem>
 <TabItem value="snowflake" label="Snowflake Tasks">
 
-![](/img/orchestration/snowflake/snowflake-dags.png)
+![Starlake-generated Snowflake Tasks DAG with task dependencies](/img/orchestration/snowflake/snowflake-dags.png)
 
 </TabItem>
 </Tabs>
@@ -298,3 +298,10 @@ Yes, you can use built-in templates, modify them, or create your own custom temp
 
 ### Does Starlake support DAG backfilling?
 Yes, Starlake supports backfilling by specifying a start date and end date. This allows you to run your DAGs retroactively on a specific date range using the `backfill` command.
+
+## Related
+
+- [Extract Data from Databases](../extract/tutorial) -- extract source data before loading and transforming
+- [Load Data into Your Warehouse](../load/tutorial) -- load files that the generated DAGs will orchestrate
+- [Transform Data with SQL](../transform/tutorial) -- write the SQL transforms that DAGs execute
+- [Unit Testing Data Pipelines](../unit-tests/concepts) -- test your pipelines locally before deploying DAGs

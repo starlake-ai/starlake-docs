@@ -15,7 +15,7 @@ You can set schedules for your orchestrations using cron expressions. This allow
 
 Simply head to the Orchestrate/Schedules menu and add a new schedule with your desired cron expression for each table or task you want to run periodically.
 
-![](/img/guides/orchestrate-in-snowflake-tasks/step1.png)
+![Starlake UI showing cron schedule configuration for Snowflake Tasks orchestration](/img/guides/orchestrate-in-snowflake-tasks/step1.png)
 
 
 Note that you do not need to set a schedule for tasks that are dependencies of other tasks, since they will be triggered automatically when their parent tasks are executed.
@@ -40,7 +40,7 @@ External stage configuration in Snowflake documentation:
 
 Once you have created the external stage, you can configure Snowflake Tasks in Starlake by specifying the stage name in the Orchestrate/Config/snowflake-load-sql Tasks menu. This will allow Starlake to create and manage Snowflake Tasks that load data from the specified external stage into your Snowflake tables.
 
-![](/img/guides/orchestrate-in-snowflake-tasks/step3.png)
+![Starlake external stage configuration for Snowflake Tasks load SQL](/img/guides/orchestrate-in-snowflake-tasks/step3.png)
 
 
 ## Dry Run Snowflake Tasks
@@ -53,7 +53,7 @@ To perform a dry run, click on the "Dry Run" button. This will simulate the exec
 
 If the dry run is successful and you are satisfied with the configuration, you can proceed to deploy the Snowflake Tasks by clicking on the "Deploy" button. This will create the tasks in your Snowflake environment, ready to be executed according to the schedules you have set.
 
-![](/img/guides/orchestrate-in-snowflake-tasks/step4.png)
+![Starlake dry run results validating Snowflake Tasks configuration before deployment](/img/guides/orchestrate-in-snowflake-tasks/step4.png)
 
 
 ## Deploy Snowflake Tasks
@@ -67,4 +67,4 @@ You can check on the status of your deployed tasks in the Snowflake UI. Navigate
 The tasks will have been created in the schema you specified at project creation time.
 
 
-![](/img/guides/orchestrate-in-snowflake-tasks/step5.png)
+![Deployed Snowflake Tasks visible in the Snowflake UI with execution status](/img/guides/orchestrate-in-snowflake-tasks/step5.png)
