@@ -1,7 +1,7 @@
 ---
-title: "Database Connections"
-description: "Configure Starlake database connections for BigQuery, Snowflake, Databricks, Redshift, DuckDB, DuckLake, and local file systems."
-keywords: [starlake, database connections, bigquery, snowflake, databricks, redshift, duckdb, ducklake]
+title: "Configure Starlake Database Connections"
+description: "Configure Starlake connections to BigQuery, Snowflake (with OAuth SSO), Databricks, Redshift, DuckDB, DuckLake, PostgreSQL, and any JDBC database. YAML examples for application.sl.yml."
+keywords: [starlake, database connections, bigquery, snowflake, databricks, redshift, duckdb, ducklake, postgresql, jdbc]
 ---
 
 import Head from '@docusaurus/Head';
@@ -49,30 +49,26 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
-# Database Connections
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Starlake supports connections to BigQuery, Snowflake, Databricks/Spark, Amazon Redshift, DuckDB, DuckLake, PostgreSQL, and any JDBC-compliant database. All connections are configured in the `connections` section of `metadata/application.sl.yml`. Each connection type has its own set of options including authentication, driver, and runtime settings. Snowflake connections support both user/password and OAuth (SSO) authentication.
+# Configure Starlake Database Connections
 
-Connections are defined in the `connections` section under the root attribute `application`.
+Starlake supports connections to BigQuery, Snowflake, Databricks/Spark, Amazon Redshift, DuckDB, DuckLake, PostgreSQL, and any JDBC-compliant database. All connections are defined in the `connections` section of `metadata/application.sl.yml`. Each connection type has specific options for authentication, driver, and runtime settings.
 
+## Supported Connection Types
 
-The following types of connections are supported:
+- [Local File System](#connect-starlake-to-the-local-file-system)
+- [Google BigQuery](#connect-starlake-to-google-bigquery)
+- [Snowflake (JDBC and OAuth SSO)](#connect-starlake-to-snowflake)
+- [Apache Spark / Databricks](#connect-starlake-to-spark-and-databricks)
+- [Amazon Redshift](#connect-starlake-to-amazon-redshift)
+- [DuckDB / DuckLake](#connect-starlake-to-duckdb-and-ducklake)
+- [PostgreSQL / Any JDBC Database](#connect-starlake-to-any-jdbc-database)
 
-- [Local File System](#local-file-system)
-- [BigQuery](#google-bigquery)
-- [Spark / Databricks](#apache-spark--databricks)
-- [Snowflake](#snowflake)
-- [Redshift](#amazon-redshift)
-- [DuckdDB / DuckLake](#duckdb--ducklake)
-- [Other Database](#any-database)
+## Connect Starlake to the Local File System
 
-
-## Local File System
-
-The local file system connection is used to read and write files to the local file system.
+The local file system connection reads and writes files to disk. Files are stored in subdirectories under `datasets/`. Each subdirectory represents a processing stage in the data pipeline.
 
 ```yaml
 application:
@@ -81,111 +77,103 @@ application:
         type: local
 ```
 
-Files will be stored in the `area` directory under the `datasets` directory.
-Défault values for `area` and `datasets` can be set in the `application` section.
+The `area` settings control the directory names for each stage. You can override them with environment variables.
 
 ```yaml
 application:
-    datasets = "{{root}}/datasets" # or set it through the SL_DATASETS environnement variable.
+    datasets: "{{root}}/datasets" # or set with the SL_DATASETS environment variable
     area:
-        pending: "pending" # Location where files of pending load are stored. May be overloaded by the ${SL_AREA_PENDING} environment variable.
-        unresolved: "unresolved" # Location where files that do not match any pattern are moved. May be overloaded by the ${SL_AREA_UNRESOLVED} environment variable.
-        archive: "archive" # Location where files are moved after they have been processed. May be overloaded by the ${SL_AREA_ARCHIVE} environment variable.
-        ingesting: "ingesting" # Location where files are moved while they are being processed. May be overloaded by the ${SL_AREA_INGESTING} environment variable.
-        accepted: "accepted" # Location where files are moved after they have been processed and accepted. May be overloaded by the ${SL_AREA_ACCEPTED} environment variable.
-        rejected: "rejected" # Location where files are moved after they have been processed and rejected. May be overloaded by the ${SL_AREA_REJECTED} environment variable.
-        business: "business" # Location where transform tasks store their result. May be overloaded by the ${SL_AREA_BUSINESS} environment variable.
-        replay: "replay" # Location rejected records are stored in their orginial format. May be overloaded by the ${SL_AREA_REPLAY} environment variable.
-        hiveDatabase: "${domain}_${area}" # Hive database name. May be overloaded by the ${SL_AREA_HIVE_DATABASE} environment variable.
-
+        pending: "pending"       # Files waiting to be loaded (SL_AREA_PENDING)
+        unresolved: "unresolved" # Files that do not match any pattern (SL_AREA_UNRESOLVED)
+        archive: "archive"       # Files moved after processing (SL_AREA_ARCHIVE)
+        ingesting: "ingesting"   # Files currently being processed (SL_AREA_INGESTING)
+        accepted: "accepted"     # Files processed and accepted (SL_AREA_ACCEPTED)
+        rejected: "rejected"     # Files processed and rejected (SL_AREA_REJECTED)
+        business: "business"     # Transform task results (SL_AREA_BUSINESS)
+        replay: "replay"         # Rejected records in original format (SL_AREA_REPLAY)
+        hiveDatabase: "${domain}_${area}" # Hive database name (SL_AREA_HIVE_DATABASE)
 ```
 
-## Google BigQuery
+## Connect Starlake to Google BigQuery
 
-Starlake support native and spark bigquery connections.
+Starlake supports native and Spark BigQuery connections. The native connection is the default. To use the Spark BigQuery connector, set `sparkFormat: "bigquery"`.
 
+### BigQuery Authentication Methods
+
+Starlake supports three authentication methods for BigQuery:
+- **APPLICATION_DEFAULT**: Uses the default credentials configured in your environment (e.g., `gcloud auth application-default login`)
+- **SERVICE_ACCOUNT_JSON_KEYFILE**: Uses a JSON key file for a service account
+- **ACCESS_TOKEN**: Uses a direct GCP access token
+
+### BigQuery Connection Configuration
 
 ```yaml
 application:
   connections:
     bigquery:
       type: "bigquery"
-      # Uncomment the line below to use the spark bigquery connector instead of the native one.
-      # sparkFormat: "bigquery" 
+      # Uncomment the line below to use the Spark BigQuery connector instead of the native one.
+      # sparkFormat: "bigquery"
       options:
-        location: "us-central1" # EU or US or ...
+        location: "us-central1" # EU or US or any BigQuery region
         authType: "APPLICATION_DEFAULT"
-        authScopes: "https://www.googleapis.com/auth/cloud-platform" # comma separated list of scopes
-        # writeMethod: # Only when 'sparkFormat' above is set. "direct" # direct or indirect (indirect is required for certain features see https://github.com/GoogleCloudDataproc/spark-bigquery-connector)
-        # temporaryGcsBucket: # Only when 'sparkFormat' above is set. "bucket_name" without the prefix "gcs://"  bucket name for temporary files
+        authScopes: "https://www.googleapis.com/auth/cloud-platform"
+        # writeMethod: "direct" # Only when sparkFormat is set. "direct" or "indirect"
+        # temporaryGcsBucket: "bucket_name" # Only when sparkFormat is set. No "gcs://" prefix
         #authType: SERVICE_ACCOUNT_JSON_KEYFILE
         #jsonKeyfile: "/Users/me/.gcloud/keys/starlake-me.json"
         #authType: "ACCESS_TOKEN"
-        #gcpAccessToken: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-  accessPolicies: # Required when applying access policies to table columns (Column Level Security)
+        #gcpAccessToken: "your-access-token"
+  accessPolicies: # Required when applying Column Level Security
     apply: true
     location: EU
     taxonomy: RGPD
 ```
 
+## Connect Starlake to Snowflake
 
-## Snowflake
+Starlake connects to Snowflake using the JDBC driver. Two authentication methods are available: user/password and OAuth SSO.
 
-### User / Password Auth
-You may use the native Snowflake JDBC driver or the Spark Snowflake connector. The native driver is recommended for most use cases.
-The Spark Snowflake connector is only required when exporting data from Snowflake to Excel or CSV / Parquet / ... files or when loading data from 
-to Snowflake using the Starlake Spark embedded library .
+### Snowflake User/Password Authentication
 
-
-
+Use the native Snowflake JDBC driver for most use cases. The Spark Snowflake connector is only needed when exporting data to Excel, CSV, or Parquet files, or when loading data using the embedded Spark library.
 
 ```yaml
-
 application:
   connections:
     snowflake:
       type: jdbc
-      # Uncomment the line below to use the Snowflake Spark embedded library instead of the Snowflake JDBC connector.
-      # sparkFormat: snowflake 
+      # Uncomment the line below to use the Snowflake Spark connector instead of JDBC.
+      # sparkFormat: snowflake
       options:
         url: "jdbc:snowflake://{{SNOWFLAKE_ACCOUNT}}.snowflakecomputing.com"
         driver: "net.snowflake.client.jdbc.SnowflakeDriver"
-        user: {{SNOWFLAKE_USER}}
-        password: {{SNOWFLAKE_PASSWORD}}
-        warehouse: {{SNOWFLAKE_WAREHOUSE}}
-        db: {{SNOWFLAKE_DB}}
+        user: "{{SNOWFLAKE_USER}}"
+        password: "{{SNOWFLAKE_PASSWORD}}"
+        warehouse: "{{SNOWFLAKE_WAREHOUSE}}"
+        db: "{{SNOWFLAKE_DB}}"
         keep_column_case: "off"
         preActions: "alter session set TIMESTAMP_TYPE_MAPPING = 'TIMESTAMP_LTZ';ALTER SESSION SET QUOTED_IDENTIFIERS_IGNORE_CASE = true"
-                sfUrl: "{{SNOWFLAKE_ACCOUNT}}.snowflakecomputing.com" # make sure you do not prefix by jdbc:snowflake://. This is done by the snowflaek driver
-        #sfUrl: "jdbc:snowflake://{{SNOWFLAKE_ACCOUNT}}.snowflakecomputing.com" # make sure the key is prefixed with 'sf' is 'sparkFormat' is set
-        # sfUser: {{SNOWFLAKE_USER}} # make sure the key is prefixed with 'sf' is 'sparkFormat' is set
-        # sfPassword: {{SNOWFLAKE_PASSWORD}} # make sure the key is prefixed with 'sf' is 'sparkFormat' is set
-        # sfWarehouse: {{SNOWFLAKE_WAREHOUSE}} # make sure the key is prefixed with 'sf' is 'sparkFormat' is set
-        # sfDatabase: {{SNOWFLAKE_DB}} # make sure the key is prefixed with 'sf' is 'sparkFormat' is set
+        sfUrl: "{{SNOWFLAKE_ACCOUNT}}.snowflakecomputing.com" # Do not prefix with jdbc:snowflake://
+        # When sparkFormat is set, prefix keys with "sf":
+        # sfUrl: "jdbc:snowflake://{{SNOWFLAKE_ACCOUNT}}.snowflakecomputing.com"
+        # sfUser: "{{SNOWFLAKE_USER}}"
+        # sfPassword: "{{SNOWFLAKE_PASSWORD}}"
+        # sfWarehouse: "{{SNOWFLAKE_WAREHOUSE}}"
+        # sfDatabase: "{{SNOWFLAKE_DB}}"
+```
 
-      
-``` 
+### Snowflake OAuth Single Sign-On (SSO)
 
+SSO is supported via the OAuth authentication type. It is only compatible with the native Snowflake JDBC driver.
 
-### Single Sign On (OAuth)
+When a user authenticates through Snowflake OAuth, Starlake automatically switches to the OAuth authentication type. The `user` and `password` fields in the configuration are ignored and replaced by the token generated by Snowflake.
 
-__Single Sign-On with Snowflake OAuth__
+#### Step 1: Create the OAuth Security Integration in Snowflake
 
-Single Sign-On (SSO) is supported via the oauth authentication type, which is only compatible with the native Snowflake JDBC driver.
-
-You can continue using the same configuration as before. 
-Once the user is authenticated through Snowflake, Starlake will automatically use the oauth authentication type to connect. 
-The user and password fields will be ignored and replaced by the user token generated by Snowflake.
-
-__Configuring Snowflake OAuth__
-
-To use Snowflake OAuth, you need to configure the following settings in your Snowflake account:
-	1.	Log in to Snowflake using the ACCOUNTADMIN role or another role with the global CREATE INTEGRATION privilege.
-	2.	Execute the following SQL command to create a new OAuth integration:
-
+Log in to Snowflake with the `ACCOUNTADMIN` role (or another role with `CREATE INTEGRATION` privileges) and run:
 
 ```sql
--- Create a new OAuth integration
 CREATE OR REPLACE SECURITY INTEGRATION STARLAKE
   TYPE = OAUTH
   ENABLED = TRUE
@@ -194,30 +182,20 @@ CREATE OR REPLACE SECURITY INTEGRATION STARLAKE
   OAUTH_REDIRECT_URI = '<REDIRECT_URI>'
   OAUTH_ISSUE_REFRESH_TOKENS = TRUE
   OAUTH_REFRESH_TOKEN_VALIDITY = 7776000 -- Valid for 90 days
-  OAUTH_USE_SECONDARY_ROLES = 'IMPLICIT'; 
+  OAUTH_USE_SECONDARY_ROLES = 'IMPLICIT';
 ```
 
+**OAuth Redirect URI values:**
+- Local development: `http://localhost:8080/api/v1/auth/snowflake/callback`
+- Snowflake native app: `https://<account>.snowflakecomputing.com/api/v1/auth/snowflake/callback`
 
-__OAuth Redirect URI__
+**Token validity:**
+- Access token: 10 minutes
+- Refresh token: 90 days (automatically renews the access token). After 90 days, the user must reauthenticate.
 
-REDIRECT_URI refers to the URL that Snowflake will redirect to after authentication:
-- If you’re running Starlake on your local machine, use: ```http://localhost:8080/api/v1/auth/snowflake/callback```
+#### Step 2: Retrieve Integration Credentials
 
-- If you’re running Starlake as a native app on Snowflake, the redirect URI will be: ```https://<account>.snowflakecomputing.com/api/v1/auth/snowflake/callback```
-
-
-
-__Token Validity__
-
-The access token provided by Snowflake is valid for 10 minutes. 
-However, the refresh token—valid for 90 days—will automatically renew the access token as needed. After 90 days, the user must reauthenticate.
-
-
-__Retrieving Integration Credentials__
-
-To extract your account name, client ID, and client secret from the integration you just created, run the following SQL query:
-
-⸻
+Run the following SQL to extract the account name, client ID, and client secret:
 
 ```sql
 WITH SECURITY_INTEGRATION as (
@@ -231,14 +209,13 @@ from
   SECURITY_INTEGRATION;
 ```
 
-In the Starlake UI, log in as an admin and navigate to the Admin page. 
-Then, click on the ```Snowflake SSO``` tab. Enter the ```Account```, ```Client ID```, and ```Client Secret``` fields using the values you extracted from Snowflake.
+#### Step 3: Configure Starlake UI
 
+In the Starlake UI, log in as an admin and navigate to **Admin > Snowflake SSO**. Enter the `Account`, `Client ID`, and `Client Secret` values from Step 2.
 
+## Connect Starlake to Spark and Databricks
 
-## Apache Spark / Databricks
-
-Spark connections are used to read and write data from Spark.
+Spark connections support three write formats: Parquet, Delta, and Iceberg. Each format requires specific Spark extensions.
 
 <Tabs groupId="spark_connections">
 
@@ -252,13 +229,11 @@ application:
       type: "spark"
       options:
         # any spark configuration can be set here
-      
-``` 
+```
 
 </TabItem>
 
 <TabItem label="Spark Delta" value="spark-delta">
-
 
 ```yaml
 application:
@@ -273,14 +248,11 @@ application:
       extensions: "io.delta.sql.DeltaSparkSessionExtension"
       catalog:
         spark_catalog: "org.apache.spark.sql.delta.catalog.DeltaCatalog"
-
-``` 
+```
 
 </TabItem>
 
 <TabItem label="Spark Iceberg" value="spark-iceberg">
-
-
 
 ```yaml
 application:
@@ -299,47 +271,35 @@ application:
     sql.catalog.spark_catalog.warehouse: "{{SL_ROOT}}/warehouse"
     sql.catalog.local.warehouse: "{{SL_ROOT}}/warehouse"
     sql.defaultCatalog:  local
-``` 
+```
 
 </TabItem>
 
-
 </Tabs>
 
+## Connect Starlake to Amazon Redshift
 
-## Amazon Redshift
-
-
-<Tabs groupId="redshift_connections">
-
-<TabItem label="Redshift JDBC" value="redshift-jdbc">
+Use the Redshift JDBC driver. If running on Spark or Databricks, uncomment the `sparkFormat` line.
 
 ```yaml
-
 application:
   connections:
     redshift:
       type: jdbc
-      # Uncomment the line below if you are running on top of Spark or Databricks
-      # sparkFormat: "io.github.spark_redshift_community.spark.redshift"  # set to "redshift" if running on top of Databricks
+      # Uncomment the line below if running on Spark or Databricks
+      # sparkFormat: "io.github.spark_redshift_community.spark.redshift"  # Use "redshift" on Databricks
       options:
-        url: "jdbc:redshift://account.region.redshift.amazonaws.com:5439/database",
+        url: "jdbc:redshift://account.region.redshift.amazonaws.com:5439/database"
         driver: com.amazon.redshift.Driver
         password: "{{REDSHIFT_PASSWORD}}"
-        tempdir: "s3a://bucketName/data",
-        tempdir_region: "eu-central-1" # required only if running from outside AWS (your laptop ...)
+        tempdir: "s3a://bucketName/data"
+        tempdir_region: "eu-central-1" # Required only when running from outside AWS
         aws_iam_role: "arn:aws:iam::aws_count_id:role/role_name"
-  
-``` 
+```
 
-</TabItem>
+## Connect Starlake to DuckDB and DuckLake
 
-</Tabs>
-
-
-
-## DuckDB / DuckLake
-DuckDB is a lightweight, in-process SQL OLAP database management system. It is designed to support analytical queries on large datasets.
+DuckDB is a lightweight, in-process SQL OLAP database. Starlake connects to DuckDB via JDBC. DuckLake extends DuckDB with a metadata catalog layer.
 
 ```yaml
 application:
@@ -351,14 +311,15 @@ application:
         driver: "org.duckdb.DuckDBDriver"
         user: "{{DATABASE_USER}}"
         password: "{{DATABASE_PASSWORD}}"
-        ## uncomment and customize the line below if using ducklake
-        # preActions: ""ATTACH IF NOT EXISTS 'ducklake:metadata.ducklake' As my_ducklake (DATA_PATH 'file_path/');USE my_ducklake;"
+        ## Uncomment and customize the line below for DuckLake
+        # preActions: "ATTACH IF NOT EXISTS 'ducklake:metadata.ducklake' As my_ducklake (DATA_PATH 'file_path/');USE my_ducklake;"
 ```
 
+For DuckLake, the `preActions` setting attaches the DuckLake metadata catalog before running any queries.
 
-## Any Database
+## Connect Starlake to Any JDBC Database
 
-The syntax below applies to any JDBC database. The example below is for Postgres.
+Starlake connects to any JDBC-compliant database (PostgreSQL, MySQL, etc.) using the generic `jdbc` connection type. The example below uses PostgreSQL.
 
 ```yaml
 application:
@@ -366,7 +327,7 @@ application:
   connections:
     postgresql:
       type: jdbc
-      # Uncomment the line below to use the spark postgres connector instead of the native one.
+      # Uncomment the line below to use the Spark JDBC connector
       # sparkFormat: jdbc
       options:
         url: "jdbc:postgresql://{{POSTGRES_HOST}}:{{POSTGRES_PORT}}/{{POSTGRES_DATABASE}}"
@@ -375,6 +336,8 @@ application:
         password: "{{DATABASE_PASSWORD}}"
         quoteIdentifiers: false
 ```
+
+Replace the connection name, URL, and driver class to connect to any JDBC-compliant database.
 
 ## Frequently Asked Questions
 
@@ -390,3 +353,8 @@ Starlake supports BigQuery, Snowflake, Databricks/Spark, Amazon Redshift, DuckDB
 ### Can I use Starlake with DuckDB or DuckLake?
 Yes, Starlake supports DuckDB as a JDBC connection. Configure it with the DuckDB JDBC URL and driver in `application.sl.yml`. DuckLake is also supported by adding a `preActions` setting to attach the DuckLake metadata catalog.
 
+### What BigQuery authentication methods does Starlake support?
+Starlake supports three methods: APPLICATION_DEFAULT (default credentials), SERVICE_ACCOUNT_JSON_KEYFILE (JSON key file), and ACCESS_TOKEN (direct GCP access token).
+
+### How do I configure a Redshift connection in Starlake?
+Use a JDBC connection with `url: "jdbc:redshift://<account>.<region>.redshift.amazonaws.com:5439/<database>"` and `driver: com.amazon.redshift.Driver`. Provide the password, a temporary S3 bucket, and an IAM role ARN.
