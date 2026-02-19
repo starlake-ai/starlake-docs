@@ -142,7 +142,7 @@ This tutorial creates three KPI tables:
 
 The execution order matters. `order_summary` depends on `revenue_summary` and `product_summary`, so Starlake must build those two first.
 
-![](/img/starbake-transform.png)
+![Starbake transform dependency graph](/img/starbake-transform.png)
 
 ## Write the SQL SELECT Statements
 
@@ -230,7 +230,7 @@ If you installed [GraphViz](/setup/starlake-core-setup), you can generate an SVG
 starlake lineage --task kpi.order_summary --svg --output lineage.svg
 ```
 
-![](/img/lineage.svg)
+![Starlake SQL transform lineage diagram](/img/lineage.svg)
 
 ## Run the Transform with Recursive Execution
 
