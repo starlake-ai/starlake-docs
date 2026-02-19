@@ -211,10 +211,10 @@ table:
 
 | Syntax | Description |
 | --- | --- |
-| `foreign_key: "<table>"` | Foreign key on the primary key of the specified table in the same domain. |
-| `foreign_key: "<domain>.<table>"` | Foreign key on the primary key of the specified table in the specified domain. |
-| `foreign_key: "<domain>.<table>.<column>"` | Foreign key on a specific column in the specified table and domain. |
-| `foreign_key: "<table>.<column>"` | Foreign key on a specific column in the specified table in the same domain. |
+| `foreignKey: "<table>"` | Foreign key on the primary key of the specified table in the same domain. |
+| `foreignKey: "<domain>.<table>"` | Foreign key on the primary key of the specified table in the specified domain. |
+| `foreignKey: "<domain>.<table>.<column>"` | Foreign key on a specific column in the specified table and domain. |
+| `foreignKey: "<table>.<column>"` | Foreign key on a specific column in the specified table in the same domain. |
 
 :::note
 Some data warehouses do not support foreign keys. The constraint is ignored at runtime but still appears in the auto-generated entity-relational diagram.
