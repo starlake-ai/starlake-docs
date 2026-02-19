@@ -16,6 +16,7 @@ keywords:
 
 ## Description
 
+Load data into an Elasticsearch index from Parquet, JSON, or JSON-array files. Supports custom mappings, document IDs, and timestamp-based index suffixes via Spark-Elasticsearch configuration.
 
 ## Parameters
 

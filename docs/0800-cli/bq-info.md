@@ -16,6 +16,7 @@ keywords:
 
 ## Description
 
+Retrieve table metadata and statistics from BigQuery, including row counts, schema information, and storage details. Use this command to inspect dataset properties or audit table configurations.
 
 ## Parameters
 

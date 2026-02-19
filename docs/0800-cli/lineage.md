@@ -11,7 +11,8 @@ keywords: [starlake lineage, data lineage, dependency graph, task dependencies, 
 **starlake lineage [options]**
 
 ## Description
-Generate Task dependencies graph
+
+Generate a task dependency graph showing how transformation tasks relate to each other.
 
 ## Parameters
 

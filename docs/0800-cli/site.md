@@ -12,8 +12,7 @@ keywords: [starlake site, documentation generation, docusaurus, data catalog, pr
 
 ## Description
 
-Generate site
-
+Generate a documentation portal from your Starlake project metadata (schemas, tasks, lineage). See [Site Builder Guide](/guides/documentation/starlake-site-builder).
 
 ## Parameters
 

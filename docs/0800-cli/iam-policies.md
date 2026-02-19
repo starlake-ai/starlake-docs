@@ -16,6 +16,7 @@ keywords:
 
 ## Description
 
+Apply IAM (Identity and Access Management) policies defined in Starlake YAML configuration to the target warehouse.
 
 ## Parameters
 

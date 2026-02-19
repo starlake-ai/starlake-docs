@@ -11,7 +11,8 @@ keywords: [starlake table-dependencies, schema dependencies, GraphViz, entity re
 **starlake table-dependencies [options]**
 
 ## Description
-Generate GraphViz files from Domain / Schema YAML files
+
+Generate a table dependency graph showing foreign key and lineage relationships between tables.
 
 ## Parameters
 

@@ -12,6 +12,7 @@ keywords: [starlake xls2yml, Excel to YAML, schema generation, data modeling, IA
 
 ## Description
 
+Convert Excel spreadsheet domain definitions into Starlake YAML configuration files.
 
 ## Parameters
 

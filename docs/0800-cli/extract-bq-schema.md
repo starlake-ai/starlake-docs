@@ -16,6 +16,7 @@ keywords:
 
 ## Description
 
+Extract table schemas from BigQuery datasets and generate Starlake YAML configuration files. Use this to reverse-engineer existing BigQuery tables into Starlake domain definitions.
 
 ## Parameters
 

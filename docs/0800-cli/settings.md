@@ -12,6 +12,7 @@ keywords: [starlake settings, project configuration, connection test, data wareh
 
 ## Description
 
+Print the resolved Starlake settings or test a database connection.
 
 ## Parameters
 

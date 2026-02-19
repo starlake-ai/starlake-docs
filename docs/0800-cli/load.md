@@ -12,6 +12,7 @@ keywords: [starlake load, data ingestion, file loading, schema validation, ETL]
 
 ## Description
 
+Load data files from the pending directory into the data warehouse using schema definitions. See [Load Tutorial](/guides/load/tutorial).
 
 ## Parameters
 

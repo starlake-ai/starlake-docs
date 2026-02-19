@@ -12,6 +12,7 @@ keywords: [starlake transform, SQL transformation, data pipeline, ELT, BigQuery]
 
 ## Description
 
+Execute a SQL or Python transformation task. Starlake resolves dependencies, compiles queries with variable substitutions, and writes results to the target table. Use `--recursive` for upstream dependencies. See [Transform Guide](/guides/transform/tutorial).
 
 ## Parameters
 

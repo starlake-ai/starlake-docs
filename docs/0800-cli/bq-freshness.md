@@ -16,6 +16,7 @@ keywords:
 
 ## Description
 
+Check data freshness in BigQuery by verifying when tables were last updated. Use this command to monitor data pipelines and detect stale tables that may indicate upstream failures.
 
 ## Parameters
 

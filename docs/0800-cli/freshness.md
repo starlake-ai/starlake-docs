@@ -16,6 +16,7 @@ keywords:
 
 ## Description
 
+Check data freshness by verifying when tables were last updated. Works across all supported warehouses (not just BigQuery).
 
 ## Parameters
 

@@ -12,6 +12,7 @@ keywords: [starlake yml2ddl, DDL generation, schema to SQL, data warehouse, data
 
 ## Description
 
+Generate SQL DDL statements (CREATE TABLE, etc.) from Starlake YAML table definitions.
 
 ## Parameters
 

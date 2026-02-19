@@ -12,10 +12,7 @@ keywords: [starlake migrate, project migration, version upgrade, schema evolutio
 
 ## Description
 
-Migrate current project to the latest version available.
-Print warning for any changes that requires user's attention.
-Once project is migrated, check the difference and makes sure that everything is working as expected.
-
+Migrate the Starlake project configuration files to the latest version format.
 
 ## Parameters
 

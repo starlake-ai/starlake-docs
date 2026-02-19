@@ -12,6 +12,8 @@ keywords: [starlake kafkaload, kafka ingestion, spark streaming, kafka batch off
 
 ## Description
 
+Load data to or offload data from Apache Kafka topics. Supports both producing and consuming messages.
+
 Two modes are available : The batch mode and the streaming mode.
 
 ### Batch mode

@@ -16,6 +16,7 @@ keywords:
 
 ## Description
 
+Infer a Starlake table schema from a sample data file (CSV, JSON, etc.) and generate the corresponding YAML configuration. See [Load Tutorial](/guides/load/tutorial).
 
 ## Parameters
 

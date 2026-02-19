@@ -12,6 +12,7 @@ keywords: [starlake secure, data security, access control, row-level security, c
 
 ## Description
 
+Apply Row-Level Security (RLS) and Column-Level Security (CLS) policies to warehouse tables. See [Security Guide](/guides/load/security).
 
 ## Parameters
 

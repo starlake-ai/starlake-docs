@@ -16,8 +16,7 @@ keywords:
 
 ## Description
 
-Create a new project optionally based on a specific template eq. quickstart / userguide
-
+Create a new Starlake project from a template. Generates the required directory structure and sample configuration files to get started quickly. See [Project Setup Guide](/guides/project-setup/starlake-project-setup).
 
 ## Parameters
 

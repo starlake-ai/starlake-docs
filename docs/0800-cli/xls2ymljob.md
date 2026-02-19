@@ -12,6 +12,7 @@ keywords: [starlake xls2ymljob, Excel to YAML, job generation, task configuratio
 
 ## Description
 
+Convert Excel spreadsheet job/task definitions into Starlake YAML transform configuration files.
 
 ## Parameters
 

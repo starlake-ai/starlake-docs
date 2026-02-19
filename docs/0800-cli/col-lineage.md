@@ -15,7 +15,8 @@ keywords:
 **starlake col-lineage [options]**
 
 ## Description
-Build lineage
+
+Generate column-level lineage showing which source columns feed into each target column across transformations. Use this command to trace data flow and understand the provenance of computed fields.
 
 ## Parameters
 

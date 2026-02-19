@@ -12,6 +12,7 @@ keywords: [starlake yml2xls, YAML to Excel, schema export, data documentation, I
 
 ## Description
 
+Export Starlake YAML domain and table definitions to an Excel spreadsheet.
 
 ## Parameters
 

@@ -16,6 +16,7 @@ keywords:
 
 ## Description
 
+Compare two versions of a Starlake project to identify configuration differences. You can compare by file path, git commit, or git tag, and render the diff report using a custom template.
 
 ## Parameters
 

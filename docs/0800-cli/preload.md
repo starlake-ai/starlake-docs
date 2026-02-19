@@ -12,6 +12,7 @@ keywords: [starlake preload, data pre-loading, ingestion preparation, ETL pipeli
 
 ## Description
 
+Check for new files in the landing area and prepare them for loading.
 
 ## Parameters
 

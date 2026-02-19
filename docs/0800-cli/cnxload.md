@@ -16,8 +16,7 @@ keywords:
 
 ## Description
 
-Load parquet file into JDBC Table.
-
+Load Parquet, CSV, or JSON files directly into a JDBC-connected database table. Supports APPEND and OVERWRITE write strategies with configurable connection options.
 
 ## Parameters
 

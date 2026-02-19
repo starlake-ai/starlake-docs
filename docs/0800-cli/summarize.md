@@ -12,6 +12,7 @@ keywords: [starlake summarize, data summary, data profiling, table statistics]
 
 ## Description
 
+Display a summary of table schemas including column names, types, and descriptions.
 
 ## Parameters
 

@@ -16,6 +16,7 @@ keywords:
 
 ## Description
 
+Start an interactive Starlake console for exploring metadata and running commands from a local web-based interface. Use this to browse domains, tables, and task definitions in your project.
 
 ## Parameters
 

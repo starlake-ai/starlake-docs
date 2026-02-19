@@ -12,6 +12,7 @@ keywords: [starlake serve, local server, HTTP API, development server]
 
 ## Description
 
+Start the Starlake HTTP server for running commands via REST API.
 
 ## Parameters
 

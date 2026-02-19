@@ -16,6 +16,7 @@ keywords:
 
 ## Description
 
+Generate Airflow or Dagster DAG files from Starlake task and domain definitions. The command analyzes SQL dependencies to produce correctly ordered workflow graphs, with optional tag filtering. See [Orchestration Guide](/guides/orchestrate/tutorial).
 
 ## Parameters
 

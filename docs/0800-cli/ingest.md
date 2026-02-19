@@ -16,6 +16,7 @@ keywords:
 
 ## Description
 
+Generic data ingestion command that loads a single file into a table using an existing schema definition.
 
 ## Parameters
 

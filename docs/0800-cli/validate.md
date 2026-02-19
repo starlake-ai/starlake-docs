@@ -12,6 +12,7 @@ keywords: [starlake validate, project validation, YAML validation, configuration
 
 ## Description
 
+Validate the Starlake project configuration files and optionally test database connections.
 
 ## Parameters
 

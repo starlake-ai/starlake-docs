@@ -16,6 +16,7 @@ keywords:
 
 ## Description
 
+Deploy generated DAG files and their library dependencies to the orchestrator's DAG directory. Run this after `dag-generate` to publish workflow definitions to Airflow or another scheduler. See [Orchestration Guide](/guides/orchestrate/tutorial).
 
 ## Parameters
 
