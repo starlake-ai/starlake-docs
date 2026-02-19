@@ -133,8 +133,7 @@ table:
   pattern: "order_lines.*.psv" # This property is a regular expression that will be used to match the file name.
   schedule: "when_available"        # (optional) cron expression to schedule the loading
   metadata:
-    mode: "FILE"
-    format: "CSV"       # (optional) auto-detected if not specified
+    format: "DSV"       # (optional) auto-detected if not specified
     encoding: "UTF-8"
     withHeader: yes     # (optional) auto-detected if not specified
     separator: "|"      # (optional) auto-detected if not specified
