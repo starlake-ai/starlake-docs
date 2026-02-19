@@ -35,7 +35,7 @@ import Head from '@docusaurus/Head';
         {
           "@type": "HowToStep",
           "name": "Run the test",
-          "text": "Run 'starlake test --transform' to execute all transform tests, or 'starlake test --name domain.table.test-name' for a specific test.",
+          "text": "Run 'starlake test --transform' to execute all transform tests, or 'starlake test --domain <domain> --table <table> --test <test-name>' for a specific test.",
           "position": 4
         }
       ]
@@ -94,7 +94,7 @@ import Head from '@docusaurus/Head';
           "name": "How to run only transform tests?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Use the command starlake test --transform. For a specific test: starlake test --name domain.table.test-name."
+            "text": "Use the command starlake test --transform. For a specific test: starlake test --domain <domain> --table <table> --test <test-name>."
           }
         },
         {
@@ -121,7 +121,7 @@ For an overview of the testing approach and DuckDB transpilation, see [Unit Test
 1. **Create the test directory** -- Add a directory under `metadata/tests/transform/{domain}/{table}/test-name`.
 2. **Add source data files** -- Place CSV or JSONL files named `domain.table.csv` (or `.json`) for each table referenced by the transformation.
 3. **Define expected output** -- Add `_expected.csv` (static data) or `_expected.sql` (SQL query whose result is compared).
-4. **Run the test** -- Execute `starlake test --transform` or `starlake test --name domain.table.test-name`.
+4. **Run the test** -- Execute `starlake test --transform` or `starlake test --domain <domain> --table <table> --test <test-name>`.
 
 ## Test directory structure
 
@@ -168,7 +168,7 @@ starlake test --transform
 Run a specific test:
 
 ```bash
-starlake test --name starbake.product.test-name
+starlake test --domain starbake --table product --test test-name
 ```
 
 Running tests also generates a complete HTML report website in the `test-reports` directory.
@@ -205,7 +205,7 @@ In `test-reports/transform/test-name/`. The report contains the DuckDB database 
 
 ### How to run only transform tests?
 
-Use the command `starlake test --transform`. For a specific test: `starlake test --name domain.table.test-name`.
+Use the command `starlake test --transform`. For a specific test: `starlake test --domain <domain> --table <table> --test <test-name>`.
 
 ### Do tests generate a visual report?
 
