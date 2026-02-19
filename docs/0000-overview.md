@@ -51,6 +51,41 @@ import Head from '@docusaurus/Head';
       ]
     })}
   </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Starlake",
+      "applicationCategory": "DeveloperApplication",
+      "applicationSubCategory": "Data Pipeline Tool",
+      "operatingSystem": "Linux, macOS, Windows",
+      "description": "Enterprise-grade open-source data pipeline tool using YAML and SQL for declarative data loading, transformation, and orchestration.",
+      "url": "https://starlake.ai",
+      "downloadUrl": "https://github.com/starlake-ai/starlake/releases",
+      "softwareVersion": "1.x",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Declarative YAML-based data pipeline configuration",
+        "Zero-code JDBC data extraction",
+        "Multi-format data loading (CSV, JSON, XML, Parquet, Fixed-width)",
+        "SQL-based data transformations with auto-lineage",
+        "Automatic DAG generation for Airflow, Dagster, and other orchestrators",
+        "Built-in data quality validation and expectations",
+        "Row-level security and column-level access control",
+        "Cross-engine support: BigQuery, Snowflake, Databricks, DuckDB, PostgreSQL, Spark"
+      ],
+      "creator": {
+        "@type": "Organization",
+        "name": "Starlake",
+        "url": "https://starlake.ai"
+      }
+    })}
+  </script>
 </Head>
 
 **Starlake** is an enterprise-grade data pipeline tool that transforms how organizations handle data integration. It allows Data Engineers to build robust pipelines using **YAML and SQL** instead of complex Python or Scala code.
