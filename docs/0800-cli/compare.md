@@ -1,6 +1,12 @@
 ---
 sidebar_position: 70
 title: compare
+description: "Compare two versions of a Starlake project using file paths, git commits, or tags and generate a diff report with templates."
+keywords:
+  - starlake compare
+  - project diff
+  - schema comparison
+  - version comparison
 ---
 
 

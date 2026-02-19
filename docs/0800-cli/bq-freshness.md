@@ -1,6 +1,12 @@
 ---
 sidebar_position: 40
 title: bq-freshness
+description: "Check BigQuery table freshness by inspecting last modification timestamps, with optional persistence and connection settings."
+keywords:
+  - starlake bq-freshness
+  - BigQuery freshness
+  - data freshness check
+  - table monitoring
 ---
 
 

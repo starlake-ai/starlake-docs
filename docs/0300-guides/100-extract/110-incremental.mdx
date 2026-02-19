@@ -1,11 +1,31 @@
-# Incremental extraction
+---
+title: "Incremental Data Extraction with Starlake"
+description: "Configure incremental extraction in Starlake to pull only new or changed data. Learn partitionColumn, fullExport settings, and CLI usage."
+keywords: [starlake, incremental extraction, partitionColumn, fullExport, CDC, data sync]
+---
+
+# Incremental Data Extraction
 
 Incremental extraction is useful when you want to extract only the data that has changed since the last extraction.
-This is useful when you have a large dataset and only a small portion of the data changes frequently.
+This is especially valuable when you have a large dataset and only a small portion of the data changes frequently.
 
-To enable incremental extraction, you need to provide a column that can be used to identify the new rows.
-This column is called the `partitionColumn`.
+## Key Configuration Options
 
+### `partitionColumn`
+
+The `partitionColumn` identifies the column used to detect new rows since the last extraction. Starlake records the maximum value of this column after each extraction and uses it as the starting point for the next run. This column should be:
+
+- Monotonically increasing (e.g., an auto-increment ID or a timestamp)
+- Never updated after insertion (otherwise changed rows may be missed)
+
+Typical choices include surrogate keys (`order_id`), timestamps (`created_at`, `updated_at`), or sequence numbers.
+
+### `fullExport`
+
+- **`fullExport: true`** (default): Extracts the entire table every time. Use this when the table is small or when you need a complete snapshot.
+- **`fullExport: false`**: Enables incremental mode. Only rows where `partitionColumn > last_exported_value` are extracted.
+
+## Configuration
 
 ```yaml {8,9} title="metadata/extract/my_extract_config.sl.yml"
 version: 1
@@ -15,7 +35,27 @@ extract:
     - schema: "starbake"
       tables:
         - name: "order"               # table names or  "*" to extract all tables
-          fullExport: false           # (optional) set to true to do a full export
-          partitionColumn: "order_id" # (optional) column to use for incremental extraction
+          fullExport: false           # Enable incremental extraction
+          partitionColumn: "order_id" # Column to track extraction progress
   ...
 ```
+
+## Example Workflow
+
+**First extraction** -- no prior state exists, so Starlake extracts all rows:
+
+```shell
+$ starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming/
+# Extracts all rows from starbake.order
+# Records max(order_id) = 1000 in SL_LAST_EXPORT
+```
+
+**Subsequent extraction** -- Starlake reads the last exported value and only fetches new rows:
+
+```shell
+$ starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming/
+# Extracts only rows where order_id > 1000
+# Updates max(order_id) = 1050 in SL_LAST_EXPORT
+```
+
+The extraction state is stored in the `SL_LAST_EXPORT` audit table. See the [Monitoring](./monitoring) page for details on how to inspect this table.

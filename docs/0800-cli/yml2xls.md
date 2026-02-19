@@ -1,6 +1,8 @@
 ---
 sidebar_position: 410
 title: yml2xls
+description: "Export Starlake YAML domain definitions and IAM policy tags to Excel spreadsheets for review and collaboration."
+keywords: [starlake yml2xls, YAML to Excel, schema export, data documentation, IAM policy tags]
 ---
 
 

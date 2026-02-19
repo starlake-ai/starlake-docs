@@ -1,6 +1,12 @@
 ---
 sidebar_position: 90
 title: dag-deploy
+description: "Deploy previously generated DAG files and library dependencies to a target directory for orchestration tools like Airflow."
+keywords:
+  - starlake dag-deploy
+  - DAG deployment
+  - Airflow DAG
+  - workflow deployment
 ---
 
 

@@ -1,10 +1,17 @@
-# Database specifics
+---
+title: "Database-Specific Extraction Settings"
+description: "Configure Starlake extraction for DB2, Oracle, and SQL Server. Learn how to extract table and column comments for each database platform."
+keywords: [starlake, DB2, Oracle, SQL Server, schema extraction, column remarks, database comments]
+---
 
-For some databases, when extracting table schemas, we need to specify the location of the table and column comments f
-or some specific databases like DB2, SQL Server or Oracle, if you want to extract the comments in addition to the schemas.
-Other databases like mysql or Postgresql or sqlserver do not require this information.
+# Database Specifics
 
-For DB2, you can specify the location of the comments in the `columnRemarks` and '`tableRemarks` sections of the configuration file. For example:
+For some databases, when extracting table schemas, we need to specify the location of the table and column comments.
+This applies to databases like DB2, SQL Server, or Oracle when you want to extract comments in addition to the schemas.
+Other databases like MySQL or PostgreSQL handle remarks through standard JDBC metadata and do not require this extra configuration.
+
+You can specify the location of the comments in the `columnRemarks` and `tableRemarks` sections of the configuration file.
+These fields accept SQL queries with `{{schema}}` and `{{table}}` placeholders that Starlake substitutes at runtime.
 
 
 import Tabs from '@theme/Tabs';
@@ -14,14 +21,63 @@ import TabItem from '@theme/TabItem';
 <Tabs groupId="databases">
 <TabItem value="db2" label="DB2">
 
-```yaml title="metadata/extract/db2_extract.yaml"
+DB2 stores column and table descriptions in system catalog tables (`SYSIBM.SQLCOLUMNS` and `QSYS2.SYSTABLES`).
+
+```yaml title="metadata/extract/db2_extract.sl.yml"
 extract:
-  connectionRef: "my_db2_connection" # The database connection to use
+  connectionRef: "my_db2_connection"
   jdbcSchemas:
     - schema: "starbake"
       columnRemarks: SELECT COLUMN_NAME, COLUMN_TEXT FROM "SYSIBM"."SQLCOLUMNS" WHERE TABLE_SCHEM = '{{schema}}' AND TABLE_NAME = '{{table}}'
       tableRemarks: SELECT TABLE_TEXT FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = '{{schema}}' AND TABLE_NAME = '{{table}}'
       ...
 ```
+</TabItem>
+
+<TabItem value="oracle" label="Oracle">
+
+Oracle stores comments in `ALL_TAB_COMMENTS` and `ALL_COL_COMMENTS`.
+
+```yaml title="metadata/extract/oracle_extract.sl.yml"
+extract:
+  connectionRef: "my_oracle_connection"
+  jdbcSchemas:
+    - schema: "STARBAKE"
+      columnRemarks: SELECT COLUMN_NAME, COMMENTS FROM ALL_COL_COMMENTS WHERE OWNER = '{{schema}}' AND TABLE_NAME = '{{table}}'
+      tableRemarks: SELECT COMMENTS FROM ALL_TAB_COMMENTS WHERE OWNER = '{{schema}}' AND TABLE_NAME = '{{table}}'
+      ...
+```
+
+:::note
+Oracle schema and table names are typically uppercase. Make sure the `schema` value in your configuration matches the case used in the database.
+:::
+
+</TabItem>
+
+<TabItem value="sqlserver" label="SQL Server">
+
+SQL Server stores extended properties (including descriptions) via `sys.extended_properties`. The `MS_Description` property is the conventional name for table and column comments.
+
+```yaml title="metadata/extract/sqlserver_extract.sl.yml"
+extract:
+  connectionRef: "my_sqlserver_connection"
+  jdbcSchemas:
+    - schema: "dbo"
+      columnRemarks: >
+        SELECT c.name AS COLUMN_NAME, CAST(ep.value AS NVARCHAR(MAX)) AS COLUMN_TEXT
+        FROM sys.columns c
+        JOIN sys.tables t ON c.object_id = t.object_id
+        JOIN sys.schemas s ON t.schema_id = s.schema_id
+        LEFT JOIN sys.extended_properties ep ON ep.major_id = c.object_id AND ep.minor_id = c.column_id AND ep.name = 'MS_Description'
+        WHERE s.name = '{{schema}}' AND t.name = '{{table}}'
+      tableRemarks: >
+        SELECT CAST(ep.value AS NVARCHAR(MAX)) AS TABLE_TEXT
+        FROM sys.tables t
+        JOIN sys.schemas s ON t.schema_id = s.schema_id
+        LEFT JOIN sys.extended_properties ep ON ep.major_id = t.object_id AND ep.minor_id = 0 AND ep.name = 'MS_Description'
+        WHERE s.name = '{{schema}}' AND t.name = '{{table}}'
+      ...
+```
+
 </TabItem>
 </Tabs>

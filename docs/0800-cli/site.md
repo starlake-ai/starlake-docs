@@ -1,6 +1,8 @@
 ---
 sidebar_position: 310
 title: site
+description: "Generate a documentation site from your Starlake project in JSON or Docusaurus MDX format with customizable templates."
+keywords: [starlake site, documentation generation, docusaurus, data catalog, project docs]
 ---
 
 

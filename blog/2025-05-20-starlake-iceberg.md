@@ -1,6 +1,12 @@
 ---
 slug: starlake-iceberg
 title: Starlake Iceberg integration
+description: "Load data into Apache Iceberg tables and run transformations with Starlake, then query results using DuckDB's iceberg_scan."
+keywords:
+    - starlake iceberg
+    - apache iceberg tutorial
+    - duckdb iceberg query
+    - spark iceberg integration
 authors:
     - hayssams
 tags:
@@ -8,6 +14,7 @@ tags:
     - starlake
     - duckdb
     - spark
+image: /img/blog/starlake-blog-default.png
 ---
 
 ## Introduction

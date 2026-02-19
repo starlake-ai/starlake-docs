@@ -1,6 +1,12 @@
 ---
 sidebar_position: 100
 title: dag-generate
+description: "Generate DAG files for tasks and domains with optional tag filtering and role definitions for workflow orchestration tools."
+keywords:
+  - starlake dag-generate
+  - DAG generation
+  - Airflow DAG
+  - workflow orchestration
 ---
 
 

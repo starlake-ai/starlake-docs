@@ -1,6 +1,12 @@
 ---
 sidebar_position: 30
 title: bootstrap
+description: "Create a new Starlake project from scratch or from a template such as quickstart or userguide with a single command."
+keywords:
+  - starlake bootstrap
+  - project initialization
+  - quickstart template
+  - new project setup
 ---
 
 

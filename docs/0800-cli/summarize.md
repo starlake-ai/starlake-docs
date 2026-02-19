@@ -1,6 +1,8 @@
 ---
 sidebar_position: 330
 title: summarize
+description: "Generate a statistical summary for a specific domain and table, providing key data profiling insights at a glance."
+keywords: [starlake summarize, data summary, data profiling, table statistics]
 ---
 
 

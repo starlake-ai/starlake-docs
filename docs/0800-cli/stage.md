@@ -1,6 +1,8 @@
 ---
 sidebar_position: 320
 title: stage
+description: "Move and uncompress files from the landing area to the pending area, handling ack files and domain-based directories."
+keywords: [starlake stage, file staging, data landing zone, file import, ETL]
 ---
 
 

@@ -1,6 +1,8 @@
 ---
 sidebar_position: 210
 title: kafkaload
+description: "Load and offload data from Kafka topics in batch or streaming mode with configurable Spark options and triggers."
+keywords: [starlake kafkaload, kafka ingestion, spark streaming, kafka batch offload, data pipeline]
 ---
 
 

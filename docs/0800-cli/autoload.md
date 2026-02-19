@@ -1,6 +1,12 @@
 ---
 sidebar_position: 20
 title: autoload
+description: "Automatically watch and load incoming data files into specified domains and tables with optional scheduling and substitutions."
+keywords:
+  - starlake autoload
+  - data ingestion
+  - auto load watch
+  - scheduled data loading
 ---
 
 

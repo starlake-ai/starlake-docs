@@ -1,3 +1,9 @@
+---
+title: "Ingestion Metrics"
+description: "Compute continuous and discrete metrics on ingested data with Starlake. Track statistics like mean, variance, percentiles and category frequency."
+keywords: [starlake, metrics, ingestion, continuous metrics, discrete metrics, data quality, statistics]
+---
+
 # About Metrics
 
 During ingestion, Starlake may produce metrics for any attribute in the dataset. Currently, only top level attributes are supported.
@@ -47,19 +53,19 @@ The following tables would be generated:
 
 ```
 +-----------+-------------+---------------------+-----------+-------------------+------+--------+-----+-------------+----------+
-|attribute  |countDistinct|missingValuesDiscrete|cometMetric|jobId              |domain|schema  |count|timestamp    |cometStage|
+|attribute  |countDistinct|missingValuesDiscrete|slMetric   |jobId              |domain|schema  |count|timestamp    |slStage   |
 +-----------+-------------+---------------------+-----------+-------------------+------+--------+-----+-------------+----------+
 |city       |53           |0                    |Discrete   |local-1650471634299|yelp  |business|200  |1650471642737|UNIT      |
 +-----------+-------------+---------------------+-----------+-------------------+------+--------+-----+-------------+----------+
 
 +------------+---+-----+------+-------------+--------+-----------+------+--------+--------+------------+------+------------+-----------+-------------------+------+--------+-----+-------------+----------+
-|attribute   |min|max  |mean  |missingValues|variance|standardDev|sum   |skewness|kurtosis|percentile25|median|percentile75|cometMetric|jobId              |domain|schema  |count|timestamp    |cometStage|
+|attribute   |min|max  |mean  |missingValues|variance|standardDev|sum   |skewness|kurtosis|percentile25|median|percentile75|slMetric   |jobId              |domain|schema  |count|timestamp    |slStage   |
 +------------+---+-----+------+-------------+--------+-----------+------+--------+--------+------------+------+------------+-----------+-------------------+------+--------+-----+-------------+----------+
 |review_count|3.0|664.0|38.675|0            |7974.944|89.303     |7735.0|4.359   |21.423  |5.0         |9.0   |25.0        |Continuous |local-1650471634299|yelp  |business|200  |1650471642737|UNIT      |
 +------------+---+-----+------+-------------+--------+-----------+------+--------+--------+------------+------+------------+-----------+-------------------+------+--------+-----+-------------+----------+
 
 +---------+---------------+-----+---------+-------------------+------+--------+-------------+----------+
-|attribute|category       |count|frequency|jobId              |domain|schema  |timestamp    |cometStage|
+|attribute|category       |count|frequency|jobId              |domain|schema  |timestamp    |slStage   |
 +---------+---------------+-----+---------+-------------------+------+--------+-------------+----------+
 |city     |Tempe          |200  |0.01     |local-1650471634299|yelp  |business|1650471642737|UNIT      |
 |city     |North Las Vegas|200  |0.01     |local-1650471634299|yelp  |business|1650471642737|UNIT      |

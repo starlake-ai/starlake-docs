@@ -1,9 +1,17 @@
-# Query extraction
+---
+title: "Extract Data Using Custom SQL Queries"
+description: "Use Starlake query-based extraction to pull data and schemas from databases with custom SQL. Full YAML config and CLI examples included."
+keywords: [starlake, query extraction, custom SQL, JDBC extraction, data export]
+---
 
-Query extraction is useful when you want to extract schema's and data based on a user-defined query.
-Schema's extraction will try to retrieve its remarks based on its table name if it exists.
+# Extract Data Using Custom SQL Queries
+
+Query extraction is useful when you want to extract schemas and data based on a user-defined query rather than extracting entire tables.
+Schema extraction will try to retrieve its remarks based on its table name if it exists.
 
 Query extraction doesn't infer primary keys nor foreign keys. All attributes are considered not required.
+
+## Basic Configuration
 
 ```yaml {8,9} title="metadata/extract/my_extract_config.sl.yml"
 version: 1
@@ -17,4 +25,44 @@ extract:
   ...
 ```
 
-It is currently supported only for JDBC connection
+It is currently supported only for JDBC connections.
+
+## Full Example
+
+The following example demonstrates extracting a subset of orders joined with customer data using a custom SQL query:
+
+```yaml title="metadata/extract/custom_query_extract.sl.yml"
+version: 1
+extract:
+  connectionRef: "duckdb"
+  jdbcSchemas:
+    - schema: "starbake"
+      tables:
+        - name: "recent_orders"
+          sql: |
+            SELECT
+              o.order_id,
+              o.customer_id,
+              o.status,
+              o.timestamp,
+              SUM(ol.quantity * ol.sale_price) AS total_amount
+            FROM starbake.order o
+            JOIN starbake.order_line ol ON o.order_id = ol.order_id
+            WHERE o.timestamp >= '2024-01-01'
+            GROUP BY o.order_id, o.customer_id, o.status, o.timestamp
+        - name: "product_catalog"
+          sql: "SELECT product_id, name, category, price FROM starbake.product WHERE price > 0"
+```
+
+## Running the Extraction
+
+```shell
+$ cd $SL_ROOT
+$ starlake extract-data --config custom_query_extract --outputDir $SL_ROOT/incoming/
+```
+
+To also extract the schema description (useful for loading into a data warehouse):
+
+```shell
+$ starlake extract-schema --config custom_query_extract
+```

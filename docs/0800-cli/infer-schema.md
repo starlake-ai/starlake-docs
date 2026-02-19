@@ -1,6 +1,12 @@
 ---
 sidebar_position: 190
 title: infer-schema
+description: "Automatically infer and generate YAML schema definitions from input datasets in CSV, JSON, XML, or Parquet format."
+keywords:
+  - starlake infer-schema
+  - schema inference
+  - YAML schema generation
+  - data type detection
 ---
 
 
