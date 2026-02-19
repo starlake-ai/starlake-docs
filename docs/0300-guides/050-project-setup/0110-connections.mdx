@@ -54,6 +54,8 @@ import Head from '@docusaurus/Head';
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+Starlake supports connections to BigQuery, Snowflake, Databricks/Spark, Amazon Redshift, DuckDB, DuckLake, PostgreSQL, and any JDBC-compliant database. All connections are configured in the `connections` section of `metadata/application.sl.yml`. Each connection type has its own set of options including authentication, driver, and runtime settings. Snowflake connections support both user/password and OAuth (SSO) authentication.
+
 Connections are defined in the `connections` section under the root attribute `application`.
 
 
