@@ -165,7 +165,7 @@ Simplify transformations by combining **YAML** configuration with standard **SQL
 
 Key transformation features:
 
-- **Jinja-Free SQL**: Write standard SELECT statements without complex templating logic.
+- **Standard SQL**: Write plain SELECT statements without complex templating logic.
 - **Auto-Lineage**: Automatic detection of column and table-level lineage.
 - **Incremental Processing**: Built-in support for processing only new or changed data.
 
