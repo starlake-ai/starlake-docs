@@ -24,6 +24,14 @@ import Head from '@docusaurus/Head';
         },
         {
           "@type": "Question",
+          "name": "What Snowflake privileges are required?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The role used must have CREATE TASK and USAGE privileges on the target schema."
+          }
+        },
+        {
+          "@type": "Question",
           "name": "Are dependencies between Snowflake Tasks managed?",
           "acceptedAnswer": {
             "@type": "Answer",
@@ -53,17 +61,62 @@ import Head from '@docusaurus/Head';
 
 # Customize Snowflake Task DAGs
 
-Starlake generates Snowflake Tasks natively from YAML configuration files, executing load and transform commands as Snowpark tasks with automatic SQL dependency resolution. This page covers Snowflake Tasks-specific configuration; full documentation with concrete factory classes and template details is coming soon.
+Starlake generates Snowflake Tasks natively from YAML configuration files. Load and transform commands execute as Snowpark tasks with automatic SQL dependency resolution. Unlike Airflow and Dagster where Starlake commands run as external processes, Snowflake Tasks execute natively inside Snowflake.
 
-This page covers Snowflake Tasks-specific customization for Starlake DAG generation. For general DAG configuration concepts (references, properties, options), see the [Customizing DAG Generation](./200-customization.mdx) hub page.
+For general DAG configuration concepts (references, properties, options), see the [Customizing DAG Generation](./200-customization.mdx) hub page. For a hands-on introduction, see the [Orchestration Tutorial](./100-tutorial.mdx).
+
+## Prerequisites
+
+- **starlake**: 1.0.1 or higher
+- **Snowflake role** with `CREATE TASK` and `USAGE` privileges on the target schema
+
+## Built-in templates
+
+Starlake provides two built-in templates for Snowflake Tasks:
+
+- **`load/snowflake_load_sql.py.j2`** -- Generates Snowflake Tasks for data loading.
+- **`transform/snowflake_scheduled_transform_sql.py.j2`** -- Generates Snowflake Tasks for data transformation.
+
+These templates can be customized or replaced with your own Jinja2 templates.
+
+## Configuration examples
+
+### Load configuration
+
+```yaml title="metadata/dags/snowflake_load_sql.sl.yml"
+dag:
+    comment: "default Snowflake pipeline configuration for load"
+    template: "load/snowflake_load_sql.py.j2"
+    filename: "snowflake_{{domain}}_{{table}}.py"
+```
+
+### Transform configuration
+
+```yaml title="metadata/dags/snowflake_scheduled_transform_sql.sl.yml"
+dag:
+    comment: "default Snowflake pipeline configuration for transform"
+    template: "transform/snowflake_scheduled_transform_sql.py.j2"
+    filename: "snowflake_{{domain}}_tasks.py"
+    options:
+        run_dependencies_first: "true"
+```
+
+## Key differences from Airflow and Dagster
+
+| Aspect | Snowflake Tasks | Airflow / Dagster |
+|---|---|---|
+| **Execution** | Native Snowpark tasks inside Snowflake | External bash processes or Cloud Run jobs |
+| **Infrastructure** | No external orchestrator required | Requires Airflow or Dagster deployment |
+| **Dependencies** | SQL dependency analysis with task chaining | DAG-level dependency management |
+| **Scheduling** | Snowflake-native scheduling | Orchestrator-specific scheduling |
 
 :::info Coming soon
 
-Documentation for Snowflake Tasks customization is currently being prepared. Check back soon for detailed instructions on:
+Full documentation for Snowflake Tasks customization is being prepared. Detailed instructions will cover:
 
 - Snowflake Task concrete factory classes
-- Task templates for data loading and transformation
-- Dependency management with Snowflake Tasks
+- Advanced template customization for loading and transformation
+- Dependency management patterns with Snowflake Tasks
 - Configuration options specific to Snowflake Tasks
 
 :::
@@ -73,6 +126,10 @@ Documentation for Snowflake Tasks customization is currently being prepared. Che
 ### Can Starlake generate Snowflake Tasks?
 
 Yes. Starlake generates Snowflake Tasks natively from YAML configuration files. The tasks are executed as native Snowpark tasks.
+
+### What Snowflake privileges are required?
+
+The role used must have `CREATE TASK` and `USAGE` privileges on the target schema.
 
 ### Are dependencies between Snowflake Tasks managed?
 

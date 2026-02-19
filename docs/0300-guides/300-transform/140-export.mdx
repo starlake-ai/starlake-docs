@@ -1,7 +1,7 @@
 ---
 title: "Export Starlake Transform Results to CSV, Parquet, or Another Database"
 description: "Export Starlake transform results to CSV, JSON, Parquet, or Avro files. Write to cloud storage (GCS, S3) or another database using sink.connectionRef. YAML configuration examples included."
-keywords: [starlake, export data, csv export, parquet, data sink, transform output, data pipeline, cloud storage, connectionRef]
+keywords: [starlake, export data, csv export, parquet, data sink, transform output, data pipeline, cloud storage, connectionRef, GCS, S3, avro]
 ---
 
 import Head from '@docusaurus/Head';
@@ -110,48 +110,44 @@ import Head from '@docusaurus/Head';
 
 # Export Transform Results
 
-Starlake transforms can write results not only to database tables but also to files in CSV, JSON, Parquet, or Avro format. You can target local storage, cloud buckets (GCS, S3), or an entirely different database by configuring the `sink` section of the YAML file. Each transform writes to a single destination; to produce multiple outputs, create separate transforms reading the same source.
+Starlake transforms can write results to files in CSV, JSON, Parquet, or Avro format, or directly to another database. You can target local storage, cloud buckets (GCS, S3, ADLS), or a different database engine by configuring the `sink` section of the YAML file. Each transform writes to a single destination. To produce multiple outputs from the same query, create separate transforms reading the same source.
 
-## How to Export Transform Results
+## Sink Configuration Properties
 
-1. **Choose an export format** -- Set `sink.format` in the transform YAML to `csv`, `json`, `parquet`, `avro`, or any Spark-supported format.
-2. **Set the file extension** -- Add `sink.extension` to control the output file name extension.
-3. **Configure a custom output path** (optional) -- Use `sink.path` to specify a path relative to the `root` defined in `application.sl.yml`. On cloud storage the bucket name is prepended automatically.
-4. **Or export to another database** -- Set `sink.connectionRef` to a connection defined in `application.sl.yml`.
-5. **Run the transform** -- Execute `starlake transform --name <domain>.<task>` to produce the exported file or write to the target database.
+| Property | Description | Example |
+|----------|-------------|---------|
+| `sink.format` | Output file format | `csv`, `json`, `parquet`, `avro` |
+| `sink.extension` | File name extension | `csv`, `parquet` |
+| `sink.path` | Custom output path (relative to root) | `mnt/data/output.csv` |
+| `sink.connectionRef` | Target database connection name | `my_postgres_db` |
 
----
+## Export to Files
 
-You may export your data to files or to another database.
-
-
-## Export to files
-You may export to CSV / JSON / Parquet / Avro or whatever file format supported by Apache Spark.
-You can export the data to a CSV file using by specifying the csv format in the sink attribute of your transform.
+Set `sink.format` and `sink.extension` in the transform YAML file. Starlake supports CSV, JSON, Parquet, Avro, and any file format supported by Apache Spark.
 
 ```yaml title="metadata/transform/<domain>/<transform>.sl.yml"
 task:
   sink:
     format: csv
     extension: csv
-
 ```
-The file will be saved in the `datasets` folder (relative to the root path) of the project under the `<domain>` folder named after the `<transform>` name and the `extension` set in the yaml file.
 
+By default, the file is saved in the `datasets/<domain>/` folder of the project. The file name is derived from the transform name and the configured extension.
 
-You may also request the file to be saved in an absolute path by specifying the file path (relative to the root path)  in the `path` attribute of the sink.
+### Custom Output Path
+
+Specify a custom path relative to the `root` defined in `application.sl.yml`:
 
 ```yaml title="metadata/transform/<domain>/<transform>.sl.yml"
 task:
   sink:
     format: csv
     path: mnt/data/output.csv
-
 ```
 
-On a cloud storage, the bucket name will be prepended to the path. The file will be saved in the specified path below the root path.
+### Cloud Storage (GCS, S3, ADLS)
 
-The root path is specified in the `root` key in the `metadata.application.sl.yml` file.
+On cloud storage, Starlake prepends the bucket name from the `root` configuration to the path:
 
 ```yaml title="metadata/application.sl.yml"
 ...
@@ -159,19 +155,31 @@ root: gs://my-bucket/folder1/folder2
 ...
 ```
 
-## Export to another database
+With this root, a `sink.path` of `mnt/data/output.csv` resolves to `gs://my-bucket/folder1/folder2/mnt/data/output.csv`.
 
-You may also export the data to a database. You can specify the database connection name  in the `sink.connectionRef` attribute of your transform.
+:::note
+With Spark, CSV and JSON exports may produce multiple partitioned files. With DuckDB or a single-node engine, a single file is produced.
+:::
+
+## Export to Another Database
+
+Write transform results directly to a database by setting `sink.connectionRef`. The connection must be defined in `application.sl.yml`.
 
 ```yaml title="metadata/transform/<domain>/<transform>.sl.yml"
-
 task:
   ...
   sink:
     connectionRef: my_database
     ...
-
 ```
+
+This is useful for cross-database ETL patterns -- for example, reading from BigQuery and writing to PostgreSQL.
+
+## Next Steps
+
+- [Transform YAML Configuration](./config) -- full sink configuration reference
+- [SQL Transform Tutorial](./tutorial) -- end-to-end walkthrough with DuckDB
+- [Orchestrate Transform Jobs](./orchestration) -- schedule exports with Airflow, Dagster, or Snowflake Tasks
 
 ## Frequently Asked Questions
 
@@ -192,4 +200,3 @@ A single transform writes to one destination. To write to two targets, create tw
 
 ### Does CSV export produce a single file or multiple files?
 The behavior depends on the engine. With Spark, multiple partitioned files may be generated. With DuckDB or a single-node engine, a single file is produced.
-

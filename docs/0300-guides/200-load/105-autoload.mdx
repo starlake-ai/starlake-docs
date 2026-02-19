@@ -1,7 +1,7 @@
 ---
 title: "Autoload — Zero-Config Data Loading"
 description: "Starlake autoload detects CSV, JSON, and XML file formats, infers schemas, and loads data into your warehouse with zero configuration. Learn naming conventions, directory structure, and format detection rules."
-keywords: [starlake, autoload, zero-config, schema inference, data loading, file detection, CSV, JSON, XML, directory structure]
+keywords: [starlake, autoload, zero-config, schema inference, data loading, file detection, CSV, JSON, XML, directory structure, BigQuery, Snowflake, Databricks]
 ---
 
 import Head from '@docusaurus/Head';
@@ -104,120 +104,121 @@ import Head from '@docusaurus/Head';
 
 # Autoload: Zero-Config File Loading into Your Data Warehouse
 
-Starlake autoload is a zero-configuration command that detects CSV, JSON, and XML file formats, infers target table schemas, and loads data into your warehouse in a single step. It uses file naming conventions and directory structure to determine the target domain and table. Autoload handles file staging, validation, and archiving automatically.
+Starlake autoload detects CSV, JSON, and XML file formats, infers target table schemas, and loads data into BigQuery, Snowflake, Databricks, DuckDB, or any supported warehouse -- all in a single command with zero configuration. It uses file naming conventions and directory structure to determine the target domain and table. Autoload handles file staging, validation, and archiving automatically.
+
+For more control over parsing (e.g., multi-character delimiters or non-standard directories), use the [manual load](load) workflow instead. For a hands-on walkthrough, see the [load tutorial](tutorial).
+
+## Domain and Schema Terminology
 
 :::note
-Datawarehouses are organized around schemas where tables are grouped.
-Depending on the database, a database `schema` can be called `schema` or `catalog` or `dataset`.
-In starlake, we use the term `domain` to designate  a `schema`, `catalog` or `dataset`.
+Data warehouses organize tables into schemas. Depending on the engine, a schema is called `schema` (Snowflake, Databricks), `catalog`, or `dataset` (BigQuery). In Starlake, the term **domain** designates a schema, catalog, or dataset.
 :::
 
-The conventions used by the autoload command are:
-- files are stored under the incoming directory and named after the domain and table they are loaded into: `$SL_ROOT/incoming/<domain>/<table><suffix>.<extension>`
-- The target schema is named after the domain names
-- The target tables are named after the file name without the extension or suffix.
-- The suffix is used to differentiate between files that are loaded in full `overwrite` mode and those loaded in `append` mode.
-For example `order_20240228.json` and `order_line_20240228.csv` are respectively loaded into the same table `order` and `order_line`.
+The folder name under `incoming/` becomes the domain name in the target warehouse.
 
-```plaintext title="directory structure example before running autoload"
-incoming
-└── starbake
+## File Naming Conventions and Directory Structure
+
+Autoload relies on conventions to map files to warehouse tables:
+
+- Files are stored under the incoming directory: `$SL_ROOT/incoming/<domain>/<table><suffix>.<extension>`
+- The **folder name** becomes the target schema (domain).
+- The **file name** (without extension or suffix) becomes the target table name.
+- A **date/time suffix** triggers APPEND mode (incremental loading). Files without a suffix use OVERWRITE mode.
+
+For example, `order_20240228.json` and `order_line_20240228.csv` load into tables `order` and `order_line` respectively, both in APPEND mode.
+
+```plaintext title="Directory structure before running autoload"
+incoming/
+└── starbake/
     ├── product.xml
     ├── order_20240228.csv
     └── order_line_20240228.csv
 ```
-<br/>
 
-After running the `autoload` command:
+## Running Autoload
+
+Run the autoload command:
+
 ```shell
 starlake autoload
 ```
-<br/>
 
-Since we did not specify the target datawarehouse but the local filesystem as the target, the directory structure will be updated as follows.
+Autoload performs four steps:
+1. Detects the file format from extension and content
+2. Infers the schema and generates YAML configuration files
+3. Stages files for loading
+4. Loads files into the target warehouse
 
-In real life, the target datawarehouse will be a database and the tables will be created in the target database.
+## Directory Structure After Autoload
 
-```plaintext title="table schemas inferred from the directory structure"
-metadata/load
-└── starbake
+After autoload runs, Starlake generates schema files and organizes data files across several directories.
+
+```plaintext title="Table schemas inferred from the directory structure"
+metadata/load/
+└── starbake/
     ├── _config.sl.yml
     ├── product.sl.yml
     └── order.sl.yml
+
 datasets/
-├── archive         # files are moved to the archive directory after being loaded
-│   └── starbake
-├── ingesting       # files are moved to the ingesting directory before being loaded
-│   └── starbake
-├── replay          # invalid records that need to be replayed are moved
-│   └── starbake    # in the  replay directory
-├── stage           # files are moved to the stage directory before being loaded
-│   └── starbake
-├── unresolved      # filenames that do not match a valid pattern are moved to the unresolved directory.
-└──incoming
-    └── starbake
+├── archive/         # Files moved here after successful loading
+│   └── starbake/
+├── ingesting/       # Files moved here during loading
+│   └── starbake/
+├── replay/          # Invalid records that need to be replayed
+│   └── starbake/
+├── stage/           # Files staged before loading
+│   └── starbake/
+├── unresolved/      # Files that do not match a valid pattern
+└── incoming/
+    └── starbake/
         ├── product.xml
         ├── order_20240228.csv
         └── order_line_20240228.csv
-
 ```
 
-<br/>
+### Generated Configuration Files
 
-
-- The `_config.sl.yml` file is a configuration file that contains the domain configuration and describe how the domain will be created in the target database.
-
-- The `<table>.sl.yml` file contains the table configuration and describes how files are parsed, validated and loaded into the target database.
-
-
+- **`_config.sl.yml`**: Domain configuration file. Defines how the domain (schema) is created in the target database.
+- **`<table>.sl.yml`**: Table configuration file. Describes how files are parsed, validated, and loaded into the target table.
 
 ## How Autoload Detects File Format (CSV, JSON, XML)
 
-- It expects the file to be named after the table it will be loaded into.
-- It uses the file extension to detect the format of the file. The supported formats are `csv`,`psv`,`dsv`, `json`, `xml`
-- It uses the first line of the file to detect the separator and the number of columns.
-- In the case of CSV files, it uses the first line of the file to detect the column names.
-- It uses the whole file content to detect the column types.
-- In the case of JSON file, it is a considered a JSON_ARRAY file if the first character is `[` and a JSON file if the first character is `{`.
-- In the case of XML file, it uses the first line of the file to detect the root element and the number of columns.
+Autoload uses the following rules to detect file formats:
 
-XML files are expected to have the following structure:
-<br/>
+- The **file extension** determines the base format. Supported extensions: `.csv`, `.psv`, `.dsv`, `.json`, `.xml`.
+- For **CSV files**: the first line is inspected to detect the separator and column names. The entire file content is analyzed to detect column types.
+- For **JSON files**: if the first character is `[`, the format is `JSON_ARRAY`. If the first character is `{`, the format is `JSON` (one object per line).
+- For **XML files**: the first line is inspected to detect the root element and the record tag.
+
+### Expected XML Structure
+
+XML files must follow this structure -- a root element containing repeated child elements (rows), where each child contains sub-elements (columns) and optionally node attributes:
 
 ```xml
-<?xml> # optional xml declaration
+<?xml version="1.0"?>
 <myroot>
-    <myrecord attr1="value1" >
+    <myrecord attr1="value1">
         <column1>value1</column1>
         <column2>value2</column2>
-        ...
     </myrecord>
-<myroot>
-
+</myroot>
 ```
 
 ## Running Autoload with Spark Locally
 
-When running against Spark Locally, the tables are created in the `datasets` directory.
-When running against a real datawarehouse, the tables are created in the target database.
+When running against Spark locally, tables are created as files in the `datasets/` directory. When running against a real warehouse, tables are created in the target database.
 
-```shell title="Extra files when running autoload against spark locally"
+```shell title="Extra files when running autoload against Spark locally"
 datasets/
-├── starbake.db     # files are loaded as tables into the starbake schema
-│   ├── order
-│   ├── order_line
-│   └── product
-├── audit.db        # audit tables are created in the audit schema
-│   ├── audit
-│   └── rejected
+├── starbake.db/     # Tables loaded into the starbake schema
+│   ├── order/
+│   ├── order_line/
+│   └── product/
+├── audit.db/        # Audit tables
+│   ├── audit/
+│   └── rejected/
 ```
-
-## How to Use Starlake Autoload
-
-1. **Place files in the incoming directory** -- Copy your CSV, JSON, or XML files into `$SL_ROOT/incoming/<domain>/`. The folder name becomes the database schema (domain).
-2. **Name files according to conventions** -- Name each file after its target table. Add a date suffix (e.g., `order_20240228.csv`) for incremental APPEND loading. Files without a suffix are loaded in OVERWRITE mode.
-3. **Run the autoload command** -- Execute `starlake autoload`. Starlake detects formats, infers schemas, stages files, and loads them into the target warehouse.
-4. **Review inferred schemas** -- Check generated YAML files in `metadata/load/<domain>/` and customize column types, validation rules, or write strategies as needed.
 
 ## Frequently Asked Questions
 

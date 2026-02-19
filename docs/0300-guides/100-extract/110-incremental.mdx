@@ -110,7 +110,7 @@ import Head from '@docusaurus/Head';
 
 # Incremental Data Extraction
 
-Starlake incremental extraction pulls only new rows from a database table by tracking the maximum value of a partition column between runs. The extraction state is persisted in the `SL_LAST_EXPORT` audit table. This mode is configured by setting `fullExport: false` and specifying a `partitionColumn` in the extraction YAML.
+Starlake incremental extraction pulls only new rows from a database table by tracking the maximum value of a partition column between runs. The extraction state is persisted in the `SL_LAST_EXPORT` audit table. This avoids re-extracting the entire table on each run and reduces both extraction time and data volume. Configuration requires setting `fullExport: false` and specifying a `partitionColumn` in the extraction YAML.
 
 ## How to Set Up Incremental Extraction
 
@@ -120,23 +120,29 @@ Starlake incremental extraction pulls only new rows from a database table by tra
 4. **Run the first extraction** -- Execute `starlake extract-data`. Since no prior state exists, all rows are extracted. The max value is recorded in `SL_LAST_EXPORT`.
 5. **Run subsequent extractions** -- On each subsequent run, only rows where the partition column exceeds the last exported value are fetched.
 
-## Key Configuration Options
+## partitionColumn and fullExport Configuration
 
 ### `partitionColumn`
 
-The `partitionColumn` identifies the column used to detect new rows since the last extraction. Starlake records the maximum value of this column after each extraction and uses it as the starting point for the next run. This column should be:
+The `partitionColumn` identifies the column used to detect new rows since the last extraction. After each run, Starlake records the maximum value of this column in the `SL_LAST_EXPORT` audit table and uses it as the lower bound for the next extraction. This column must be:
 
-- Monotonically increasing (e.g., an auto-increment ID or a timestamp)
-- Never updated after insertion (otherwise changed rows may be missed)
+- **Monotonically increasing** -- auto-increment ID, timestamp, or sequence number.
+- **Never updated after insertion** -- otherwise modified rows are missed.
 
-Typical choices include surrogate keys (`order_id`), timestamps (`created_at`, `updated_at`), or sequence numbers.
+Typical choices: surrogate keys (`order_id`), creation timestamps (`created_at`), or update timestamps (`updated_at`).
+
+:::warning
+Incremental mode detects only new rows. Rows modified after insertion are not re-extracted unless the partition column is an `updated_at` timestamp that changes on every update.
+:::
 
 ### `fullExport`
 
-- **`fullExport: true`** (default): Extracts the entire table every time. Use this when the table is small or when you need a complete snapshot.
-- **`fullExport: false`**: Enables incremental mode. Only rows where `partitionColumn > last_exported_value` are extracted.
+| Value | Behavior |
+|-------|----------|
+| `fullExport: true` (default) | Extracts the entire table on every run. Use for small tables or when a complete snapshot is needed. |
+| `fullExport: false` | Extracts only rows where `partitionColumn > last_exported_value`. Requires `partitionColumn` to be set. |
 
-## Configuration
+## YAML Configuration for Incremental Extraction
 
 ```yaml {8,9} title="metadata/extract/my_extract_config.sl.yml"
 version: 1
@@ -151,7 +157,7 @@ extract:
   ...
 ```
 
-## Example Workflow
+## First Run vs. Subsequent Runs: Incremental Extraction Workflow
 
 **First extraction** -- no prior state exists, so Starlake extracts all rows:
 
@@ -161,7 +167,7 @@ $ starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming
 # Records max(order_id) = 1000 in SL_LAST_EXPORT
 ```
 
-**Subsequent extraction** -- Starlake reads the last exported value and only fetches new rows:
+**Subsequent extraction** -- Starlake reads the last exported value and fetches only new rows:
 
 ```shell
 $ starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming/
@@ -170,3 +176,27 @@ $ starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming
 ```
 
 The extraction state is stored in the `SL_LAST_EXPORT` audit table. See the [Monitoring](./monitoring) page for details on how to inspect this table.
+
+## Combining Incremental and Parallel Extraction
+
+When `fullExport: false` and `numPartitions > 1` are configured on the same table entry, the same `partitionColumn` serves both purposes: parallel partitioning and incremental tracking. See the [Parallel Extraction](./parallel) page for configuration details.
+
+## Frequently Asked Questions
+
+### What is the difference between fullExport true and false in Starlake?
+With `fullExport: true` (default), Starlake extracts the entire table on every run. With `fullExport: false`, only rows where the `partitionColumn` value exceeds the last exported value are extracted.
+
+### What column types are suitable for partitionColumn?
+The column must be monotonically increasing and never updated after insertion. Typical choices are: auto-increment keys (`order_id`), timestamps (`created_at`, `updated_at`), or sequence numbers.
+
+### Where does Starlake store the last extraction state?
+The state is stored in the `SL_LAST_EXPORT` audit table. Starlake records the maximum value of the `partitionColumn` after each extraction.
+
+### What happens during the first incremental extraction?
+Since no prior state exists, Starlake extracts all rows from the table. It then records the maximum `partitionColumn` value for subsequent runs.
+
+### Are updated rows detected in incremental mode?
+No. Incremental mode detects only new rows (`partitionColumn` value greater than the last export). Modified rows are not re-extracted unless the partition column is an `updated_at` timestamp.
+
+### Can you combine incremental and parallel extraction?
+Yes. When `fullExport: false` and `numPartitions > 1` are configured, the same `partitionColumn` is used for both parallel partitioning and incremental tracking.

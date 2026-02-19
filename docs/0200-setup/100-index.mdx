@@ -52,47 +52,62 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
-Starlake is a declarative data pipeline platform that uses YAML and SQL to define data pipelines, minimizing custom code while enforcing data governance and quality. It supports two deployment modes: Self Hosted (free, on-premise or cloud) and Starlake Cloud (managed SaaS). Both options include the CLI, a web-based UI, AI-assisted features, and orchestration with Airflow or Dagster.
+# Starlake Setup: Self Hosted vs Cloud Deployment Options
 
-Starlake offers two deployment options:
+Starlake is a declarative data pipeline platform that uses YAML and SQL to define data ingestion, transformation, and orchestration. It enforces data governance and quality while minimizing custom code. Starlake supports two deployment modes: **Self Hosted** and **Starlake Cloud**. Both include the CLI, a web UI, AI-assisted features, and orchestration with Airflow or Dagster.
 
-**Starlake Self Hosted:** 
-Building upon Starlake CLI, this version also brings in a web-based user interface for managing your projects through a browser. 
-It includes all command-line functionalities, along with advanced UI and AI features. 
-Starlake is free to use and can be deployed on your own infrastructure, whether on-premises or in the cloud.
+## Starlake Self Hosted: Free Deployment On-Premise or Cloud
 
-**Starlake Cloud:** 
-This fully managed cloud-based version of Starlake offers all platform features and is available as a subscription service.
+Starlake Self Hosted runs on your own infrastructure. You deploy it on-premise or in any cloud environment (AWS, GCP, Azure). It includes the full command-line interface, a web-based UI for managing projects through a browser, AI features, and orchestration capabilities. Starlake Self Hosted is free to use with no license fees.
 
-The table below provides a comparison of these deployment options:
+Key characteristics:
+- **Cost**: Free
+- **Deployment**: On-premise or your own cloud account
+- **Control**: You manage the infrastructure and updates
+- **Setup**: Install the CLI locally or via Docker, then optionally deploy with Airflow or Dagster using Docker Compose
+
+## Starlake Cloud: Managed SaaS Service
+
+Starlake Cloud is a fully managed version of the platform. It provides the same features as Self Hosted but removes the need to manage infrastructure. Starlake Cloud is available as a subscription service.
+
+Key characteristics:
+- **Cost**: Subscription
+- **Deployment**: SaaS (managed by Starlake)
+- **Control**: Infrastructure is managed for you
+- **Setup**: Sign up and start building pipelines
+
+## Compare Deployment Options
+
+The table below summarizes the differences between the two deployment modes.
+
 <table>
   <thead>
     <tr>
       <th>Feature</th>
-      <th>Starlake</th>
+      <th>Starlake Self Hosted</th>
       <th>Starlake Cloud</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td>Command-line interface</td>
-      <td>✅</td>
-      <td>✅</td>
+      <td>Yes</td>
+      <td>Yes</td>
     </tr>
     <tr>
       <td>Web-based UI</td>
-      <td>✅</td>
-      <td>✅</td>
+      <td>Yes</td>
+      <td>Yes</td>
     </tr>
     <tr>
       <td>AI features</td>
-      <td>✅</td>
-      <td>✅</td>
+      <td>Yes</td>
+      <td>Yes</td>
     </tr>
     <tr>
-      <td>Orchestration</td>
-      <td>✅</td>
-      <td>✅</td>
+      <td>Orchestration (Airflow / Dagster)</td>
+      <td>Yes</td>
+      <td>Yes</td>
     </tr>
     <tr>
       <td>Deployment</td>
@@ -107,7 +122,9 @@ The table below provides a comparison of these deployment options:
   </tbody>
 </table>
 
-<p>Choose the deployment option that best suits your needs and follow the respective installation guide to get started with Starlake.</p>
+## Get Started with Setup
+
+Choose the deployment option that fits your needs and follow the installation guide.
 
 <div className='container'>
   <div className='row'>
@@ -115,13 +132,14 @@ The table below provides a comparison of these deployment options:
       <div>
         <Card shadow='tl'>
           <CardHeader>
-            <h3><center>Starlake</center></h3>
+            <h3><center>Starlake Self Hosted</center></h3>
           </CardHeader>
           <CardBody>
+            <p>Install the CLI on Linux, macOS, Windows, or Docker. Free, deploy on your own infrastructure.</p>
           </CardBody>
           <CardFooter>
             <a href="/setup/starlake-core-setup">
-              <button className='button button--secondary button--block'>Setup locally</button> 
+              <button className='button button--secondary button--block'>Setup locally</button>
             </a>
           </CardFooter>
         </Card>
@@ -143,3 +161,6 @@ Yes. Both Starlake Self Hosted and Starlake Cloud include a web-based user inter
 
 ### Can I deploy Starlake on my own cloud account?
 Yes. Starlake Self Hosted can be deployed on-premise or in any cloud environment (AWS, GCP, Azure). It includes the CLI, web UI, AI features, and orchestration capabilities at no cost.
+
+### What is Starlake?
+Starlake is a declarative data pipeline platform. It uses YAML and SQL to define data ingestion, transformation, and orchestration pipelines. It enforces data governance and quality while minimizing custom code.

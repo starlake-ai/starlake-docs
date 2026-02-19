@@ -55,23 +55,63 @@ import Head from '@docusaurus/Head';
       ]
     })}
   </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to orchestrate load jobs with Starlake",
+      "description": "Generate DAGs automatically for load job orchestration with Airflow, Dagster or Snowflake Tasks.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Define load configurations",
+          "text": "Ensure all table and domain YAML configurations are complete in your Starlake project."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run dag-generate",
+          "text": "Execute starlake dag-generate from the command line. This analyzes dependencies and produces DAG files."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Deploy DAGs to your orchestrator",
+          "text": "Copy the generated DAG files to your Airflow, Dagster or Snowflake Tasks environment."
+        }
+      ]
+    })}
+  </script>
 </Head>
 
 # Orchestrate Load Jobs
 
-Starlake automatically generates orchestration DAGs from your YAML load and transform definitions. Supported orchestrators include Airflow, Dagster and Snowflake Tasks. The `starlake dag-generate` command analyzes job dependencies and produces ready-to-deploy DAG files.
+Starlake generates orchestration DAGs automatically from your YAML load and transform definitions. You do not write DAG code manually. The `starlake dag-generate` command analyzes job dependencies and produces ready-to-deploy DAG files for your orchestrator.
 
-Once your load configurations are ready, Starlake can generate orchestration DAGs automatically based on your YAML definitions.
+Supported orchestrators:
+- **Airflow** -- Generates Python DAG files.
+- **Dagster** -- Generates Dagster job definitions.
+- **Snowflake Tasks** -- Generates Snowflake Task definitions.
 
-## Generate DAGs for Load
+## Why automatic DAG generation matters
 
-Run the following command to generate DAGs that include your load jobs:
+In a traditional data pipeline, you must write and maintain orchestration code alongside your data logic. Starlake eliminates this duplication: your YAML definitions already declare the tables, domains and dependencies. The `dag-generate` command derives the execution graph from these declarations.
+
+This means:
+- Zero DAG code to write or maintain.
+- Dependencies between load and transform jobs are resolved automatically.
+- Adding a new table or domain updates the DAG on the next generation.
+
+## How to generate and deploy DAGs
+
+1. **Ensure all YAML configurations are complete** -- Table, domain and transform definitions must be in place.
+2. **Run the generation command:**
 
 ```bash
 starlake dag-generate
 ```
 
-This analyzes dependencies between your load and transform jobs and produces DAG files for your orchestrator.
+3. **Deploy the generated files** -- Copy the output to your Airflow DAGs folder, Dagster repository or Snowflake Tasks environment.
+
+The command analyzes dependencies between your load and transform jobs and produces the correct execution order.
 
 ## Next Steps
 

@@ -1,7 +1,7 @@
 ---
-title: "Transform Data with SQL"
-description: "Learn how to use SQL SELECT statements in Starlake to create business insights like revenue, product, and order summaries from your data."
-keywords: [starlake, sql transform, data transformation, select statements, business insights, data pipeline]
+title: "SQL Transform Tutorial: Create KPI Tables with Starlake"
+description: "Step-by-step tutorial: transform data with SQL SELECT statements in Starlake. Create revenue, product, and order KPI tables. Automatic dependency resolution, lineage graph, recursive execution. Works with DuckDB, BigQuery, Snowflake."
+keywords: [starlake, sql transform, data transformation, select statements, business insights, data pipeline, KPI, lineage, DuckDB, BigQuery, Snowflake]
 ---
 
 import Head from '@docusaurus/Head';
@@ -14,34 +14,58 @@ import Head from '@docusaurus/Head';
       "mainEntity": [
         {
           "@type": "Question",
-          "name": "Does Starlake only support SQL for transformations?",
+          "name": "What is the difference between starlake transform and starlake load?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Starlake transformations are based on standard SQL SELECT statements combined with YAML configuration. You write plain SQL without Jinja templating. Python is supported when running on Spark or Databricks through their native Python integration."
+            "text": "starlake load ingests raw files (CSV, JSON, Parquet) into the data warehouse. starlake transform executes SQL SELECT statements to create new derived tables from the loaded data."
           }
         },
         {
           "@type": "Question",
-          "name": "How does Starlake handle dependencies between transform tasks?",
+          "name": "Does Starlake require Jinja templating in SQL files?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Starlake automatically detects dependencies between SQL tasks by analyzing table references. You can visualize the dependency graph using the 'starlake lineage' command, and run tasks in the correct order using the --recursive flag."
+            "text": "No. Starlake transformations use standard SQL without Jinja templating. Environment variables like sl_start_date and sl_end_date are injected automatically."
           }
         },
         {
           "@type": "Question",
-          "name": "Can Starlake run transformations incrementally?",
+          "name": "How does Starlake determine the execution order of transforms?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes, Starlake supports incremental transformations through write strategies like UPSERT_BY_KEY_AND_TIMESTAMP. It automatically generates the appropriate MERGE INTO or INSERT OVERWRITE SQL based on the writeStrategy property."
+            "text": "Starlake analyzes the FROM and JOIN clauses in each SQL file to build a dependency graph (DAG). The starlake lineage command visualizes this graph."
           }
         },
         {
           "@type": "Question",
-          "name": "Where are SQL transform files stored in a Starlake project?",
+          "name": "Can you run a single transform without its dependencies?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "SQL transform files are stored in the metadata/transform directory. The subdirectory name determines the target schema. For example, files in metadata/transform/kpi/ will store results in the 'kpi' schema."
+            "text": "Yes. Without the --recursive flag, only the named transform runs. The --recursive flag forces execution of all upstream dependencies first."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where are transform results stored?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The subdirectory name inside metadata/transform/ determines the target schema. For example, files in metadata/transform/kpi/ write to the kpi schema."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Starlake work with DuckDB for SQL transformations?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. This tutorial uses DuckDB as the local engine. Starlake also supports BigQuery, Snowflake, Databricks, and any JDBC-compatible engine."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you visualize the lineage graph as SVG?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Install GraphViz, then run starlake lineage --task kpi.order_summary --svg --output lineage.svg."
           }
         }
       ]
@@ -56,6 +80,14 @@ import Head from '@docusaurus/Head';
       "@type": "HowTo",
       "name": "How to Transform Data with SQL in Starlake",
       "description": "Step-by-step guide to creating business insights from your data using SQL SELECT statements and Starlake transform.",
+      "totalTime": "PT10M",
+      "tool": [
+        { "@type": "HowToTool", "name": "Starlake CLI" },
+        { "@type": "HowToTool", "name": "DuckDB" }
+      ],
+      "supply": [
+        { "@type": "HowToSupply", "name": "Loaded data from starlake load tutorial" }
+      ],
       "step": [
         {
           "@type": "HowToStep",
@@ -71,7 +103,7 @@ import Head from '@docusaurus/Head';
         },
         {
           "@type": "HowToStep",
-          "name": "Check the dependency lineage",
+          "name": "Check the dependency lineage graph",
           "text": "Run 'starlake lineage --task kpi.order_summary --print' to see the execution order of your transforms as a directed acyclic graph.",
           "position": 3
         },
@@ -94,29 +126,27 @@ import Head from '@docusaurus/Head';
 
 # Transform Data with SQL
 
-Starlake transforms turn raw loaded data into business insights using standard SQL SELECT statements. Each SQL file produces one target table, and Starlake automatically detects dependencies between tasks to run them in the correct order. This tutorial walks through creating revenue, product, and order summaries from the Starbake sample dataset using DuckDB.
+Starlake transforms turn raw loaded data into business insights using standard SQL SELECT statements -- no Jinja templating required. Each SQL file produces one target table, and Starlake automatically detects dependencies between tasks to run them in the correct order. This tutorial walks through creating revenue, product, and order KPI tables from the Starbake sample dataset using DuckDB. The same approach works with BigQuery, Snowflake, Databricks, and any JDBC-compatible engine.
 
 ## Prerequisites
-Make sure you run the [Load step](../load/tutorial) first to get the data in the database.
 
-## The insights
+Complete the [Load tutorial](../load/tutorial) first to populate the database with source data.
 
-In this tutorial, we will create 3 insights:
-- revenue_summary: to get the total revenue per order
-- product_summary: to get per product and order, the total revenue, the number of units sold and the profit
-- order_summary: to get per order, the total revenue, the profit and the number of items sold
+## Define the KPI Insights
 
-This requires us to build the insights in the following order:
+This tutorial creates three KPI tables:
 
-1. revenue_summary and product_summary
-2. order_summary
+- **revenue_summary** -- total revenue per order
+- **product_summary** -- revenue, units sold, and profit per product and order
+- **order_summary** -- revenue, profit, and item count per order
+
+The execution order matters. `order_summary` depends on `revenue_summary` and `product_summary`, so Starlake must build those two first.
 
 ![](/img/starbake-transform.png)
 
-## The SELECT statements
-We will store these insights in the `kpi` schema. We need to write one SQL query per insight as shown below:
+## Write the SQL SELECT Statements
 
-<br/>
+Store these SQL files in the `kpi` directory. The directory name determines the target schema: all results write to the `kpi` schema.
 
 ```sql title="metadata/transform/kpi/revenue_summary.sql"
 SELECT
@@ -163,9 +193,7 @@ FROM
         JOIN kpi.revenue_summary rs ON ps.order_id = rs.order_id
 ```
 
-Storing the sql files in the `kpi` directory instructs starlake to store the insights in the `kpi` schema.
-
-Your metadata/transform directory should look like this:
+Your `metadata/transform` directory should look like this:
 
 ```plaintext
 metadata/transform
@@ -175,15 +203,15 @@ metadata/transform
     └── revenue_summary.sql
 ```
 
-## Run the transform
+## Check the Dependency Lineage Graph
 
-before running our transform, let's see in what order we should run them by running the following command:
+Before running the transforms, inspect the dependency order:
 
 ```bash
-starlake lineage  --task kpi.order_summary --print
+starlake lineage --task kpi.order_summary --print
 ```
 
-This should produce a acyclic graph showing the order in which the insights should be run. The output should look like this:
+This produces a directed acyclic graph showing the execution order:
 
 ```plaintext
 kpi.order_summary
@@ -196,23 +224,27 @@ kpi.order_summary
     starbake.order_lines
 ```
 
-If you installed the [GraphViz tool](/setup/starlake-core-setup), you can produce the same graph in svg or png format using the following command:
+If you installed [GraphViz](/setup/starlake-core-setup), you can generate an SVG or PNG version:
 
 ```bash
-
 starlake lineage --task kpi.order_summary --svg --output lineage.svg
 ```
 
 ![](/img/lineage.svg)
 
+## Run the Transform with Recursive Execution
 
-To build our top level insight, we can run the following command using the `recursive` flag, this instructs starlake to run the insights in the correct order:
+Use the `--recursive` flag to execute all upstream dependencies in the correct order:
 
 ```bash
 starlake transform --recursive --name kpi.order_summary
 ```
 
-Our database should now contain the following tables and data (amounts and dates may differ here):
+Without `--recursive`, only the named transform runs. Use this when dependencies are already up to date.
+
+## Verify the Results
+
+Open DuckDB and inspect the KPI tables:
 
 ```plaintext
 $ duckdb $SL_ROOT/datasets/duckdb.db
@@ -246,20 +278,33 @@ D select * from kpi.order_summary limit 5;
 D .quit
 ```
 
-<br/>
-Our insight is now built and stored in the `kpi` schema. We can now run them from inside our orchestrator to schedule them to run at regular intervals.
+The KPI tables are now in the `kpi` schema. You can schedule these transforms with an orchestrator -- see [Orchestrate Transform Jobs](./orchestration) for details.
+
+## Next Steps
+
+- [Customize Transform Configuration](./config) -- set write strategies, partitioning, and access control
+- [SQL Transform Syntax](./sql) -- learn about incremental models, column documentation, and custom SQL
+- [Export Transform Results](./export) -- write results to CSV, Parquet, or another database
 
 ## Frequently Asked Questions
 
-### Does Starlake only support SQL for transformations?
-Starlake transformations are based on standard SQL SELECT statements combined with YAML configuration. You write plain SQL without Jinja templating. Python is supported when running on Spark or Databricks through their native Python integration.
+### What is the difference between starlake transform and starlake load?
+`starlake load` ingests raw files (CSV, JSON, Parquet) into the data warehouse. `starlake transform` executes SQL SELECT statements to create new derived tables from the loaded data.
 
-### How does Starlake handle dependencies between transform tasks?
-Starlake automatically detects dependencies between SQL tasks by analyzing table references. You can visualize the dependency graph using the `starlake lineage` command, and run tasks in the correct order using the `--recursive` flag.
+### Does Starlake require Jinja templating in SQL files?
+No. Starlake transformations use standard SQL without Jinja templating. Environment variables like `sl_start_date` and `sl_end_date` are injected automatically.
 
-### Can Starlake run transformations incrementally?
-Yes, Starlake supports incremental transformations through write strategies like `UPSERT_BY_KEY_AND_TIMESTAMP`. It automatically generates the appropriate MERGE INTO or INSERT OVERWRITE SQL based on the `writeStrategy` property.
+### How does Starlake determine the execution order of transforms?
+Starlake analyzes the `FROM` and `JOIN` clauses in each SQL file to build a dependency graph (DAG). The `starlake lineage` command visualizes this graph.
 
-### Where are SQL transform files stored in a Starlake project?
-SQL transform files are stored in the `metadata/transform` directory. The subdirectory name determines the target schema. For example, files in `metadata/transform/kpi/` will store results in the `kpi` schema.
+### Can you run a single transform without its dependencies?
+Yes. Without the `--recursive` flag, only the named transform runs. The `--recursive` flag forces execution of all upstream dependencies first.
 
+### Where are transform results stored?
+The subdirectory name inside `metadata/transform/` determines the target schema. For example, files in `metadata/transform/kpi/` write to the `kpi` schema.
+
+### Does Starlake work with DuckDB for SQL transformations?
+Yes. This tutorial uses DuckDB as the local engine. Starlake also supports BigQuery, Snowflake, Databricks, and any JDBC-compatible engine.
+
+### How do you visualize the lineage graph as SVG?
+Install GraphViz, then run `starlake lineage --task kpi.order_summary --svg --output lineage.svg`.

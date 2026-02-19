@@ -114,16 +114,16 @@ import Head from '@docusaurus/Head';
 
 # Customize Dagster DAGs
 
-This guide covers Dagster-specific customization for Starlake DAG generation, including Shell and Cloud Run factory classes, Jinja2 templates for data loading and transformation, and the Multi Asset Sensor mechanism for dependency-driven execution. It details how Dagster asset materialization integrates with Starlake commands.
+This guide covers Dagster-specific customization for Starlake DAG generation. It details Shell and Cloud Run factory classes, Jinja2 templates for data loading and transformation, and the Multi Asset Sensor mechanism for dependency-driven execution. It explains how Dagster asset materialization integrates with Starlake commands.
 
-## How to configure Dagster assets for Starlake
+## Quick start
 
 1. **Install prerequisites** -- Dagster 1.6.0+, starlake-dagster 0.1.2+, and starlake 1.0.1+.
 2. **Choose a factory class** -- Use `StarlakeDagsterShellJob` for local/on-premise or `StarlakeDagsterCloudRunJob` for GCP Cloud Run.
 3. **Configure DAG YAML** -- Create a configuration file in `metadata/dags` with the Dagster template, filename, and options (`run_dependencies_first`).
 4. **Generate and deploy** -- Run `starlake dag-generate --clean`, then deploy the generated files to your Dagster repository.
 
-For general DAG configuration concepts (references, properties, options), see the [Customizing DAG Generation](./200-customization.mdx) hub page.
+For general DAG configuration concepts (references, properties, options), see the [Customizing DAG Generation](./200-customization.mdx) hub page. For a hands-on introduction, see the [Orchestration Tutorial](./100-tutorial.mdx).
 
 ## Prerequisites
 
@@ -133,32 +133,35 @@ For general DAG configuration concepts (references, properties, options), see th
 
 ## Concrete factory classes
 
-Each **concrete** factory class extends `ai.starlake.dagster.StarlakeDagsterJob` and implements the **sl_job** method that will generate the **Dagster op** that will run the corresponding starlake command.
+Each concrete factory class extends `ai.starlake.dagster.StarlakeDagsterJob` and implements the **sl_job** method to generate the Dagster op that runs the corresponding Starlake command.
 
 ### StarlakeDagsterShellJob
+
 :::note Shell
 
-`ai.starlake.dagster.shell.StarlakeDagsterShellJob` is a concrete implementation of `StarlakeDagsterJob` that generates nodes using dagster-shell library. Usefull for **on premise** execution.
+`ai.starlake.dagster.shell.StarlakeDagsterShellJob` generates nodes using the dagster-shell library. Use it for **on-premise** or local execution.
 
 :::
-An additional **SL_STARLAKE_PATH** option is required to specify the **path** to the **starlake executable**.
+
+An additional **SL_STARLAKE_PATH** option specifies the path to the Starlake executable.
 
 ![](/img/orchestration/dagster/shell.png)
 
 ### StarlakeDagsterCloudRunJob
-:::note Cloud run
 
-`ai.starlake.dagster.gcp.StarlakeDagsterCloudRunJob` class is a concrete implementation of `StarlakeDagsterJob` that overrides the `sl_job` method that will run the starlake command by executing **Cloud Run job**.
+:::note Cloud Run
+
+`ai.starlake.dagster.gcp.StarlakeDagsterCloudRunJob` overrides the `sl_job` method to run Starlake commands by executing **Cloud Run jobs**.
 
 :::
 
-Bellow is the list of **additional options** used to configure the **Cloud run job**:
+Additional options for the Cloud Run job:
 
-| name                             | type | description                                                                                               |
+| Name                             | Type | Description                                                                                               |
 | -------------------------------- | ---- | --------------------------------------------------------------------------------------------------------- |
-| **cloud_run_project_id**   | str  | the optional cloud run project id (the project id on which the composer has been instantiated by default) |
-| **cloud_run_job_name**     | str  | the required name of the cloud run job                                                                    |
-| **cloud_run_region**       | str  | the optional region (`europe-west1` by default)                                                         |
+| **cloud_run_project_id**   | str  | The optional Cloud Run project id (defaults to the Composer project id) |
+| **cloud_run_job_name**     | str  | The required name of the Cloud Run job                                                                    |
+| **cloud_run_region**       | str  | The optional region (`europe-west1` by default)                                                         |
 
 ## Pre-load strategy visualizations
 
@@ -182,15 +185,13 @@ The pre-load strategy options (NONE, IMPORTED, PENDING, ACK) are described in th
 
 ## Templates
 
-### Data loading
+### Data loading templates
 
-*__dagster_scheduled_table_tpl.py.j2* is the **abstract template** to generate Dagster DAGs for **data loading** which **requires** the instantiation of a **concrete factory class** that implements *ai.starlake.dagster.StarlakeDagsterJob*
+*__dagster_scheduled_table_tpl.py.j2* is the **abstract template** for Dagster data loading DAGs. It requires a concrete factory class implementing `ai.starlake.dagster.StarlakeDagsterJob`.
 
-Currently, there are **three Dagster concrete templates** for data loading.
+Three Dagster concrete templates extend it using **include statements**:
 
-All extend this abstract template by instantiating the corresponding concrete factory class using **include statements**.
-
-- *dagster_scheduled_table_shell.py.j2* instantiates a `StarlakeDagsterShellJob` class.
+- *dagster_scheduled_table_shell.py.j2* -- Instantiates `StarlakeDagsterShellJob`:
 
 ```python title="src/main/resources/templates/dags/load/dagster_scheduled_table_shell.py.j2"
 # This template executes individual shell jobs and requires the following dag generation options set:
@@ -200,7 +201,7 @@ All extend this abstract template by instantiating the corresponding concrete fa
 {% include 'templates/dags/load/__dagster_scheduled_table_tpl.py.j2' %}
 ```
 
-- *dagster_scheduled_table_cloud_run.py.j2* instantiates a `StarlakeDagsterCloudRunJob` class.
+- *dagster_scheduled_table_cloud_run.py.j2* -- Instantiates `StarlakeDagsterCloudRunJob`:
 
 ```python title="src/main/resources/templates/dags/load/dagster_scheduled_table_cloud_run.py.j2"
 # This template executes individual cloud run jobs and requires the following dag generation options set:
@@ -212,15 +213,13 @@ All extend this abstract template by instantiating the corresponding concrete fa
 {% include 'templates/dags/load/__airflow_scheduled_table_tpl.py.j2' %}
 ```
 
-### Data transformation
+### Data transformation templates
 
-*__dagster_scheduled_task_tpl.py.j2* is the **abstract template** to generate Dagster DAGs for **data transformation** which **requires**, in the same way, the instantiation of a **concrete factory class** that implements *ai.starlake.dagster.StarlakeDagsterJob*
+*__dagster_scheduled_task_tpl.py.j2* is the **abstract template** for data transformation DAGs. It follows the same pattern.
 
-Currently, there are **three Dagster concrete templates** for data transformation.
+Three Dagster concrete templates exist:
 
-All extend this abstract template by instantiating the corresponding concrete factory class using **include statements**.
-
-- *dagster_scheduled_task_shell.py.j2* instantiates a `StarlakeDagsterShellJob` class.
+- *dagster_scheduled_task_shell.py.j2* -- Instantiates `StarlakeDagsterShellJob`:
 
 ```python title="src/main/resources/templates/dags/transform/dagster_scheduled_task_shell.py.j2"
 # ...
@@ -228,7 +227,7 @@ All extend this abstract template by instantiating the corresponding concrete fa
 {% include 'templates/dags/load/__dagster_scheduled_task_tpl.py.j2' %}
 ```
 
-- *dagster_scheduled_task_cloud_run.py.j2* instantiates a `StarlakeDagsterCloudRunJob` class.
+- *dagster_scheduled_task_cloud_run.py.j2* -- Instantiates `StarlakeDagsterCloudRunJob`:
 
 ```python title="src/main/resources/templates/dags/transform/dagster_scheduled_task_cloud_run.py.j2"
 # ...
@@ -238,11 +237,11 @@ All extend this abstract template by instantiating the corresponding concrete fa
 
 ## Dependencies
 
-For any transformation, Starlake is able to calculate all its dependencies towards other tasks or loads thanks to the **analysis** of **SQL queries**.
+Starlake calculates all dependencies for each transformation by **analyzing SQL queries**.
 
-The **run_dependencies_first** option defines whether or not we wish to recursively **generate all the dependencies** associated with each task for which the transformation DAG must be generated (False by default). If we choose to not generate those dependencies, the corresponding DAG will be scheduled using the **Dagster Multi Asset Sensor** mechanism.
+The **run_dependencies_first** option controls whether dependencies are generated inline or handled through the **Dagster Multi Asset Sensor** mechanism (default: `False`).
 
-All **dependencies** for data transformation are **available** in the generated DAG via the **Python** dictionary **variable** **task_deps**.
+All dependencies are available in the generated DAG via the Python dictionary variable **task_deps**:
 
 ```python
 task_deps=json.loads("""[ {
@@ -284,15 +283,15 @@ task_deps=json.loads("""[ {
 } ]""")
 ```
 
-### Inline
+### Inline dependencies
 
-In this strategy (**run_dependencies_first** = *True*), all the dependencies related to the transformation will be generated.
+With **run_dependencies_first** = *True*, all dependencies are included in the same Dagster job.
 
 ![](/img/orchestration/dagster/transformWithDependencies.png)
 
 ### Multi Asset Sensor
 
-In this strategy (**run_dependencies_first** = *False*), the default strategy, a **sensor** will be created to **check** if the **dependencies** are **met** via the use of **Dagster Assets**.
+With **run_dependencies_first** = *False* (default), a **sensor** checks whether all dependent assets have been materialized before triggering execution.
 
 ```python title="src/main/resources/template/dags/transform/__dagster_scheduled_task_tpl.py.j2"
 #...
@@ -354,9 +353,9 @@ defs = Definitions(
 )
 ```
 
-Those **required Assets** are **materialized** for **each** **load** and **task** that have been **executed**.
+#### How assets are materialized
 
-The *ai.starlake.dagster.StarlakeDagsterJob* class is responsible for **recording** the **assets** related to the execution of each starlake command.
+The `ai.starlake.dagster.StarlakeDagsterJob` class records **assets** for each Starlake command:
 
 ```python title="ai.starlake.dagster.StarlakeDagsterJob"
 def sl_import(self, task_id: str, domain: str, **kwargs) -> NodeDefinition:
@@ -376,7 +375,7 @@ def sl_transform(self, task_id: str, transform_name: str, transform_options: str
 
 ```
 
-Each corresponding **asset** will be then **materialized** at run time through the execution of the **Dagset op** defined within the **sl_job** function of the concrete factory class that has been instantiated by the template.
+Each asset is materialized at runtime through the Dagster op defined in **sl_job** of the concrete factory class:
 
 ```python title="ai.starlake.dagster.shell.StarlakeShellJob"
 def sl_job(self, task_id: str, arguments: list, spark_config: StarlakeSparkConfig=None, **kwargs) -> NodeDefinition:
@@ -388,7 +387,7 @@ def sl_job(self, task_id: str, arguments: list, spark_config: StarlakeSparkConfi
         arguments (list): The required arguments of the starlake command to run.
 
     Returns:
-        OpDefinition: The Dastger node.
+        OpDefinition: The Dagster node.
     """
     command = self.__class__.get_context_var("SL_STARLAKE_PATH", "starlake", self.options) + f" {' '.join(arguments)}"
 

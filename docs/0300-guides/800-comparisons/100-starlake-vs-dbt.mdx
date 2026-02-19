@@ -1,7 +1,7 @@
 ---
 title: "Starlake vs dbt — Feature Comparison"
-description: "Compare Starlake and dbt for data transformation: declarative YAML vs Jinja SQL, built-in load vs transform-only, orchestration support and more."
-keywords: [starlake vs dbt, dbt alternative, declarative data pipeline, yaml data pipeline, starlake comparison]
+description: "Starlake vs dbt feature comparison: full ELT pipeline (extract, load, transform, test, orchestrate) with YAML + standard SQL vs transform-only Jinja SQL. Includes feature table, key differences, and guidance on when to choose each tool."
+keywords: [starlake vs dbt, dbt alternative, declarative data pipeline, yaml data pipeline, starlake comparison, elt pipeline, standard sql, data engineering]
 ---
 
 import Head from '@docusaurus/Head';
@@ -51,19 +51,43 @@ import Head from '@docusaurus/Head';
             "@type": "Answer",
             "text": "Starlake supports BigQuery, Snowflake, Redshift, Databricks, PostgreSQL, DuckDB and Spark SQL. dbt supports a similar range through community adapters. Both tools cover the major cloud data warehouses."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I migrate from dbt to Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Starlake uses standard SQL, so migrating dbt models primarily involves removing Jinja templating and translating dbt YAML configuration to Starlake YAML format. Simple models migrate quickly; complex macro-heavy projects require more effort."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can Starlake and dbt coexist in the same project?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Some teams use dbt for transformations and Starlake for extraction and loading. However, to benefit from automatic lineage and orchestration generation, using Starlake for the full pipeline is recommended."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What data loading formats does Starlake support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "CSV, JSON, XML, Parquet, Avro, and fixed-width. Loading includes schema validation, type checking, encryption, write strategies (overwrite, append, merge), and row-level security."
+          }
         }
       ]
     })}
   </script>
 </Head>
 
-## Introduction
+# Starlake vs dbt -- Feature Comparison
 
-**Starlake** and **dbt** are two popular tools that help data teams build and manage analytical pipelines. dbt pioneered the "analytics engineering" movement by bringing software engineering best practices to SQL-based transformations. Starlake takes a broader approach: it provides a single declarative framework (YAML + SQL) that covers extraction, loading, transformation, testing and orchestration in one cohesive tool.
+**Starlake** and **dbt** are two popular tools for building analytical data pipelines. dbt pioneered the "analytics engineering" movement by applying software engineering best practices to SQL transformations. Starlake takes a broader approach: a single declarative framework (YAML + standard SQL) that covers extraction, loading, transformation, testing, and orchestration. For teams seeking a dbt alternative that handles the full data pipeline, Starlake eliminates the need for multiple tools.
 
 Both projects have active communities and are used in production by companies of all sizes. This page provides a factual comparison to help you decide which tool fits your needs.
 
-## Feature Comparison Table
+## Feature comparison table
 
 | Feature | Starlake | dbt |
 |---|---|---|
@@ -80,37 +104,37 @@ Both projects have active communities and are used in production by companies of
 | **VSCode extension** | Free for all users | Free for up to 15 users (dbt Power User); paid beyond that |
 | **License** | Apache 2.0 (fully open source) | dbt Core: Apache 2.0; dbt Cloud: proprietary SaaS |
 
-## Key Differences
+## Key differences
 
-### Full Pipeline Coverage vs Transform-Only
+### Full pipeline coverage vs transform-only
 
-dbt is designed specifically for the **T** (Transform) in ELT. It excels at modeling, testing, and documenting transformations but deliberately leaves extraction and loading to other tools in the stack.
+dbt focuses on the **T** (Transform) in ELT. It excels at modeling, testing, and documenting transformations but leaves extraction and loading to other tools.
 
-Starlake covers the **entire ELT pipeline** -- extract, load, transform, test and orchestrate -- in a single declarative framework. This means fewer tools to integrate, a unified configuration language, and a single lineage graph from source to destination.
+Starlake covers the **entire ELT pipeline** -- extract, load, transform, test, and orchestrate -- in a single framework. This means fewer tools to integrate, a unified configuration language, and a single lineage graph from source to destination.
 
-For teams that already have a mature ingestion stack (Fivetran, Airbyte, custom scripts), dbt slots in naturally. For teams starting fresh or looking to consolidate, Starlake reduces the overall tooling footprint.
+For teams with a mature ingestion stack (Fivetran, Airbyte, custom scripts), dbt slots in naturally. For teams starting fresh or consolidating, Starlake reduces the overall tooling footprint.
 
-### Standard SQL vs Jinja-Templated SQL
+### Standard SQL vs Jinja-templated SQL
 
-dbt extends SQL with **Jinja templating**, enabling powerful macros, control flow, and dynamic model generation. This flexibility is a strength for complex use cases but introduces a learning curve and makes SQL files harder to read and debug with standard tools.
+dbt extends SQL with **Jinja templating**, enabling powerful macros, control flow, and dynamic model generation. This flexibility helps with complex use cases but introduces a learning curve and makes SQL files harder to read with standard tools.
 
-Starlake uses **standard SQL** paired with YAML configuration for metadata (write strategies, materialization, scheduling). There is no templating layer inside the SQL itself. This keeps SQL files compatible with standard editors, linters, and database tools.
+Starlake uses **standard SQL** paired with YAML configuration for metadata (write strategies, materialization, scheduling). No templating layer exists inside the SQL. SQL files remain compatible with standard editors, linters, and database tools.
 
-### Orchestration Generation
+### Automatic orchestration generation
 
-dbt Core does not include a built-in orchestrator. Teams typically use dbt Cloud's scheduler, Airflow with the dbt operator, Dagster's dbt integration, or Prefect. Wiring up DAG dependencies requires manual configuration or additional tooling.
+dbt Core does not include a built-in orchestrator. Teams typically use dbt Cloud's scheduler, Airflow with the dbt operator, Dagster's dbt integration, or Prefect. Wiring DAG dependencies requires manual configuration.
 
-Starlake **automatically analyzes SQL dependencies** and generates ready-to-deploy DAGs for Airflow, Dagster, Snowflake Tasks, and other orchestrators. You select a template, and Starlake produces the orchestration code -- no manual DAG wiring required.
+Starlake **automatically analyzes SQL dependencies** and generates ready-to-deploy DAGs for [Airflow](../orchestrate/airflow), [Dagster](../orchestrate/dagster), [Snowflake Tasks](../orchestrate/snowflake-tasks), and other orchestrators. Select a template and Starlake produces the orchestration code.
 
-### Data Loading Capabilities
+### Production-grade data loading
 
-dbt's `seed` command is designed for **small CSV reference files** (dimension lookups, mapping tables). It is not intended for production-scale data ingestion.
+dbt's `seed` command handles **small CSV reference files** (dimension lookups, mapping tables). It is not designed for production-scale data ingestion.
 
-Starlake provides **production-grade data loading** that supports multiple formats (CSV, JSON, XML, Parquet, Avro, fixed-width), schema validation, type checking, encryption, upsert strategies (overwrite, append, merge by key and timestamp), and row-level security. Loading is a first-class citizen in Starlake, not a convenience feature.
+Starlake provides **production-grade data loading** with support for CSV, JSON, XML, Parquet, Avro, and fixed-width formats. It includes schema validation, type checking, encryption, upsert strategies (overwrite, append, merge by key and timestamp), and row-level security. Loading is a first-class feature in Starlake.
 
-## When to Choose Starlake
+## When to choose Starlake
 
-- You need a **single tool** for extract, load, transform, test and orchestrate.
+- You need a **single tool** for extract, load, transform, test, and orchestrate.
 - You prefer **standard SQL** without a templating layer.
 - You want **auto-generated orchestration DAGs** for Airflow, Dagster, or Snowflake Tasks.
 - You require **production-grade data loading** with schema validation, encryption, and multiple write strategies.
@@ -118,7 +142,7 @@ Starlake provides **production-grade data loading** that supports multiple forma
 - You value a **fully open-source tool** (Apache 2.0) with no paid feature tiers for core functionality.
 - You want to **develop locally on DuckDB** and deploy to any warehouse with automatic SQL transpilation.
 
-## When to Choose dbt
+## When to choose dbt
 
 - You already have a mature **extraction and loading** stack (Fivetran, Airbyte, Stitch) and only need a transformation layer.
 - Your team is familiar with **Jinja templating** and relies on dbt macros and packages from the community ecosystem.
@@ -126,6 +150,12 @@ Starlake provides **production-grade data loading** that supports multiple forma
 - You use **dbt Cloud** and value its integrated IDE, scheduler, documentation hosting, and collaboration features.
 - Your organization has standardized on dbt and the cost of switching outweighs the benefits.
 - You need support for **niche database adapters** maintained by the dbt community.
+
+## Related pages
+
+- [Orchestration Tutorial](../orchestrate/tutorial) -- Generate and deploy DAGs automatically.
+- [Unit Testing](../unit-tests/concepts) -- Test pipelines locally on DuckDB.
+- [Starlake Site Builder](../documentation/site-builder) -- Generate a documentation portal with ERD and lineage.
 
 ## Frequently Asked Questions
 
@@ -148,3 +178,7 @@ Starlake uses standard SQL for transformations, so migrating dbt models primaril
 ### Can Starlake and dbt coexist in the same project?
 
 While they serve overlapping purposes, some teams use dbt for transformations and Starlake for extraction and loading. However, to benefit from Starlake's automatic lineage and orchestration generation, it is recommended to use Starlake for the full pipeline.
+
+### What data loading formats does Starlake support?
+
+CSV, JSON, XML, Parquet, Avro, and fixed-width. Loading includes schema validation, type checking, encryption, write strategies (overwrite, append, merge by key and timestamp), and row-level security.

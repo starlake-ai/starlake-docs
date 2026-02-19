@@ -13,6 +13,10 @@ import Head from '@docusaurus/Head';
       "@type": "HowTo",
       "name": "How to Deploy Starlake Pipelines to Production",
       "description": "Step-by-step guide to deploying Starlake data pipelines to cloud environments using Docker and an orchestrator.",
+      "tool": [
+        {"@type": "HowToTool", "name": "Docker"},
+        {"@type": "HowToTool", "name": "Starlake CLI"}
+      ],
       "step": [
         {
           "@type": "HowToStep",
@@ -31,6 +35,12 @@ import Head from '@docusaurus/Head';
           "name": "Deploy DAGs to your orchestrator",
           "text": "Copy the contents of the metadata/dags/generated folder to your orchestrator's DAGs folder to schedule and run your pipelines.",
           "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Verify deployment",
+          "text": "Run a dry-run on the deployed DAGs to verify the pipeline works as expected before enabling scheduling.",
+          "position": 4
         }
       ]
     })}
@@ -95,31 +105,42 @@ import Head from '@docusaurus/Head';
 
 # Deploy Starlake Pipelines
 
-Deploying a Starlake project to production involves three steps: setting environment variables (`SL_ENV`, `SL_ROOT`), copying the metadata folder to a cloud storage bucket, and deploying the generated DAGs to your orchestrator. The Starlake Docker container runs on GCP, AWS, Azure, or on-premise with no vendor lock-in.
+Deploying a Starlake project to production involves three steps: setting environment variables, copying metadata to cloud storage, and deploying generated DAGs to your orchestrator. The Starlake Docker container runs on GCP, AWS, Azure, or on-premise with no vendor lock-in.
 
-## How to deploy Starlake pipelines
+## Deployment overview
 
-1. **Set environment variables** -- Configure `SL_ENV` and `SL_ROOT` in your Starlake Docker container to match the target environment.
-2. **Copy metadata to cloud storage** -- Upload your `metadata` folder to a cloud storage bucket so the Docker container can access it.
-3. **Deploy DAGs to your orchestrator** -- Copy the contents of `metadata/dags/generated` to your orchestrator's DAGs folder.
+1. **Set environment variables** -- Configure `SL_ENV` and `SL_ROOT` in your Starlake Docker container.
+2. **Copy metadata to cloud storage** -- Upload your `metadata` folder to a cloud storage bucket.
+3. **Deploy DAGs to your orchestrator** -- Copy `metadata/dags/generated` to your orchestrator's DAGs folder.
+4. **Verify** -- Run a dry-run to confirm the pipeline works before enabling scheduling.
 
-## Running your project
-Deploying your project is as simple as copying your metadata folder to a cloud storage bucket
-and run any of the load / transform command from the `starlake` docker container running on any cloud provider.
+## Set environment variables
+
+Configure the Starlake Docker container with the target environment:
 
 :::note
-Make sure you use environment variables to abstract your project
-from the target environment as described [here](../../configuration/environment)
+Use environment variables to abstract your project from the target environment as described in the [Environment configuration](../../configuration/environment) guide.
 
-In your starlake docker container make the SL_ENV and SL_ROOT env variables are set to the correct values.
-
+Set `SL_ENV` to the target environment name and `SL_ROOT` to the project root directory inside the container.
 :::
 
+## Copy metadata to cloud storage
 
+Copy your `metadata` folder to a cloud storage bucket accessible by the Starlake Docker container. The container runs load and transform commands against the metadata stored in cloud storage.
 
-## Orchestrating the pipeline
+This approach works identically across cloud providers. The Starlake Docker container reads the metadata from the bucket and executes the pipeline commands.
 
-To run on your orchestrator, just copy the contents of the `metadata/dags/generated` folder to your orchestrator's DAGs folder.
+## Deploy DAGs to your orchestrator
+
+Copy the contents of the `metadata/dags/generated` folder to your orchestrator's DAGs folder. The orchestrator schedules and triggers Starlake commands via the Docker container.
+
+For DAG generation details, see the [Orchestration Tutorial](../orchestrate/tutorial). For customization, see [Customizing DAG Generation](../orchestrate/customization).
+
+## Related guides
+
+- [Environment configuration](../../configuration/environment) -- Parameterize your project for multiple environments.
+- [Orchestration Tutorial](../orchestrate/tutorial) -- Generate and deploy DAGs.
+- [Unit Testing](../unit-tests/concepts) -- Test your pipelines before deployment.
 
 ## Frequently Asked Questions
 

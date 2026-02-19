@@ -1,7 +1,7 @@
 ---
 title: "SQL Transform Syntax: SELECT, Incremental Models, and Custom SQL in Starlake"
 description: "Write SQL transforms in Starlake using standard SELECT statements. Configure incremental models with sl_start_date/sl_end_date, document calculated columns, and use custom MERGE/INSERT with parseSQL: false."
-keywords: [starlake, sql transforms, select statement, materialization, incremental model, data pipeline, parseSQL]
+keywords: [starlake, sql transforms, select statement, materialization, incremental model, data pipeline, parseSQL, sl_start_date, sl_end_date]
 ---
 
 import Head from '@docusaurus/Head';
@@ -73,78 +73,118 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
-#  SQL Transforms
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Write an Incremental SQL Transform in Starlake",
+      "description": "Configure a SQL transform that processes only new data using sl_start_date and sl_end_date variables.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "Write a SQL SELECT with date filters",
+          "text": "Use the sl_start_date and sl_end_date variables in the WHERE clause of your SQL file to filter data to the current processing interval."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "Configure the write strategy",
+          "text": "Set writeStrategy.type to APPEND or UPSERT_BY_KEY_AND_TIMESTAMP in the YAML configuration file to define how new results merge with existing data."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "Enable catchup in the DAG definition",
+          "text": "Add the catchup flag to your YAML DAG definition so the orchestrator reruns missed intervals automatically."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 4,
+          "name": "Run the transform via the orchestrator",
+          "text": "The orchestrator (Airflow, Dagster, Snowflake Tasks) passes the correct sl_start_date and sl_end_date for each execution interval."
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# SQL Transforms
 
 Starlake SQL transforms let you materialize any SELECT statement into a target table using a configurable write strategy. This page covers SELECT syntax, column documentation with `attributesDesc`, custom MERGE/INSERT via `parseSQL: false`, and incremental modelling with the `sl_start_date` / `sl_end_date` environment variables. All SQL is standard -- no Jinja templating is involved.
 
-## SELECT statements
-[SQL transforms](../transform/tutorial#the-select-statements) are SELECT statements materialized using a user defined strategy.
-The result of the SELECT statement is then used to populate the target table by applying the [write strategy](../load/write-strategies) defined in the corresponding YAML configuration file.
-The SELECT statement can be as simple or as complex as needed.
+## SELECT Statement Materialization
 
-The only requirement is that the result of the SELECT statement must match the schema of the target table if it exists, otherwise starlake will infer the schema.
+A [SQL transform](./tutorial#write-the-sql-select-statements) is a SELECT statement that Starlake materializes into a target table using the [write strategy](../load/write-strategies) defined in the companion YAML file. The SELECT can be as simple or as complex as needed -- single table queries, multi-table joins, subqueries, and window functions all work.
 
+**Schema matching rules:**
+- If the target table exists, the SELECT result must match its schema.
+- If the target table does not exist, Starlake infers the schema (column names and types) from the SELECT result.
+- Column documentation from source tables propagates automatically to the target.
 
+## Document Calculated Columns
 
-## Column description
-
-Most of the time you won't need to document the columns in the SELECT statement as starlake will infer the schema from the result of the SELECT statement
-and the column documentation from the source table column description.
-
-You may need to document the calculated columns in the SELECT statement as they don't exist in the source tables.
-You can do that by adding setting the `attributesDesc` key in the YAML configuration file.
+Starlake infers column metadata from source tables. For calculated columns that do not exist in any source, add documentation using `attributesDesc` in the YAML configuration:
 
 ```yaml title="metadata/transform/<domain>/<table>.sl.yml"
-
 task:
   ...
   attributesDesc:
-    name: <column_name>
-    comment: <column_description>
+    - name: <column_name>
+      comment: <column_description>
   ...
-
 ```
 
-## Custom write strategy
+This metadata appears in the data catalog and helps downstream consumers understand derived fields.
 
-If none of the [predefined write strategies](../load/write-strategies) fits your need, you can write your own update/insert/merge statements directly in the SQL file
-instead of letting starlake convert your select statements into update/insert/merge statements.
+## Custom Write Strategy with parseSQL
 
-But in that case, you will need to set the `parseSQL` (`true` by default) to `false` in the YAML configuration file.
+If none of the [predefined write strategies](../load/write-strategies) fits your use case, write your own MERGE, INSERT, or UPDATE statement directly in the SQL file. Set `parseSQL` to `false` so Starlake executes the SQL as-is instead of wrapping the SELECT in a materialization statement:
 
 ```yaml title="metadata/transform/<domain>/<table>.sl.yml"
-
 task:
   ...
   parseSQL: false
   ...
-
 ```
 
+With `parseSQL: false`, you have full control over the DML statement. Starlake does not modify or wrap the SQL.
 
-## Incremental modelling
+## Incremental Modelling
 
-As data arrives periodically we have to build KPIs on that new data only. 
-For example, the daily_sales KPI does not need the whole input dataset but just the data
-for the day we are computing the KPI. The computed daily KPI are then appended 
-to the existing dataset, greatly reducing the amount of data processed.
+When data arrives periodically, you often need to process only the new data for each interval. Starlake supports incremental transforms through two reserved environment variables:
 
-Starlake allows you to write your query as follows:
+- **`sl_start_date`** -- start of the current processing interval
+- **`sl_end_date`** -- end of the current processing interval
 
+Use these variables in a WHERE clause to filter input data:
 
-![alt_text](/img/blog/incremental-models/query.png "image_tooltip")
+```sql title="metadata/transform/<domain>/daily_sales.sql"
+SELECT
+    product_id,
+    SUM(amount) AS daily_revenue,
+    COUNT(*) AS transaction_count
+FROM
+    sales.transactions
+WHERE
+    transaction_date >= '{{sl_start_date}}'
+    AND transaction_date < '{{sl_end_date}}'
+GROUP BY
+    product_id
+```
 
+The orchestrator (Airflow, Dagster, or Snowflake Tasks) passes the correct values for each execution interval. The computed results append to the existing table, which greatly reduces the volume of data processed on each run.
 
-The `sl_start_date` and `sl_end_date` variables represent the start and end times for
-which the query is being executed. These are reserved environment variables that are automatically 
-passed to the transformation process by the orchestrator (e.g., Airflow, Dagster or Snowflake Tasks).
+### Handle Missed Intervals with Catchup
 
-You might wonder what happens if the job fails to run for a specific day.
-There's no need to worry—Starlake handles this seamlessly by leveraging Airflow's
- **Catchup** mechanism. By configuration, Starlake requests the orchestrator 
- to catch up on any missed intervals. To enable this, simply add the `catchup` flag
- to your YAML DAG definition in Starlake, and as expected the orchestrator will run the missed intervals using 
- the `sl_start_date` and `sl_end_date` variables valued accordingly.
+If an incremental job fails for a specific day, Starlake integrates with Airflow's **Catchup** mechanism. Add the `catchup` flag to your YAML DAG definition, and the orchestrator replays missed intervals with the correct `sl_start_date` and `sl_end_date` values.
+
+## Next Steps
+
+- [SQL Transform Tutorial](./tutorial) -- end-to-end walkthrough with DuckDB
+- [Transform YAML Configuration](./config) -- write strategies, partitioning, access control
+- [Python Transforms](./python) -- use PySpark for complex logic beyond SQL
 
 ## Frequently Asked Questions
 
@@ -155,10 +195,10 @@ If the target table already exists, the SELECT result must match its schema. Oth
 Use the `attributesDesc` property in the transform YAML file to add a name and comment for each calculated column.
 
 ### Can you write custom MERGE or INSERT instead of a SELECT?
-Yes. Set `parseSQL: false` in the YAML configuration. Starlake will then execute the SQL as-is without converting it into a write statement.
+Yes. Set `parseSQL: false` in the YAML configuration. Starlake executes the SQL as-is without converting it into a write statement.
 
 ### What are the sl_start_date and sl_end_date variables?
-They are reserved environment variables representing the current time interval. They are automatically passed by the orchestrator (Airflow, Dagster, or Snowflake Tasks) for incremental executions.
+They are reserved environment variables representing the current time interval. The orchestrator (Airflow, Dagster, or Snowflake Tasks) passes them automatically for incremental executions.
 
 ### What happens if an incremental job fails for a day?
 Starlake integrates with Airflow's Catchup mechanism. Missed intervals are automatically replayed with the correct `sl_start_date` and `sl_end_date` values.
@@ -168,4 +208,3 @@ No. Starlake SQL files use standard SQL. Environment variables are injected dire
 
 ### How does schema inference work when the target table does not exist?
 Starlake executes the SELECT and infers the schema (types, column names) from the result. Source column documentation is automatically propagated.
-

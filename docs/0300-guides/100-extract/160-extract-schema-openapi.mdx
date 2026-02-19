@@ -112,27 +112,19 @@ import Head from '@docusaurus/Head';
 
 # OpenAPI Schema Extraction
 
-Starlake can generate table schemas from OpenAPI definitions by mapping API routes and response schemas to Starlake domains and tables. The mapping is configured in a YAML file that supports route filtering, schema exclusion, explode strategies for nested structures, and attribute name normalization. By default, Starlake processes GET operations and filters out schemas that are not objects or arrays of objects.
+Starlake generates table schemas from OpenAPI definitions by mapping API routes and response schemas to Starlake domains and tables. This page covers `extract-schema` only -- no data extraction occurs from OpenAPI definitions. The mapping is configured in a YAML file that supports route filtering, schema exclusion, explode strategies for nested structures, and attribute name normalization. By default, Starlake processes GET operations and filters out schemas that are not objects or arrays of objects.
 
-## How to Extract Schemas from OpenAPI Definitions
+## How Starlake Maps OpenAPI to Domains and Tables
 
-1. **Define the OpenAPI-Starlake mapping** -- Create a YAML config in `metadata/extract/` specifying `connectionRef`, `basePath`, domains, route filters, schema exclusions, and explode strategies.
-2. **Configure the filesystem connection** -- In `metadata/application.sl.yml`, add a connection of type `fs` pointing to the OpenAPI JSON definition file.
-3. **Place the OpenAPI definition file** -- Drop the OpenAPI JSON file into `metadata/extract/openapi/` (or the path specified in the connection).
-4. **Run the extract-schema command** -- Execute `starlake extract-schema --config my_openapi_extract_config` to generate Starlake table definitions in the load folder.
+The extraction process reads an OpenAPI JSON definition and converts each eligible route into a Starlake table. Starlake filters out schemas that are not objects or arrays of objects. Root arrays are flattened, and the output follows JSON Lines format.
 
-## Overview
-The schema extraction process leverages YAML configuration to define relations between Starlake's domains and tables with OpenAPI definitions.
-This configuration supports advanced features like excluding routes or fields, and handling explosion strategies for complex data structures.
-Table names are deduced from paths and normalized. Attribute names are normalized as well in order for them to be compatible with databases.
+Each API route produces one table per response schema. The table name is derived from the API path after normalization. Routes are grouped into Starlake domains, which map to database schemas.
 
-Generally speaking, what we are interested in an OpenAPI definition are GET operations and their schema. Starlake filters out schemas that are not objects or arrays of objects. Furthermore, the extraction flattens root arrays and considers the output to match JSON Lines.
+## Step-by-Step OpenAPI Extraction Configuration
 
-## Extract step-by-step
+### 1. Define the YAML Mapping Between OpenAPI Routes and Starlake Tables
 
-### 1. Define OpenAPI-Starlake Mapping
-
-In `metadata/extract/` defines a YAML config file, here named `my_openapi_extract_config.sl.yml`.
+Create a YAML configuration file in `metadata/extract/`:
 
 ```yaml {7,8} title="metadata/extract/my_openapi_extract_config.sl.yml"
 version: 1
@@ -154,36 +146,43 @@ extract:
                 postal_adresses: adresses
 ```
 
-The given example don't highlight all possible configuration. Let's break the configuration down and see how you may define yours:
+### Full Configuration Reference
 
-- sanitizeAttributeName: One of :
-  - ON_EXTRACT: attribute name is sanitized and stored as field name. Default.
-  - ON_LOAD: attribute name is sanitized and stored as rename property when attribute's name differs from sanitized name
-- connectionRef: reference a FS connection indicating where the open API file is
-- openAPI:
-  - basePath: paths are used for table names. This base path is remove before table name is produced.
-  - formatTypeMapping: map of String, String allowing to map a custom format to a starlake type. By default, if the format is not standard, the type is resolved as String.
-  - domains:
-    - basePath: same as root's one but override its for the domain. May be interesting if root base path is /api/v2 and we want to create re referential domain where api are all located under /api/v2/referentials/. Otherwise we would get table name like `referentials_products` instead of `products`.
-    - name: starlake domain name. Group multiple root under one specific domain.
-    - schemas: apply `include` then `exclude` list. OpenAPI have named schemas. If you are facing an OpenAPI definitions
-    where you want to discard specific schemas, just add it to `exclude` list. These may be an API where it requires you to list all ids before gettings the details of each of them. In contrary, if you are only interested by some schemas, use `include` list.
-    - routes:
-      - paths: all paths to include in the process. If regex is too complex, you may add multiple entries. By default, takes all paths.
-      - as: force the table name. Be sure that eligible `paths` are outputting only one schema. Otherwise an error is thrown during process because of collision.
-      - operations: GET or POST. By default, it is GET.
-      - exclude: paths to exclude. Detect `paths` first and then exclude them.
-      - excludeFields: in the response schema's, the API may define some deprecated attributes that you may want to drop. Just add their patterns.
-      - explode:
-        - on: May be one of :
-          - ALL: Keep properties of type object or array.
-          - ARRAY: Keep properties of type object. Don't dive on array type.
-          - OBJECT: Keep properties of type array. If encounters an object, dive deeper.
-        - exclude: list of properties to ignore. Sub properties are concatenated to thei parent with `_`. I.e `postal.address.number` become `postal_address_number`.
-        - rename: each exploded schemas are saved by default to a table named: `{api_path}_{property_path}`. If you don't want, you can use `rename` to match a property path to a table name. It's a map of `table_name -> property pattern`. If you force the renaming to `""`, then the output table will be `api_path`. It won't be suffixed with a dangling `_`.
+The following fields are available in the extraction YAML:
 
+- **`sanitizeAttributeName`** -- Controls how attribute names are normalized:
+  - `ON_EXTRACT` (default): sanitizes the name and stores it directly as the field name.
+  - `ON_LOAD`: sanitizes the name and stores it as a `rename` property when it differs from the original.
+- **`connectionRef`** -- References a filesystem connection pointing to the OpenAPI JSON file.
+- **`openAPI`** -- Root configuration block:
+  - **`basePath`** -- Removed from the beginning of the path before generating table names. Avoids unnecessary prefixes.
+  - **`formatTypeMapping`** -- Map of `String -> String` to map custom OpenAPI formats to Starlake types. Unknown formats default to `String`.
+  - **`domains`** -- List of domain configurations:
+    - **`basePath`** -- Overrides the root `basePath` for this domain. Useful when APIs under `/api/v2/referentials/` should produce table names like `products` instead of `referentials_products`.
+    - **`name`** -- Starlake domain name. Groups multiple routes under one domain.
+    - **`schemas`** -- Filtering rules for OpenAPI named schemas:
+      - `include` -- Keep only these schemas (applied first).
+      - `exclude` -- Remove these schemas (applied second). Supports regex.
+    - **`routes`** -- List of route configurations:
+      - **`paths`** -- Regex patterns for paths to include. Defaults to all paths.
+      - **`as`** -- Forces the table name. Only valid when `paths` matches a single schema.
+      - **`operations`** -- `GET` or `POST`. Defaults to `GET`.
+      - **`exclude`** -- Paths to exclude after `paths` matching.
+      - **`excludeFields`** -- Regex patterns for response schema fields to drop (e.g., deprecated attributes).
+      - **`explode`** -- Controls how nested/complex properties are handled:
+        - **`on`** -- Strategy for complex types:
 
-### 2. Define file connections to the OpenAPI definition file
+          | Value | Objects | Arrays |
+          |-------|---------|--------|
+          | `ALL` | Keep as property | Keep as property |
+          | `ARRAY` | Keep as property | Do not dive into arrays |
+          | `OBJECT` | Dive deeper into objects | Keep as property |
+
+        - **`exclude`** -- Properties to ignore during explosion. Sub-properties use `_` as separator (e.g., `postal_address_number`).
+        - **`rename`** -- Map of `table_name -> property_pattern`. Renames exploded tables. Setting the value to `""` produces a table name equal to the API path without a suffix.
+
+### 2. Configure the Filesystem Connection to the OpenAPI File
+
 ```yaml {7,8} title="metadata/application.sl.yml"
 version: 1
 application:
@@ -194,41 +193,47 @@ application:
             path: my_open_api_file.json
 ```
 
-`path` defines the location to the openAPI definition. By convention, these file will be in `metadata/extract/openapi`
-but you are free to specify an absolute location or use a substituted variable.
+The `path` field points to the OpenAPI definition file. By convention, place OpenAPI files in `metadata/extract/openapi/`, but you can specify an absolute path or use a substitution variable.
 
-### 3. Drop your OpenAPI definition
-According to the defined connection, you can drop your openAPI definition into `metadata/extract/openapi/my_open_api_file.json`.
+### 3. Place the OpenAPI Definition File in Your Project
 
-### 4. Extract
+Drop the OpenAPI JSON file at the location specified in the connection. For the example above:
 
-Now, you just have to launch schema extraction. Schema extraction will extract to the `load` folder by default but you can specify another one with `outputDir`.
-If any domain or table exists, they are merged together.
+```
+metadata/extract/openapi/my_open_api_file.json
+```
+
+### 4. Run extract-schema to Generate Starlake Schemas
 
 ```shell
 $ starlake extract-schema --config my_openapi_extract_config
 ```
 
-## Name normalization
-You may need to know how Starlake normalize names in order to apply those same transformation in your code and get a perfect match.
+Schema extraction generates table definitions in the `load` folder by default. You can specify another location with `--outputDir`. If any domain or table already exists, the definitions are merged.
 
-### Table name
-Table names are deduced from path. This is how they are normalized:
-- remove path parameters
-- remove all accents
-- replace non alpha numeric with underscore
-- replace consecutive/trailing underscores
-- add underscore before capitals preceded by lowercase
-- add underscore after a group of capitals
-- lower all
+## Table and Attribute Name Normalization Rules
 
-### Attribute name
-Attribute names are normalized as follows:
-- remove all accents
-- replace non alpha numeric with underscore
-- replace consecutive/trailing underscores
-- add underscore before capitals preceded by lowercase
-- add underscore after a group of capitals
+Starlake normalizes names from OpenAPI paths and attributes to ensure database compatibility.
+
+### Table Name Normalization
+
+Table names are derived from the API path. The normalization steps are:
+1. Remove path parameters (e.g., `{id}`)
+2. Remove all accents
+3. Replace non-alphanumeric characters with underscores
+4. Replace consecutive and trailing underscores
+5. Add an underscore before capitals preceded by lowercase (camelCase splitting)
+6. Add an underscore after a group of consecutive capitals
+7. Convert to lowercase
+
+### Attribute Name Normalization
+
+Attribute names follow the same rules except step 1 (no path parameters) and step 7 (case is preserved for `ON_LOAD` mode):
+1. Remove all accents
+2. Replace non-alphanumeric characters with underscores
+3. Replace consecutive and trailing underscores
+4. Add an underscore before capitals preceded by lowercase
+5. Add an underscore after a group of consecutive capitals
 
 ## Frequently Asked Questions
 

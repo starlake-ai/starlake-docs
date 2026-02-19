@@ -51,6 +51,14 @@ import Head from '@docusaurus/Head';
             "@type": "Answer",
             "text": "Yes. Each entry in 'tables' can have or omit a 'sql' field. Entries without 'sql' extract the entire table."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "Can you extract the schema at the same time as data?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Schema extraction (extract-schema) tries to retrieve remarks based on the table name if they exist. Both commands (extract-data and extract-schema) use the same configuration file."
+          }
         }
       ]
     })}
@@ -67,14 +75,14 @@ import Head from '@docusaurus/Head';
       "step": [
         {
           "@type": "HowToStep",
-          "name": "Define the extraction YAML with a sql field",
-          "text": "In metadata/extract/, create a YAML config file. In the tables section, add a 'sql' field containing the full SQL query. The 'name' field serves as the logical name for the output file.",
+          "name": "Define the JDBC connection",
+          "text": "Configure the JDBC connection in metadata/application.sl.yml (see the main extraction tutorial).",
           "position": 1
         },
         {
           "@type": "HowToStep",
-          "name": "Set the connection reference",
-          "text": "Set connectionRef to a JDBC connection defined in metadata/application.sl.yml.",
+          "name": "Create the extraction YAML with a sql field",
+          "text": "In metadata/extract/, create a YAML config file. In the tables section, add a 'sql' field containing the full SQL query. The 'name' field serves as the logical name for the output file.",
           "position": 2
         },
         {
@@ -96,20 +104,15 @@ import Head from '@docusaurus/Head';
 
 # Extract Data Using Custom SQL Queries
 
-Starlake query extraction lets you export data from a JDBC database using custom SQL statements instead of extracting entire tables. You can apply filters, joins, aggregations, and column selections directly in the YAML configuration. This feature is available for any JDBC connection and is configured by adding a `sql` field to the table entry.
-
-## How to Extract Data from a SQL Query
-
-1. **Define the extraction YAML with a `sql` field** -- In `metadata/extract/`, create a YAML config. In the `tables` section, add a `sql` field with your SQL query. The `name` field serves as the logical output file name.
-2. **Set the connection reference** -- Set `connectionRef` to a JDBC connection defined in `metadata/application.sl.yml`.
-3. **Run the extract-data command** -- Execute `starlake extract-data --config custom_query_extract --outputDir $SL_ROOT/incoming/`.
-4. **Optionally extract the schema** -- Run `starlake extract-schema --config custom_query_extract` to generate a schema description file for warehouse loading.
+Starlake query extraction exports data from a JDBC database using custom SQL statements instead of extracting entire tables. You define a `sql` field on each table entry to apply filters, joins, aggregations, or column selections. Both `extract-data` and `extract-schema` use the same YAML configuration file. This feature is available for JDBC connections only.
 
 :::info
-Query extraction does not infer primary keys or foreign keys. All attributes are considered not required.
+Query-based extraction does not work with non-JDBC connections (filesystem, etc.). It also does not infer primary keys or foreign keys. All attributes from query results are treated as not required.
 :::
 
-## Basic Configuration
+## Query Extraction YAML Configuration
+
+Add a `sql` field to any table entry in the extraction YAML. The `name` field serves as the logical name for the output file.
 
 ```yaml {8,9} title="metadata/extract/my_extract_config.sl.yml"
 version: 1
@@ -123,11 +126,11 @@ extract:
   ...
 ```
 
-It is currently supported only for JDBC connections.
+You can mix table-based and query-based entries in the same configuration. Entries without a `sql` field extract the entire table. Entries with a `sql` field execute the provided query.
 
-## Full Example
+## Full Example: JOIN and Aggregation in an Extraction Query
 
-The following example demonstrates extracting a subset of orders joined with customer data using a custom SQL query:
+The following example extracts a subset of orders joined with order lines, computing a total amount per order. It also extracts a filtered product catalog.
 
 ```yaml title="metadata/extract/custom_query_extract.sl.yml"
 version: 1
@@ -152,18 +155,27 @@ extract:
           sql: "SELECT product_id, name, category, price FROM starbake.product WHERE price > 0"
 ```
 
-## Running the Extraction
+Key points:
+- `name` defines the output file name (e.g., `recent_orders.csv`).
+- `sql` accepts any valid SQL for the target database: JOINs, WHERE clauses, GROUP BY, aggregations.
+- The `schema` field identifies the source schema for metadata purposes.
+
+## Run extract-data and extract-schema Commands
+
+Extract the data:
 
 ```shell
 $ cd $SL_ROOT
 $ starlake extract-data --config custom_query_extract --outputDir $SL_ROOT/incoming/
 ```
 
-To also extract the schema description (useful for loading into a data warehouse):
+Optionally, generate a schema description file for warehouse loading:
 
 ```shell
 $ starlake extract-schema --config custom_query_extract
 ```
+
+Schema extraction attempts to retrieve table remarks (descriptions) based on the table name when they exist. Both commands use the same configuration file.
 
 ## Frequently Asked Questions
 

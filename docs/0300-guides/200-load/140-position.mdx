@@ -1,7 +1,7 @@
 ---
 title: "Load Fixed-Width Files"
 description: "Load fixed-width positional files into BigQuery, Snowflake, Databricks, or DuckDB using Starlake. Define column positions in YAML, infer schemas automatically, and validate data during loading."
-keywords: [starlake, fixed-width, positional, load, column width, schema inference, COBOL, mainframe]
+keywords: [starlake, fixed-width, positional, load, column width, schema inference, COBOL, mainframe, BigQuery, Snowflake, Databricks, DuckDB]
 ---
 
 import Head from '@docusaurus/Head';
@@ -104,12 +104,15 @@ import Head from '@docusaurus/Head';
 
 # Load Fixed-Width Positional Files into Your Data Warehouse
 
-Starlake loads fixed-width (positional) files into BigQuery, Snowflake, Databricks, DuckDB, and other warehouses. Column boundaries are defined using zero-based `first` and `last` position properties in YAML. Schema inference is supported via a reference file with `name:value` pairs. This format is commonly used for mainframe COBOL file exports.
+Starlake loads fixed-width (positional) files into BigQuery, Snowflake, Databricks, DuckDB, and other warehouses. Column boundaries are defined using zero-based `first` and `last` position properties in YAML -- no delimiter is needed. Schema inference is supported via a reference file. This format is commonly used for **mainframe COBOL file exports** and legacy system data.
 
-To load fixed width files, you need to know the width of each column.
-The example below is an example of how a fixed width file may be used to represent orders.
+For delimiter-separated files, see the [CSV/DSV](csv) documentation. For zero-config loading, see [autoload](autoload).
 
-<br/>
+## Fixed-Width File Format
+
+In fixed-width files, each column occupies a fixed number of characters. There is no delimiter between columns. You must know the width of each column to parse the file.
+
+Example fixed-width file representing orders:
 
 ```plaintext
 00001    62024-02-05T21:19:15.454ZCancelled
@@ -117,41 +120,39 @@ The example below is an example of how a fixed width file may be used to represe
 00003    82024-02-05T21:19:15.454ZDelivered
 ```
 
-<br/>
+Column layout for this file:
 
-In the file above the columns are as follows:
-- order_id: 5 characters
-- customer_id: 5 characters
-- timestamp: 24 characters
-- status: 10 characters
+| Column | Width | Characters |
+|---|---|---|
+| `order_id` | 5 | 0-4 |
+| `customer_id` | 5 | 5-9 |
+| `timestamp` | 24 | 10-33 |
+| `status` | 10 | 34-43 |
 
 ## Infer Schema from a Fixed-Width Reference File
 
-The width of each column is fixed, but the columns are not separated by a delimiter.
-We just need to provide the `infer-schema` command with a file that contains a single record where each field is placed on a separate line prefixed by its name followed by a colon.
+To infer the schema, create a reference file where each field appears on a separate line in `name:value` format. The value must have the **exact width** of the column (including padding spaces).
 
-To infer the schema of the fixed width file above, we can submit the following file to the `infer-schema` command:
-
-```plaintext
+```plaintext title="Reference file for schema inference"
 order_id:00001
 customer_id:    6
 timestamp:2024-02-05T21:19:15.454Z
 status:Cancelled
 ```
 
-After calling the infer-schema command below, the schema will be inferred and printed to the console.
+Run the `infer-schema` command with the `--format FIXED` option:
 
 ```bash
-$ starlake infer-schema --input-path /my/path/fixed_width_file.txt --format FIXED --output-dir $SL_ROOT/metadata/load/starbake
+starlake infer-schema --input-path /my/path/fixed_width_file.txt --format FIXED --output-dir $SL_ROOT/metadata/load/starbake
 ```
 
-The schema will be saved in the directory specified by the `output-dir` parameter.
+The schema is saved in the directory specified by `--output-dir`.
 
 ## Column Position Configuration (first / last)
 
-The starlake YAML schema will look like the one below:
+The generated YAML defines column positions using `position.first` and `position.last` properties. Both values are **0-based** and **inclusive**.
 
-```yaml
+```yaml title="metadata/load/<domain>/<table>.sl.yml"
 load:
     metadata:
       format: FIXED
@@ -166,7 +167,7 @@ load:
           last: 4
       - name: customer_id
         type: string
-        position: # next  5 characters
+        position: # next 5 characters
           first: 5
           last: 9
       - name: timestamp
@@ -181,22 +182,35 @@ load:
           last: 43
 ```
 
-The `first` and `last` values are 0-based. A column spanning the first 5 characters has `first: 0` and `last: 4`.
+A column spanning the first 5 characters has `first: 0` and `last: 4`. The inferred schema defaults all columns to `string` -- edit the file to set appropriate types (`int`, `date`, `timestamp`, etc.).
+
+### Additional Parsing Options
+
+The following options from [CSV loading](csv) also apply to fixed-width files:
+
+- `encoding`: File encoding (default `UTF-8`)
+- `trim`: Trim strategy per attribute (`None`, `Left`, `Right`, `Both`)
+- `filter`: Condition/regex to filter lines
 
 ## Run the Load Command
 
-After inferring the schema, we can use the `load` command to load the data into the datawarehouse.
+After reviewing and customizing the schema, load the data:
 
 ```bash
-$ starlake load
+starlake load
 ```
 
-## How to Load Fixed-Width Data with Starlake
+Starlake parses each line using the defined column positions, validates records against the schema, and loads valid records into the target table. Rejected records are stored in the `audit.rejected` table.
 
-1. **Create a reference file** -- Create a text file with one field per line in `name:value` format, where each value has the exact width of the column.
-2. **Infer the schema** -- Run `starlake infer-schema --input-path <file> --format FIXED --output-dir metadata/load/<domain>` to generate the YAML configuration with position offsets.
-3. **Review column positions** -- Check the generated YAML. Each attribute has `position.first` and `position.last` (0-based, inclusive). Adjust types from `string` to `int`, `date`, etc.
-4. **Load the data** -- Execute `starlake load` to parse the fixed-width file and load validated records into the target warehouse.
+## Use Case: Mainframe COBOL File Exports
+
+Fixed-width is the standard format for mainframe and COBOL system exports. To load these files:
+
+1. Map each field from your COBOL copybook to a `position.first` / `position.last` pair in the YAML schema.
+2. Set appropriate types for numeric fields (`int`, `long`, `double`).
+3. Use `trim: Both` on string fields to remove padding spaces.
+
+All Starlake [write strategies](load-strategies) work with fixed-width files: APPEND, OVERWRITE, OVERWRITE_BY_PARTITION, UPSERT_BY_KEY, UPSERT_BY_KEY_AND_TIMESTAMP, and SCD2.
 
 ## Frequently Asked Questions
 

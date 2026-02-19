@@ -1,7 +1,7 @@
 ---
 title: "Python Transforms in Starlake: PySpark DataFrame Pipelines"
 description: "Run Python transforms in Starlake with PySpark. Pass arguments via --options, return a DataFrame as SL_THIS temporary view, and materialize results to any table. Same YAML config as SQL transforms."
-keywords: [starlake, python transforms, dataframe, python pipeline, data transformation, spark, pyspark, SL_THIS]
+keywords: [starlake, python transforms, dataframe, python pipeline, data transformation, spark, pyspark, SL_THIS, databricks, EMR]
 ---
 
 import Head from '@docusaurus/Head';
@@ -110,82 +110,101 @@ import Head from '@docusaurus/Head';
 
 # Python Transforms
 
-Starlake supports Python transforms for operations that go beyond what SQL can express, such as machine learning inference, text processing, or external API calls. Python transforms require a Spark runtime (standalone, Databricks, or EMR) and follow the same YAML configuration format as SQL transforms. The script must register its output DataFrame as the `SL_THIS` temporary view so Starlake can materialize the result.
+Starlake supports Python transforms for operations that go beyond what SQL can express -- machine learning inference, text processing, external API calls, or complex algorithmic logic. Python transforms require a Spark runtime (standalone Spark, Databricks, or EMR). They do not work with DuckDB. The YAML configuration format is identical to SQL transforms: only the source file extension changes from `.sql` to `.py`.
+
+## Python vs SQL Transforms
+
+| Aspect | SQL Transform | Python Transform |
+|--------|--------------|-----------------|
+| Source file | `.sql` | `.py` |
+| Runtime | DuckDB, BigQuery, Snowflake, Spark, Databricks | Spark, Databricks, EMR only |
+| Use case | Standard queries, joins, aggregations | ML, text processing, API calls |
+| Output mechanism | SELECT result | `SL_THIS` temporary view |
+| YAML configuration | Same format | Same format |
+
+Use SQL transforms for standard data operations. Choose Python when the logic cannot be expressed in SQL.
 
 ## How to Write a Python Transform
 
 1. **Create a Python file** -- Add a `.py` file in the `metadata/transform/<domain>/` directory. The file name determines the task name.
 2. **Write the PySpark logic** -- Use `SparkSession` to read source tables, apply transformations, and produce a result DataFrame.
-3. **Register the result as SL_THIS** -- Call `df.createOrReplaceTempView("SL_THIS")` on your result DataFrame.
+3. **Register the result as SL_THIS** -- Call `df.createOrReplaceTempView("SL_THIS")` on your result DataFrame. Starlake reads this view to materialize the output table.
 4. **Add an optional YAML configuration** -- Create a `.sl.yml` file with the same name to set write strategy, partitioning, or expectations.
 5. **Run the transform** -- Execute `starlake transform --name <domain>.<task>` with optional `--options key1=value1,key2=value2` to pass parameters.
 
----
+## Directory Structure
 
-In addition to SQL transforms, you may run Python transforms in your pipeline.
-Python transforms are defined by a Python function that takes a DataFrame as input and returns a DataFrame as output.
-The function is then registered as a transform in the pipeline.
-
-
-Exactly like the SQL transform, you can define a python transform by creating a python file and adding it
-to the `metadata/transform/<domain>` directory.
-
-You can also define a YAML configuration file for the python script using the exact same format as the SQL transform.
-
-Arguments specified in the command line through the `--options` flag will be passed to the python function as keyword arguments:
-
-```bash
-
-$ starlake transform --name <domain>.<transform_name> --options key1=value1,key2=value2
-
+```plaintext
+metadata/transform
+└── <domain>
+    ├── <task>.py
+    └── <task>.sl.yml  (optional)
 ```
 
-will be passed as keyword arguments to the python function:
+## Pass Arguments to the Python Script
+
+Arguments specified with the `--options` flag are forwarded as command-line arguments:
 
 ```bash
-
-<transform-name>.py --key1 value1 --key2 value2
-
+starlake transform --name <domain>.<transform_name> --options key1=value1,key2=value2
 ```
 
-The dataframe returned by the python function will be saved as the output table of the transform.
+Starlake converts this into:
+
+```bash
+<transform_name>.py --key1 value1 --key2 value2
+```
+
+Parse these arguments in your script using `argparse` or `sys.argv`.
+
+## Register the Output as SL_THIS
+
+Before the script exits, it must create a temporary view named `SL_THIS`. Starlake reads this view and materializes it into the target table using the configured write strategy.
 
 :::note
-
-Before returning the dataframe, the function must create a temporary view with the name `SL_THIS` so that the dataframe can be saved as a table.
-
+The `SL_THIS` temporary view is mandatory. Starlake cannot materialize the output without it.
 :::
 
-```python
+## Example: Aggregate Sales Data with PySpark
 
+```python title="metadata/transform/analytics/sales_by_category.py"
 import sys
-from random import random
-from operator import add
-
 from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
 
 if __name__ == "__main__":
-    """
-        Usage: pi [partitions]
-    """
-    spark = SparkSession \
-        .builder \
-        .getOrCreate()
+    spark = SparkSession.builder.getOrCreate()
 
-    partitions = 2
-    n = 100000 * partitions
+    # Read source tables
+    products = spark.table("starbake.products")
+    order_lines = spark.table("starbake.order_lines")
 
-    def f(_: int) -> float:
-        x = random() * 2 - 1
-        y = random() * 2 - 1
-        return 1 if x ** 2 + y ** 2 <= 1 else 0
+    # Aggregate revenue by product category
+    result = (
+        order_lines
+        .join(products, "product_id")
+        .groupBy("category")
+        .agg(
+            F.sum(F.col("quantity") * F.col("sale_price")).alias("total_revenue"),
+            F.sum("quantity").alias("total_units_sold")
+        )
+    )
 
-    count = spark.sparkContext.parallelize(range(1, n + 1), partitions).map(f).reduce(add)
-    result = "Pi is roughly %f" % (4.0 * count / n)
-    df = spark.createDataFrame([[result]])
-    df.createOrReplaceTempView("SL_THIS")
-
+    # Register as SL_THIS for Starlake to materialize
+    result.createOrReplaceTempView("SL_THIS")
 ```
+
+## Schema Matching
+
+The same rules apply as for SQL transforms:
+- If the target table exists, the DataFrame schema must match.
+- If the target table does not exist, Starlake infers the schema from the DataFrame.
+
+## Next Steps
+
+- [SQL Transform Tutorial](./tutorial) -- end-to-end walkthrough with DuckDB
+- [Transform YAML Configuration](./config) -- write strategies, partitioning, access control
+- [SQL Transform Syntax](./sql) -- SELECT statements, incremental models, column documentation
 
 ## Frequently Asked Questions
 

@@ -43,6 +43,14 @@ import Head from '@docusaurus/Head';
             "@type": "Answer",
             "text": "Yes, you can use the wildcard '*' in the tables name field to extract all tables from a given schema. You can also filter by table types such as TABLE, VIEW, or SYSTEM TABLE."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the difference between extract-data and extract-schema?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "extract-data exports the actual table data as CSV files. extract-schema generates table schema description files in the metadata/load directory, which are used by the starlake load command to load data into a data warehouse without relying on schema inference."
+          }
         }
       ]
     })}
@@ -86,6 +94,12 @@ import Head from '@docusaurus/Head';
           "name": "Verify the output files",
           "text": "Check the $SL_ROOT/incoming/starbake folder for the extracted CSV files, ready to be loaded into a data warehouse.",
           "position": 5
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Generate table schema descriptions (optional)",
+          "text": "Run 'starlake extract-schema --config my_extract_config' to generate schema description files in metadata/load for use with starlake load.",
+          "position": 6
         }
       ]
     })}
@@ -94,15 +108,16 @@ import Head from '@docusaurus/Head';
 
 # Extract Data from Databases
 
-Starlake extracts tables from any JDBC-compliant database (PostgreSQL, MySQL, Oracle, SQL Server, DuckDB, etc.) and writes them as CSV files ready for warehouse loading. Extraction supports full and incremental modes, parallel reads, and wildcard table selection. Configuration is declarative via YAML files under the `metadata/extract/` directory.
+Starlake extracts tables from any JDBC-compliant database (PostgreSQL, MySQL, Oracle, SQL Server, DuckDB, and others) and writes them as CSV files. Configuration is declarative: you define a JDBC connection in `application.sl.yml` and list the schemas and tables to extract in a YAML file under `metadata/extract/`. Extraction supports full and incremental modes, parallel reads, and wildcard table selection.
 
-## How to Extract Data from a Database with Starlake
+## Steps to Configure and Run an Extraction
 
 1. **Install prerequisites** -- Install DuckDB and download the sample `duckdb.db` database into `$SL_ROOT/datasets`.
 2. **Configure the database connection** -- Edit `metadata/application.sl.yml` to add a JDBC connection entry with the database URL and driver class.
-3. **Configure the extraction YAML** -- Create `metadata/extract/my_extract_config.sl.yml` specifying `connectionRef`, schema name, tables to extract, and table types.
-4. **Run the extract-data command** -- Execute `starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming/` to extract tables as CSV files.
-5. **Verify the output files** -- Check the `$SL_ROOT/incoming/starbake` folder for the extracted CSV files, ready to be loaded into a data warehouse.
+3. **Create the extraction YAML** -- Create `metadata/extract/my_extract_config.sl.yml` specifying `connectionRef`, schema name, tables to extract, and table types.
+4. **Run the extract-data command** -- Execute `starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming/` to export tables as CSV files.
+5. **Verify the output files** -- Check the `$SL_ROOT/incoming/starbake` folder for the extracted CSV files.
+6. **(Optional) Generate schema descriptions** -- Run `starlake extract-schema --config my_extract_config` to produce table description files for warehouse loading.
 
 ## Prerequisites
 
@@ -129,20 +144,9 @@ D .quit
 $
 ```
 
+## Configure the Connection to the Source Database
 
-## Extract Data
-
-Extracting Data involves the following steps:
-
-- Configure the connection to the source database
-- Select the database schema to extract
-- Select the tables to extract
-- Select the columns to extract (optional)
-- Select the rows to extract (optional)
-
-## Configure the connection to the source database
-
-In the project folder, under the `metadata` folder,  edit the file application.sl.yml and set the connection parameters to the source database.
+In the project folder, under the `metadata` folder, edit the file `application.sl.yml` and set the connection parameters to the source database.
 
 ```yaml title="metadata/application.sl.yml"
 version: 1
@@ -158,7 +162,9 @@ application:
   ...
 ```
 
-In the metadata/extract folder, create a new file `my_extract_config.sl.yml` and set the connectionRef to the connection defined in the application.sl.yml file.
+## Create the Extraction Configuration
+
+In the `metadata/extract` folder, create a new file `my_extract_config.sl.yml`. Set `connectionRef` to the connection defined in `application.sl.yml`, specify the schema to extract, and list the tables.
 
 ```yaml title="metadata/extract/my_extract_config.sl.yml"
 version: 1
@@ -177,9 +183,11 @@ extract:
         #- "ALIAS"
         #- "SYNONYM"
 ```
-That's it! We are ready to extract the data from the database.
 
-## Extract the data
+The wildcard `*` extracts all tables from the specified schema. You can also list individual table names. The `tableTypes` field filters by object type (TABLE, VIEW, SYSTEM TABLE, GLOBAL TEMPORARY, LOCAL TEMPORARY, ALIAS, SYNONYM).
+
+## Run the extract-data Command
+
 ```shell
 $ cd $SL_ROOT
 $ starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming/
@@ -187,18 +195,18 @@ $ starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming
 
 The `$SL_ROOT/incoming/starbake` folder will contain the extracted data in CSV format.
 
-You are now ready to load the data into the datawarehouse of your choice using the [starlake load](../load/tutorial) command.
+You are now ready to load the data into the data warehouse of your choice using the [starlake load](../load/tutorial) command.
 
+## Generate Table Schema Descriptions with extract-schema (Optional)
 
-## Extract Schema (Optional)
-
-The command below generates a table schema description file in the metadata/load directory and allows you to load the data into the datawarehouse of your choice,
-using starlake load command instead of going through the infer-schema feature starlake provides.
+The `extract-schema` command generates a table schema description file in the `metadata/load` directory. This file allows you to load the data into a data warehouse using `starlake load` without relying on schema inference.
 
 ```bash
 $ cd $SL_ROOT
 $ starlake extract-schema --config my_extract_config # extract description
 ```
+
+The generated schema files describe columns, types, and constraints. They are stored alongside the load configuration so `starlake load` can use them directly.
 
 ## Frequently Asked Questions
 
@@ -214,3 +222,11 @@ By default, Starlake extracts data into CSV files stored in the output directory
 ### Can I extract all tables from a schema at once?
 Yes, you can use the wildcard `*` in the tables `name` field to extract all tables from a given schema. You can also filter by table types such as TABLE, VIEW, or SYSTEM TABLE.
 
+### What is the difference between extract-data and extract-schema?
+`extract-data` exports the actual table data as CSV files. `extract-schema` generates table schema description files in the `metadata/load` directory, which are used by `starlake load` to load data into a data warehouse without relying on schema inference.
+
+### Where do I configure the connection to the source database?
+In the `metadata/application.sl.yml` file, under the `connections` section. Each connection requires a `type` (e.g., `jdbc`), a JDBC URL, and a driver class name.
+
+### What is the CLI command to run an extraction?
+`starlake extract-data --config <config_name> --outputDir <output_directory>`

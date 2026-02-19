@@ -129,9 +129,9 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
-This guide explains how to configure Starlake DAG generation for Apache Airflow, including BashOperator and Cloud Run factory classes, Jinja2 template customization, data-aware scheduling with Airflow Datasets, user-defined macros, and Terraform integration. It covers both inline dependency and data-aware scheduling strategies.
+This guide explains how to configure Starlake DAG generation for Apache Airflow. It covers BashOperator and Cloud Run factory classes, Jinja2 template customization, data-aware scheduling with Airflow Datasets, user-defined macros, and Terraform integration. Both inline dependency and data-aware scheduling strategies are described.
 
-## How to configure Airflow DAGs for Starlake
+## Quick start
 
 1. **Install prerequisites** -- Apache Airflow 2.4.0+, starlake-airflow 0.1.2.1+, and starlake 1.0.1+.
 2. **Choose a factory class** -- Use `StarlakeAirflowBashJob` for on-premise or `StarlakeAirflowCloudRunJob` for GCP Cloud Run.
@@ -139,22 +139,23 @@ This guide explains how to configure Starlake DAG generation for Apache Airflow,
 4. **Customize templates if needed** -- Extend Jinja2 templates for transform parameters, user-defined macros, or Terraform variable injection.
 5. **Generate and deploy** -- Run `starlake dag-generate --clean`, then copy DAG files to your Airflow DAGs folder.
 
-For general DAG configuration concepts (references, properties, options), see the [Customizing DAG Generation](./200-customization.mdx) hub page.
+For general DAG configuration concepts (references, properties, options), see the [Customizing DAG Generation](./200-customization.mdx) hub page. For a hands-on introduction, see the [Orchestration Tutorial](./100-tutorial.mdx).
 
 ## Prerequisites
 
-- **Apache Airflow**: 2.4.0 or higher (2.6.0 or higher is recommended with cloud-run)
+- **Apache Airflow**: 2.4.0 or higher (2.6.0 or higher recommended with Cloud Run)
 - **starlake-airflow**: 0.1.2.1 or higher
 - **starlake**: 1.0.1 or higher
 
 ## Concrete factory classes
 
-Each **concrete** factory class extends `ai.starlake.airflow.StarlakeAirflowJob` and implements the **sl_job** method that will generate the **Airflow task** that will run the corresponding starlake command.
+Each concrete factory class extends `ai.starlake.airflow.StarlakeAirflowJob` and implements the **sl_job** method to generate the Airflow task that runs the corresponding Starlake command.
+
+### Default pool
 
 :::note Default pool
 
-For all templates instantiating `StarlakeAirflowJob` class, the
-**default_pool** option defines the Airflow pool to use for all tasks executed within the DAG.
+For all templates that instantiate `StarlakeAirflowJob`, the **default_pool** option defines the Airflow pool used for all tasks in the DAG.
 
 :::
 
@@ -165,43 +166,46 @@ dag:
  #...
 ```
 
+### StarlakeAirflowBashJob
+
 :::note Bash
 
-`ai.starlake.airflow.bash.StarlakeAirflowBashJob` is a concrete implementation of `StarlakeAirflowJob` that generates tasks using `airflow.operators.bash.BashOperator`. Usefull for **on premise** execution.
+`ai.starlake.airflow.bash.StarlakeAirflowBashJob` is a concrete implementation that generates tasks using `airflow.operators.bash.BashOperator`. Use it for **on-premise** execution.
 
 :::
 
-An additional **SL_STARLAKE_PATH** option is required to specify the **path** to the **starlake executable**.
+An additional **SL_STARLAKE_PATH** option specifies the path to the Starlake executable.
 
 ![](/img/orchestration/airflow/bash.png)
 
+### StarlakeAirflowCloudRunJob
 
-:::note Cloud run
+:::note Cloud Run
 
-`ai.starlake.airflow.gcp.StarlakeAirflowCloudRunJob` class is a concrete implementation of `StarlakeAirflowJob` that overrides the `sl_job` method that will run the starlake command by executing **Cloud Run job**.
+`ai.starlake.airflow.gcp.StarlakeAirflowCloudRunJob` overrides the `sl_job` method to run Starlake commands by executing **Cloud Run jobs**.
 
 :::
 
-Bellow is the list of **additional options** used to configure the **Cloud run job**:
+Additional options for the Cloud Run job:
 
-| name                             | type | description                                                                                               |
+| Name                             | Type | Description                                                                                               |
 | -------------------------------- | ---- | --------------------------------------------------------------------------------------------------------- |
-| **cloud_run_project_id**   | str  | the optional cloud run project id (the project id on which the composer has been instantiated by default) |
-| **cloud_run_job_name**     | str  | the required name of the cloud run job                                                                    |
-| **cloud_run_region**       | str  | the optional region (`europe-west1` by default)                                                         |
-| **cloud_run_async**        | bool | the optional flag to run the cloud run job asynchronously (`True` by default)`|
-| **retry_on_failure**       | bool | the optional flag to retry the cloud run job on failure (`False` by default)`|
-| **retry_delay_in_seconds** | int  | the optional delay in seconds to wait before retrying the cloud run job (`10` by default)`|
+| **cloud_run_project_id**   | str  | The optional Cloud Run project id (defaults to the project id of the Composer environment) |
+| **cloud_run_job_name**     | str  | The required name of the Cloud Run job                                                                    |
+| **cloud_run_region**       | str  | The optional region (`europe-west1` by default)                                                         |
+| **cloud_run_async**        | bool | Run the Cloud Run job asynchronously (`True` by default)|
+| **retry_on_failure**       | bool | Retry the Cloud Run job on failure (`False` by default)|
+| **retry_delay_in_seconds** | int  | Delay in seconds before retrying (`10` by default)|
 
 ![](/img/orchestration/airflow/cloudRunSynchronous.png)
 
-If the execution has been parameterized to be **asynchronous**, an `ai.starlake.airflow.gcp.CloudRunJobCompletionSensor` which extends `airflow.sensors.bash.BashSensor` will be instantiated to **wait** for the **completion** of the **Cloud run job execution**.
+When the execution is **asynchronous**, an `ai.starlake.airflow.gcp.CloudRunJobCompletionSensor` (extending `airflow.sensors.bash.BashSensor`) waits for the Cloud Run job to complete.
 
 ![](/img/orchestration/airflow/cloudRunAsynchronous.png)
 
 ## Pre-load strategy visualizations
 
-The pre-load strategy options (NONE, IMPORTED, PENDING, ACK) are described in the [hub page](./200-customization.mdx#pre-load-strategy). Below are the Airflow-specific visualizations for each strategy.
+The pre-load strategy options (NONE, IMPORTED, PENDING, ACK) are described in the [hub page](./200-customization.mdx#pre-load-strategy). Below are the Airflow-specific DAG visualizations for each strategy.
 
 ### NONE
 
@@ -221,15 +225,13 @@ The pre-load strategy options (NONE, IMPORTED, PENDING, ACK) are described in th
 
 ## Templates
 
-### Data loading
+### Data loading templates
 
-*__airflow_scheduled_table_tpl.py.j2* is the **abstract template** to generate Airflow DAGs for **data loading** which **requires** the instantiation of a **concrete factory class** that implements *ai.starlake.airflow.StarlakeAirflowJob*
+*__airflow_scheduled_table_tpl.py.j2* is the **abstract template** for data loading DAGs. It requires a concrete factory class that implements `ai.starlake.airflow.StarlakeAirflowJob`.
 
-Currently, there are **three Airflow concrete templates** for data loading.
+Three Airflow concrete templates extend this abstract template using **include statements**:
 
-All extend this abstract template by instantiating the corresponding concrete factory class using **include statements**.
-
-- *airflow_scheduled_table_bash.py.j2* instantiates a `StarlakeAirflowBashJob` class.
+- *airflow_scheduled_table_bash.py.j2* -- Instantiates `StarlakeAirflowBashJob`:
 
 ```python title="src/main/resources/templates/dags/load/airflow_scheduled_table_bash.py.j2"
 # This template executes individual bash jobs and requires the following dag generation options set:
@@ -239,7 +241,7 @@ All extend this abstract template by instantiating the corresponding concrete fa
 {% include 'templates/dags/load/__airflow_scheduled_table_tpl.py.j2' %}
 ```
 
-- *airflow_scheduled_table_cloud_run.py.j2* instantiates a `StarlakeAirflowCloudRunJob` class.
+- *airflow_scheduled_table_cloud_run.py.j2* -- Instantiates `StarlakeAirflowCloudRunJob`:
 
 ```python title="src/main/resources/templates/dags/load/airflow_scheduled_table_cloud_run.py.j2"
 # This template executes individual cloud run jobs and requires the following dag generation options set:
@@ -251,15 +253,13 @@ All extend this abstract template by instantiating the corresponding concrete fa
 {% include 'templates/dags/load/__airflow_scheduled_table_tpl.py.j2' %}
 ```
 
-### Data transformation
+### Data transformation templates
 
-*__airflow_scheduled_task_tpl.py.j2* is the **abstract template** to generate Airflow DAGs for **data transformation** which **requires**, in the same way, the instantiation of a **concrete factory class** that implements *ai.starlake.airflow.StarlakeAirflowJob*
+*__airflow_scheduled_task_tpl.py.j2* is the **abstract template** for data transformation DAGs. It follows the same pattern.
 
-Currently, there are **three Airflow concrete templates** for data transformation.
+Three Airflow concrete templates exist:
 
-All extend this abstract template by instantiating the corresponding concrete factory class using **include statements**.
-
-- *airflow_scheduled_task_bash.py.j2* instantiates a `StarlakeAirflowBashJob` class.
+- *airflow_scheduled_task_bash.py.j2* -- Instantiates `StarlakeAirflowBashJob`:
 
 ```python title="src/main/resources/templates/dags/transform/airflow_scheduled_task_bash.py.j2"
 # ...
@@ -267,7 +267,7 @@ All extend this abstract template by instantiating the corresponding concrete fa
 {% include 'templates/dags/load/__airflow_scheduled_task_tpl.py.j2' %}
 ```
 
-- *airflow_scheduled_task_cloud_run.py.j2* instantiates a `StarlakeAirflowCloudRunJob` class.
+- *airflow_scheduled_task_cloud_run.py.j2* -- Instantiates `StarlakeAirflowCloudRunJob`:
 
 ```python title="src/main/resources/templates/dags/transform/airflow_scheduled_task_cloud_run.py.j2"
 # ...
@@ -277,12 +277,13 @@ All extend this abstract template by instantiating the corresponding concrete fa
 
 ## Customize existing templates
 
-Although the options are useful for customizing the generated DAGs, there are situations where we need to be able to **dynamically** apply some of them **at runtime**.
+Built-in options cover most use cases, but some situations require **dynamic runtime** customization.
 
-### Transform parameters
+### Inject transform parameters
+
 :::note Transform parameters
 
-Often data transformation requires **parameterized SQL queries** whose **parameters** should be **evaluated at runtime**.
+Data transformations often require **parameterized SQL queries** whose parameters are **evaluated at runtime**.
 
 :::
 
@@ -296,10 +297,9 @@ step1 as(
 -- ...
 ```
 
-#### jobs variable
+#### The jobs variable
 
-All Starlake DAG templates for data transformation offer the ability of **injecting parameter values** via the optional definition of a **dictionary**-like **Python variable** named **jobs** where each **key** represents the **name of a transformation** and its **value** the **parameters** to be passed to the transformation.
-Each entry of this dictionary will be added to the **options** of the corresponding DAG.
+All Starlake DAG templates for data transformation support a **dictionary-like Python variable** named **jobs**. Each **key** is a **transformation name** and its **value** contains the **parameters** to pass. These entries are added to the corresponding DAG options.
 
 ```python title="src/main/resources/template/dags/__starlake_airflow_cloud_run_job.py.j2"
 #...
@@ -334,7 +334,7 @@ sl_job = StarlakeAirflowCloudRunJob(options=dict(options, **sys.modules[__name__
 #...
 ```
 
-Because this variable has to be defined in the **same module** as that of the **generated DAG** (`options=dict(options, **sys.modules[__name__].__dict__.get('jobs', {}))`), we need to create a **customized DAG template** that should **extend** the existing one(s), including our specific code.
+Because `jobs` must be defined in the **same module** as the generated DAG, create a **custom DAG template** that extends an existing one:
 
 ```python title="metadata/dags/templates/__custom_jobs.py.j2"
 #...
@@ -349,14 +349,15 @@ jobs = #...
 {% include 'templates/dags/transform/airflow_scheduled_task_cloud_run.py.j2' %} # the template to extend
 ```
 
-### Airflow user defined macros
-:::note Airflow user defined macros
+### Airflow user-defined macros
 
-Because the **SQL parameters** may be closely related to **Airflow context variable**(s), their **evaluation** may rely on some **Airflow user defined macros**.
+:::note Airflow user-defined macros
+
+SQL parameters may depend on **Airflow context variables**. Their evaluation can rely on **Airflow user-defined macros**.
 
 :::
 
-All **starlake DAG templates** for data transformation offer the ability to specify **User defined macros** through the optional definition of a **dictionary**-like **Python variable** named **user_defined_macros**.
+All Starlake DAG templates for transformation support a **dictionary-like Python variable** named **user_defined_macros**:
 
 ```python
 #...
@@ -374,7 +375,7 @@ with DAG(dag_id=os.path.basename(__file__).replace(".py", "").replace(".pyc", ""
 #...
 ```
 
-Again, because this variable has to be defined in the **same module** as that of the **generated DAG** (`user_defined_macros=sys.modules[__name__].__dict__.get('user_defined_macros', None)`), we need to create a **customized DAG template** that should **extend** the existing one(s), including our specific code.
+Define `user_defined_macros` in the same module as the generated DAG using a custom template:
 
 ```python title="metadata/dags/templates/__custom_jobs.py.j2"
 from custom import get_days_interval,get_month_periode_depending_on_start_day_params
@@ -393,7 +394,9 @@ user_defined_macros = {
 {% include 'templates/dags/transform/airflow_scheduled_task_cloud_run.py.j2' %} # relative to src/main/resources starlake resource directory
 ```
 
-In addition, a **good practice** is to inject those variables using **terraform variables** ...
+### Terraform integration
+
+A recommended practice is to inject variables using **Terraform**:
 
 ```python title="metadata/dags/templates/__custom_jobs.py.j2"
 #...
@@ -456,7 +459,7 @@ jobs = [
 ]
 ```
 
-Finally, we will have to define a specific **DAG configuration** that will make use of our **customized DAG template**.
+Define a specific DAG configuration that references the custom template:
 
 ```yaml title="metadata/dags/custom_transform_cloud_run.yml"
 ---
@@ -494,11 +497,11 @@ resource "google_storage_bucket_object" "composer_storage_objects" {
 
 ## Dependencies
 
-For any transformation, Starlake is able to calculate all its dependencies towards other tasks or loads thanks to the **analysis** of **SQL queries**.
+Starlake calculates all dependencies for each transformation by **analyzing SQL queries**.
 
-The **run_dependencies_first** option defines whether or not we wish to recursively **generate all the dependencies** associated with each task for which the transformation DAG must be generated (False by default). If we choose to not generate those dependencies, the corresponding DAG will be scheduled using the **Airflow's data-aware scheduling mechanism**.
+The **run_dependencies_first** option controls whether dependencies are generated inline or handled through Airflow's data-aware scheduling (default: `False`).
 
-All **dependencies** for data transformation are **available** in the generated DAG via the **Python** dictionary **variable** **task_deps**.
+All dependencies are available in the generated DAG via the Python dictionary variable **task_deps**:
 
 ```python
 task_deps=json.loads("""[ {
@@ -540,17 +543,17 @@ task_deps=json.loads("""[ {
 } ]""")
 ```
 
-### Inline
+### Inline dependencies
 
-In this strategy (**run_dependencies_first** = *True*), all the dependencies related to the transformation will be generated.
+With **run_dependencies_first** = *True*, all dependencies are included in the same DAG.
 
 ![](/img/orchestration/airflow/transformWithDependencies.png)
 
 ### Data-aware scheduling
 
-In this strategy (**run_dependencies_first** = *False*), the default strategy, the scheduler will **launch** a **run** for the corresponding **transform DAG** if its **dependencies** are **met**.
+With **run_dependencies_first** = *False* (default), Airflow uses **Datasets** to trigger the transform DAG when its dependencies are met.
 
-A **schedule** will be created to **check** if the **dependencies** are **met** via the use of **Airflow Datasets**.
+A schedule is created using **Airflow Datasets**:
 
 ```python title="src/main/resources/template/dags/transform/__airflow_scheduled_task_tpl.py.j2"
 #...
@@ -589,9 +592,9 @@ with DAG(dag_id=os.path.basename(__file__).replace(".py", "").replace(".pyc", ""
 #...
 ```
 
-Those **required Datasets** are **updated** for **each** **load** and **task** that have been **executed**.
+#### How Datasets are updated
 
-The *ai.starlake.airflow.StarlakeAirflowJob* class is responsible for **recording** the **outlets** related to the execution of each starlake command.
+The `ai.starlake.airflow.StarlakeAirflowJob` class records **outlets** for each Starlake command:
 
 ```python title="ai.starlake.airflow.StarlakeAirflowJob"
 def __init__(
@@ -633,7 +636,7 @@ def sl_transform(
     #...
 ```
 
-All the **outlets** that have been **recorded** are **available** in the *outlets* *property* of the **starlake concrete factory class instance** and are used at the very **last step** of the corresponding DAG to update the Datasets.
+All recorded outlets are used at the last step of the DAG to update the Datasets:
 
 ```python title="src/main/resources/template/dags/transform/__airflow_scheduled_task_tpl.py.j2"
     end = sl_job.dummy_op(task_id="end", outlets=[Dataset(keep_ascii_only(dag.dag_id))]+list(map(lambda x: Dataset(x.uri + _extra_dataset_parameters), sl_job.outlets)))
@@ -641,7 +644,7 @@ All the **outlets** that have been **recorded** are **available** in the *outlet
 
 ![](/img/orchestration/airflow/transformWithoutDependencies.png)
 
-In conjunction with the Starlake dag generation, the outlets property can be used to **schedule** **effortless** **DAGs** that will run the transform commands.
+The outlets property enables **effortless scheduling** of transform DAGs in conjunction with Starlake DAG generation.
 
 ## Frequently Asked Questions
 

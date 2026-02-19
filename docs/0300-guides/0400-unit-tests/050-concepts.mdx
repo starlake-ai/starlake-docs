@@ -1,7 +1,7 @@
 ---
 title: "Unit Testing Data Pipelines"
-description: "Understand unit testing concepts for data pipelines in Starlake, using DuckDB for fast local testing without cloud access or service accounts."
-keywords: [starlake, unit testing, data pipeline testing, duckdb, sql transpilation, data quality]
+description: "Unit test your data pipelines locally with Starlake and DuckDB. Automatic SQL transpilation from BigQuery, Snowflake, or Databricks to DuckDB for fast, deterministic testing without cloud access or service accounts. Works in CI pipelines."
+keywords: [starlake, unit testing, data pipeline testing, duckdb, sql transpilation, data quality, CI pipeline, local testing]
 ---
 
 import Head from '@docusaurus/Head';
@@ -43,6 +43,14 @@ import Head from '@docusaurus/Head';
             "@type": "Answer",
             "text": "You can test both data loading and data transformations. For load tests, you provide sample input files and expected output data. For transform tests, you provide sample source data and verify the SQL transformation produces the expected results."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "Does SQL transpilation change my queries?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. You write SQL in your target dialect (BigQuery, Snowflake, Databricks, etc.) and Starlake automatically transpiles it to DuckDB for testing. Your original queries remain unchanged."
+          }
         }
       ]
     })}
@@ -51,23 +59,62 @@ import Head from '@docusaurus/Head';
 
 # Unit Testing Data Pipelines
 
-Unit tests are a critical part of the software development process.
-They help ensure that the code works as expected and that changes to the code do not introduce bugs.
-In data engineering, unit tests are used to validate the correctness of data pipelines.
-Unit tests can be used to test the correctness of the data transformations, the data loading process, and the data quality.
+Starlake lets you unit test data pipelines locally using DuckDB, with automatic SQL transpilation from your target data warehouse dialect. No cloud access, no service accounts, and fast deterministic feedback -- ideal for CI pipelines.
 
-The main issues in testing data engineering pipelines on the target datawarehouse are:
-- Data access costs
-- Shared database unsuitable for unit tests
-- Requires a service account for your C.I..
-- Slow feedback loop
-- Hard to test the code in a repeatable way
+## Why test locally with DuckDB?
 
-To address these issues, Starlake transpiles your SQL dialect to the  in-memory datawarehouse DuckDB.
-This allows you to run your unit tests on your local machine without the need for a service account or access to the target datawarehouse.
-This also allows you to run your unit tests in a repeatable way, ensuring that your tests are deterministic.
+Testing data pipelines on the target data warehouse presents several challenges:
 
-![](/img/starlake-unit-tests.png)
+| Challenge | Cloud-based testing | Local DuckDB testing |
+|---|---|---|
+| **Data access costs** | Queries consume warehouse credits | Free, in-memory execution |
+| **Shared database** | Unsuitable for isolated unit tests | Each test gets its own instance |
+| **Service accounts** | Required for CI environments | Not needed |
+| **Feedback speed** | Slow round-trips to cloud | Sub-second execution |
+| **Reproducibility** | Hard to ensure deterministic results | Fully deterministic |
+
+## How it works
+
+Starlake transpiles your SQL from the target dialect (BigQuery, Snowflake, Databricks, etc.) to DuckDB-compatible SQL. Tests run against a local DuckDB instance populated with sample data. Starlake compares the actual results against expected data you define in CSV or JSON files.
+
+You write SQL in your target dialect. Starlake handles the transpilation automatically. No query modification is needed.
+
+![Starlake unit testing architecture](/img/starlake-unit-tests.png)
+
+## What you can test
+
+Starlake supports two types of unit tests:
+
+- **[Load tests](./100-load-tests.mdx)** -- Validate data loading pipelines. Provide sample input files and expected output data. Starlake loads the data using DuckDB and compares the result.
+- **[Transform tests](./200-transform-tests.mdx)** -- Validate SQL transformations. Provide source data and expected output. Starlake transpiles and runs the SQL, then compares the result.
+
+Both types generate detailed HTML test reports with the DuckDB database, unexpected rows, and missing rows for debugging.
+
+## Running tests
+
+Run all tests (load and transform):
+
+```bash
+starlake test
+```
+
+Run only load tests:
+
+```bash
+starlake test --load
+```
+
+Run only transform tests:
+
+```bash
+starlake test --transform
+```
+
+Run a specific test:
+
+```bash
+starlake test --name domain.table.test-name
+```
 
 ## Frequently Asked Questions
 
@@ -82,3 +129,6 @@ Yes, since Starlake unit tests run on DuckDB locally, they can be executed in an
 
 ### What can I test with Starlake unit tests?
 You can test both data loading and data transformations. For load tests, you provide sample input files and expected output data. For transform tests, you provide sample source data and verify the SQL transformation produces the expected results.
+
+### Does SQL transpilation change my queries?
+No. You write SQL in your target dialect (BigQuery, Snowflake, Databricks, etc.) and Starlake automatically transpiles it to DuckDB for testing. Your original queries remain unchanged.

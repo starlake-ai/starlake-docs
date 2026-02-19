@@ -1,7 +1,7 @@
 ---
 title: "Manual Load Configuration"
 description: "Configure Starlake manual load for multi-character delimiters, custom folder layouts, and per-environment incoming paths. Define domain and table settings in YAML."
-keywords: [starlake, manual load, load configuration, custom separator, incoming path, multi-character delimiter, environment]
+keywords: [starlake, manual load, load configuration, custom separator, incoming path, multi-character delimiter, environment, domain, table]
 ---
 
 import Head from '@docusaurus/Head';
@@ -96,43 +96,39 @@ import Head from '@docusaurus/Head';
 
 # Manual Load: Configure Custom Separators and Incoming Paths
 
-Starlake manual load gives you full control over file parsing, directory layout, and per-environment configuration. Use it when autoload cannot detect your file format (e.g., multi-character delimiters) or when files are stored outside the standard `incoming/<domain>/` directory structure. Configuration is defined in YAML files at the domain and table level.
-
-## How to Configure Manual Load
-
-1. **Define the incoming directory** -- Set `application.area.incoming` in `metadata/application.sl.yml`. Use an environment variable like `{{incoming_path}}` for per-environment paths.
-2. **Create the domain configuration** -- Create `metadata/load/<domain>/_config.sl.yml` and set `load.metadata.directory` to point to your incoming folder.
-3. **Create the table configuration** -- Create a `<table>.sl.yml` file for each table, defining the file pattern, format, separator, and attribute schema.
-4. **Run the load command** -- Execute `starlake load` to load files matching the configured patterns into the target warehouse.
+Starlake manual load gives you full control over file parsing, directory layout, and per-environment configuration. Use it when [autoload](autoload) cannot handle your files -- for example, when you have multi-character delimiters or files stored outside the standard `incoming/<domain>/` directory structure. All configuration is defined in YAML at the domain and table level.
 
 ## When to Use Manual Load Instead of Autoload
 
-You'll use Load instead of Autoload when:
-- You want to load data from a file when the separator cannot be detected easily (e.g. a file with a multichar separator)
-- You want to load the data from a folders that are not in the standard `incoming` folder or that are not named after the domain name
+Use manual load (`starlake load`) instead of [autoload](autoload) when:
+
+- Your files use a **multi-character separator** that autoload cannot detect automatically (e.g., `||`, `::`, `~|~`).
+- Your files are stored in a **non-standard folder** that does not follow the `incoming/<domain>/` convention.
+- You need full control over **schema customization** before any data is loaded.
+
+For all other cases, autoload is simpler and requires no configuration. See the [load tutorial](tutorial) for a step-by-step walkthrough.
 
 ## Set a Custom Incoming Directory
 
-You may use a different folder location for your incoming files by setting the `application.incoming`  variable in the `metadata/application.sl.yml` file.
-<br/>
-
-
+By default, Starlake looks for files in `$SL_ROOT/datasets/incoming/`. Override this location by setting the `application.area.incoming` property:
 
 ```yaml title="metadata/application.sl.yml"
 application:
   area:
     incoming: /path/to/incoming
 ```
-<br/>
 
 ### Per-Environment Incoming Path Configuration
 
-You may also use a different incoming location per environment by setting the `incoming_path` variable in the `metadata/env.<env>.yml` file.
+Use an environment variable to set different incoming paths for dev, test, and prod:
 
-```yaml title="metadata/env.<env>.yml"
-incoming_path: /path/to/incoming
+```yaml title="metadata/env.dev.sl.yml"
+incoming_path: /data/dev/incoming
 ```
-<br/>
+
+```yaml title="metadata/env.prod.sl.yml"
+incoming_path: /data/prod/incoming
+```
 
 ```yaml title="metadata/application.sl.yml"
 application:
@@ -140,37 +136,40 @@ application:
     incoming: "{{incoming_path}}"
 ```
 
-
-
+The `{{incoming_path}}` placeholder is resolved at runtime from the active environment file.
 
 ## Domain Configuration (_config.sl.yml)
 
-We first need to define for each domain where the files will be loaded from.
-This is done by creating a domain configuration file that describe where the `load` command should look for the files to load
+Each domain needs a configuration file that tells the `load` command where to find incoming files. Create a `_config.sl.yml` file under `metadata/load/<domain>/`:
 
-<br/>
-
-In this case the load command will look in the directory `{{incoming_path}}/starbake` where `{{incoming_path}}` is an environment variable
-defined in the `metadata/env.sl.yml` file and that may be redefined for each environment (dev, test, prod) in the `metadata/env.dev.yml` file for example.
-
-<br/>
-
-```yaml title="metadata/load/<domain>/_config.sl.yml"
+```yaml title="metadata/load/starbake/_config.sl.yml"
 load:
   metadata:
     directory: "{{incoming_path}}/starbake"
 ```
-<br/>
 
-Since the directory is set at the domain level, this means that all files loaded for this domain, will be loaded from this directory.
+The `{{incoming_path}}` variable is resolved from the environment file (`metadata/env.sl.yml` or `metadata/env.<env>.sl.yml`). This means all files for the `starbake` domain are loaded from this directory.
+
+Since the directory is set at the domain level, all tables within this domain share the same incoming path.
 
 ## Table Configuration by File Format
 
-We then need to define for each table the file format and the file name pattern that the `load` command should look for:
-- [Load CSV files](csv)
-- [Load JSON files](json)
-- [Load XML files](xml)
-- [Load fixed position files](position)
+Each table requires a `<table>.sl.yml` file that defines the file pattern, format, separator, and attribute schema. Configuration differs by file format:
+
+- [Load CSV and DSV files](csv) -- Delimited files with configurable separator, encoding, and quoting
+- [Load JSON files](json) -- Flat or nested JSON with struct and array support
+- [Load XML files](xml) -- XML with rowTag, attribute prefix, and XSD validation
+- [Load fixed-width positional files](position) -- Column positions defined by first/last offsets
+
+## Running the Load Command
+
+After configuring domain and table YAML files, run the load command:
+
+```bash
+starlake load
+```
+
+Starlake processes all domains and tables, matching files in each domain's configured directory against the file patterns defined in each table's `.sl.yml` file. The [load strategy](load-strategies) controls the order in which files are processed.
 
 ## Frequently Asked Questions
 

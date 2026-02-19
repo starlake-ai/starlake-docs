@@ -1,7 +1,7 @@
 ---
 title: "Load CSV and DSV Files"
-description: "Load CSV and delimiter-separated files into your data warehouse with Starlake. Configure parsing options, infer schemas and validate data."
-keywords: [starlake, CSV, DSV, delimiter, load, parsing, infer schema, data validation]
+description: "Load CSV and delimiter-separated files into BigQuery, Snowflake, Databricks or DuckDB with Starlake. Configure separators, encoding, headers, column validation, and write strategies in YAML."
+keywords: [starlake, CSV, DSV, delimiter, load, parsing, infer schema, data validation, separator, encoding, BigQuery, Snowflake, Databricks, write strategy]
 ---
 
 import Head from '@docusaurus/Head';
@@ -17,7 +17,7 @@ import Head from '@docusaurus/Head';
           "name": "What delimiters does Starlake support for CSV files?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Starlake supports any single-character delimiter through the 'separator' property in the metadata configuration. Common delimiters include semicolons (;), commas (,), pipes (|), and tabs. The default separator is semicolon (;)."
+            "text": "Starlake supports any single-character delimiter through the 'separator' property in the metadata configuration. Common delimiters include semicolons (;), commas (,), pipes (|), and tabs. The default separator is semicolon (;). For multi-character delimiters, use the manual load configuration."
           }
         },
         {
@@ -25,7 +25,7 @@ import Head from '@docusaurus/Head';
           "name": "What encoding does Starlake use for CSV files?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "The default encoding is UTF-8. You can change it by setting the 'encoding' property in the metadata section of the table configuration file. Any encoding supported by Java can be used."
+            "text": "The default encoding is UTF-8. You can change it by setting the 'encoding' property in the metadata section of the table configuration file. Any encoding supported by Java can be used (e.g., ISO-8859-1, Windows-1252)."
           }
         },
         {
@@ -42,6 +42,22 @@ import Head from '@docusaurus/Head';
           "acceptedAnswer": {
             "@type": "Answer",
             "text": "Use the 'starlake infer-schema' command to automatically detect the schema from a sample data file. This generates a YAML configuration file with detected column names, types, and parsing options that you can then customize."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What write strategies are available for CSV loading?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports APPEND, OVERWRITE, OVERWRITE_BY_PARTITION, UPSERT_BY_KEY, UPSERT_BY_KEY_AND_TIMESTAMP, and SCD2 write strategies for CSV files."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens to rows that fail validation?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Rows that do not match the defined schema (wrong type, missing required field) are sent to the audit.rejected table with the rejection reason."
           }
         }
       ]
@@ -78,6 +94,12 @@ import Head from '@docusaurus/Head';
         {
           "@type": "HowToStep",
           "position": 4,
+          "name": "Choose a write strategy",
+          "text": "Set writeStrategy.type to APPEND, OVERWRITE, UPSERT_BY_KEY, or SCD2 depending on your loading pattern."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 5,
           "name": "Run the load command",
           "text": "Execute 'starlake load' to parse, validate, and load CSV data into the target warehouse table."
         }
@@ -86,40 +108,25 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
-# Load DSV files
+# Load CSV and Delimiter-Separated Files into Your Data Warehouse
 
-Starlake loads CSV and delimiter-separated value (DSV) files into your data warehouse with automatic schema inference and data validation. It supports configurable separators, encodings, and write strategies. Rejected records are stored separately in an audit table for review.
+Starlake loads CSV and delimiter-separated value (DSV) files into BigQuery, Snowflake, Databricks, DuckDB, and other warehouses. It supports configurable separators, encodings, headers, and [write strategies](load-strategies). Schema inference auto-detects column names and types. Every record is validated against the schema -- rejected records are stored in the `audit.rejected` table for review.
 
+You can use [autoload](autoload) for zero-config loading, or configure the manual [load](load) workflow for full control over parsing options.
 
-## File load configuration
+## Infer CSV Schema Automatically with infer-schema
 
-Most of the time, we won't need to define the table configuration, as the `infer-schema` command will be able to infer the table configuration from the file itself using the `infer-schema command.
-
-Sometimes, we still need to update some properties of the load configuration for the table or add new properties not present in the source file (ACL, comments  ...) or apply transformations.
-
-<br/>
-
-Describing the file you load involves defining :
-- the file pattern that is mapped to this schema,
-- the parsing parameters and the materialization strategy (APPEND, OVERWRITE, OVERWRITE_BY_PARTITION, UPSERT_BY_KEY, UPSERT_BY_KEY_AND_TIMESTAMP, SCD2 ...)
-- the file format as a list of attributes.
-
-## Infer schema
-
-The very first step is to infer the schema of the file from a data file as described in the [autoload section](autoload#how-autoload-detects-the-format-of-the-files) before you start customizing your configuration. This is done using the `infer-schema` command. This will bootstrap the configuration file for the table.
+Start by inferring the schema from a sample data file. The `infer-schema` command detects column names, types, separator, and encoding, then generates a YAML configuration file.
 
 ```bash
-
 starlake infer-schema --input-path incoming/starbake
-
 ```
 
+This generates a `<table>.sl.yml` file under `metadata/load/<domain>/`. Review and customize it before loading. See the [autoload format detection](autoload#how-autoload-detects-file-format-csv-json-xml) documentation for details on how detection works.
 
-## Parsing CSV
+## CSV Parsing Options: Separator, Encoding, Quote, Escape
 
-CSV Parsing options are defined in the `metadata` section of the configuration file.
-
-<br/>
+Most of the time, `infer-schema` generates a working configuration. Customize the `metadata` section when you need to override parsing behavior.
 
 ```yaml title="metadata/load/<domain>/<table>.sl.yml - parsing section"
 table:
@@ -133,24 +140,26 @@ table:
     - ...
 ```
 
----
+### Available Parsing Options
 
-|Attribute| Description|
-|---|---|
-|encoding| the encoding of the file. Default is `UTF-8`|
-|withHeader| if the file contains a header. Default is `true`|
-|separator| the separator used in the file. Default is `;`|
-|quote| the quote character used in the file. Default is `"`|
-|escape| the escape character used in the file. Default is `\`|
-|filter| a condition / regex to filter lines. All lines matching the condition will be loaded. All others will be discarded. Default is None|
-|ack| load file only if a file with the same name and with this extension exist in the same directory.|
-|options| a map of options to pass to the parser. Available options are defined in the [Apache Spark CSV documentation](https://spark.apache.org/docs/latest/sql-data-sources-csv.html#data-source-option)|
-|emptyIsNull| if empty column values should be considered as null. Default is `false`|
-|fillWithDefaultValue| if the null value should be filled with the default value of the column. Default is `false`|
+| Option | Description | Default |
+|---|---|---|
+| `encoding` | File encoding (e.g., `UTF-8`, `ISO-8859-1`, `Windows-1252`) | `UTF-8` |
+| `withHeader` | Whether the file contains a header row | `true` |
+| `separator` | Column delimiter character | `;` |
+| `quote` | Quote character for wrapping field values | `"` |
+| `escape` | Escape character inside quoted fields | `\` |
+| `filter` | Condition/regex to filter lines. Matching lines are loaded; others are discarded | None |
+| `ack` | Load the file only if a file with the same name and this extension exists in the same directory | None |
+| `options` | Map of options passed to the parser. See the [Apache Spark CSV documentation](https://spark.apache.org/docs/latest/sql-data-sources-csv.html#data-source-option) for all available options | None |
+| `emptyIsNull` | Treat empty column values as NULL | `false` |
+| `fillWithDefaultValue` | Fill NULL values with the column's default value | `false` |
 
-## Attributes validation
+## Column Validation: Types, Required Fields, Transforms
 
-```yaml title="metadata/load/<domain>/<table>.sl.yml - validation section"
+The `attributes` section defines column-level validation rules. Each attribute maps to a column in the source file and the target table.
+
+```yaml title="metadata/load/<domain>/<table>.sl.yml - attributes section"
 table:
   pattern: "order_line.*.csv"
   metadata:
@@ -165,31 +174,26 @@ table:
   - name: "sale_price"
     type: "double"
 ```
-<br/>
-The attributes properties are defined in the `attributes` section of the configuration file.
 
-|Attribute|Description|Default|
+### Available Attribute Properties
+
+| Property | Description | Default |
 |---|---|---|
-|name| the name of the column in the file header. If no header is present, this refers to the column index in the file. This is the only required property. this will also refer to the column name in the table except if the `rename` property is set.| |
-|type| the type of the column. Default is `string`. Available types are `string`, `int`, `long`, `double`, `float`, `boolean`, any flavor of `date` or `timestamp` as defined in the `metadata/types/default.sl.yml` file. Also note that you can add your own types in the `metadata/types` directory.| |
-|required| if the column is required to have a non null value (see `nullValue` in the `metadata.options` section).| false|
-|privacy| a transformation to apply to the column.| |
-|transform| a transformation to apply to the column.| |
-|comment| a comment for the column.| |
-|rename| the name of the column in the database.|`name`|
-|default| the default value of the column.| |
-|trim| the trim strategy for the column.  Available trim strategies are `None`, `Left`, `Right`, `Both`| |
+| `name` | Column name from the file header. If no header, refers to the column index (0-based). Also used as the target table column name unless `rename` is set. | (required) |
+| `type` | Column type: `string`, `int`, `long`, `double`, `float`, `boolean`, or any `date`/`timestamp` variant defined in `metadata/types/default.sl.yml`. You can add custom types in the `metadata/types/` directory. | `string` |
+| `required` | Whether the column must have a non-null value | `false` |
+| `privacy` | Privacy transformation to apply (e.g., masking, hashing) | None |
+| `transform` | SQL transformation to apply to the column value | None |
+| `comment` | Column comment | None |
+| `rename` | Target column name in the database (overrides `name`) | `name` |
+| `default` | Default value when the column is NULL | None |
+| `trim` | Trim strategy: `None`, `Left`, `Right`, `Both` | None |
 
+To add, replace, or ignore attributes during loading, see the [Transform on load](transform) documentation.
 
-To add / replace or ignore some attributes, check the [Transform on load](transform) section.
+## Complete CSV Load Configuration Example
 
-## Complete configuration
-
-The name property of the column is the only required field. The type property is optional and will be set to `string` if not provided.
-The configuration file below describes how the `order_line` files should be loaded.
-
-
-<br/>
+The configuration below describes a complete setup for loading `order_line` CSV files with APPEND write strategy:
 
 ```yaml title="metadata/load/<domain>/<table>.sl.yml"
 table:
@@ -211,23 +215,33 @@ table:
     type: "double"
 ```
 
-## How to Load CSV/DSV Files with Starlake
-
-1. **Infer the schema** -- Run `starlake infer-schema --input-path incoming/<domain>` to auto-detect column names, types, and separator from a sample file.
-2. **Configure parsing options** -- Edit the generated `<table>.sl.yml` file to set `format`, `separator`, `encoding`, `withHeader`, `quote`, and `escape` properties.
-3. **Define attribute validation** -- Review the `attributes` section and set column types (`int`, `double`, `date`, etc.), required constraints, and trim strategies.
-4. **Run the load command** -- Execute `starlake load` to parse, validate, and load CSV data into the target warehouse table.
+The `writeStrategy.type` controls how data is written to the target table. Available strategies: `APPEND`, `OVERWRITE`, `OVERWRITE_BY_PARTITION`, `UPSERT_BY_KEY`, `UPSERT_BY_KEY_AND_TIMESTAMP`, and `SCD2`.
 
 ## Frequently Asked Questions
 
 ### What delimiters does Starlake support for CSV files?
-Starlake supports any single-character delimiter through the `separator` property in the metadata configuration. Common delimiters include semicolons (`;`), commas (`,`), pipes (`|`), and tabs. The default separator is semicolon (`;`).
+Starlake supports any single-character delimiter through the `separator` property in the metadata configuration. Common delimiters include semicolons (`;`), commas (`,`), pipes (`|`), and tabs. The default separator is semicolon (`;`). For multi-character delimiters, use the [manual load](load) configuration.
 
 ### What encoding does Starlake use for CSV files?
-The default encoding is UTF-8. You can change it by setting the `encoding` property in the metadata section of the table configuration file. Any encoding supported by Java can be used.
+The default encoding is UTF-8. Change it by setting the `encoding` property in the metadata section. Any Java-supported encoding is accepted (e.g., `ISO-8859-1`, `Windows-1252`).
 
-### Does Starlake require CSV files to have headers?
-No, headers are optional. By default, Starlake expects headers (`withHeader: true`). If your file has no header, set `withHeader` to false and the attribute names in the schema will refer to column indices instead.
+### How do I load a CSV file without a header row?
+Set `withHeader: false` in the `metadata` section. Column names in the `attributes` section then refer to column indices (0-based) instead of header names.
 
 ### How does Starlake infer the schema of a CSV file?
-Use the `starlake infer-schema` command to automatically detect the schema from a sample data file. This generates a YAML configuration file with detected column names, types, and parsing options that you can then customize.
+Run `starlake infer-schema --input-path incoming/<domain>`. This generates a `.sl.yml` YAML file with detected column names, types, and parsing options.
+
+### What write strategies are available for CSV loading?
+Starlake supports APPEND, OVERWRITE, OVERWRITE_BY_PARTITION, UPSERT_BY_KEY, UPSERT_BY_KEY_AND_TIMESTAMP, and SCD2.
+
+### Can I rename columns during CSV loading?
+Yes. Use the `rename` property on any attribute to set a different column name in the target table.
+
+### How does Starlake handle empty values in CSV files?
+By default, empty values are kept as empty strings. Set `emptyIsNull: true` in the metadata section to treat empty values as NULL.
+
+### What happens to rows that fail validation?
+Rows that do not match the defined schema (wrong type, missing required field) are sent to the `audit.rejected` table with the rejection reason.
+
+### Can I apply transformations during CSV loading?
+Yes. Use the `transform` and `privacy` properties on individual attributes, or see the [Transform on load](transform) documentation for adding, replacing, or ignoring attributes.

@@ -33,7 +33,7 @@ import Head from '@docusaurus/Head';
           "name": "What are the prerequisites for parallel extraction?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "The database must support concurrent read-write connections. The partitionColumn parameter must be defined."
+            "text": "The database must support concurrent read-write connections. The partitionColumn parameter must be defined. Databases like SQLite do not support concurrent connections and are incompatible with parallel extraction."
           }
         },
         {
@@ -51,6 +51,14 @@ import Head from '@docusaurus/Head';
             "@type": "Answer",
             "text": "A monotonically increasing numeric column (auto-increment ID, sequence) is recommended. Timestamps can also work."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Starlake determine the partition boundaries?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake queries the minimum and maximum values of the partitionColumn, then divides the range into numPartitions equal segments. Each segment is read by a separate JDBC connection."
+          }
         }
       ]
     })}
@@ -67,50 +75,58 @@ import Head from '@docusaurus/Head';
       "step": [
         {
           "@type": "HowToStep",
+          "name": "Verify database compatibility",
+          "text": "Ensure the database supports concurrent read-write connections. Databases like SQLite are incompatible with parallel extraction.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
           "name": "Choose a partition column",
           "text": "Select a monotonically increasing numeric column (auto-increment ID or sequence). Timestamps can also work.",
-          "position": 1
+          "position": 2
         },
         {
           "@type": "HowToStep",
           "name": "Set partitionColumn in the YAML",
           "text": "Add partitionColumn with the column name in the table entry of the extraction YAML.",
-          "position": 2
+          "position": 3
         },
         {
           "@type": "HowToStep",
           "name": "Set numPartitions",
           "text": "Add numPartitions with the desired level of parallelism (e.g., 4). The default is 1 (no parallelism).",
-          "position": 3
+          "position": 4
         },
         {
           "@type": "HowToStep",
           "name": "Run the extraction",
           "text": "Execute starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming/. Starlake splits the read into numPartitions concurrent JDBC queries.",
-          "position": 4
+          "position": 5
         }
       ]
     })}
   </script>
 </Head>
 
-# Parallel Data Extraction with Starlake (numPartitions)
+# Parallel Data Extraction
 
-Starlake parallel extraction splits a table read into multiple concurrent JDBC queries to reduce extraction time. It requires setting `numPartitions` (the number of concurrent reads) and `partitionColumn` (the column used to split the data). Parallel extraction can be combined with incremental mode by also setting `fullExport: false`.
+Starlake parallel extraction splits a table read into multiple concurrent JDBC queries to reduce extraction time. It divides the data range based on the `partitionColumn` values and executes `numPartitions` simultaneous reads. Parallel extraction can be combined with incremental mode. It requires a database that supports concurrent connections.
 
-## How to Enable Parallel Extraction
+## Prerequisites for Parallel Extraction
 
-1. **Choose a partition column** -- Select a monotonically increasing numeric column (auto-increment ID or sequence). Timestamps can also work.
-2. **Set `partitionColumn`** -- Add `partitionColumn` with the column name in the table entry of the extraction YAML.
-3. **Set `numPartitions`** -- Add `numPartitions` with the desired level of parallelism (e.g., 4). The default is 1 (no parallelism).
-4. **Run the extraction** -- Execute `starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming/`. Starlake splits the read into `numPartitions` concurrent JDBC queries.
+- The database must support **concurrent read-write connections**. Databases like SQLite do not support this and are incompatible with parallel extraction. PostgreSQL, MySQL, Oracle, SQL Server, and DuckDB support it.
+- The `partitionColumn` must be defined. It should be a monotonically increasing numeric column (auto-increment ID or sequence). Timestamps can also work.
+- Setting `numPartitions` to a value greater than 1 activates parallelism. The default is 1 (no parallelism).
 
-:::info
-
-Parallel extraction is available only on databases that support concurrent read-write connections.
-
+:::warning
+Parallel extraction opens `numPartitions` simultaneous JDBC connections to the source database. Ensure the database connection pool and server can handle the additional load.
 :::
 
+## How Starlake Partitions the Data
+
+Starlake queries the minimum and maximum values of the `partitionColumn`, then divides the range into `numPartitions` equal segments. Each segment is read by a separate JDBC connection in parallel. The results are combined into the output.
+
+## YAML Configuration for Parallel Extraction
 
 ```yaml {8,9,10} title="metadata/extract/my_extract_config.sl.yml"
 version: 1
@@ -126,13 +142,13 @@ extract:
   ...
 ```
 
-Note that when using parallel extraction,
-- the `partitionColumn` attribute must be set to the column to use for partitioning and
-- the `numPartitions` attribute must be set to the number of partitions to use.
+Both `partitionColumn` and `numPartitions` must be set together to enable parallel extraction.
 
+## Combining Parallel and Incremental Extraction
 
-If incremental extraction is used (fullExport set to false),
-the partitionColumn used for parallel extraction is also the column used for incremental extraction:
+When `fullExport: false` and `numPartitions > 1` are configured on the same table entry, the same `partitionColumn` serves two purposes:
+- **Parallel partitioning** -- splitting the data range into concurrent reads.
+- **Incremental tracking** -- recording the last exported value in `SL_LAST_EXPORT`.
 
 ```yaml {8,9,10} title="metadata/extract/my_extract_config.sl.yml"
 version: 1
@@ -148,6 +164,17 @@ extract:
   ...
 ```
 
+See the [Incremental Extraction](./incremental) page for more details on incremental mode.
+
+## Choosing the Number of Partitions
+
+The optimal `numPartitions` value depends on:
+- **Source database capacity** -- more partitions means more simultaneous connections.
+- **Table size** -- small tables benefit less from parallelism.
+- **Network bandwidth** -- parallel reads increase throughput only if the network is not the bottleneck.
+
+Start with 4 partitions and adjust based on observed performance and database load.
+
 ## Frequently Asked Questions
 
 ### How does parallel extraction work in Starlake?
@@ -157,10 +184,13 @@ Parallel extraction divides the reading of a table into multiple partitions exec
 No. The default value is 1 (no parallelism). Increasing this value activates parallel extraction.
 
 ### What are the prerequisites for parallel extraction?
-The database must support concurrent read-write connections. The `partitionColumn` parameter must be defined.
+The database must support concurrent read-write connections. The `partitionColumn` parameter must be defined. Databases like SQLite are incompatible with parallel extraction.
 
 ### Can I use parallel and incremental extraction at the same time?
 Yes. When `fullExport: false` and `numPartitions > 1`, the same `partitionColumn` is used for both parallel partitioning and incremental tracking.
 
 ### What type of column should I use for partitionColumn in parallel mode?
 A monotonically increasing numeric column (auto-increment ID, sequence) is recommended. Timestamps can also work.
+
+### How does Starlake determine the partition boundaries?
+Starlake queries the minimum and maximum values of the `partitionColumn`, then divides the range into `numPartitions` equal segments. Each segment is read by a separate JDBC connection.

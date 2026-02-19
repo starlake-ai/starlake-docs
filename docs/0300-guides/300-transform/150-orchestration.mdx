@@ -112,34 +112,58 @@ import Head from '@docusaurus/Head';
 
 Starlake analyzes the `FROM` and `JOIN` clauses in your SQL transforms to build a dependency graph and generates ready-to-use DAGs for Airflow, Dagster, or Snowflake Tasks. The generated DAGs include both load and transform jobs in the correct execution order. After any SQL change that modifies table references, re-run `starlake dag-generate` to keep the DAGs in sync.
 
-## How to Generate Transform DAGs
-
-1. **Write your SQL transforms** -- Place SQL files in `metadata/transform/<domain>/`. Starlake parses `FROM` and `JOIN` clauses to detect dependencies automatically.
-2. **Configure your orchestrator** -- Set the target orchestrator (Airflow, Dagster, or Snowflake Tasks) and scheduling parameters in the DAG configuration YAML.
-3. **Run `starlake dag-generate`** -- This analyzes all transforms and produces DAG files with the correct execution order for both load and transform jobs.
-4. **Deploy the generated DAGs** -- Copy the generated DAG files to your orchestrator's DAG directory (e.g., Airflow's `dags/` folder).
-5. **Regenerate after dependency changes** -- After adding or modifying SQL transforms that change table references, re-run `starlake dag-generate`.
-
----
-
-Starlake automatically resolves dependencies between your SQL transforms and generates execution DAGs for your orchestrator.
-
 ## How Dependency Resolution Works
 
-Starlake analyzes the `FROM` and `JOIN` clauses in your SQL transforms to build a dependency graph. This graph determines the execution order so that upstream tables are always computed before downstream ones.
+Starlake parses every SQL file in `metadata/transform/` and extracts table references from `FROM` and `JOIN` clauses. It builds a directed acyclic graph (DAG) where each node is a transform task and each edge is a dependency. Upstream tables are always computed before downstream ones.
 
-## Generate DAGs for Transform
+### Example Dependency Graph
+
+Consider three transforms: `revenue_summary`, `product_summary`, and `order_summary`. The `order_summary` query joins results from the other two:
+
+```plaintext
+order_summary
+  product_summary
+    starbake.products
+    starbake.order_lines
+    starbake.orders
+  revenue_summary
+    starbake.orders
+    starbake.order_lines
+```
+
+Starlake ensures `product_summary` and `revenue_summary` run before `order_summary`. Source tables from the `starbake` schema are loaded first via the load jobs.
+
+## Generate DAGs
+
+Run the `dag-generate` command to produce DAG files for your configured orchestrator:
 
 ```bash
 starlake dag-generate
 ```
 
-The generated DAGs include both load and transform jobs in the correct execution order.
+The output includes both load and transform jobs in the correct execution order. Starlake generates files compatible with the target orchestrator:
+
+- **Airflow** -- Python DAG files ready for the `dags/` directory
+- **Dagster** -- Asset definitions with dependency metadata
+- **Snowflake Tasks** -- SQL task definitions with scheduling
+
+## Deploy the Generated DAGs
+
+Copy the generated files to your orchestrator's expected directory. For Airflow, this is typically the `dags/` folder:
+
+```bash
+cp generated/dags/*.py $AIRFLOW_HOME/dags/
+```
+
+## Regenerate After Changes
+
+After any SQL modification that changes table references (adding a table, modifying a JOIN, renaming a transform), re-run `starlake dag-generate`. The dependency graph is recomputed from the SQL files each time.
 
 ## Next Steps
 
-- See the [Orchestration Tutorial](/docs/guides/orchestrate/tutorial) for a complete walkthrough.
-- See [Customizing DAG Generation](/docs/guides/orchestrate/customization) for per-orchestrator configuration.
+- [Orchestration Tutorial](/docs/guides/orchestrate/tutorial) -- complete walkthrough for setting up orchestration
+- [Customizing DAG Generation](/docs/guides/orchestrate/customization) -- configure scheduling, retries, parallelism, and orchestrator-specific parameters
+- [SQL Transform Tutorial](./tutorial) -- end-to-end transform walkthrough with lineage visualization
 
 ## Frequently Asked Questions
 
@@ -159,4 +183,4 @@ Yes. The generated DAGs include both load and transform jobs in the correct exec
 Yes. After any change that modifies dependencies (adding a table, modifying a JOIN), re-run `starlake dag-generate` to update the DAGs.
 
 ### Can you customize the generated DAGs?
-Yes. See the DAG customization page to configure scheduling, retries, parallelism, and other orchestrator-specific parameters.
+Yes. See the [DAG customization page](/docs/guides/orchestrate/customization) to configure scheduling, retries, parallelism, and other orchestrator-specific parameters.

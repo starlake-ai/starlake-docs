@@ -1,7 +1,7 @@
 ---
 title: "Load XML Files"
 description: "Load XML files into BigQuery, Snowflake, or Databricks using Starlake. Configure rowTag, attribute prefixes, XSD validation, and nested element mapping in YAML."
-keywords: [starlake, XML, load, nested attributes, node attributes, row tag, XSD validation, data warehouse]
+keywords: [starlake, XML, load, nested attributes, node attributes, row tag, XSD validation, data warehouse, BigQuery, Databricks, Spark XML]
 ---
 
 import Head from '@docusaurus/Head';
@@ -104,12 +104,13 @@ import Head from '@docusaurus/Head';
 
 # Load XML Files with Node Attributes and Nested Elements
 
-Starlake loads XML files into BigQuery, Snowflake, Databricks, and other warehouses with support for node attributes and nested elements. It uses a configurable `rowTag` to identify records, prefixes node attributes with `_` to avoid naming collisions, and supports optional XSD validation. Nested child elements map to STRUCT types and repeated elements to ARRAY types.
+Starlake loads XML files into BigQuery, Snowflake, Databricks, DuckDB, and other warehouses with full support for node attributes, child elements, and nested structures. It uses a configurable `rowTag` to identify records, prefixes node attributes with `_` to avoid naming collisions, and supports optional XSD validation. Nested child elements map to STRUCT types and repeated elements to ARRAY types -- similar to [JSON loading](json).
 
-Loading XML files is similar to loading JSON files where attributes may have nested or repeated attributes.
-The difference is that in XML, child nodes and __node attributes__ are used to represent the nested attributes.
+## XML Structure and Mapping Concepts
 
-Consider the following XML file:
+Loading XML files is similar to loading [JSON](json) files: attributes can be nested and repeated. The key difference is that XML uses **child elements** and **node attributes** to represent data.
+
+Consider this XML file:
 
 ```xml
 <?xml version="1.0"?>
@@ -128,59 +129,87 @@ Consider the following XML file:
         <neighbor name="Malaysia" direction="N"/>
     </country>
 </data>
-
 ```
 
 ## How Starlake Maps XML Elements to Table Columns
 
-The parser needs to detect what tag identifies a row. In the example above, the tag `country` identifies a row.
+Starlake identifies a **row** by the `rowTag` element -- in the example above, `country`. Each `country` element becomes one row in the target table.
 
-Child nodes and node attributes are used to represent the nested attributes. In the example above, the `country` tag will have the following attributes in the database table:
-- `_name`
-- `rank`
-- `year`
-- `gdppc`
-- `neighbor`
-    - `_name`
-    - `_direction`
+Child elements and node attributes map to columns as follows:
+- **Child elements** (`rank`, `year`, `gdppc`) become regular columns.
+- **Node attributes** (`name` on `country`) become columns prefixed with `_` (e.g., `_name`).
+- **Repeated child elements** (`neighbor`) become ARRAY columns.
+- **Nested attributes** on repeated elements (`_name`, `_direction` on `neighbor`) are prefixed with `_`.
 
+The resulting table structure for `country`:
 
-Note that the `_` prefix is used to differentiate node attributes from child nodes, to avoid name collisions.
+| Column | Source |
+|---|---|
+| `_name` | Node attribute on `country` |
+| `rank` | Child element |
+| `year` | Child element |
+| `gdppc` | Child element |
+| `neighbor` (array of struct) | Repeated child element |
+| `neighbor._name` | Node attribute on `neighbor` |
+| `neighbor._direction` | Node attribute on `neighbor` |
 
-<br/>
+The `_` prefix distinguishes node attributes from child elements and prevents naming collisions.
 
 :::note
-Also note that the target datawarehouse need to support nested and repeated attributes. For example, BigQuery and Databricks support nested and repeated attributes, while Redshift does not.
+The target warehouse must support nested and repeated attributes. BigQuery and Databricks support them natively. Redshift does not -- flatten the XML structure before loading.
 :::
-
-
 
 ## Infer XML Schema Automatically
 
-The very first step is to infer the schema of the file from a data file as described in the [autoload section](autoload#how-autoload-detects-the-format-of-the-files) before you start customizing your configuration. This is done using the `infer-schema` command. This will bootstrap the configuration file for the table.
+Start by inferring the schema from a sample file. The `infer-schema` command detects the XML structure and generates a YAML configuration.
 
 ```bash
-
 starlake infer-schema --input-path incoming/starbake
-
 ```
+
+This generates a `<table>.sl.yml` file under `metadata/load/<domain>/`. Review and customize it before loading. See the [autoload format detection](autoload#how-autoload-detects-file-format-csv-json-xml) documentation for details.
 
 ## XML Parsing Options: rowTag, attributePrefix, XSD Validation
 
-You may need to customize the configuration file to parse the XML file.
-The main options to consider are:
-- `rowTag`: The tag that identifies a row in the XML file.
-- `attributePrefix`: The prefix used to identify node attributes (`_` by default).
-- `rowValidationXSDPath`: The path to the XSD file used to validate the XML file.
+Customize the generated configuration with the following options:
 
-Other options are available to customize the parsing of the XML file. You can find the full list of options in the [Spark XML reference](https://github.com/databricks/spark-xml?tab=readme-ov-file#features).
+| Option | Description | Default |
+|---|---|---|
+| `rowTag` | The XML element that represents a single record (row) | Auto-detected |
+| `attributePrefix` | Prefix for node attributes to avoid collisions with child elements | `_` |
+| `rowValidationXSDPath` | Path to an XSD file for record-level validation | None |
 
-## How to Load XML Data with Starlake
+```yaml title="metadata/load/<domain>/<table>.sl.yml"
+table:
+  pattern: "country.*.xml"
+  metadata:
+    format: "XML"
+    writeStrategy:
+      type: "OVERWRITE"
+    options:
+      rowTag: "country"
+      attributePrefix: "_"
+      rowValidationXSDPath: "/path/to/schema.xsd"
+  attributes:
+    - name: "_name"
+      type: "string"
+    - name: "rank"
+      type: "int"
+    - name: "year"
+      type: "int"
+    - name: "gdppc"
+      type: "int"
+    - name: "neighbor"
+      type: "struct"
+      array: true
+      attributes:
+        - name: "_name"
+          type: "string"
+        - name: "_direction"
+          type: "string"
+```
 
-1. **Infer the XML schema** -- Run `starlake infer-schema --input-path incoming/<domain>` to detect the XML structure and generate a YAML configuration.
-2. **Set the rowTag** -- In the generated YAML, set the `rowTag` option to the XML element that represents a single record (e.g., `country`).
-3. **Configure attribute prefix and XSD validation** -- Optionally set `attributePrefix` (default `_`) and `rowValidationXSDPath` to validate records against an XSD schema.
-4. **Run the load command** -- Execute `starlake load` to parse, validate, and load the XML data into the target warehouse table.
+For the full list of XML parsing options, see the [Spark XML reference](https://github.com/databricks/spark-xml?tab=readme-ov-file#features).
 
 ## Frequently Asked Questions
 
@@ -200,7 +229,10 @@ BigQuery and Databricks support nested and repeated attributes natively. Redshif
 Set the `attributePrefix` option in the metadata section. The default is `_`. You can change it to any string.
 
 ### Can Starlake load XML files with multiple levels of nesting?
-Yes. Nested child elements are mapped to STRUCT types, and repeated elements to ARRAY types, similar to JSON loading.
+Yes. Nested child elements are mapped to STRUCT types, and repeated elements to ARRAY types, similar to [JSON loading](json).
 
 ### Where can I find all XML parsing options?
 Starlake uses the Spark XML library. The full list of options is available in the [Spark XML GitHub repository](https://github.com/databricks/spark-xml?tab=readme-ov-file#features) documentation.
+
+### What write strategies work with XML files?
+All Starlake write strategies work with XML files: APPEND, OVERWRITE, OVERWRITE_BY_PARTITION, UPSERT_BY_KEY, UPSERT_BY_KEY_AND_TIMESTAMP, and SCD2.

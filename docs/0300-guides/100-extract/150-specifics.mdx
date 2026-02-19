@@ -65,13 +65,64 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Extract Column and Table Comments from DB2, Oracle, or SQL Server with Starlake",
+      "description": "Configure columnRemarks and tableRemarks in the Starlake extraction YAML to retrieve table and column descriptions from databases that store them outside standard JDBC metadata.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Identify the database type",
+          "text": "Determine if the source database is DB2, Oracle, or SQL Server. MySQL and PostgreSQL do not need extra configuration.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Locate the system catalog tables",
+          "text": "Identify the system tables that contain column and table descriptions (e.g., ALL_COL_COMMENTS for Oracle, SYSIBM.SQLCOLUMNS for DB2, sys.extended_properties for SQL Server).",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Configure columnRemarks",
+          "text": "Add the columnRemarks field in the jdbcSchemas section with a SQL query using {{schema}} and {{table}} placeholders.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Configure tableRemarks",
+          "text": "Add the tableRemarks field with the corresponding SQL query.",
+          "position": 4
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run extract-schema",
+          "text": "Execute starlake extract-schema --config <config_name> to generate schemas with comments included.",
+          "position": 5
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Database-Specific Extraction Settings: DB2, Oracle, SQL Server
 
-Starlake schema extraction can retrieve table and column comments from databases that store them outside standard JDBC metadata. DB2, Oracle, and SQL Server each require custom SQL queries configured via the `columnRemarks` and `tableRemarks` fields in the extraction YAML. MySQL and PostgreSQL do not need this extra configuration because their JDBC drivers expose comments through standard metadata calls.
+Some databases store table and column comments outside of standard JDBC metadata. DB2, Oracle, and SQL Server each require custom SQL queries to retrieve these descriptions during schema extraction. Starlake provides the `columnRemarks` and `tableRemarks` fields in the extraction YAML for this purpose. MySQL and PostgreSQL expose comments through standard JDBC metadata calls and do not need extra configuration.
 
-You can specify the location of the comments in the `columnRemarks` and `tableRemarks` sections of the configuration file.
-These fields accept SQL queries with `{{schema}}` and `{{table}}` placeholders that Starlake substitutes at runtime.
+:::info
+The `columnRemarks` and `tableRemarks` configuration applies to the `extract-schema` command only. It does not affect `extract-data`.
+:::
 
+## Configuring Column and Table Remarks
+
+The `columnRemarks` and `tableRemarks` fields accept SQL queries with two placeholders:
+- `{{schema}}` -- replaced at runtime with the schema name being extracted.
+- `{{table}}` -- replaced at runtime with the table name being extracted.
+
+These fields are optional. Configure them only when you need to include column and table descriptions in the generated schema files.
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -80,7 +131,9 @@ import TabItem from '@theme/TabItem';
 <Tabs groupId="databases">
 <TabItem value="db2" label="DB2">
 
-DB2 stores column and table descriptions in system catalog tables (`SYSIBM.SQLCOLUMNS` and `QSYS2.SYSTABLES`).
+### DB2 Configuration
+
+DB2 stores column descriptions in `SYSIBM.SQLCOLUMNS` (`COLUMN_TEXT` field) and table descriptions in `QSYS2.SYSTABLES` (`TABLE_TEXT` field).
 
 ```yaml title="metadata/extract/db2_extract.sl.yml"
 extract:
@@ -94,6 +147,8 @@ extract:
 </TabItem>
 
 <TabItem value="oracle" label="Oracle">
+
+### Oracle Configuration
 
 Oracle stores comments in `ALL_TAB_COMMENTS` and `ALL_COL_COMMENTS`.
 
@@ -114,6 +169,8 @@ Oracle schema and table names are typically uppercase. Make sure the `schema` va
 </TabItem>
 
 <TabItem value="sqlserver" label="SQL Server">
+
+### SQL Server Configuration
 
 SQL Server stores extended properties (including descriptions) via `sys.extended_properties`. The `MS_Description` property is the conventional name for table and column comments.
 
@@ -140,6 +197,16 @@ extract:
 
 </TabItem>
 </Tabs>
+
+## Summary: System Catalog Tables by Database
+
+| Database | Column comments | Table comments |
+|----------|----------------|----------------|
+| **DB2** | `SYSIBM.SQLCOLUMNS` (`COLUMN_TEXT`) | `QSYS2.SYSTABLES` (`TABLE_TEXT`) |
+| **Oracle** | `ALL_COL_COMMENTS` (`COMMENTS`) | `ALL_TAB_COMMENTS` (`COMMENTS`) |
+| **SQL Server** | `sys.extended_properties` (`MS_Description`) | `sys.extended_properties` (`MS_Description`) |
+| **MySQL** | Standard JDBC metadata (no config needed) | Standard JDBC metadata (no config needed) |
+| **PostgreSQL** | Standard JDBC metadata (no config needed) | Standard JDBC metadata (no config needed) |
 
 ## Frequently Asked Questions
 

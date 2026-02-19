@@ -1,7 +1,7 @@
 ---
 title: "Load Strategies — File Ordering"
 description: "Configure file processing order in Starlake with built-in load strategies (chronological or alphabetical) or implement a custom Scala strategy. Set loadStrategyClass in application.sl.yml."
-keywords: [starlake, load strategy, file ordering, IngestionTimeStrategy, IngestionNameStrategy, custom strategy, Scala]
+keywords: [starlake, load strategy, file ordering, IngestionTimeStrategy, IngestionNameStrategy, custom strategy, Scala, file processing order]
 ---
 
 import Head from '@docusaurus/Head';
@@ -112,41 +112,54 @@ import Head from '@docusaurus/Head';
 
 # Load Strategies: Control File Processing Order
 
-Starlake load strategies control the order in which files are processed during `starlake load` or `starlake autoload`. Two built-in strategies are available: `IngestionTimeStrategy` (chronological order by modification time, the default) and `IngestionNameStrategy` (alphabetical order by file name). You can also implement a custom strategy in Scala by extending the `LoadStrategy` interface.
+Starlake load strategies control the **order in which files are processed** during `starlake load` or `starlake autoload`. Two built-in strategies are available: `IngestionTimeStrategy` (chronological order, the default) and `IngestionNameStrategy` (alphabetical order). You can also implement a custom strategy in Scala.
 
 :::note
-This page covers **load strategies** which control the **order in which files are processed**. This is different from **write strategies** (APPEND, OVERWRITE, UPSERT_BY_KEY, SCD2) which control how data is written to target tables.
+**Load strategies vs. write strategies**: This page covers **load strategies**, which control the order files are processed. This is different from **write strategies** (APPEND, OVERWRITE, UPSERT_BY_KEY, SCD2) which control how data is written to target tables.
 :::
+
+## How Load Strategies Work
+
+During a `starlake load` or `starlake autoload` run, Starlake scans each domain's incoming directory for files matching the `table.pattern` defined in `metadata/load/<domain>/<table>.sl.yml`. The load strategy determines the order in which matching files are processed.
+
+The strategy's `list` method receives two filtering parameters:
+- **`since`** (`LocalDateTime`): Only return files modified after this timestamp. The built-in `IngestionTimeStrategy` uses this to skip already-processed files.
+- **`extension`**: Only return files matching this extension.
 
 ## Built-in Strategies: IngestionTimeStrategy and IngestionNameStrategy
 
-The `starlake` load  will look for each domain and table, the files that match the pattern specified in
-the `table.pattern` attribute of the `metadata/load/<domain>/<table>.sl.yml` file in the directory specified in the `load.metadata.directory`
-attribute of the same file or, if not specified, from the `<domain>/_config.sl.yml` file.
+| Strategy | Class | Description |
+|---|---|---|
+| **Time-based** (default) | `ai.starlake.job.load.IngestionTimeStrategy` | Processes files in chronological order based on file last modification time. Older files are loaded first. |
+| **Name-based** | `ai.starlake.job.load.IngestionNameStrategy` | Processes files in lexicographical (alphabetical) order based on file name. |
 
-starlake comes with two load strategies:
+### Example: Time-Based Ordering (Default)
 
-Load Strategy | Description
---- | ---
-`ai.starlake.job.load.IngestionTimeStrategy` | Load the files in a chronological order based on the file last modification time. This is the default.
-`ai.starlake.job.load.IngestionNameStrategy` | Load the files in a lexicographical order based on the file name.
+With `IngestionTimeStrategy`, given three files:
+- `order_20240101.csv` (modified Jan 15)
+- `order_20240201.csv` (modified Feb 10)
+- `order_20240301.csv` (modified Mar 5)
 
-To use a load strategy, you need to specify the `loadStrategyClass` attribute in the `metadata/application.sl.yml` file.
+Files are loaded in this order: `order_20240101.csv`, `order_20240201.csv`, `order_20240301.csv`.
 
-<br/>
+### Switching to Name-Based Ordering
 
-```yaml title="metadata/application.sl.yml: to switch from a time based load to a name based load"
+Set the `loadStrategyClass` property in `metadata/application.sl.yml`:
+
+```yaml title="metadata/application.sl.yml"
 application:
-  ...
   loadStrategyClass: ai.starlake.job.load.IngestionNameStrategy
-  ...
 ```
+
+With `IngestionNameStrategy`, files are sorted alphabetically by file name, regardless of modification time.
 
 ## Implement a Custom Load Strategy in Scala
 
-You can define your own load strategy by implementing the `ai.starlake.job.load.LoadStrategy` interface.
+For advanced use cases, implement a custom strategy by extending the `LoadStrategy` interface.
 
-<br/>
+### Step 1: Implement the Interface
+
+Create a Scala class that implements `ai.starlake.job.load.LoadStrategy`:
 
 ```scala title="src/main/scala/my/own/CustomLoadStrategy.scala"
 object CustomLoadStrategy extends LoadStrategy with StrictLogging {
@@ -160,14 +173,21 @@ object CustomLoadStrategy extends LoadStrategy with StrictLogging {
   ): List[FileInfo] = ???
 }
 ```
-<br/>
 
-```yaml title="metadata/application.sl.yml: to use a custom load strategy"
+The `list` method must return a `List[FileInfo]` in the desired processing order. Use the `since` parameter to filter files by modification time. Use the `extension` parameter to filter by file type.
 
+### Step 2: Package and Deploy
+
+1. Compile and package your class into a JAR file.
+2. Place the JAR in Starlake's classpath (e.g., in the `lib/` directory or via your build tool).
+
+### Step 3: Configure the Strategy
+
+Reference your custom class in `metadata/application.sl.yml`:
+
+```yaml title="metadata/application.sl.yml"
 application:
-  ...
-  loadStrategyClass: ai.starlake.job.load.MyLoadStrategy
-  ...
+  loadStrategyClass: my.own.CustomLoadStrategy
 ```
 
 ## Frequently Asked Questions
