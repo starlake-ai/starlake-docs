@@ -51,6 +51,22 @@ import Head from '@docusaurus/Head';
             "@type": "Answer",
             "text": "extract-data exports the actual table data as CSV files. extract-schema generates table schema description files in the metadata/load directory, which are used by the starlake load command to load data into a data warehouse without relying on schema inference."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "Where do I configure the connection to the source database?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In the metadata/application.sl.yml file, under the connections section. Each connection requires a type (e.g., jdbc), a JDBC URL, and a driver class name."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the CLI command to run an extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "starlake extract-data --config <config_name> --outputDir <output_directory>"
+          }
         }
       ]
     })}
