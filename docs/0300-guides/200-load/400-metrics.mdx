@@ -25,7 +25,7 @@ import Head from '@docusaurus/Head';
           "name": "How do I enable metrics on an attribute?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Set the metric property on the attribute in the table YAML file. Use continuous for numeric metrics or discrete for categorical metrics."
+            "text": "Set the metricType property on the attribute in the table YAML file. Use continuous for numeric metrics or discrete for categorical metrics."
           }
         },
         {
@@ -85,13 +85,13 @@ import Head from '@docusaurus/Head';
         },
         {
           "@type": "HowToStep",
-          "name": "Set metric: continuous on numeric attributes",
-          "text": "Add metric: continuous on attributes where you want statistical metrics (min, max, mean, variance, percentiles, etc.)."
+          "name": "Set metricType: continuous on numeric attributes",
+          "text": "Add metricType: continuous on attributes where you want statistical metrics (min, max, mean, variance, percentiles, etc.)."
         },
         {
           "@type": "HowToStep",
-          "name": "Set metric: discrete on categorical attributes",
-          "text": "Add metric: discrete on attributes where you want category frequency and count distinct metrics."
+          "name": "Set metricType: discrete on categorical attributes",
+          "text": "Add metricType: discrete on attributes where you want category frequency and count distinct metrics."
         },
         {
           "@type": "HowToStep",
@@ -111,7 +111,7 @@ Use ingestion metrics to monitor data quality trends, detect anomalies and feed 
 
 ## How to enable metrics
 
-Set the `metric` property on individual attributes in the table YAML file:
+Set the `metricType` property on individual attributes in the table YAML file:
 
 ```yaml title="metadata/load/<domain>/<table>.sl.yml"
 table:
@@ -119,10 +119,10 @@ table:
   attributes:
     - name: "review_count"
       type: "long"
-      metric: continuous
+      metricType: continuous
     - name: "city"
       type: "string"
-      metric: discrete
+      metricType: discrete
 ```
 
 :::note
@@ -131,7 +131,7 @@ Only top-level attributes are supported for metric computation. Nested attribute
 
 ## Continuous metrics
 
-When `metric` is set to `continuous`, Starlake computes the following statistics on the attribute:
+When `metricType` is set to `continuous`, Starlake computes the following statistics on the attribute:
 
 | Metric | Description |
 |---|---|
@@ -151,7 +151,7 @@ When `metric` is set to `continuous`, Starlake computes the following statistics
 
 ## Discrete metrics
 
-When `metric` is set to `discrete`, Starlake computes the following statistics on the attribute:
+When `metricType` is set to `discrete`, Starlake computes the following statistics on the attribute:
 
 | Metric | Description |
 |---|---|
@@ -224,7 +224,7 @@ Assuming a file with attributes `city` (discrete) and `review_count` (continuous
 Two types: **continuous** (min, max, mean, median, variance, standard deviation, skewness, kurtosis, percentiles 25/75, missing values, row count) and **discrete** (count distinct, category frequency, category count, row count).
 
 ### How do I enable metrics on an attribute?
-Set the `metric` property on the attribute in the table YAML file. Use `continuous` for numeric metrics or `discrete` for categorical metrics.
+Set the `metricType` property on the attribute in the table YAML file. Use `continuous` for numeric metrics or `discrete` for categorical metrics.
 
 ### Where are ingestion metrics stored?
 Metrics are stored in dedicated tables in the data warehouse, with an ingestion timestamp allowing you to compare values between successive loads.
