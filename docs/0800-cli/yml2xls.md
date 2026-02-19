@@ -8,7 +8,7 @@ keywords: [starlake yml2xls, YAML to Excel, schema export, data documentation, I
 
 ## Synopsis
 
-**starlake $command [options]**
+**starlake yml2xls [options]**
 
 ## Description
 
