@@ -1,0 +1,141 @@
+# Starlake
+
+> Open-source declarative data pipeline platform for Extract, Load, and Transform operations using YAML and SQL.
+
+Starlake lets data engineers build production data pipelines without writing Python or Scala. Define schemas, connections, and transformations in YAML and SQL. Starlake handles loading files (CSV, JSON, XML, fixed-width) into warehouses, extracting data from databases, running SQL/Python transforms, and auto-generating Airflow/Dagster DAGs from SQL dependency analysis. Supports BigQuery, Snowflake, Databricks, Spark, PostgreSQL, and DuckDB.
+
+## Overview
+
+- [Overview](https://docs.starlake.ai/): Platform overview covering extract, load, transform, and orchestrate capabilities
+
+## Setup
+
+- [Setup Options](https://docs.starlake.ai/category/setup-starlake): Self-hosted vs cloud deployment options
+- [Install Starlake CLI](https://docs.starlake.ai/setup/starlake-core-setup): Install on Linux, macOS, Windows, or Docker (requires Java 17+)
+- [Dev Environment](https://docs.starlake.ai/setup/starlake-dev): Set up Starlake with Airflow or Dagster using Docker Compose
+- [Snowflake Native App](https://docs.starlake.ai/setup/snowflake-native-app-setup): Post-installation permissions setup for the Snowflake native app
+
+## Project Setup
+
+- [Bootstrap a Project](https://docs.starlake.ai/guides/project-setup/starlake-project-setup): Create a new Starlake project with starlake bootstrap
+- [Environment Variables](https://docs.starlake.ai/guides/project-setup/environment): Multi-environment configuration with environment variables
+- [Connections](https://docs.starlake.ai/guides/project-setup/connections): Configure database connections
+
+## Extract
+
+- [Extract Tutorial](https://docs.starlake.ai/guides/extract/tutorial): Extract data from databases with Starlake
+- [Extract from Query](https://docs.starlake.ai/guides/extract/extract-from-query): Extract data using custom SQL queries
+- [Incremental Extraction](https://docs.starlake.ai/guides/extract/incremental): Incremental data extraction strategies
+- [Parallel Extraction](https://docs.starlake.ai/guides/extract/parallel): Parallel extraction using numPartitions
+- [Monitoring](https://docs.starlake.ai/guides/extract/monitoring): Monitor extractions with the SL_LAST_EXPORT audit table
+- [Database Specifics](https://docs.starlake.ai/guides/extract/specifics): Database-specific settings for DB2, Oracle, SQL Server
+- [OpenAPI Schema](https://docs.starlake.ai/guides/extract/extract-schema-openapi): Extract schemas from OpenAPI definitions (REST API to tables)
+
+## Load
+
+- [Load Tutorial](https://docs.starlake.ai/guides/load/tutorial): Load CSV, JSON, and XML files into your data warehouse
+- [Autoload](https://docs.starlake.ai/guides/load/autoload): Zero-config data loading with automatic schema inference
+- [Manual Load Config](https://docs.starlake.ai/guides/load/load): Configure load tasks manually with YAML
+- [CSV Files](https://docs.starlake.ai/guides/load/csv): Load CSV and DSV files
+- [JSON Files](https://docs.starlake.ai/guides/load/json): Load JSON files
+- [XML Files](https://docs.starlake.ai/guides/load/xml): Load XML files
+- [Fixed-Width Files](https://docs.starlake.ai/guides/load/position): Load fixed-width positional files
+- [Load Strategies](https://docs.starlake.ai/guides/load/load-strategies): File ordering strategies
+- [Write Strategies](https://docs.starlake.ai/guides/load/write-strategies): APPEND, OVERWRITE, UPSERT, SCD2, DELETE_THEN_INSERT
+- [Sink Configuration](https://docs.starlake.ai/guides/load/sink): Clustering and partitioning for BigQuery, Databricks, Spark
+- [Native Load](https://docs.starlake.ai/guides/load/native): Skip Spark validation for faster loading
+- [Validate](https://docs.starlake.ai/guides/load/validate): Type validation with built-in and custom regex types
+- [Transform on Load](https://docs.starlake.ai/guides/load/transform): Computed columns, ignore fields, and foreign keys
+- [Security](https://docs.starlake.ai/guides/load/security): Table, row, and column-level access control for BigQuery and Databricks
+- [Expectations](https://docs.starlake.ai/guides/load/expectations): Post-load data quality assertions
+- [Load Orchestration](https://docs.starlake.ai/guides/load/orchestration): Orchestrate load jobs with Airflow, Dagster, Snowflake Tasks
+- [Metrics](https://docs.starlake.ai/guides/load/metrics): Continuous and discrete data profiling during ingestion
+
+## Transform
+
+- [Transform Tutorial](https://docs.starlake.ai/guides/transform/tutorial): Create KPI tables with SQL transforms
+- [Transform Config](https://docs.starlake.ai/guides/transform/config): YAML configuration for write strategies, partitioning, ACL
+- [SQL Transforms](https://docs.starlake.ai/guides/transform/sql): SELECT syntax, incremental models, and custom SQL
+- [Python Transforms](https://docs.starlake.ai/guides/transform/python): PySpark DataFrame pipelines
+- [Export Results](https://docs.starlake.ai/guides/transform/export): Export transform results to CSV, Parquet, or another database
+- [Transform Orchestration](https://docs.starlake.ai/guides/transform/orchestration): Automatic DAG generation for Airflow, Dagster, Snowflake Tasks
+
+## Orchestrate
+
+- [Orchestration Tutorial](https://docs.starlake.ai/guides/orchestrate/tutorial): DAG generation overview
+- [Customizing DAGs](https://docs.starlake.ai/guides/orchestrate/customization): Customize generated DAG templates
+- [Airflow](https://docs.starlake.ai/guides/orchestrate/airflow): Customize Airflow DAGs
+- [Dagster](https://docs.starlake.ai/guides/orchestrate/dagster): Customize Dagster DAGs
+- [Snowflake Tasks](https://docs.starlake.ai/guides/orchestrate/snowflake-tasks): Customize Snowflake Task DAGs
+
+## Deploy
+
+- [Deploy Tutorial](https://docs.starlake.ai/guides/deploy/tutorial): Deploy Starlake pipelines to production
+
+## Unit Tests
+
+- [Testing Concepts](https://docs.starlake.ai/guides/unit-tests/concepts): Unit testing data pipelines
+- [Load Tests](https://docs.starlake.ai/guides/unit-tests/load-tests): Test load tasks
+- [Transform Tests](https://docs.starlake.ai/guides/unit-tests/transform-tests): Test transform tasks
+
+## Documentation
+
+- [Site Builder](https://docs.starlake.ai/guides/documentation/site-builder): Generate documentation sites from Starlake projects
+
+## Configuration
+
+- [Environment Variables](https://docs.starlake.ai/configuration/environment): All Starlake environment variables reference
+- [Database Connections](https://docs.starlake.ai/configuration/connections): Connection configuration reference
+
+## Comparisons
+
+- [Starlake vs dbt](https://docs.starlake.ai/guides/comparisons/starlake-vs-dbt): Feature comparison between Starlake and dbt
+
+## CLI Reference
+
+- [autoload](https://docs.starlake.ai/cli/autoload): Auto-detect and load files
+- [bootstrap](https://docs.starlake.ai/cli/bootstrap): Create a new project
+- [extract](https://docs.starlake.ai/cli/extract): Extract data from databases
+- [extract-data](https://docs.starlake.ai/cli/extract-data): Extract data using configured schemas
+- [extract-schema](https://docs.starlake.ai/cli/extract-schema): Extract database schemas
+- [extract-script](https://docs.starlake.ai/cli/extract-script): Generate extraction scripts
+- [load](https://docs.starlake.ai/cli/load): Load files into the data warehouse
+- [transform](https://docs.starlake.ai/cli/transform): Run SQL/Python transforms
+- [dag-generate](https://docs.starlake.ai/cli/dag-generate): Generate orchestration DAGs
+- [dag-deploy](https://docs.starlake.ai/cli/dag-deploy): Deploy generated DAGs
+- [test](https://docs.starlake.ai/cli/test): Run unit tests
+- [validate](https://docs.starlake.ai/cli/validate): Validate YAML configurations
+- [lineage](https://docs.starlake.ai/cli/lineage): Display table lineage
+- [col-lineage](https://docs.starlake.ai/cli/col-lineage): Display column-level lineage
+- [table-dependencies](https://docs.starlake.ai/cli/table-dependencies): Show table dependencies
+- [acl-dependencies](https://docs.starlake.ai/cli/acl-dependencies): Show ACL dependencies
+- [infer-schema](https://docs.starlake.ai/cli/infer-schema): Infer schema from data files
+- [site](https://docs.starlake.ai/cli/site): Generate documentation site
+- [serve](https://docs.starlake.ai/cli/serve): Start the Starlake web server
+- [console](https://docs.starlake.ai/cli/console): Open the interactive console
+- [settings](https://docs.starlake.ai/cli/settings): Display current settings
+- [migrate](https://docs.starlake.ai/cli/migrate): Migrate project to latest version
+- [metrics](https://docs.starlake.ai/cli/metrics): Compute data metrics
+- [secure](https://docs.starlake.ai/cli/secure): Apply security rules
+- [preload](https://docs.starlake.ai/cli/preload): Run pre-load transformations
+- [freshness](https://docs.starlake.ai/cli/freshness): Check data freshness
+- [compare](https://docs.starlake.ai/cli/compare): Compare schemas or datasets
+- [yml2xls](https://docs.starlake.ai/cli/yml2xls): Convert YAML schemas to Excel
+- [xls2yml](https://docs.starlake.ai/cli/xls2yml): Convert Excel schemas to YAML
+- [xls2ymljob](https://docs.starlake.ai/cli/xls2ymljob): Convert Excel job definitions to YAML
+- [yml2ddl](https://docs.starlake.ai/cli/yml2ddl): Generate DDL from YAML schemas
+- [parquet2csv](https://docs.starlake.ai/cli/parquet2csv): Convert Parquet files to CSV
+- [cnxload](https://docs.starlake.ai/cli/cnxload): Load connection configurations
+- [esload](https://docs.starlake.ai/cli/esload): Load data into Elasticsearch
+- [kafkaload](https://docs.starlake.ai/cli/kafkaload): Load data into Kafka
+- [ingest](https://docs.starlake.ai/cli/ingest): Ingest data from various sources
+- [stage](https://docs.starlake.ai/cli/stage): Stage files for loading
+- [summarize](https://docs.starlake.ai/cli/summarize): Summarize dataset statistics
+- [iam-policies](https://docs.starlake.ai/cli/iam-policies): Manage IAM policies
+- [bq-info](https://docs.starlake.ai/cli/bq-info): Display BigQuery table info
+- [bq-freshness](https://docs.starlake.ai/cli/bq-freshness): Check BigQuery data freshness
+- [extract-bq-schema](https://docs.starlake.ai/cli/extract-bq-schema): Extract BigQuery schemas
+
+## Glossary
+
+- [Data Engineering Glossary](https://docs.starlake.ai/glossary): Common data engineering terms and concepts
