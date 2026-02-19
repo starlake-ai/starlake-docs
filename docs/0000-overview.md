@@ -174,16 +174,11 @@ Key transformation features:
 Let's say we want to build aggregates from the previously loaded data
 
 ```yaml
-transform:
-  default:
-    writeStrategy:
-      type: "OVERWRITE"
-  tasks:
-    - name: most_profitable_products
-      writeStrategy:
-        type: "UPSERT_BY_KEY_AND_TIMESTAMP"
-        timestamp: signup
-        key: [id]
+task:
+  writeStrategy:
+    type: "UPSERT_BY_KEY_AND_TIMESTAMP"
+    timestamp: signup
+    key: [id]
 ```
 
 ```sql
