@@ -77,7 +77,7 @@ import Head from '@docusaurus/Head';
           "@type": "HowToStep",
           "position": 1,
           "name": "Infer the XML schema",
-          "text": "Run 'starlake infer-schema --input-path incoming/<domain>' to detect the XML structure and generate a YAML configuration."
+          "text": "Run 'starlake infer-schema --input incoming/<domain>' to detect the XML structure and generate a YAML configuration."
         },
         {
           "@type": "HowToStep",
@@ -164,7 +164,7 @@ The target warehouse must support nested and repeated attributes. BigQuery and D
 Start by inferring the schema from a sample file. The `infer-schema` command detects the XML structure and generates a YAML configuration.
 
 ```bash
-starlake infer-schema --input-path incoming/starbake
+starlake infer-schema --input incoming/starbake
 ```
 
 This generates a `<table>.sl.yml` file under `metadata/load/<domain>/`. Review and customize it before loading. See the [autoload format detection](autoload#how-autoload-detects-file-format-csv-json-xml) documentation for details.

@@ -77,7 +77,7 @@ import Head from '@docusaurus/Head';
           "@type": "HowToStep",
           "position": 1,
           "name": "Infer the schema",
-          "text": "Run 'starlake infer-schema --input-path incoming/<domain>' to auto-detect column names, types, and separator from a sample file."
+          "text": "Run 'starlake infer-schema --input incoming/<domain>' to auto-detect column names, types, and separator from a sample file."
         },
         {
           "@type": "HowToStep",
@@ -119,7 +119,7 @@ You can use [autoload](autoload) for zero-config loading, or configure the manua
 Start by inferring the schema from a sample data file. The `infer-schema` command detects column names, types, separator, and encoding, then generates a YAML configuration file.
 
 ```bash
-starlake infer-schema --input-path incoming/starbake
+starlake infer-schema --input incoming/starbake
 ```
 
 This generates a `<table>.sl.yml` file under `metadata/load/<domain>/`. Review and customize it before loading. See the [autoload format detection](autoload#how-autoload-detects-file-format-csv-json-xml) documentation for details on how detection works.
@@ -229,7 +229,7 @@ The default encoding is UTF-8. Change it by setting the `encoding` property in t
 Set `withHeader: false` in the `metadata` section. Column names in the `attributes` section then refer to column indices (0-based) instead of header names.
 
 ### How does Starlake infer the schema of a CSV file?
-Run `starlake infer-schema --input-path incoming/<domain>`. This generates a `.sl.yml` YAML file with detected column names, types, and parsing options.
+Run `starlake infer-schema --input incoming/<domain>`. This generates a `.sl.yml` YAML file with detected column names, types, and parsing options.
 
 ### What write strategies are available for CSV loading?
 Starlake supports APPEND, OVERWRITE, OVERWRITE_BY_PARTITION, UPSERT_BY_KEY, UPSERT_BY_KEY_AND_TIMESTAMP, and SCD2.
