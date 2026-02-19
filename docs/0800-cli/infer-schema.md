@@ -29,7 +29,6 @@ Parameter|Cardinality|Description
 --write `<value>`|*Optional*|One of Set(OVERWRITE, APPEND)
 --format `<value>`|*Optional*|Force input file format
 --rowTag `<value>`|*Optional*|row tag to use if detected format is XML
---variant `<value>`|*Optional*|Infer schema as a single variant attribute
---clean `<value>`|*Optional*|Delete previous YML before writing
+--variant|*Optional*|Infer schema as a single variant attribute
+--clean|*Optional*|Delete previous YML before writing
 --encoding `<value>`|*Optional*|Input file encoding. Default to UTF-8
---from-json-schema `<value>`|*Optional*|Input file is a valid JSON Schema
