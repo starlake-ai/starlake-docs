@@ -32,3 +32,4 @@ Parameter|Cardinality|Description
 --variant|*Optional*|Infer schema as a single variant attribute
 --clean|*Optional*|Delete previous YML before writing
 --encoding `<value>`|*Optional*|Input file encoding. Default to UTF-8
+--from-json-schema|*Optional*|Input file is a valid JSON Schema
