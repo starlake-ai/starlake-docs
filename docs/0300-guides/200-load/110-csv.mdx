@@ -4,6 +4,51 @@ description: "Load CSV and delimiter-separated files into your data warehouse wi
 keywords: [starlake, CSV, DSV, delimiter, load, parsing, infer schema, data validation]
 ---
 
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What delimiters does Starlake support for CSV files?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports any single-character delimiter through the 'separator' property in the metadata configuration. Common delimiters include semicolons (;), commas (,), pipes (|), and tabs. The default separator is semicolon (;)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What encoding does Starlake use for CSV files?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The default encoding is UTF-8. You can change it by setting the 'encoding' property in the metadata section of the table configuration file. Any encoding supported by Java can be used."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Starlake require CSV files to have headers?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No, headers are optional. By default, Starlake expects headers (withHeader: true). If your file has no header, set 'withHeader' to false and the attribute names in the schema will refer to column indices instead."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Starlake infer the schema of a CSV file?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the 'starlake infer-schema' command to automatically detect the schema from a sample data file. This generates a YAML configuration file with detected column names, types, and parsing options that you can then customize."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Load DSV files
 
 
@@ -126,3 +171,17 @@ table:
   - name: "sale_price"
     type: "double"
 ```
+
+## Frequently Asked Questions
+
+### What delimiters does Starlake support for CSV files?
+Starlake supports any single-character delimiter through the `separator` property in the metadata configuration. Common delimiters include semicolons (`;`), commas (`,`), pipes (`|`), and tabs. The default separator is semicolon (`;`).
+
+### What encoding does Starlake use for CSV files?
+The default encoding is UTF-8. You can change it by setting the `encoding` property in the metadata section of the table configuration file. Any encoding supported by Java can be used.
+
+### Does Starlake require CSV files to have headers?
+No, headers are optional. By default, Starlake expects headers (`withHeader: true`). If your file has no header, set `withHeader` to false and the attribute names in the schema will refer to column indices instead.
+
+### How does Starlake infer the schema of a CSV file?
+Use the `starlake infer-schema` command to automatically detect the schema from a sample data file. This generates a YAML configuration file with detected column names, types, and parsing options that you can then customize.

@@ -4,6 +4,88 @@ description: "Generate and deploy DAGs for Airflow, Dagster, or Snowflake Tasks 
 keywords: [starlake, orchestration, dag generation, airflow, dagster, snowflake tasks, data pipeline]
 ---
 
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Which orchestrators does Starlake support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports DAG generation for Apache Airflow, Dagster, and Snowflake Tasks. It is not an orchestrator itself but generates DAG files that you deploy to your orchestrator of choice."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Starlake generate DAGs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake uses the 'dag-generate' command to produce DAG files based on YAML configuration templates in the metadata/dags directory. It automatically analyzes SQL task dependencies to build the correct execution order."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I customize the generated DAG templates?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, you can use built-in templates, modify them, or create your own custom templates. Templates can be referenced as absolute paths, relative paths to metadata/dags/templates/, or built-in templates from the Starlake library."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Starlake support DAG backfilling?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Starlake supports backfilling by specifying a start date and end date. This allows you to run your DAGs retroactively on a specific date range using the backfill command."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Generate and Deploy DAGs with Starlake",
+      "description": "Step-by-step guide to generating DAGs for Airflow, Dagster, or Snowflake Tasks from your Starlake pipelines.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Configure DAG settings",
+          "text": "Create DAG configuration YAML files in the metadata/dags directory specifying templates, filenames, and options like pre_load_strategy and run_dependencies_first.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run dag-generate",
+          "text": "Run 'starlake dag-generate --clean' to generate DAG files in the dags/generated directory.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Review generated DAGs with dry-run",
+          "text": "Run 'python -m ai.starlake.orchestration --file <file> dry-run' to test the generated DAGs before deploying.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Deploy to your orchestrator",
+          "text": "Run 'python -m ai.starlake.orchestration --file <file> deploy' to deploy the DAGs to Airflow, Dagster, or Snowflake.",
+          "position": 4
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Generate and Deploy DAGs
 
 import Tabs from '@theme/Tabs';
@@ -193,3 +275,17 @@ The load and transforms tasks will be run as bash commands on the orchestrator. 
 Starlake comes with templates out of the box.
 
 On Snowflake, the tasks will be run as native snowpark tasks.
+
+## Frequently Asked Questions
+
+### Which orchestrators does Starlake support?
+Starlake supports DAG generation for Apache Airflow, Dagster, and Snowflake Tasks. It is not an orchestrator itself but generates DAG files that you deploy to your orchestrator of choice.
+
+### How does Starlake generate DAGs?
+Starlake uses the `dag-generate` command to produce DAG files based on YAML configuration templates in the `metadata/dags` directory. It automatically analyzes SQL task dependencies to build the correct execution order.
+
+### Can I customize the generated DAG templates?
+Yes, you can use built-in templates, modify them, or create your own custom templates. Templates can be referenced as absolute paths, relative paths to `metadata/dags/templates/`, or built-in templates from the Starlake library.
+
+### Does Starlake support DAG backfilling?
+Yes, Starlake supports backfilling by specifying a start date and end date. This allows you to run your DAGs retroactively on a specific date range using the `backfill` command.

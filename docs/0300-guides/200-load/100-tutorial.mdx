@@ -4,6 +4,88 @@ description: "Step-by-step tutorial to load and validate JSON, XML and CSV files
 keywords: [starlake, load tutorial, data warehouse, autoload, CSV, JSON, XML, write strategies]
 ---
 
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What file formats does Starlake support for loading?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports loading CSV, TSV, JSON, XML, Fixed-width, Parquet, and Avro files. The file format is auto-detected based on the file extension and content when using the autoload command."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the difference between autoload and load in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The autoload command is a shortcut that combines infer-schema, stage, and load into a single step. It automatically detects file types, infers schemas, and loads data. The manual load command requires you to run infer-schema and stage separately before loading."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Starlake validate data during loading?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Starlake automatically validates data against the inferred or user-defined schema during loading. Rejected records are stored in a separate audit table, and successfully validated records are loaded into the target table."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where do files go after being loaded by Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Once loaded, files are moved to the $SL_ROOT/datasets/archive folder if the SL_ARCHIVE environment variable is set to true (which is the default). You can replay them by moving them back to the incoming folder."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Load Data into a Data Warehouse with Starlake",
+      "description": "Step-by-step guide to loading and validating CSV, JSON, and XML files into your data warehouse using Starlake autoload.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Prepare incoming data files",
+          "text": "Run the extract step first, or copy the sample-data folder contents into $SL_ROOT/incoming/ to have files ready for loading.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the autoload command",
+          "text": "Run 'starlake autoload' to automatically detect file types, infer schemas, stage files, and load them into target tables.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Query the loaded data",
+          "text": "Open the DuckDB shell with 'duckdb datasets/duckdb.db' and run SQL queries to verify the data has been loaded correctly.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Optionally use manual load workflow",
+          "text": "Instead of autoload, you can run 'starlake infer-schema', then 'starlake stage', then 'starlake load' for more control over each step.",
+          "position": 4
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Load Data into Your Data Warehouse
 
 Load and validate, in one shot or incrementally, JSON, XML and CSV files into your datawarehouse using different write strategies.
@@ -146,4 +228,18 @@ SL_ENV=DUCKDB starlake load
 ```
 
 Our raw files have been loaded into the datawarehouse and we can now start to [transform our data to build insights](../transform/tutorial).
+
+## Frequently Asked Questions
+
+### What file formats does Starlake support for loading?
+Starlake supports loading CSV, TSV, JSON, XML, Fixed-width, Parquet, and Avro files. The file format is auto-detected based on the file extension and content when using the `autoload` command.
+
+### What is the difference between autoload and load in Starlake?
+The `autoload` command is a shortcut that combines `infer-schema`, `stage`, and `load` into a single step. It automatically detects file types, infers schemas, and loads data. The manual `load` command requires you to run `infer-schema` and `stage` separately before loading.
+
+### Does Starlake validate data during loading?
+Yes, Starlake automatically validates data against the inferred or user-defined schema during loading. Rejected records are stored in a separate audit table, and successfully validated records are loaded into the target table.
+
+### Where do files go after being loaded by Starlake?
+Once loaded, files are moved to the `$SL_ROOT/datasets/archive` folder if the `SL_ARCHIVE` environment variable is set to true (which is the default). You can replay them by moving them back to the incoming folder.
 

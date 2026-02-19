@@ -1,0 +1,8 @@
+{
+  "label": "Comparisons",
+  "position": 800,
+  "link": {
+    "type": "generated-index",
+    "description": "Compare Starlake with other data pipeline tools."
+  }
+}

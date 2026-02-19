@@ -4,6 +4,94 @@ description: "Learn how to use SQL SELECT statements in Starlake to create busin
 keywords: [starlake, sql transform, data transformation, select statements, business insights, data pipeline]
 ---
 
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Does Starlake only support SQL for transformations?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake transformations are based on standard SQL SELECT statements combined with YAML configuration. You write plain SQL without Jinja templating. Python is supported when running on Spark or Databricks through their native Python integration."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Starlake handle dependencies between transform tasks?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake automatically detects dependencies between SQL tasks by analyzing table references. You can visualize the dependency graph using the 'starlake lineage' command, and run tasks in the correct order using the --recursive flag."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can Starlake run transformations incrementally?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Starlake supports incremental transformations through write strategies like UPSERT_BY_KEY_AND_TIMESTAMP. It automatically generates the appropriate MERGE INTO or INSERT OVERWRITE SQL based on the writeStrategy property."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where are SQL transform files stored in a Starlake project?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "SQL transform files are stored in the metadata/transform directory. The subdirectory name determines the target schema. For example, files in metadata/transform/kpi/ will store results in the 'kpi' schema."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Transform Data with SQL in Starlake",
+      "description": "Step-by-step guide to creating business insights from your data using SQL SELECT statements and Starlake transform.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Run the load step first",
+          "text": "Complete the Load tutorial to get your data into the database before running transforms.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Write SQL SELECT statements",
+          "text": "Create SQL files in the metadata/transform/kpi directory with SELECT queries for each insight (e.g., revenue_summary, product_summary, order_summary).",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Check the dependency lineage",
+          "text": "Run 'starlake lineage --task kpi.order_summary --print' to see the execution order of your transforms as a directed acyclic graph.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the transform command",
+          "text": "Run 'starlake transform --recursive --name kpi.order_summary' to execute all dependent transforms in the correct order.",
+          "position": 4
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Verify the results",
+          "text": "Open the DuckDB shell and query the kpi schema to verify your insights have been computed and stored correctly.",
+          "position": 5
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Transform Data with SQL
 
 Use SELECT statements to create insights from the data in the database.
@@ -160,4 +248,18 @@ D .quit
 
 <br/>
 Our insight is now built and stored in the `kpi` schema. We can now run them from inside our orchestrator to schedule them to run at regular intervals.
+
+## Frequently Asked Questions
+
+### Does Starlake only support SQL for transformations?
+Starlake transformations are based on standard SQL SELECT statements combined with YAML configuration. You write plain SQL without Jinja templating. Python is supported when running on Spark or Databricks through their native Python integration.
+
+### How does Starlake handle dependencies between transform tasks?
+Starlake automatically detects dependencies between SQL tasks by analyzing table references. You can visualize the dependency graph using the `starlake lineage` command, and run tasks in the correct order using the `--recursive` flag.
+
+### Can Starlake run transformations incrementally?
+Yes, Starlake supports incremental transformations through write strategies like `UPSERT_BY_KEY_AND_TIMESTAMP`. It automatically generates the appropriate MERGE INTO or INSERT OVERWRITE SQL based on the `writeStrategy` property.
+
+### Where are SQL transform files stored in a Starlake project?
+SQL transform files are stored in the `metadata/transform` directory. The subdirectory name determines the target schema. For example, files in `metadata/transform/kpi/` will store results in the `kpi` schema.
 

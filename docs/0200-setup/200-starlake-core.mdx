@@ -5,6 +5,51 @@ description: "Get started with Starlake in minutes. Step-by-step installation gu
 keywords: [starlake installation, data pipeline setup, etl quickstart, docker etl, cloud integration]
 ---
 
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What are the prerequisites to install Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "For Linux and macOS, you need Java 17 or higher installed. For Windows, you also need PowerShell 5.0 or later and administrator privileges. The Docker installation requires only Docker to be installed and running."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I install Starlake using Docker?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Docker is the fastest way to get started with Starlake. Pull the image with 'docker pull starlakeai/starlake:latest' and run commands by mounting your project directory to /starlake in the container."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which Java version does Starlake require?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake requires Java 17 or higher. You can use either Oracle JDK or OpenJDK. Verify your version with 'java -version'."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I upgrade Starlake to a newer version?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run 'starlake upgrade' to fetch the latest versions from Maven Central and Sonatype Snapshots. The command lets you choose which version to install and automatically updates the configuration and downloads the new JAR files."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
@@ -316,3 +361,17 @@ Common installation issues and solutions:
 Any additional libraries (e.g., Oracle client) should be copied to the `bin/deps` folder.
 
 :::
+
+## Frequently Asked Questions
+
+### What are the prerequisites to install Starlake?
+For Linux and macOS, you need Java 17 or higher installed. For Windows, you also need PowerShell 5.0 or later and administrator privileges. The Docker installation requires only Docker to be installed and running.
+
+### Can I install Starlake using Docker?
+Yes, Docker is the fastest way to get started with Starlake. Pull the image with `docker pull starlakeai/starlake:latest` and run commands by mounting your project directory to `/starlake` in the container.
+
+### Which Java version does Starlake require?
+Starlake requires Java 17 or higher. You can use either Oracle JDK or OpenJDK. Verify your version with `java -version`.
+
+### How do I upgrade Starlake to a newer version?
+Run `starlake upgrade` to fetch the latest versions from Maven Central and Sonatype Snapshots. The command lets you choose which version to install and automatically updates the configuration and downloads the new JAR files.

@@ -4,6 +4,39 @@ description: "Deploy Starlake data pipelines to cloud environments by copying me
 keywords: [starlake, deploy, cloud deployment, docker, orchestration, data pipeline, production]
 ---
 
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Deploy Starlake Pipelines to Production",
+      "description": "Step-by-step guide to deploying Starlake data pipelines to cloud environments using Docker and an orchestrator.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Set environment variables",
+          "text": "Configure SL_ENV and SL_ROOT environment variables in your Starlake Docker container to match the target environment.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Copy metadata to cloud storage",
+          "text": "Copy your metadata folder to a cloud storage bucket so the Starlake Docker container can access it from any cloud provider.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Deploy DAGs to your orchestrator",
+          "text": "Copy the contents of the metadata/dags/generated folder to your orchestrator's DAGs folder to schedule and run your pipelines.",
+          "position": 3
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Deploy Starlake Pipelines
 
 ## Running your project

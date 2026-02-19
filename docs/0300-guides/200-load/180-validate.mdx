@@ -4,6 +4,51 @@ description: "Validate data types during ingestion with Starlake. Define schemas
 keywords: [starlake, type validation, data types, schema validation, regex, ingestion]
 ---
 
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I define custom validation types in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Create a custom.sl.yml file in the metadata/types directory. Each custom type needs a name, a regex pattern for validation, a primitiveType mapping (string, long, double, boolean, timestamp, decimal, date, byte, or short), and optionally a sample value and comment."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use regex patterns for data validation in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, every type in Starlake is validated using a regex pattern. Built-in types like int, double, and boolean have predefined patterns. You can create custom types with your own regex patterns, such as email addresses, phone numbers, or zip codes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens when data fails validation in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Records that fail type validation are rejected and stored in an audit rejected table. Valid records are loaded into the target table. This ensures that only data matching the expected schema and types reaches your data warehouse."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What built-in types does Starlake provide for validation?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake provides built-in types including string, int, integer, long, short, byte, double, decimal, boolean, date, timestamp, and numerous ISO date/time formats (ISO_LOCAL_DATE, ISO_DATE_TIME, RFC_1123_DATE_TIME, etc.). These are defined in metadata/types/default.sl.yml."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Type validation
 
 
@@ -203,5 +248,19 @@ The following primitive types are supported:
 - timestamp
 - decimal
 - date
+
+## Frequently Asked Questions
+
+### How do I define custom validation types in Starlake?
+Create a `custom.sl.yml` file in the `metadata/types` directory. Each custom type needs a name, a regex pattern for validation, a `primitiveType` mapping (string, long, double, boolean, timestamp, decimal, date, byte, or short), and optionally a sample value and comment.
+
+### Can I use regex patterns for data validation in Starlake?
+Yes, every type in Starlake is validated using a regex pattern. Built-in types like `int`, `double`, and `boolean` have predefined patterns. You can create custom types with your own regex patterns, such as email addresses, phone numbers, or zip codes.
+
+### What happens when data fails validation in Starlake?
+Records that fail type validation are rejected and stored in an audit rejected table. Valid records are loaded into the target table. This ensures that only data matching the expected schema and types reaches your data warehouse.
+
+### What built-in types does Starlake provide for validation?
+Starlake provides built-in types including string, int, integer, long, short, byte, double, decimal, boolean, date, timestamp, and numerous ISO date/time formats (ISO_LOCAL_DATE, ISO_DATE_TIME, RFC_1123_DATE_TIME, etc.). These are defined in `metadata/types/default.sl.yml`.
 
 

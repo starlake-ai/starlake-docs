@@ -1,0 +1,310 @@
+---
+title: "Customize Dagster DAGs"
+description: "Customize Starlake DAG generation for Dagster, including concrete factory classes, templates, and multi-asset sensors for dependency management."
+keywords: [starlake, dagster, dag customization, cloud run, shell job, multi-asset sensor, orchestration]
+toc_min_heading_level: 2
+toc_max_heading_level: 4
+---
+# Customize Dagster DAGs
+
+This page covers Dagster-specific customization for Starlake DAG generation. For general DAG configuration concepts (references, properties, options), see the [Customizing DAG Generation](./200-customization.mdx) hub page.
+
+## Prerequisites
+
+- **Dagster**: 1.6.0 or higher
+- **starlake-dagster**: 0.1.2 or higher
+- **starlake**: 1.0.1 or higher
+
+## Concrete factory classes
+
+Each **concrete** factory class extends `ai.starlake.dagster.StarlakeDagsterJob` and implements the **sl_job** method that will generate the **Dagster op** that will run the corresponding starlake command.
+
+### StarlakeDagsterShellJob
+:::note Shell
+
+`ai.starlake.dagster.shell.StarlakeDagsterShellJob` is a concrete implementation of `StarlakeDagsterJob` that generates nodes using dagster-shell library. Usefull for **on premise** execution.
+
+:::
+An additional **SL_STARLAKE_PATH** option is required to specify the **path** to the **starlake executable**.
+
+![](/img/orchestration/dagster/shell.png)
+
+### StarlakeDagsterCloudRunJob
+:::note Cloud run
+
+`ai.starlake.dagster.gcp.StarlakeDagsterCloudRunJob` class is a concrete implementation of `StarlakeDagsterJob` that overrides the `sl_job` method that will run the starlake command by executing **Cloud Run job**.
+
+:::
+
+Bellow is the list of **additional options** used to configure the **Cloud run job**:
+
+| name                             | type | description                                                                                               |
+| -------------------------------- | ---- | --------------------------------------------------------------------------------------------------------- |
+| **cloud_run_project_id**   | str  | the optional cloud run project id (the project id on which the composer has been instantiated by default) |
+| **cloud_run_job_name**     | str  | the required name of the cloud run job                                                                    |
+| **cloud_run_region**       | str  | the optional region (`europe-west1` by default)                                                         |
+
+## Pre-load strategy visualizations
+
+The pre-load strategy options (NONE, IMPORTED, PENDING, ACK) are described in the [hub page](./200-customization.mdx#pre-load-strategy). Below are the Dagster-specific visualizations for each strategy.
+
+### NONE
+
+![](/img/orchestration/dagster/none.png)
+
+### IMPORTED
+
+![](/img/orchestration/dagster/imported.png)
+
+### PENDING
+
+![](/img/orchestration/dagster/pending.png)
+
+### ACK
+
+![](/img/orchestration/dagster/ack.png)
+
+## Templates
+
+### Data loading
+
+*__dagster_scheduled_table_tpl.py.j2* is the **abstract template** to generate Dagster DAGs for **data loading** which **requires** the instantiation of a **concrete factory class** that implements *ai.starlake.dagster.StarlakeDagsterJob*
+
+Currently, there are **three Dagster concrete templates** for data loading.
+
+All extend this abstract template by instantiating the corresponding concrete factory class using **include statements**.
+
+- *dagster_scheduled_table_shell.py.j2* instantiates a `StarlakeDagsterShellJob` class.
+
+```python title="src/main/resources/templates/dags/load/dagster_scheduled_table_shell.py.j2"
+# This template executes individual shell jobs and requires the following dag generation options set:
+# - SL_STARLAKE_PATH: the path to the starlake executable [OPTIONAL]
+# ...
+{% include 'templates/dags/__starlake_dahster_shell_job.py.j2' %}
+{% include 'templates/dags/load/__dagster_scheduled_table_tpl.py.j2' %}
+```
+
+- *dagster_scheduled_table_cloud_run.py.j2* instantiates a `StarlakeDagsterCloudRunJob` class.
+
+```python title="src/main/resources/templates/dags/load/dagster_scheduled_table_cloud_run.py.j2"
+# This template executes individual cloud run jobs and requires the following dag generation options set:
+# - cloud_run_project_id: the project id where the job is located (if not set, the project id of the composer environment will be used) [OPTIONAL]
+# - cloud_run_job_region: the region where the job is located (if not set, europe-west1 will be used) [OPTIONAL]
+# - cloud_run_job_name: the name of the job to execute [REQUIRED]
+# ...
+{% include 'templates/dags/__starlake_dagster_cloud_run_job.py.j2' %}
+{% include 'templates/dags/load/__airflow_scheduled_table_tpl.py.j2' %}
+```
+
+### Data transformation
+
+*__dagster_scheduled_task_tpl.py.j2* is the **abstract template** to generate Dagster DAGs for **data transformation** which **requires**, in the same way, the instantiation of a **concrete factory class** that implements *ai.starlake.dagster.StarlakeDagsterJob*
+
+Currently, there are **three Dagster concrete templates** for data transformation.
+
+All extend this abstract template by instantiating the corresponding concrete factory class using **include statements**.
+
+- *dagster_scheduled_task_shell.py.j2* instantiates a `StarlakeDagsterShellJob` class.
+
+```python title="src/main/resources/templates/dags/transform/dagster_scheduled_task_shell.py.j2"
+# ...
+{% include 'templates/dags/__starlake_dagster_shell_job.py.j2' %}
+{% include 'templates/dags/load/__dagster_scheduled_task_tpl.py.j2' %}
+```
+
+- *dagster_scheduled_task_cloud_run.py.j2* instantiates a `StarlakeDagsterCloudRunJob` class.
+
+```python title="src/main/resources/templates/dags/transform/dagster_scheduled_task_cloud_run.py.j2"
+# ...
+{% include 'templates/dags/__starlake_dagster_cloud_run_job.py.j2' %}
+{% include 'templates/dags/load/__dagster_scheduled_table_tpl.py.j2' %}
+```
+
+## Dependencies
+
+For any transformation, Starlake is able to calculate all its dependencies towards other tasks or loads thanks to the **analysis** of **SQL queries**.
+
+The **run_dependencies_first** option defines whether or not we wish to recursively **generate all the dependencies** associated with each task for which the transformation DAG must be generated (False by default). If we choose to not generate those dependencies, the corresponding DAG will be scheduled using the **Dagster Multi Asset Sensor** mechanism.
+
+All **dependencies** for data transformation are **available** in the generated DAG via the **Python** dictionary **variable** **task_deps**.
+
+```python
+task_deps=json.loads("""[ {
+  "data" : {
+    "name" : "Customers.HighValueCustomers",
+    "typ" : "task",
+    "parent" : "Customers.CustomerLifeTimeValue",
+    "parentTyp" : "task",
+    "parentRef" : "CustomerLifetimeValue",
+    "sink" : "Customers.HighValueCustomers"
+  },
+  "children" : [ {
+    "data" : {
+      "name" : "Customers.CustomerLifeTimeValue",
+      "typ" : "task",
+      "parent" : "starbake.Customers",
+      "parentTyp" : "table",
+      "parentRef" : "starbake.Customers",
+      "sink" : "Customers.CustomerLifeTimeValue"
+    },
+    "children" : [ {
+      "data" : {
+        "name" : "starbake.Customers",
+        "typ" : "table",
+        "parentTyp" : "unknown"
+      },
+      "task" : false
+    }, {
+      "data" : {
+        "name" : "starbake.Orders",
+        "typ" : "table",
+        "parentTyp" : "unknown"
+      },
+      "task" : false
+    } ],
+    "task" : true
+  } ],
+  "task" : true
+} ]""")
+```
+
+### Inline
+
+In this strategy (**run_dependencies_first** = *True*), all the dependencies related to the transformation will be generated.
+
+![](/img/orchestration/dagster/transformWithDependencies.png)
+
+### Multi Asset Sensor
+
+In this strategy (**run_dependencies_first** = *False*), the default strategy, a **sensor** will be created to **check** if the **dependencies** are **met** via the use of **Dagster Assets**.
+
+```python title="src/main/resources/template/dags/transform/__dagster_scheduled_task_tpl.py.j2"
+#...
+from dagster import AssetKey, MultiAssetSensorDefinition, MultiAssetSensorEvaluationContext, SkipReason, Definitions
+
+# if you want to load dependencies, set run_dependencies_first to True in the options
+run_dependencies_first: bool = StarlakeDagsterJob.get_context_var(var_name='run_dependencies_first', default_value='False', options=options).lower() == 'true'
+
+# highlight-next-line
+sensor = None
+
+# if you choose to not load the dependencies, a sensor will be created to check if the dependencies are met
+# highlight-next-line
+if not run_dependencies_first:
+    assets: Set[str] = []
+
+    def load_assets(task: dict):
+        if 'children' in task:
+            for child in task['children']:
+                assets.append(sanitize_id(child['data']['name']))
+                load_assets(child)
+
+    for task in task_deps:
+        load_assets(task)
+
+    def multi_asset_sensor_with_skip_reason(context: MultiAssetSensorEvaluationContext):
+        asset_events = context.latest_materialization_records_by_key()
+        if all(asset_events.values()):
+            context.advance_all_cursors()
+            return RunRequest()
+        elif any(asset_events.values()):
+            materialized_asset_key_strs = [
+                key.to_user_string() for key, value in asset_events.items() if value
+            ]
+            not_materialized_asset_key_strs = [
+                key.to_user_string() for key, value in asset_events.items() if not value
+            ]
+            return SkipReason(
+                f"Observed materializations for {materialized_asset_key_strs}, "
+                f"but not for {not_materialized_asset_key_strs}"
+            )
+        else:
+            return SkipReason("No materializations observed")
+
+    sensor = MultiAssetSensorDefinition(
+        name = f'{job_name}_sensor',
+        monitored_assets = list(map(lambda asset: AssetKey(asset), assets)),
+        asset_materialization_fn = multi_asset_sensor_with_skip_reason,
+        minimum_interval_seconds = 60,
+        description = f"Sensor for {job_name}",
+        job_name = job_name,
+    )
+#...
+defs = Definitions(
+   jobs=[generate_job()],
+   schedules=crons,
+   # highlight-next-line
+   sensors=[sensor] if sensor else [],
+)
+```
+
+Those **required Assets** are **materialized** for **each** **load** and **task** that have been **executed**.
+
+The *ai.starlake.dagster.StarlakeDagsterJob* class is responsible for **recording** the **assets** related to the execution of each starlake command.
+
+```python title="ai.starlake.dagster.StarlakeDagsterJob"
+def sl_import(self, task_id: str, domain: str, **kwargs) -> NodeDefinition:
+    # highlight-next-line
+    kwargs.update({'asset': AssetKey(sanitize_id(domain))})
+    #...
+
+def sl_load(self, task_id: str, domain: str, table: str, spark_config: StarlakeSparkConfig=None, **kwargs) -> NodeDefinition:
+    # highlight-next-line
+    kwargs.update({'asset': AssetKey(sanitize_id(f"\{domain\}.\{table\}"))})
+    #...
+
+def sl_transform(self, task_id: str, transform_name: str, transform_options: str = None, spark_config: StarlakeSparkConfig = None, **kwargs) -> NodeDefinition:
+    # highlight-next-line
+    kwargs.update({'asset': AssetKey(sanitize_id(transform_name))})
+    #...
+
+```
+
+Each corresponding **asset** will be then **materialized** at run time through the execution of the **Dagset op** defined within the **sl_job** function of the concrete factory class that has been instantiated by the template.
+
+```python title="ai.starlake.dagster.shell.StarlakeShellJob"
+def sl_job(self, task_id: str, arguments: list, spark_config: StarlakeSparkConfig=None, **kwargs) -> NodeDefinition:
+    """Overrides IStarlakeJob.sl_job()
+    Generate the Dagster node that will run the starlake command.
+
+    Args:
+        task_id (str): The required task id.
+        arguments (list): The required arguments of the starlake command to run.
+
+    Returns:
+        OpDefinition: The Dastger node.
+    """
+    command = self.__class__.get_context_var("SL_STARLAKE_PATH", "starlake", self.options) + f" {' '.join(arguments)}"
+
+    # highlight-next-line
+    asset_key: AssetKey = kwargs.get("asset", None)
+
+    @op(
+        name=task_id,
+        ins=kwargs.get("ins", {}),
+        out={kwargs.get("out", "result"): Out(str)},
+    )
+    def job(context, **kwargs):
+        output, return_code = execute_shell_command(
+            shell_command=command,
+            output_logging="STREAM",
+            log=context.log,
+            cwd=self.sl_root,
+            env=self.sl_env_vars,
+            log_shell_command=True,
+        )
+
+        if return_code:
+            raise Failure(description=f"Starlake command {command} execution failed with output: {output}")
+
+        if asset_key:
+            # highlight-next-line
+            yield AssetMaterialization(asset_key=asset_key.path, description=kwargs.get("description", f"Starlake command {command} execution succeeded"))
+
+        yield Output(value=output, output_name="result")
+
+    return job
+
+```
+
+![](/img/orchestration/dagster/transformWithoutDependencies.png)

@@ -4,6 +4,51 @@ description: "Choose how Starlake writes data to tables: APPEND, OVERWRITE, UPSE
 keywords: [starlake, write strategy, APPEND, OVERWRITE, UPSERT, SCD2, DELETE_THEN_INSERT, merge]
 ---
 
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "When should I use UPSERT_BY_KEY vs SCD2 in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use UPSERT_BY_KEY when you only need the latest version of each record identified by a key. Use SCD2 (Slowly Changing Dimension Type 2) when you need to preserve the full history of changes to each record, with start and end timestamps tracking each version."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the difference between APPEND and OVERWRITE write strategies?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "APPEND inserts all new rows into the table without modifying existing data. OVERWRITE replaces all existing rows in the table with the new rows, effectively deleting everything and inserting fresh data."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the ADAPTATIVE write strategy in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The ADAPTATIVE write strategy allows you to change the write mode at runtime based on criteria such as day of the week, file size, or file name pattern. For example, you can APPEND data on weekdays and OVERWRITE on Sundays."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does DELETE_THEN_INSERT differ from UPSERT_BY_KEY?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "DELETE_THEN_INSERT first deletes all rows in the target table that have matching keys in the incoming data, then inserts all incoming rows. UPSERT_BY_KEY performs a merge operation, updating existing rows and inserting new ones in a single step."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Write strategies
 
 When loading a file to a database table you can specify how to data is written to the table.
@@ -240,6 +285,20 @@ fileDayOfWeek | Integer representing file modification day of week. Monday = 1, 
 :::note
 For a criteria relying on datetime, you can change its timezone with `timezone` application settings in `application.sl.yml`
 :::
+
+## Frequently Asked Questions
+
+### When should I use UPSERT_BY_KEY vs SCD2?
+Use `UPSERT_BY_KEY` when you only need the latest version of each record identified by a key. Use `SCD2` (Slowly Changing Dimension Type 2) when you need to preserve the full history of changes to each record, with start and end timestamps tracking each version.
+
+### What is the difference between APPEND and OVERWRITE?
+`APPEND` inserts all new rows into the table without modifying existing data. `OVERWRITE` replaces all existing rows in the table with the new rows, effectively deleting everything and inserting fresh data.
+
+### What is the ADAPTATIVE write strategy?
+The `ADAPTATIVE` write strategy allows you to change the write mode at runtime based on criteria such as day of the week, file size, or file name pattern. For example, you can APPEND data on weekdays and OVERWRITE on Sundays.
+
+### How does DELETE_THEN_INSERT differ from UPSERT_BY_KEY?
+`DELETE_THEN_INSERT` first deletes all rows in the target table that have matching keys in the incoming data, then inserts all incoming rows. `UPSERT_BY_KEY` performs a merge operation, updating existing rows and inserting new ones in a single step.
 
 
 

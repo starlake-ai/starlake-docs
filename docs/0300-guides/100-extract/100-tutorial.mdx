@@ -4,6 +4,94 @@ description: "Learn how to extract tables from databases as files using Starlake
 keywords: [starlake, extract data, database extraction, JDBC, ETL, data pipeline]
 ---
 
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What databases does Starlake support for extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports extraction from any JDBC-compliant database, including PostgreSQL, MySQL, SQL Server, Oracle, DuckDB, and more. You configure the connection using a JDBC URL and driver in the application.sl.yml file."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can Starlake extract data incrementally?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Starlake supports incremental extraction by specifying a timestamp column in the table configuration. Only rows with a timestamp newer than the last extraction will be fetched."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the output format of Starlake extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "By default, Starlake extracts data into CSV files stored in the output directory you specify. The extracted files are organized by schema name and can be directly loaded into a data warehouse using the starlake load command."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I extract all tables from a schema at once?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, you can use the wildcard '*' in the tables name field to extract all tables from a given schema. You can also filter by table types such as TABLE, VIEW, or SYSTEM TABLE."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Extract Data from a Database with Starlake",
+      "description": "Step-by-step guide to extracting tables from a JDBC database as CSV files using Starlake CLI.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Install prerequisites",
+          "text": "Install DuckDB and download the sample duckdb.db database into your project's datasets folder at $SL_ROOT/datasets.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Configure the database connection",
+          "text": "Edit metadata/application.sl.yml to add a JDBC connection entry with the database URL and driver class.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Configure the extraction YAML",
+          "text": "Create metadata/extract/my_extract_config.sl.yml specifying the connectionRef, schema name, tables to extract, and table types.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the extract-data command",
+          "text": "Run 'starlake extract-data --config my_extract_config --outputDir $SL_ROOT/incoming/' to extract tables as CSV files.",
+          "position": 4
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Verify the output files",
+          "text": "Check the $SL_ROOT/incoming/starbake folder for the extracted CSV files, ready to be loaded into a data warehouse.",
+          "position": 5
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Extract Data from Databases
 
 Extract tables in one shot or incrementally from a database as a set of files.
@@ -104,4 +192,18 @@ using starlake load command instead of going through the infer-schema feature st
 $ cd $SL_ROOT
 $ starlake extract-schema --config my_extract_config # extract description
 ```
+
+## Frequently Asked Questions
+
+### What databases does Starlake support for extraction?
+Starlake supports extraction from any JDBC-compliant database, including PostgreSQL, MySQL, SQL Server, Oracle, DuckDB, and more. You configure the connection using a JDBC URL and driver in the `application.sl.yml` file.
+
+### Can Starlake extract data incrementally?
+Yes, Starlake supports incremental extraction by specifying a `timestamp` column in the table configuration. Only rows with a timestamp newer than the last extraction will be fetched.
+
+### What is the output format of Starlake extraction?
+By default, Starlake extracts data into CSV files stored in the output directory you specify. The extracted files are organized by schema name and can be directly loaded into a data warehouse using the `starlake load` command.
+
+### Can I extract all tables from a schema at once?
+Yes, you can use the wildcard `*` in the tables `name` field to extract all tables from a given schema. You can also filter by table types such as TABLE, VIEW, or SYSTEM TABLE.
 

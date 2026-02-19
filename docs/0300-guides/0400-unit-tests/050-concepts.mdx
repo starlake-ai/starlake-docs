@@ -4,6 +4,51 @@ description: "Understand unit testing concepts for data pipelines in Starlake, u
 keywords: [starlake, unit testing, data pipeline testing, duckdb, sql transpilation, data quality]
 ---
 
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Why does Starlake use DuckDB for unit testing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake uses DuckDB because it is a fast, in-memory SQL database that runs locally without requiring cloud access or service accounts. This eliminates data access costs, provides fast feedback, and allows deterministic, repeatable tests."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do Starlake unit tests work locally?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake transpiles your target data warehouse SQL dialect to DuckDB-compatible SQL. This lets you run your production load and transform logic on a local DuckDB instance, comparing actual results against expected data defined in JSON files."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I run Starlake unit tests in my CI pipeline?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, since Starlake unit tests run on DuckDB locally, they can be executed in any CI environment without needing a service account or access to the target data warehouse. This makes them ideal for automated testing before deployment."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What can I test with Starlake unit tests?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can test both data loading and data transformations. For load tests, you provide sample input files and expected output data. For transform tests, you provide sample source data and verify the SQL transformation produces the expected results."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Unit Testing Data Pipelines
 
 Unit tests are a critical part of the software development process.
@@ -23,3 +68,17 @@ This allows you to run your unit tests on your local machine without the need fo
 This also allows you to run your unit tests in a repeatable way, ensuring that your tests are deterministic.
 
 ![](/img/starlake-unit-tests.png)
+
+## Frequently Asked Questions
+
+### Why does Starlake use DuckDB for unit testing?
+Starlake uses DuckDB because it is a fast, in-memory SQL database that runs locally without requiring cloud access or service accounts. This eliminates data access costs, provides fast feedback, and allows deterministic, repeatable tests.
+
+### How do Starlake unit tests work locally?
+Starlake transpiles your target data warehouse SQL dialect to DuckDB-compatible SQL. This lets you run your production load and transform logic on a local DuckDB instance, comparing actual results against expected data defined in JSON files.
+
+### Can I run Starlake unit tests in my CI pipeline?
+Yes, since Starlake unit tests run on DuckDB locally, they can be executed in any CI environment without needing a service account or access to the target data warehouse. This makes them ideal for automated testing before deployment.
+
+### What can I test with Starlake unit tests?
+You can test both data loading and data transformations. For load tests, you provide sample input files and expected output data. For transform tests, you provide sample source data and verify the SQL transformation produces the expected results.
