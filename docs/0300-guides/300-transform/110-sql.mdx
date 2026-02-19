@@ -114,6 +114,10 @@ import Head from '@docusaurus/Head';
 
 Starlake SQL transforms let you materialize any SELECT statement into a target table using a configurable write strategy. This page covers SELECT syntax, column documentation with `attributesDesc`, custom MERGE/INSERT via `parseSQL: false`, and incremental modelling with the `sl_start_date` / `sl_end_date` environment variables. All SQL is standard -- no Jinja templating is involved.
 
+:::info Variable substitution syntax
+The `{{variable}}` syntax used in SQL files (e.g. `{{sl_start_date}}`) is Starlake's environment variable substitution, not Jinja templating. These variables are resolved at runtime before the SQL is sent to the database engine. You can use any environment variable with this syntax.
+:::
+
 ## SELECT Statement Materialization
 
 A [SQL transform](./tutorial#write-the-sql-select-statements) is a SELECT statement that Starlake materializes into a target table using the [write strategy](../load/write-strategies) defined in the companion YAML file. The SELECT can be as simple or as complex as needed -- single table queries, multi-table joins, subqueries, and window functions all work.
