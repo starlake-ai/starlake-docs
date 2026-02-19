@@ -200,3 +200,9 @@ No. Incremental mode detects only new rows (`partitionColumn` value greater than
 
 ### Can you combine incremental and parallel extraction?
 Yes. When `fullExport: false` and `numPartitions > 1` are configured, the same `partitionColumn` is used for both parallel partitioning and incremental tracking.
+
+## Related
+
+- [Extract Tutorial](./tutorial) -- full walkthrough for setting up your first extraction
+- [Load Data into Your Warehouse](../load/tutorial) -- load incrementally extracted files into your warehouse
+- [Configure Database Connections](../project-setup/connections) -- set up the JDBC connection used for extraction

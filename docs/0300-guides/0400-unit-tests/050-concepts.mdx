@@ -132,3 +132,9 @@ You can test both data loading and data transformations. For load tests, you pro
 
 ### Does SQL transpilation change my queries?
 No. You write SQL in your target dialect (BigQuery, Snowflake, Databricks, etc.) and Starlake automatically transpiles it to DuckDB for testing. Your original queries remain unchanged.
+
+## Related
+
+- [Load Tutorial](../load/tutorial) -- learn how to load data before writing load tests
+- [Transform Tutorial](../transform/tutorial) -- learn how to write SQL transforms before writing transform tests
+- [Orchestrate Pipelines](../orchestrate/tutorial) -- schedule tested pipelines with Airflow, Dagster or Snowflake Tasks

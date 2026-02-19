@@ -358,3 +358,10 @@ Starlake supports three methods: APPLICATION_DEFAULT (default credentials), SERV
 
 ### How do I configure a Redshift connection in Starlake?
 Use a JDBC connection with `url: "jdbc:redshift://<account>.<region>.redshift.amazonaws.com:5439/<database>"` and `driver: com.amazon.redshift.Driver`. Provide the password, a temporary S3 bucket, and an IAM role ARN.
+
+## Related
+
+- [Extract Data from Databases](../extract/tutorial) -- use connections to extract tables as CSV files
+- [Load Data into Your Warehouse](../load/tutorial) -- load files into the connected data warehouse
+- [Transform Data with SQL](../transform/tutorial) -- run SQL transforms against the connected database
+- [Environment Variables](./environment) -- manage connection settings across DEV and PROD environments

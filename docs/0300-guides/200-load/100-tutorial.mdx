@@ -293,3 +293,10 @@ Set the `SL_INCOMING` environment variable, or configure the `application.area.i
 
 ### How do I review rejected records?
 Query the `audit.rejected` table. It contains the job ID, timestamp, domain, table name, the rejected record, and the rejection reason.
+
+## Related
+
+- [Extract Data from Databases](../extract/tutorial) -- extract source data as CSV files before loading
+- [Transform Data with SQL](../transform/tutorial) -- build KPI tables from your loaded data
+- [Write Strategies](./write-strategies) -- control how data is written to tables (APPEND, OVERWRITE, UPSERT, SCD2)
+- [Unit Test Load Pipelines](../unit-tests/load-tests) -- validate loading logic locally with DuckDB

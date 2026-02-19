@@ -225,3 +225,9 @@ Environment-specific variables (defined in `env.<ENV>.sl.yml`) override global v
 
 ### Are the `${}` and `{{}}` syntaxes interchangeable?
 Yes. Both `${variable_name}` and `{{variable_name}}` produce the same result. You can use either syntax in domain and job YAML files.
+
+## Related
+
+- [Configure Database Connections](./connections) -- define connections that use environment variables for credentials
+- [Load Tutorial](../load/tutorial) -- use `SL_ENV` to target different warehouses when loading data
+- [Transform Tutorial](../transform/tutorial) -- use predefined date variables like `sl_date` in SQL transforms

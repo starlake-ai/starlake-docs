@@ -246,3 +246,10 @@ In the `metadata/application.sl.yml` file, under the `connections` section. Each
 
 ### What is the CLI command to run an extraction?
 `starlake extract-data --config <config_name> --outputDir <output_directory>`
+
+## Related
+
+- [Load Data into Your Warehouse](../load/tutorial) -- load extracted CSV files into BigQuery, Snowflake, Databricks or DuckDB
+- [Configure Database Connections](../project-setup/connections) -- set up JDBC connections used by the extract command
+- [Incremental Extraction](./incremental) -- extract only new rows using a partition column
+- [Unit Testing Data Pipelines](../unit-tests/concepts) -- test your extract-load-transform pipeline locally
