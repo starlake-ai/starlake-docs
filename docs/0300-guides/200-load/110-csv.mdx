@@ -183,7 +183,7 @@ table:
 | `type` | Column type: `string`, `int`, `long`, `double`, `float`, `boolean`, or any `date`/`timestamp` variant defined in `metadata/types/default.sl.yml`. You can add custom types in the `metadata/types/` directory. | `string` |
 | `required` | Whether the column must have a non-null value | `false` |
 | `privacy` | Privacy transformation to apply (e.g., masking, hashing) | None |
-| `transform` | SQL transformation to apply to the column value | None |
+| `script` | SQL transformation to apply to the column value | None |
 | `comment` | Column comment | None |
 | `rename` | Target column name in the database (overrides `name`) | `name` |
 | `default` | Default value when the column is NULL | None |
@@ -244,4 +244,4 @@ By default, empty values are kept as empty strings. Set `emptyIsNull: true` in t
 Rows that do not match the defined schema (wrong type, missing required field) are sent to the `audit.rejected` table with the rejection reason.
 
 ### Can I apply transformations during CSV loading?
-Yes. Use the `transform` and `privacy` properties on individual attributes, or see the [Transform on load](transform) documentation for adding, replacing, or ignoring attributes.
+Yes. Use the `script` and `privacy` properties on individual attributes, or see the [Transform on load](transform) documentation for adding, replacing, or ignoring attributes.
