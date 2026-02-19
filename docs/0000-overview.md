@@ -61,7 +61,7 @@ import Head from '@docusaurus/Head';
 
 - **100% Declarative**: No Orchestration code to write.
 - **Automated Quality**: schema validation and data quality checks are built-in.
-- **Cross-Platform**: Run on Spark, Snowflake, BigQuery, Databricks, Redshift, DuckDB, PostgreSQL and more
+- **Cross-Platform**: Run on Spark, Snowflake, BigQuery, Databricks, DuckDB, PostgreSQL and more
 
 ![](/img/starlake-perimeter.png)
 
