@@ -214,4 +214,12 @@ $RECYCLE.BIN/
 
 
 .idea
+
+# Claude Code local config
+.claude/
+
+# BMAD framework artifacts
+_bmad/
+bmad/
+
 # End of https://www.toptal.com/developers/gitignore/api/docusaurus,macos,windows,linux
