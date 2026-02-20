@@ -1,6 +1,8 @@
 ---
 sidebar_position: 260
 title: parquet2csv
+description: "Convert Parquet files to CSV format with configurable partitions, write modes, and Spark options like delimiter and header."
+keywords: [starlake parquet2csv, parquet to csv, file conversion, data export, spark]
 ---
 
 
@@ -10,25 +12,7 @@ title: parquet2csv
 
 ## Description
 
-Convert parquet files to CSV.
-The folder hierarchy should be in the form /input_folder/domain/schema/part*.parquet
-Once converted the csv files are put in the folder /output_folder/domain/schema.csv file
-When the specified number of output partitions is 1 then /output_folder/domain/schema.csv is the file containing the data
-otherwise, it is a folder containing the part*.csv files.
-When output_folder is not specified, then the input_folder is used a the base output folder.
-
-````shell
-starlake parquet2csv
-         --input_dir /tmp/datasets/accepted/
-         --output_dir /tmp/datasets/csv/
-         --domain sales
-         --schema orders
-         --option header=true
-         --option separator=,
-         --partitions 1
-         --write_mode overwrite
-````
-
+Convert Parquet files to CSV format for inspection or downstream processing.
 
 ## Parameters
 

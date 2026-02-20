@@ -1,14 +1,122 @@
+---
+title: "Clustering and Partitioning in Starlake — BigQuery, Databricks, Spark"
+description: "Configure clustering, partitioning, materialized views and expiration in Starlake for BigQuery and Spark/Databricks. YAML-based sink configuration for query optimization."
+keywords: [starlake, clustering, partitioning, BigQuery, Databricks, sink, query optimization, materialized view, Spark]
+---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I configure clustering in Starlake for BigQuery?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Add a sink.clustering section in the table YAML file with the list of clustering columns. BigQuery supports multiple clustering columns."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the difference between clustering and partitioning?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Partitioning physically divides the table into segments based on a column value (e.g. date). Clustering sorts data within each partition by one or more columns, speeding up queries that filter on those columns."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I enable a materialized view in Starlake for BigQuery?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Set sink.materializedView: true in the table configuration. Optionally enable automatic refresh with enableRefresh: true and set the interval via refreshIntervalMs."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I partition on multiple columns in BigQuery via Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. BigQuery supports only a single partition field. Starlake respects this constraint: sink.partition.field accepts only one column. However, with Spark (Databricks), multiple partition columns are supported."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What Spark options are available in the sink section?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The sink.options section allows passing key-value pairs to the Spark writer, for example compression: snappy. You can also define the format (delta, parquet), coalesce, and clustering/partition columns."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I configure partition expiration in BigQuery?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the sink.days property to define the number of days before expiration. By default, partitions do not expire."
+          }
+        }
+      ]
+    })}
+  </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to configure partitioning and clustering in Starlake",
+      "description": "Set up partitioning and clustering in the table YAML sink section for BigQuery or Spark/Databricks.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Open the table YAML file",
+          "text": "Edit metadata/load/<domain>/<table>.sl.yml."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Add a sink section",
+          "text": "Under the table key, add a sink section with clustering and partition properties."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Define clustering columns",
+          "text": "List one or more columns under sink.clustering. Both BigQuery and Spark support multiple clustering columns."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Define a partition field",
+          "text": "Set sink.partition.field (BigQuery, single column) or sink.partition (Spark, multiple columns)."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the load",
+          "text": "Execute starlake load. The target table will be created or updated with the configured partitioning and clustering."
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Clustering and Partitioning
 
-Some datawarehouses are designed to store data in a way that makes it easy to perform clustering and partitioning.
-Clustering and partitioning are two techniques that can be used to improve the performance of queries on large datasets.
-Clustering involves storing similar rows of data together, while partitioning involves splitting a table into smaller chunks of data.
+Clustering and partitioning reduce query cost and improve performance on large tables. Partitioning physically divides a table into segments based on a column value (typically a date). Clustering sorts data within each partition by one or more columns, speeding up queries that filter on those columns.
 
+Starlake exposes these optimizations through the `sink` section of the table YAML definition. Both BigQuery and Spark/Databricks are supported, with additional options for materialized views, table expiration and Spark writer settings.
 
-`BigQuery`and `Databricks` are two datawarehouses that support user-defined clustering and partitioning.
+## How to configure partitioning and clustering
 
-To specify clustering and partitioning in BigQuery, you define the following properties in the `sink` section of the table configuration file.
+1. **Open the table YAML file** -- Edit `metadata/load/<domain>/<table>.sl.yml`.
+2. **Add a `sink` section** -- Under the `table` key, add a `sink` section with clustering and partition properties.
+3. **Define clustering columns** -- List one or more columns under `sink.clustering`. Both BigQuery and Spark support multiple clustering columns.
+4. **Define a partition field** -- Set `sink.partition.field` (BigQuery, single column) or `sink.partition` (Spark, multiple columns).
+5. **Run the load** -- Execute `starlake load`. The target table will be created or updated with the configured partitioning and clustering.
 
+## Sink configuration by platform
+
+Starlake adapts the sink properties to each target platform. BigQuery supports partition expiration, materialized views and partition filters. Spark supports multiple partition columns, coalesce and arbitrary writer options.
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -19,7 +127,7 @@ import TabItem from '@theme/TabItem';
 <TabItem value="bigquery" label="BigQuery">
 
 ```yaml title="metadata/load/<domain>/<table>.sl.yml"
-table
+table:
     ...
     sink:
       clustering:
@@ -28,11 +136,22 @@ table
       partition:
         field: <field> # only one field is allowed
       requirePartitionFilter: <true|false> # default is false
-      days: <Ta> # expiration in days. default is "never expire"
+      days: <number> # expiration in days. default is "never expire"
       materializedView: <true|false> # Sink data as a materialized view. default is false
       enableRefresh: <true|false> # only if materializedView is true. Default is false
-      refreshIntervalMs: <TabItem> # only if enable refresh is true.
+      refreshIntervalMs: <number> # only if enable refresh is true.
 ```
+
+**BigQuery-specific properties:**
+
+| Property | Type | Description |
+|---|---|---|
+| `partition.field` | string | Single column for partition. BigQuery allows only one. |
+| `requirePartitionFilter` | boolean | Force queries to include a partition filter. Default: `false`. |
+| `days` | number | Partition expiration in days. Default: never expire. |
+| `materializedView` | boolean | Store the table as a materialized view. Default: `false`. |
+| `enableRefresh` | boolean | Enable automatic refresh of the materialized view. Default: `false`. |
+| `refreshIntervalMs` | number | Refresh interval in milliseconds. Applies only when `enableRefresh` is `true`. |
 
 </TabItem>
 
@@ -54,5 +173,38 @@ table:
             <key>: <value> # Options to pass to the Spark writer. For example, "compression" -> "snappy"
 ```
 
+**Spark-specific properties:**
+
+| Property | Type | Description |
+|---|---|---|
+| `format` | string | Output format. Common values: `delta`, `parquet`. |
+| `partition` | list | One or more partition columns. Spark supports multiple columns. |
+| `coalesce` | boolean | Coalesce output files into fewer partitions. Default: `false`. |
+| `options` | map | Key-value pairs passed to the Spark writer (e.g., `compression: snappy`). |
+
 </TabItem>
 </Tabs>
+
+## Relationship with write strategies
+
+The `OVERWRITE_BY_PARTITION` [write strategy](/guides/load/write-strategies) depends on the partition configured in the sink section. Make sure to define `sink.partition` before using this strategy.
+
+## Frequently Asked Questions
+
+### How do I configure clustering in Starlake for BigQuery?
+Add a `sink.clustering` section in the table YAML file with the list of clustering columns. BigQuery supports multiple clustering columns.
+
+### What is the difference between clustering and partitioning?
+Partitioning physically divides the table into segments based on a column value (e.g., date). Clustering sorts data within each partition by one or more columns, speeding up queries that filter on those columns.
+
+### How do I enable a materialized view in Starlake for BigQuery?
+Set `sink.materializedView: true` in the table configuration. Optionally enable automatic refresh with `enableRefresh: true` and set the interval via `refreshIntervalMs`.
+
+### Can I partition on multiple columns in BigQuery via Starlake?
+No. BigQuery supports only a single partition field. Starlake respects this constraint: `sink.partition.field` accepts only one column. With Spark (Databricks), multiple partition columns are supported.
+
+### What Spark options are available in the sink section?
+The `sink.options` section allows passing key-value pairs to the Spark writer (e.g., `compression: snappy`). You can also define the format (`delta`, `parquet`), `coalesce`, and clustering/partition columns.
+
+### How do I configure partition expiration in BigQuery?
+Use the `sink.days` property to define the number of days before expiration. By default, partitions do not expire.

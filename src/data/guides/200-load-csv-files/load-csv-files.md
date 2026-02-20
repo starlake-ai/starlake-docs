@@ -20,7 +20,7 @@ A domain is a logical grouping of your data assets in Starlake. It maps to a sch
 3. You may optionally add a description your domain. This is useful for documentation purposes and for AI assistance. This description will be saved in the database as a comment.
 4. Click "Create" to finalize the domain creation.
 
-![](/img/guides/load-csv-files/step1.png)
+![Starlake UI creating a new domain for CSV data loading](/img/guides/load-csv-files/step1.png)
 
 We are now ready to load our CSV files into the schema "starbake" of our database.
 
@@ -31,7 +31,7 @@ Prepare a sample CSV file with a few rows of data that represent the structure y
 
 1. Click on "Load" and select "CSV / JSON / XML".
 2. Choose the CSV file you want to load.
-![](/img/guides/load-csv-files/step2.png)
+![Starlake CSV file preview with inferred table name and AI description](/img/guides/load-csv-files/step2.png)
 A preview of the file will be displayed.
 Starlake will also infer the table name from the filename. Update the table name if necessary.
 If A.I. is enabled, you may request it to suggest a description for the table by clicking on the "A.I." button inside the "Description" field.
@@ -42,7 +42,7 @@ If A.I. is enabled, you may request it to suggest a description for the table by
 
 Starlake will automatically infer the table schema from the CSV file. You can review and modify the inferred schema if necessary.
 
-![](/img/guides/load-csv-files/step3.1.png)
+![Starlake inferred table schema from CSV with editable data types and primary key](/img/guides/load-csv-files/step3.1.png)
 
 To customize the inferred schema, you can edit the data types, and invoke the A.I. assistant to suggest descriptions as needed. This allows you to ensure that the schema matches your requirements before loading the data.
 This schema will be created when executing your load if it does not already exist.
@@ -53,7 +53,7 @@ Hit the "Finish" button to complete the process.
 
 If you kept the "Load Data" option enabled, Starlake will start loading the data from the CSV file into the specified table and display the results.
 
-![](/img/guides/load-csv-files/step3.2.png)
+![Starlake CSV load results showing data successfully loaded into the database](/img/guides/load-csv-files/step3.2.png)
 
 
 ## Going Further

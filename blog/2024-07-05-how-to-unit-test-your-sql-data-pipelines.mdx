@@ -1,22 +1,47 @@
 ---
 slug: how-unit-test-your-sql-data-pipelines
 title: How to unit test your data pipelines
+description: "Learn how to unit test SQL data pipelines locally with DuckDB using Starlake, reducing costs and catching bugs before deployment."
+keywords:
+    - unit test data pipeline
+    - sql testing duckdb
+    - starlake unit tests
+    - data quality testing
 authors:
     - tiboun
 tags: [Unit Test, Databricks, DuckDB, Data Engineering, Analytics, BigQuery, Snowflake, Redshift]
+image: /img/blog/starlake-blog-default.png
 ---
 
-<head>
-    <link rel="canonical" href="https://www.linkedin.com/pulse/how-unit-test-your-sql-data-pipelines-bounkong-khamphousone-2xwye" />
-</head>
+import Head from '@docusaurus/Head';
 
-
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "How to unit test your data pipelines",
+      "description": "Learn how to unit test SQL data pipelines locally with DuckDB using Starlake, reducing costs and catching bugs before deployment.",
+      "datePublished": "2024-07-05",
+      "author": {
+        "@type": "Organization",
+        "name": "Starlake",
+        "url": "https://starlake.ai"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Starlake",
+        "url": "https://starlake.ai"
+      }
+    })}
+  </script>
+</Head>
 
 In today's data-driven landscape, ensuring the reliability and accuracy of your data warehouse is paramount. The cost of not testing your data can be astronomical, leading to critical business decisions based on faulty data and eroding trust. 
 
 The path to rigorous data testing comes with its own set of challenges. In this article, I will highlight how you can confidently deploy your data pipelines by leveraging [Starlake JSQLTranspiler](https://github.com/starlake-ai/jsqltranspiler) and DuckDB, while also reducing costs. we will go beyond testing your transform usually written in SQL and see how we can also test our Ingestion jobs.
 
-![]( /img/blog/how-to-unit-test-your-sql-data-pipelines/data-pipeline-cicd.gif)
+![Animated CI/CD pipeline flow for SQL data pipeline testing with Starlake and DuckDB]( /img/blog/how-to-unit-test-your-sql-data-pipelines/data-pipeline-cicd.gif)
 
 {/* truncate */}
 

@@ -1,6 +1,12 @@
 ---
 sidebar_position: 70
 title: compare
+description: "Compare two versions of a Starlake project using file paths, git commits, or tags and generate a diff report with templates."
+keywords:
+  - starlake compare
+  - project diff
+  - schema comparison
+  - version comparison
 ---
 
 
@@ -10,6 +16,7 @@ title: compare
 
 ## Description
 
+Compare two versions of a Starlake project to identify configuration differences. You can compare by file path, git commit, or git tag, and render the diff report using a custom template.
 
 ## Parameters
 

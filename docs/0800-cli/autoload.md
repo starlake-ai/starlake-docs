@@ -1,6 +1,12 @@
 ---
 sidebar_position: 20
 title: autoload
+description: "Automatically watch and load incoming data files into specified domains and tables with optional scheduling and substitutions."
+keywords:
+  - starlake autoload
+  - data ingestion
+  - auto load watch
+  - scheduled data loading
 ---
 
 
@@ -10,6 +16,7 @@ title: autoload
 
 ## Description
 
+Automatically infer schemas from files in the incoming directory and load them into the data warehouse in a single step. This combines the `infer-schema` and `load` commands, making it ideal for quick ingestion of new data sources. See [Autoload Guide](/guides/load/autoload).
 
 ## Parameters
 

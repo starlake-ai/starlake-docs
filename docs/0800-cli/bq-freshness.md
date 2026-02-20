@@ -1,15 +1,25 @@
 ---
 sidebar_position: 40
 title: bq-freshness
+description: "Check BigQuery table freshness by inspecting last modification timestamps, with optional persistence and connection settings."
+keywords:
+  - starlake bq-freshness
+  - BigQuery freshness
+  - data freshness check
+  - table monitoring
 ---
 
+:::warning Deprecated
+The `bq-freshness` command has been replaced by [`freshness`](/cli/freshness), which works across all supported warehouses (not just BigQuery). Please use `starlake freshness` instead.
+:::
 
 ## Synopsis
 
-**starlake bq-freshness [options]**
+**starlake freshness [options]**
 
 ## Description
 
+Check data freshness in BigQuery by verifying when tables were last updated. Use this command to monitor data pipelines and detect stale tables that may indicate upstream failures.
 
 ## Parameters
 

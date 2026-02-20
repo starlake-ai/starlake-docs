@@ -1,6 +1,12 @@
 ---
 sidebar_position: 40
 title: bq-info
+description: "Retrieve metadata and information about BigQuery tables and datasets, with options to persist results or filter by table."
+keywords:
+  - starlake bq-info
+  - BigQuery metadata
+  - dataset information
+  - table info
 ---
 
 
@@ -10,6 +16,7 @@ title: bq-info
 
 ## Description
 
+Retrieve table metadata and statistics from BigQuery, including row counts, schema information, and storage details. Use this command to inspect dataset properties or audit table configurations.
 
 ## Parameters
 

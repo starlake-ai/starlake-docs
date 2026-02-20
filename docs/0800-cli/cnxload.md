@@ -1,6 +1,12 @@
 ---
 sidebar_position: 50
 title: cnxload
+description: "Load a parquet source file into a JDBC table with configurable connection options and write strategies like APPEND or OVERWRITE."
+keywords:
+  - starlake cnxload
+  - parquet to JDBC
+  - database loading
+  - connection load
 ---
 
 
@@ -10,8 +16,7 @@ title: cnxload
 
 ## Description
 
-Load parquet file into JDBC Table.
-
+Load Parquet, CSV, or JSON files directly into a JDBC-connected database table. Supports APPEND and OVERWRITE write strategies with configurable connection options.
 
 ## Parameters
 

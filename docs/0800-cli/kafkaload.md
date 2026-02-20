@@ -1,6 +1,8 @@
 ---
 sidebar_position: 210
 title: kafkaload
+description: "Load and offload data from Kafka topics in batch or streaming mode with configurable Spark options and triggers."
+keywords: [starlake kafkaload, kafka ingestion, spark streaming, kafka batch offload, data pipeline]
 ---
 
 
@@ -9,6 +11,8 @@ title: kafkaload
 **starlake kafkaload [options]**
 
 ## Description
+
+Load data to or offload data from Apache Kafka topics. Supports both producing and consuming messages.
 
 Two modes are available : The batch mode and the streaming mode.
 
@@ -22,10 +26,10 @@ If you ask to coalesce to a single partition, the offloader will store the data 
 argument.
 
 The figure below describes the batch offloading process
-![](/img/cli/kafka-offload.png)
+![Starlake Kafka batch offloading process diagram from topics to files](/img/cli/kafka-offload.png)
 
 The figure below describes the batch offloading process with `comet-offsets-mode = "FILE"`
-![](/img/cli/kafka-offload-fs.png)
+![Starlake Kafka batch offloading with FILE offset mode for single partition output](/img/cli/kafka-offload-fs.png)
 
 ### Streaming mode
 

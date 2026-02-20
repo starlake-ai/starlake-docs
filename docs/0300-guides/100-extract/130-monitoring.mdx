@@ -1,8 +1,112 @@
-# Monitoring
+---
+title: "Monitor Starlake Data Extractions (SL_LAST_EXPORT Audit Table)"
+description: "Monitor Starlake data extractions using the SL_LAST_EXPORT audit table. Query extraction status, detect failures, and track row counts. Includes SQL examples and audit configuration."
+keywords: [starlake, monitoring, SL_LAST_EXPORT, audit, extraction tracking, observability]
+---
 
-Starlake keeps track of the successive extractions in the table `SL_LAST_EXPORT` located in the audit schema (`audit` by default).
+import Head from '@docusaurus/Head';
 
-The connection to the audit schema is defined in the `metadata/application.sl.yml` file.
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Where does Starlake store the extraction history?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In the SL_LAST_EXPORT table of the audit schema (audit by default). The connection to the audit schema is configured in metadata/application.sl.yml."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What information does the SL_LAST_EXPORT table contain?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "It contains: the schema name (domain), the table name (schema), the timestamp of the last extraction (last_ts), the mode (FULL or INCREMENTAL), the number of rows extracted (count), the success status (success), and an optional error message (message)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I detect failed extractions?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Query the SL_LAST_EXPORT table with the filter WHERE success = false. You can add a time filter, for example AND last_ts >= CURRENT_TIMESTAMP - INTERVAL '24 hours'."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I configure the audit schema connection?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In metadata/application.sl.yml, section audit, define domain (audit schema name) and sink.connectionRef (reference to a JDBC connection defined in the connections section)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I detect anomalies in extracted data volume?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Monitor the count field in SL_LAST_EXPORT. A sudden drop in row count may indicate a problem in the source data or connectivity."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Monitor Starlake Data Extractions",
+      "description": "Configure audit logging and query the SL_LAST_EXPORT table to monitor extraction status, detect failures, and track row counts.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Configure the audit connection",
+          "text": "In metadata/application.sl.yml, define the audit section with the schema name and a reference to a JDBC connection.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run an extraction",
+          "text": "Execute starlake extract-data to populate the SL_LAST_EXPORT audit table.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Verify extraction status",
+          "text": "Query SL_LAST_EXPORT to confirm all expected tables were extracted with success = true.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Alert on failures",
+          "text": "Filter rows with success = false and configure a notification to the operations team.",
+          "position": 4
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Track volumes over time",
+          "text": "Compare the count values across runs to detect abnormal drops that may indicate source data issues or connectivity problems.",
+          "position": 5
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# Monitor Starlake Data Extractions
+
+Starlake records the result of every extraction run in the `SL_LAST_EXPORT` audit table. This table stores the schema name, table name, row count, success status, extraction mode, and the last exported partition column value. You can query it directly with SQL to detect failures, track volumes, and monitor incremental extraction progress. The audit table lives in a configurable schema (named `audit` by default) and its connection is defined in `metadata/application.sl.yml`.
+
+## Configure the Audit Schema Connection
+
+Define the audit schema and its JDBC connection in `metadata/application.sl.yml`:
 
 ```yaml
 version: 1
@@ -21,3 +125,81 @@ application:
     ...
 ```
 
+The `domain` field sets the audit schema name. The `sink.connectionRef` points to a JDBC connection defined in the `connections` section.
+
+## SL_LAST_EXPORT Table Schema
+
+The `SL_LAST_EXPORT` table stores the state of each extraction run. Its columns are:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `domain` | VARCHAR | The source schema name (e.g., `starbake`) |
+| `schema` | VARCHAR | The table name that was extracted |
+| `last_ts` | TIMESTAMP | Timestamp of the last extraction run |
+| `last_date` | VARCHAR | Date string of the last extraction |
+| `last_long` | BIGINT | Last exported value of the partition column (for incremental extractions) |
+| `last_string` | VARCHAR | Last exported string value of the partition column |
+| `mode` | VARCHAR | Extraction mode: `FULL` or `INCREMENTAL` |
+| `count` | BIGINT | Number of rows extracted in the last run |
+| `success` | BOOLEAN | Whether the extraction completed successfully |
+| `message` | VARCHAR | Error or status message |
+| `step` | VARCHAR | The extraction step |
+
+## SQL Queries to Check Extraction Status
+
+Check the last export for all tables in a schema:
+
+```sql
+-- Last export status for all tables in the starbake schema
+SELECT domain, schema, last_ts, last_long, mode, count, success
+FROM audit.SL_LAST_EXPORT
+WHERE domain = 'starbake'
+ORDER BY last_ts DESC;
+```
+
+Find failed extractions in the last 24 hours:
+
+```sql
+-- Failed extractions in the last 24 hours
+SELECT domain, schema, last_ts, message
+FROM audit.SL_LAST_EXPORT
+WHERE success = false
+  AND last_ts >= CURRENT_TIMESTAMP - INTERVAL '24 hours';
+```
+
+View the extraction history for a specific table:
+
+```sql
+-- Extraction history for the order table
+SELECT last_ts, mode, count, success, message
+FROM audit.SL_LAST_EXPORT
+WHERE domain = 'starbake' AND schema = 'order'
+ORDER BY last_ts DESC;
+```
+
+## Extraction Monitoring Workflow: Detect Failures and Track Row Counts
+
+A typical monitoring workflow runs after each extraction pipeline:
+
+1. **Run the extraction** via `starlake extract-data`.
+2. **Query `SL_LAST_EXPORT`** to confirm all expected tables were extracted successfully.
+3. **Alert on failures** -- if any row has `success = false`, trigger a notification to the operations team.
+4. **Track row counts over time** -- sudden drops in `count` may indicate source data issues or connectivity problems.
+5. **Check incremental state** -- for tables using incremental extraction, verify that `last_long` or `last_string` progresses as expected.
+
+## Frequently Asked Questions
+
+### Where does Starlake store the extraction history?
+In the `SL_LAST_EXPORT` table of the audit schema (`audit` by default). The connection to the audit schema is configured in `metadata/application.sl.yml`.
+
+### What information does the SL_LAST_EXPORT table contain?
+It contains: the schema name (`domain`), the table name (`schema`), the timestamp of the last extraction (`last_ts`), the mode (FULL or INCREMENTAL), the number of rows extracted (`count`), the success status (`success`), and an optional error message (`message`).
+
+### How do I detect failed extractions?
+Query the `SL_LAST_EXPORT` table with the filter `WHERE success = false`. You can add a time filter, for example `AND last_ts >= CURRENT_TIMESTAMP - INTERVAL '24 hours'`.
+
+### How do I configure the audit schema connection?
+In `metadata/application.sl.yml`, section `audit`, define `domain` (audit schema name) and `sink.connectionRef` (reference to a JDBC connection defined in the `connections` section).
+
+### How do I detect anomalies in extracted data volume?
+Monitor the `count` field in `SL_LAST_EXPORT`. A sudden drop in row count may indicate a problem in the source data or connectivity.

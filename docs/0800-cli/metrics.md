@@ -1,6 +1,8 @@
 ---
 sidebar_position: 240
 title: metrics
+description: "Compute and publish data quality metrics for a given domain and schema, with optional Google Cloud authentication."
+keywords: [starlake metrics, data quality, schema metrics, data profiling]
 ---
 
 
@@ -10,6 +12,7 @@ title: metrics
 
 ## Description
 
+Compute data quality metrics (continuous, discrete, and frequency metrics) on loaded tables. See [Metrics Guide](/guides/load/metrics).
 
 ## Parameters
 

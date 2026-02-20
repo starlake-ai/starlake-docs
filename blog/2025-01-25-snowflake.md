@@ -1,9 +1,16 @@
 ---
 slug: snowflake-data-loading
 title: Snowflake Data Loading
+description: "Simplify Snowflake data loading with Starlake's declarative YAML: schema validation, SCD2 strategies, and automated orchestration."
+keywords:
+    - snowflake data loading
+    - starlake snowflake
+    - SCD2 data loading
+    - snowflake ETL
 authors:
   - hayssams
 tags: [Snowflake, ETL, Starlake]
+image: /img/blog/starlake-blog-default.png
 ---
 
 ## Summary

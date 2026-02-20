@@ -1,71 +1,137 @@
-# Customize the Transform
+---
+title: "Starlake Transform YAML Configuration: Write Strategies, Partitioning, ACL"
+description: "Complete YAML configuration reference for Starlake transforms. Set write strategies (overwrite, upsert, append), table partitioning, clustering, row-level security, expectations, and cross-database writes."
+keywords: [starlake, transform configuration, write strategy, partitioning, yaml config, data pipeline, clustering, row-level security, expectations, connectionRef]
+---
 
-Add write strategies, partitioning, access control, and more to your transform tasks.
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the default write strategy for a Starlake transform?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "By default, the result of the SELECT statement is appended to the target table. You can change this with the writeStrategy.type property in the YAML file (overwrite, upsert, etc.)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you partition a table created by a Starlake transform?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Add a sink.partition section in the transform YAML file listing the partition columns. Clustering is configured similarly with sink.clustering."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can Starlake transform read from one database and write to another?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Use connectionRef at the task level to change the source database, and sink.connectionRef to change the target database."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What are expectations in a Starlake transform?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Expectations are data quality assertions evaluated after the transform runs. If failOnError is set to true, the job fails when the assertion is not satisfied."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the difference between domain, schema, catalog and dataset in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake uses the term 'domain' as an abstraction. Depending on the data warehouse, it maps to a schema (PostgreSQL, Snowflake), a dataset (BigQuery), or a catalog (Databricks)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you rename the target table of a transform?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the domain and table properties in the YAML file to override the schema and table names derived from the folder and file names."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# Customize the Transform Configuration
+
+Every Starlake SQL or Python transform can be fine-tuned through a companion YAML configuration file placed next to the source file. This configuration controls write strategies (append, overwrite, upsert), table partitioning and clustering, access control (ACL, row-level security), data quality expectations, and cross-database routing. When no YAML file is provided, Starlake applies sensible defaults: append mode, schema inferred from the directory name, and table inferred from the file name.
+
+## Configuration Properties Overview
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `writeStrategy.type` | How results are written to the target table | `append` |
+| `sink.partition` | Columns used for table partitioning | none |
+| `sink.clustering` | Columns used for table clustering | none |
+| `sink.connectionRef` | Target database connection for cross-database writes | project default |
+| `connectionRef` | Source database connection | project default |
+| `acl` | Table-level access grants | none |
+| `rls` | Row-level security predicates | none |
+| `expectations` | Data quality assertions | none |
+| `domain` | Override the target schema name | directory name |
+| `table` | Override the target table name | file name |
+
+## Domain and Schema Terminology
 
 :::note
-Datawarehouses are organized around schemas where tables are grouped.
-Depending on the database, a database `schema` can be called `schema` or `catalog` or `dataset`.
-In starlake, we use the term `domain` to designate  a `schema`, `catalog` or `dataset`.
+Data warehouses organize tables into schemas. Depending on the platform, a schema is called `schema` (PostgreSQL, Snowflake), `dataset` (BigQuery), or `catalog` (Databricks). Starlake uses the term `domain` as a unified abstraction.
 :::
 
-Exactly like in the `load` section, the `transform` section is organized around the `domain` and `table` concepts.
+## Directory Structure and Naming Conventions
 
-Transforming data consists in applying a series of operations to the data to make it ready for analysis.
-The operations can be as simple as renaming a column or as complex as joining multiple tables together.
+The transform directory follows this structure:
 
-The transform takes SQL queries or python scripts as input and outputs to an existing or new table using a write strategy.
-
-The way the materialization is done is defined in a YAML file next to the SQL or Python file.
-The YAML file and the SQL file are named, by default, after the table they are transforming .
-
-## Conventions
-
-The transform directory looks like this:
 ```plaintext title="transform directory structure"
 metadata/transform
-└── <domain>>
-    ├── _config.sl.yml
+└── <domain>
+    ├── _config.sl.yml          # domain-level configuration (shared settings for all tasks in this domain)
     ├── <table>.sl.yml
     └── <table>.sql
 ```
-<br/>
 
-The SQL file contains only the SELECT statement that contain the transformations to apply before storing on the target table.
+By default, the transform task name matches the file name. The SQL result writes to a table named `<table>` in the schema named `<domain>`. The companion YAML file configures how that materialization happens.
 
-And the YAML file contains the configuration of the transformation. The sections below describe the content of the YAML file.
+### Override the Target Schema and Table
 
-By default, your transforms tasks will be named after the table they are transforming. The result of the SQL file will be written to the table with the same name as the SQL file (`<table>`in this case) in the schema with the same name as
-the folder name (`<domain>` in this case).
+Use the `domain` and `table` properties to write to a different schema or table than the defaults:
 
-You can change this by specifying a different name in the `name` field of the transform configuration file:
-
-```yaml tile="metadata/transform/<domain>/custom.sl.yml"
+```yaml title="metadata/transform/<domain>/custom.sl.yml"
 task:
-  domain: mydomain # will write to the mydomain schema whatever the name of the <domain> folder
-  table: mytable # will write to the mytable table whatever the name of the <table> in the filename
-  name: custom # this task name. Will be used to name the task when running from the CLI
+  domain: mydomain # writes to the mydomain schema regardless of the folder name
+  table: mytable # writes to the mytable table regardless of the file name
+  name: custom # task name used in CLI commands
 ```
 
+## Write Strategies
 
-## Write strategies
+By default, the SELECT result appends to the target table. Override this with `writeStrategy.type`:
 
-If not specified, the result of the `SELECT`statement contained in the SQL file will be appended to the `<table>` located in `<domain>`.
-You may use any of these strategies. Below is an example of using the `overwrite` strategy.
-
-```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
+```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 task:
   writeStrategy:
-    type: overwrite ## or any of the strategies defined [here](../load/write-strategies)
+    type: OVERWRITE ## or any strategy defined in the write strategies reference
 ```
 
-Transform strategies work exactly like the load [write strategies](../load/write-strategies).
-
+Transform write strategies work the same way as load [write strategies](../load/write-strategies). Available types include `append`, `overwrite`, `upsert`, and others documented in that reference.
 
 ## Clustering and Partitioning
 
-You can specify the clustering and partitioning of the table in the transform configuration file.
+Partition and cluster the target table to improve query performance:
 
-```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
+```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 task:
   ...
   sink:
@@ -77,15 +143,13 @@ task:
       - column4
 ```
 
-Detailed explanation of the clustering and partitioning can be found [here](../load/sink).
+See the [sink configuration reference](../load/sink) for detailed options.
 
+## Access Control
 
-##  Access control
+Control who can access the target table. Starlake supports table-level grants (ACL), row-level security (RLS), and column-level access policies.
 
-You can specify the access control of the table in the transform configuration file similar to the load configuration file [acccess control section](../load/security).
-
-```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
-
+```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 task:
     ...
     acl:
@@ -101,47 +165,42 @@ task:
     attributesDesc:
         - name: "code0"
           accessPolicy: <column_access_policy>
-
     ...
 ```
 
+See the [security configuration reference](../load/security) for more details on access control options.
 
-## Running a transform against a different database
+## Read from a Different Database
 
-By default, the transform runs against the database referenced in the connectionRef in the `metadata/application.sl.yml` file.
-You can override this by specifying the `connectionRef` in the transform configuration file.
+By default, transforms run against the database configured in `metadata/application.sl.yml`. Override the source database with `connectionRef`:
 
-```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
-
+```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 task:
     ...
     connectionRef: myConnection
     ...
-
 ```
 
-## Writing to a different database
+## Write to a Different Database
 
-You can even specify a different target database in the sink section of the transform configuration file.
+Route the transform output to a different target database by setting `sink.connectionRef`:
 
-This allows you to transform data from one database and write it to another database.
-
-```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
-
+```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 task:
     ...
     sink:
       connectionRef: myOtherConnection
       ...
     ...
-
 ```
 
-## Expectations
+This lets you read from one database and write to another in a single transform.
 
-You can specify the expectations of the table in the transform configuration file.
+## Data Quality Expectations
 
-```yaml tile="metadata/transform/<domain>/<table>.sl.yml"
+Add assertions that Starlake evaluates after the transform runs. If `failOnError` is `true`, the job fails when an assertion is not satisfied.
+
+```yaml title="metadata/transform/<domain>/<table>.sl.yml"
 task:
   ...
   expectations:
@@ -149,5 +208,33 @@ task:
       failOnError: true
 ```
 
+See the [expectations reference](../load/expectations) for the full assertion syntax.
 
-Detailed explanation of the expectations can be found [here](../load/expectations).
+## Next Steps
+
+- [SQL Transform Tutorial](./tutorial) -- end-to-end walkthrough with DuckDB
+- [SQL Transform Syntax](./sql) -- SELECT statements, incremental models, and custom SQL
+- [Export Transform Results](./export) -- write results to files or another database
+
+## Frequently Asked Questions
+
+### What is the default write strategy for a Starlake transform?
+By default, the result of the SELECT statement is appended to the target table. You can change this with the `writeStrategy.type` property in the YAML file (overwrite, upsert, etc.).
+
+### How do you partition a table created by a Starlake transform?
+Add a `sink.partition` section in the transform YAML file listing the partition columns. Clustering is configured similarly with `sink.clustering`.
+
+### Can Starlake read from one database and write to another?
+Yes. Use `connectionRef` at the task level to change the source database, and `sink.connectionRef` to change the target database.
+
+### How do you apply row-level security on a transformed table?
+Use the `rls` section of the YAML file to define filter predicates associated with groups or users.
+
+### What are expectations in a Starlake transform?
+Expectations are data quality assertions evaluated after the transform runs. If `failOnError` is set to `true`, the job fails when the assertion is not satisfied.
+
+### How do you rename the target table of a transform?
+Use the `domain` and `table` properties in the YAML file to override the schema and table names derived from the folder and file names.
+
+### What is the difference between domain, schema, catalog, and dataset in Starlake?
+Starlake uses the term `domain` as a unified abstraction. Depending on the data warehouse, it maps to a schema (PostgreSQL, Snowflake), a dataset (BigQuery), or a catalog (Databricks).

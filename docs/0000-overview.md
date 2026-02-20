@@ -37,7 +37,7 @@ import Head from '@docusaurus/Head';
           "name": "How does Starlake extract data?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Starlake extracts data through a zero-code, YAML-based configuration system that supports any ODBC/JDBC database. It handles parallel extraction, incremental loads, and schema evolution automatically without custom scripts."
+            "text": "Starlake extracts data through a zero-code, YAML-based configuration system that supports any JDBC database. It handles parallel extraction, incremental loads, and schema evolution automatically without custom scripts."
           }
         },
         {
@@ -45,10 +45,45 @@ import Head from '@docusaurus/Head';
           "name": "How does Starlake load data?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Starlake loads data by inferring schemas and orchestration logic from declarative YAML files. It supports formats like CSV, JSON, Parquet, and Avro, and automatically handles quality validation, encryption, and loading into major data warehouses."
+            "text": "Starlake loads data by inferring schemas and orchestration logic from declarative YAML files. It supports formats like CSV, JSON, XML, Fixed-width, Parquet, and Avro (via Spark), and automatically handles quality validation, encryption, and loading into major data warehouses."
           }
         }
       ]
+    })}
+  </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Starlake",
+      "applicationCategory": "DeveloperApplication",
+      "applicationSubCategory": "Data Pipeline Tool",
+      "operatingSystem": "Linux, macOS, Windows",
+      "description": "Enterprise-grade open-source data pipeline tool using YAML and SQL for declarative data loading, transformation, and orchestration.",
+      "url": "https://starlake.ai",
+      "downloadUrl": "https://github.com/starlake-ai/starlake/releases",
+      "softwareVersion": "1.x",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Declarative YAML-based data pipeline configuration",
+        "Zero-code JDBC data extraction",
+        "Multi-format data loading (CSV, JSON, XML, Parquet, Fixed-width)",
+        "SQL-based data transformations with auto-lineage",
+        "Automatic DAG generation for Airflow, Dagster, and other orchestrators",
+        "Built-in data quality validation and expectations",
+        "Row-level security and column-level access control",
+        "Cross-engine support: BigQuery, Snowflake, Databricks, DuckDB, PostgreSQL, Spark"
+      ],
+      "creator": {
+        "@type": "Organization",
+        "name": "Starlake",
+        "url": "https://starlake.ai"
+      }
     })}
   </script>
 </Head>
@@ -61,9 +96,9 @@ import Head from '@docusaurus/Head';
 
 - **100% Declarative**: No Orchestration code to write.
 - **Automated Quality**: schema validation and data quality checks are built-in.
-- **Cross-Platform**: Run on Spark, Snowflake, BigQuery, Databricks, Redshift, DuckDB, PostgreSQL and more
+- **Cross-Platform**: Run on Spark, Snowflake, BigQuery, Databricks, DuckDB, PostgreSQL and more
 
-![](/img/starlake-perimeter.png)
+![Starlake declarative data pipeline perimeter covering extract, load, transform, and orchestrate](/img/starlake-perimeter.png)
 
 ## What is Declarative Data Engineering?
 
@@ -79,7 +114,7 @@ Starlake provides a **zero-code extraction** capability. You define your data so
 
 Key extraction features:
 
-- **Universal Connectivity**: Support for any ODBC/JDBC compliant database.
+- **Universal Connectivity**: Support for any JDBC compliant database.
 - **Smart Loading**: Native support for incremental and full loads.
 - **Auto-Evolution**: Automated handling of schema changes in source data.
 
@@ -118,7 +153,7 @@ Starlake transforms data ingestion into a purely configuration-based process.
 
 Key loading features:
 
-- **Multi-Format Support**: CSV, TSV, JSON, XML, Fixed width, Parquet, Avro.
+- **Multi-Format Support**: CSV, TSV, JSON, XML, Fixed-width, Parquet (and Avro via Spark).
 - **Quality & Security**: Automated data quality validation and privacy/encryption controls.
 - **Warehouse Native**: Optimized loading for all major data warehouses with row-level security.
 
@@ -133,8 +168,7 @@ table:
   pattern: "order_lines.*.psv" # This property is a regular expression that will be used to match the file name.
   schedule: "when_available"        # (optional) cron expression to schedule the loading
   metadata:
-    mode: "FILE"
-    format: "CSV"       # (optional) auto-detected if not specified
+    format: "DSV"       # (optional) auto-detected if not specified
     encoding: "UTF-8"
     withHeader: yes     # (optional) auto-detected if not specified
     separator: "|"      # (optional) auto-detected if not specified
@@ -166,7 +200,7 @@ Simplify transformations by combining **YAML** configuration with standard **SQL
 
 Key transformation features:
 
-- **Jinja-Free SQL**: Write standard SELECT statements without complex templating logic.
+- **Standard SQL**: Write plain SELECT statements without complex templating logic.
 - **Auto-Lineage**: Automatic detection of column and table-level lineage.
 - **Incremental Processing**: Built-in support for processing only new or changed data.
 
@@ -175,16 +209,11 @@ Key transformation features:
 Let's say we want to build aggregates from the previously loaded data
 
 ```yaml
-transform:
-  default:
-    writeStrategy:
-      type: "OVERWRITE"
-  tasks:
-    - name: most_profitable_products
-      writeStrategy:
-        type: "UPSERT_BY_KEY_AND_TIMESTAMP"
-        timestamp: signup
-        key: [id]
+task:
+  writeStrategy:
+    type: "UPSERT_BY_KEY_AND_TIMESTAMP"
+    timestamp: signup
+    key: [id]
 ```
 
 ```sql
@@ -200,7 +229,7 @@ Starlake will automatically apply the right merge strategy (INSERT OVERWRITE or 
 
 Visit our [transform tutorial](guides/transform/tutorial) to learn more
 
-### 4. How does Starlake test data?
+### How does Starlake test data?
 
 Starlake allows you to run your production load and transform logic on a local **DuckDB** instance, enabling fast, cost-effective unit testing.
 
@@ -223,7 +252,7 @@ In the example below, we run a test to validate the load task on the table sales
 
 Visit our [test tutorial](guides/unit-tests/concepts) to learn more
 
-### 5. Does Starlake support orchestration?
+### Does Starlake support orchestration?
 
 Automate your entire data pipeline:
 
@@ -259,7 +288,7 @@ For example, in load tasks, you can choose to use the native data warehouse engi
 Starlake is also cross-engine capable: it enables transformations that query one data warehouse and write results to another. This is especially useful for export tasks to formats like CSV, Parquet, or Excel, as well as for integrations with external analytical or operational databases.
 
 <center>
-<img src="/img/multi-cross-engine.png" alt="drawing" width="600"/>
+<img src="/img/multi-cross-engine.png" alt="Starlake multi-engine and cross-engine support for Spark, BigQuery, Snowflake, and DuckDB" width="600"/>
 </center>
 
 ## Code-free Orchestration
@@ -276,5 +305,5 @@ With Starlake develop and test your load and transform tasks locally on DuckDB u
 4. Share and publish unit-test reports
 
 <center>
-<img src="/img/duckdb-dual-mode.png" alt="drawing" width="600"/>
+<img src="/img/duckdb-dual-mode.png" alt="Starlake DuckDB dual mode: develop locally, deploy to any data warehouse" width="600"/>
 </center>

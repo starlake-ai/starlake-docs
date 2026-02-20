@@ -1,65 +1,198 @@
-# About Metrics
+---
+title: "Ingestion Metrics in Starlake — Continuous and Discrete Data Profiling"
+description: "Compute continuous and discrete metrics during data ingestion with Starlake. Track mean, variance, percentiles, skewness, kurtosis, category frequency and more. Compare metrics across loads."
+keywords: [starlake, metrics, ingestion, continuous metrics, discrete metrics, data quality, statistics, data profiling, skewness, kurtosis]
+---
 
-During ingestion, Starlake may produce metrics for any attribute in the dataset. Currently, only top level attributes are supported.
-One of the two available metric type may be specified on an attribute: continuous and discrete.
-When the `metric` property is set to `continuous`, Starlake will compute for this attribute the following metrics:
-- minimum value
-- maximum value
-- sum of all values
-- mean: The arithmetic average
-- median: the value separating the higher half from the lower half, may be thought of as "the middle" value
-- variance: How far the values are spread out from their average value.
-- standard deviation: square root of the variance, the standard deviation measures how spread out numbers are in a data set
-- missing values
-- skewness: The measure of the asymmetry of the probability distribution. Negative skew commonly indicates that the tail is on the left side of the distribution, and positive skew indicates that the tail is on the right.
-- kurtosis: It tells us the extent to which the distribution is more or less outlier-prone (heavier or light-tailed) than the normal distribution. The greater the kurtosis, the less precise the standard deviation and variance become.
-- 25th percentile: Returns the approximate `25 percentile` of this attribute which is the smallest value in the ordered attribute values (sorted from least to greatest) such that no more than `25%` of attribute values is less than the value or equal to that value
-- 75 percentile: Returns the approximate `75 percentile` of this attribute which is the smallest value in the ordered attribute values (sorted from least to greatest) such that no more than `75%` of attribute values is less than the value or equal to that value
-- row count 
+import Head from '@docusaurus/Head';
 
-When the `metric` property is set to `discrete`, Starlake will compute for this attribute the following metrics:
-- count distinct: The number of distinct values for this attribute
-- category frequency: The frequency (percentage) for each distinct value for this attribute
-- category count: The number of occurrences for each distinct value for this attribute
-- row count
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What types of metrics does Starlake compute during ingestion?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Two types: continuous (min, max, mean, median, variance, standard deviation, skewness, kurtosis, percentiles 25/75, missing values, row count) and discrete (count distinct, category frequency, category count, row count)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I enable metrics on an attribute?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Set the metricType property on the attribute in the table YAML file. Use continuous for numeric metrics or discrete for categorical metrics."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where are ingestion metrics stored?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Metrics are stored in dedicated tables in the data warehouse, with an ingestion timestamp allowing you to compare values between successive loads."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I compute metrics on nested attributes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Currently, only top-level attributes are supported for metric computation."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What continuous metrics are computed?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Minimum, maximum, sum, mean, median, variance, standard deviation, missing values, skewness, kurtosis, percentile 25, percentile 75 and row count."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What discrete metrics are computed?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Count distinct, category frequency (percentage), category count (number of occurrences per distinct value) and row count."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are metrics computed on all data or only the incoming batch?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Only on the incoming batch. Each computation is associated with the ingestion timestamp, enabling tracking over time."
+          }
+        }
+      ]
+    })}
+  </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to compute data profiling metrics during ingestion in Starlake",
+      "description": "Enable automatic statistical metrics (mean, variance, percentiles, category frequency) on attributes during data loading with Starlake.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Open the table YAML file",
+          "text": "Navigate to metadata/load/<domain>/<table>.sl.yml."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Set metricType: continuous on numeric attributes",
+          "text": "Add metricType: continuous on attributes where you want statistical metrics (min, max, mean, variance, percentiles, etc.)."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Set metricType: discrete on categorical attributes",
+          "text": "Add metricType: discrete on attributes where you want category frequency and count distinct metrics."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the load",
+          "text": "Metrics are computed automatically during ingestion and stored in dedicated tables with timestamps for historical comparison."
+        }
+      ]
+    })}
+  </script>
+</Head>
 
-Each metric is computed for each attribute only on the incoming dataset and stored in a table with the ingestion time allowing to compare metric values between loads.
+# Ingestion Metrics
 
-Assuming we are ingesting a file with the following schema:
+Starlake computes automatic data profiling statistics on each incoming batch during ingestion. Two metric types are available: **continuous** for numeric attributes and **discrete** for categorical attributes. Metrics are stored in dedicated tables with an ingestion timestamp, enabling comparison across loads.
 
+Use ingestion metrics to monitor data quality trends, detect anomalies and feed [post-load expectations](/guides/load/expectations) with statistical baselines.
+
+## How to enable metrics
+
+Set the `metricType` property on individual attributes in the table YAML file:
+
+```yaml title="metadata/load/<domain>/<table>.sl.yml"
+table:
+  pattern: "business.*.csv"
+  attributes:
+    - name: "review_count"
+      type: "long"
+      metricType: continuous
+    - name: "city"
+      type: "string"
+      metricType: discrete
 ```
-|-- business_id: string (nullable = false)
-|-- name: string (nullable = true)
-|-- address: string (nullable = true)
-|-- city: string (nullable = true) 
-|-- state: string (nullable = true)
-|-- postal_code: string (nullable = true)
-|-- latitude: double (nullable = true)
-|-- longitude: double (nullable = true)
-|-- stars: double (nullable = true)
-|-- review_count: long (nullable = true)
-|-- is_open: long (nullable = true)
-```
 
-with the attributes `city` is marked as discrete and `review_count` is marked as continuous
+:::note
+Only top-level attributes are supported for metric computation. Nested attributes are not supported.
+:::
 
-The following tables would be generated:
+## Continuous metrics
+
+When `metricType` is set to `continuous`, Starlake computes the following statistics on the attribute:
+
+| Metric | Description |
+|---|---|
+| **minimum** | Smallest value |
+| **maximum** | Largest value |
+| **sum** | Sum of all values |
+| **mean** | Arithmetic average |
+| **median** | Middle value separating the upper and lower halves |
+| **variance** | How far values are spread out from the mean |
+| **standard deviation** | Square root of the variance; measures spread of values |
+| **missing values** | Count of null or missing values |
+| **skewness** | Asymmetry of the probability distribution. Negative skew: tail on the left. Positive skew: tail on the right. |
+| **kurtosis** | Extent to which the distribution is outlier-prone compared to a normal distribution. Higher kurtosis means heavier tails. |
+| **percentile 25** | Value below which 25% of values fall |
+| **percentile 75** | Value below which 75% of values fall |
+| **row count** | Total number of rows in the batch |
+
+## Discrete metrics
+
+When `metricType` is set to `discrete`, Starlake computes the following statistics on the attribute:
+
+| Metric | Description |
+|---|---|
+| **count distinct** | Number of distinct values |
+| **category frequency** | Percentage for each distinct value |
+| **category count** | Number of occurrences per distinct value |
+| **row count** | Total number of rows in the batch |
+
+## Storage and timestamps
+
+Each metric computation is scoped to the incoming batch only, not the full table. Starlake stores the results in dedicated metric tables with an ingestion timestamp. This allows you to compare metric values between successive loads and track data quality trends over time.
+
+## Example output
+
+Assuming a file with attributes `city` (discrete) and `review_count` (continuous):
+
+**Discrete metrics table:**
 
 ```
 +-----------+-------------+---------------------+-----------+-------------------+------+--------+-----+-------------+----------+
-|attribute  |countDistinct|missingValuesDiscrete|cometMetric|jobId              |domain|schema  |count|timestamp    |cometStage|
+|attribute  |countDistinct|missingValuesDiscrete|slMetric   |jobId              |domain|schema  |count|timestamp    |slStage   |
 +-----------+-------------+---------------------+-----------+-------------------+------+--------+-----+-------------+----------+
 |city       |53           |0                    |Discrete   |local-1650471634299|yelp  |business|200  |1650471642737|UNIT      |
 +-----------+-------------+---------------------+-----------+-------------------+------+--------+-----+-------------+----------+
+```
 
+**Continuous metrics table:**
+
+```
 +------------+---+-----+------+-------------+--------+-----------+------+--------+--------+------------+------+------------+-----------+-------------------+------+--------+-----+-------------+----------+
-|attribute   |min|max  |mean  |missingValues|variance|standardDev|sum   |skewness|kurtosis|percentile25|median|percentile75|cometMetric|jobId              |domain|schema  |count|timestamp    |cometStage|
+|attribute   |min|max  |mean  |missingValues|variance|standardDev|sum   |skewness|kurtosis|percentile25|median|percentile75|slMetric   |jobId              |domain|schema  |count|timestamp    |slStage   |
 +------------+---+-----+------+-------------+--------+-----------+------+--------+--------+------------+------+------------+-----------+-------------------+------+--------+-----+-------------+----------+
 |review_count|3.0|664.0|38.675|0            |7974.944|89.303     |7735.0|4.359   |21.423  |5.0         |9.0   |25.0        |Continuous |local-1650471634299|yelp  |business|200  |1650471642737|UNIT      |
 +------------+---+-----+------+-------------+--------+-----------+------+--------+--------+------------+------+------------+-----------+-------------------+------+--------+-----+-------------+----------+
+```
 
+**Category frequency table:**
+
+```
 +---------+---------------+-----+---------+-------------------+------+--------+-------------+----------+
-|attribute|category       |count|frequency|jobId              |domain|schema  |timestamp    |cometStage|
+|attribute|category       |count|frequency|jobId              |domain|schema  |timestamp    |slStage   |
 +---------+---------------+-----+---------+-------------------+------+--------+-------------+----------+
 |city     |Tempe          |200  |0.01     |local-1650471634299|yelp  |business|1650471642737|UNIT      |
 |city     |North Las Vegas|200  |0.01     |local-1650471634299|yelp  |business|1650471642737|UNIT      |
@@ -84,3 +217,26 @@ The following tables would be generated:
 |city     |.............. |...  |.....    |local-1650471634299|yelp  |business|1650471642737|UNIT      |
 +---------+---------------+-----+---------+-------------------+------+--------+-------------+----------+
 ```
+
+## Frequently Asked Questions
+
+### What types of metrics does Starlake compute during ingestion?
+Two types: **continuous** (min, max, mean, median, variance, standard deviation, skewness, kurtosis, percentiles 25/75, missing values, row count) and **discrete** (count distinct, category frequency, category count, row count).
+
+### How do I enable metrics on an attribute?
+Set the `metricType` property on the attribute in the table YAML file. Use `continuous` for numeric metrics or `discrete` for categorical metrics.
+
+### Where are ingestion metrics stored?
+Metrics are stored in dedicated tables in the data warehouse, with an ingestion timestamp allowing you to compare values between successive loads.
+
+### Can I compute metrics on nested attributes?
+No. Currently, only top-level attributes are supported for metric computation.
+
+### What continuous metrics are computed?
+Minimum, maximum, sum, mean, median, variance, standard deviation, missing values, skewness, kurtosis, percentile 25, percentile 75 and row count.
+
+### What discrete metrics are computed?
+Count distinct, category frequency (percentage), category count (number of occurrences per distinct value) and row count.
+
+### Are metrics computed on all data or only the incoming batch?
+Only on the incoming batch. Each computation is associated with the ingestion timestamp, enabling tracking over time.

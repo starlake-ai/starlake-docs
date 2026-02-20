@@ -1,6 +1,8 @@
 ---
 sidebar_position: 320
 title: stage
+description: "Move and uncompress files from the landing area to the pending area, handling ack files and domain-based directories."
+keywords: [starlake stage, file staging, data landing zone, file import, ETL]
 ---
 
 
@@ -10,24 +12,7 @@ title: stage
 
 ## Description
 
-Move the files from the landing area to the pending area.
-
-Files are loaded one domain at a time.
-
-Each domain has its own directory and is specified in the "directory" key of Domain YML file
-compressed files are uncompressed if a corresponding ack file exist.
-
-Compressed files are recognized by their extension which should be one of .tgz, .zip, .gz.
-raw file should also have a corresponding ack file
-before moving the files to the pending area, the ack files are deleted.
-
-To import files without ack specify an empty "ack" key (aka ack:"") in the domain YML file.
-
-"ack" is the default ack extension searched for but you may specify a different one in the domain YML file.
-````shell
-comet import
-````
-
+Move files from the landing directory to the pending directory, applying optional file-level transformations.
 
 ## Parameters
 

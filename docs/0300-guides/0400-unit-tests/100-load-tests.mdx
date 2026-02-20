@@ -1,63 +1,213 @@
+---
+title: "Test Load Tasks"
+description: "Write and run unit tests for Starlake data loading tasks locally on DuckDB. Compare loaded data against expected CSV results, inspect rejected records, and generate detailed HTML test reports. No cloud access required."
+keywords: [starlake, load test, unit test, duckdb, data loading, test reports, data validation, expected csv, rejected data]
+---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to write load tests in Starlake",
+      "description": "Write and run unit tests for Starlake data loading tasks locally on DuckDB, comparing loaded data against expected CSV results.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Create the test directory",
+          "text": "Create a test directory under metadata/tests/load/{domain}/{table}/test-name.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Add initial data",
+          "text": "Add a CSV or JSONL file named domain.table.csv or domain.table.json containing initial data to preload into the table.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Add input data files",
+          "text": "Add one or more data files matching the file pattern expected by the loader for this table.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Define expected output",
+          "text": "Add a _expected.csv file containing the expected data in the table after the load task runs.",
+          "position": 4
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the test",
+          "text": "Run 'starlake test --load' to execute all load tests, or 'starlake test --domain <domain> --table <table> --test <test-name>' for a specific test.",
+          "position": 5
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Where to place load tests in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Load tests are in metadata/tests/load. Each test is a directory in the domain/table subdirectory."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What files make up a load test?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A CSV or JSONL file with initial data (named domain.table.json or .csv), one or more data files matching the loader's expected pattern, and a _expected.csv file containing the expected data after loading."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Starlake validate load test results?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake compares the table schema with the expected data schema and the actual data with the _expected.csv file. The test fails if the schema or data does not match."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where to find load test reports?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In test-reports/load/test-name/. The report contains the DuckDB database (testname.db), unexpected data (not_expected.csv), and missing data (missing.csv)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What does the test report database contain?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The tables sl_expected (expected data), domain.table (actual data), sl_expectations (expectation results), audit.audit (audit log), and audit.rejected (rejected data)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How to run only load tests?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the command starlake test --load. For a specific test: starlake test --domain <domain> --table <table> --test <test-name>."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do tests generate a visual report?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Running tests generates a complete website in the test-reports directory."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
 # Test Load Tasks
 
-Test your load task locally before deploying to production.
+Starlake load tests validate data loading pipelines locally on DuckDB without cloud access. Provide sample input files and expected CSV output, and Starlake compares schema and data automatically. Test reports include the DuckDB database, unexpected rows, and missing rows for debugging.
 
-Load tasks are the first step in the data pipeline.
-They are responsible for loading data from the source to the destination.
-In this tutorial, we will test the load tasks.
+For an overview of the testing approach and DuckDB transpilation, see [Unit Testing Concepts](./050-concepts.mdx). For SQL transformation tests, see [Test Transform Tasks](./200-transform-tests.mdx).
 
-Load tests are located in the `metadata/tests/load` directory.
+## How to write a load test
 
-Each test is a directory located in the `domain/table` subdirectory and contains the following files:
-- a CSV or JSONL file that will contain the initial data that will be loaded into the table before the unit test is run.
-This file should be named after the domain and table names. For example, the file for the `starbake.product` table should be named `starbake.product.json` or `starbake.product.csv`.
-- one or multiple data files whose names match the file pattern expected by the loader for this table. This is the data that will be loaded into the table using the `starlake load` task.
-- a `_expected.csv` file that contains the expected data in the table after the load task is run.
+1. **Create the test directory** -- Add a directory under `metadata/tests/load/{domain}/{table}/test-name`.
+2. **Add initial data** -- Place a CSV or JSONL file named `domain.table.csv` (or `.json`) with data to preload.
+3. **Add input data files** -- Add files matching the pattern expected by the loader for this table.
+4. **Define expected output** -- Add a `_expected.csv` file with the expected table data after loading.
+5. **Run the test** -- Execute `starlake test --load` or `starlake test --domain <domain> --table <table> --test <test-name>`.
 
-After loading using the `starlake load` task against the schema defined in the `metadata/load` directory,
-Starlake will compare the schema of the table with the schema of the expected data file and will raise an error if they do not match.
+## Test directory structure
 
-The test will pass if the load task succeeds and the data in the table matches the data in the `_expected.csv` file.
+Load tests reside in `metadata/tests/load`. Each test is a directory inside the `domain/table` subdirectory.
 
-The reports of the test `test-name` are stored in the `test-reports/load/test-name` directory and contain the following files:
-- `test-reports/load/test-name/testname.db`: the actual database after the load task is run. This database contains the following tables:
-    - sl_expected: The expected data.
-    - `starbake.product`: The actual data.
-    - sl_expectations: The results of the execution of any the expectation related to this table.
-    - audit.audit: The audit log of the load task.
-    - audit.rejected: The rejected data.
-- `test-reports/load/test-name/not_expected.csv`: the unexpected data in the actual table after the load task is run.
-- `test-reports/load/test-name/missing.csv`: the missing data in the actual table after the load task is run.
+A test directory contains:
 
-The test reports are generated using the `starlake test` task.
+- **Initial data file** -- A CSV or JSONL file with data to preload into the table before the test runs. Name it after the domain and table: `starbake.product.json` or `starbake.product.csv`.
+- **Input data files** -- One or more files whose names match the file pattern expected by the loader. This data is loaded using the `starlake load` task.
+- **Expected output** -- A `_expected.csv` file containing the expected data in the table after the load completes.
 
-To run the load tests without running transform tests, use the following command:
+## How validation works
+
+After loading data against the schema defined in `metadata/load`, Starlake:
+
+1. Compares the table schema with the expected data schema.
+2. Compares the actual loaded data with the `_expected.csv` file.
+
+The test passes if both schema and data match. Any mismatch raises an error.
+
+## Test reports
+
+Reports for a test named `test-name` are stored in `test-reports/load/test-name/` and contain:
+
+- **`testname.db`** -- The DuckDB database after the load task runs, containing:
+  - `sl_expected` -- The expected data.
+  - `domain.table` (e.g., `starbake.product`) -- The actual loaded data.
+  - `sl_expectations` -- Results of any expectation related to this table.
+  - `audit.audit` -- The audit log of the load task.
+  - `audit.rejected` -- Rejected data.
+- **`not_expected.csv`** -- Rows in the actual table that are not in the expected data.
+- **`missing.csv`** -- Rows in the expected data that are missing from the actual table.
+
+## Running load tests
+
+Run all load tests (skip transform tests):
+
 ```bash
 starlake test --load
 ```
 
-To run a specific test use the `--name` flag:
+Run a specific test:
+
 ```bash
-starlake test --name starbake.product.test-name
+starlake test --domain starbake --table product --test test-name
 ```
 
+Running tests also generates a complete HTML report website in the `test-reports` directory.
 
-Running tests will also generate a complete website report in the `test-reports` directory.
+## Example: Load summary report
 
+![Load summary report](/img/tests/load-summary.png)
 
-## Example: Load  summary report
+## Frequently Asked Questions
 
-![](/img/tests/load-summary.png)
+### Where to place load tests in Starlake?
 
-## Example: Transform Test report
+Load tests are in `metadata/tests/load`. Each test is a directory in the `domain/table` subdirectory.
 
-![](/img/tests/transform.png)
+### What files make up a load test?
 
-## Example: Load & Transform report
+A CSV or JSONL file with initial data (named `domain.table.json` or `.csv`), one or more data files matching the loader's expected pattern, and a `_expected.csv` file containing the expected data after loading.
 
-![](/img/tests/report.png)
+### How does Starlake validate load test results?
 
+Starlake compares the table schema with the expected data schema and the actual data with the `_expected.csv` file. The test fails if the schema or data does not match.
 
+### Where to find load test reports?
 
+In `test-reports/load/test-name/`. The report contains the DuckDB database (`testname.db`), unexpected data (`not_expected.csv`), and missing data (`missing.csv`).
 
+### What does the test report database contain?
 
+The tables `sl_expected` (expected data), `domain.table` (actual data), `sl_expectations` (expectation results), `audit.audit` (audit log), and `audit.rejected` (rejected data).
+
+### How to run only load tests?
+
+Use the command `starlake test --load`. For a specific test: `starlake test --domain <domain> --table <table> --test <test-name>`.
+
+### Do tests generate a visual report?
+
+Yes. Running tests generates a complete website in the `test-reports` directory.

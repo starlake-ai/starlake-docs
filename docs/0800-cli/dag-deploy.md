@@ -1,6 +1,12 @@
 ---
 sidebar_position: 90
 title: dag-deploy
+description: "Deploy previously generated DAG files and library dependencies to a target directory for orchestration tools like Airflow."
+keywords:
+  - starlake dag-deploy
+  - DAG deployment
+  - Airflow DAG
+  - workflow deployment
 ---
 
 
@@ -10,6 +16,7 @@ title: dag-deploy
 
 ## Description
 
+Deploy generated DAG files and their library dependencies to the orchestrator's DAG directory. Run this after `dag-generate` to publish workflow definitions to Airflow or another scheduler. See [Orchestration Guide](/guides/orchestrate/tutorial).
 
 ## Parameters
 

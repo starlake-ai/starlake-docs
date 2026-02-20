@@ -1,2 +1,136 @@
-# Orchestration
+---
+title: "Orchestrate Load Jobs with Starlake — Airflow, Dagster, Snowflake Tasks"
+description: "Generate orchestration DAGs automatically for Starlake load jobs. Supports Airflow, Dagster and Snowflake Tasks. Run starlake dag-generate to analyze dependencies and produce DAG files."
+keywords: [starlake load orchestration, airflow load, dagster load, dag generation, snowflake tasks, dag-generate]
+---
 
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I generate DAGs for load jobs in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run the starlake dag-generate command. It analyzes dependencies between load and transform jobs and produces DAG files for the configured orchestrator."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which orchestrators does Starlake support for load jobs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports Airflow, Dagster and Snowflake Tasks for load job orchestration."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need to write Airflow DAGs manually for Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. The starlake dag-generate command automatically generates DAGs from the YAML definitions in your project."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are dependencies between load and transform jobs handled automatically?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. DAG generation analyzes the dependencies declared in YAML files and produces a correct execution graph."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where can I find the full orchestration documentation for Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In the orchestration tutorial and DAG customization page, accessible from the Next Steps links on this page."
+          }
+        }
+      ]
+    })}
+  </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to orchestrate load jobs with Starlake",
+      "description": "Generate DAGs automatically for load job orchestration with Airflow, Dagster or Snowflake Tasks.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Define load configurations",
+          "text": "Ensure all table and domain YAML configurations are complete in your Starlake project."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run dag-generate",
+          "text": "Execute starlake dag-generate from the command line. This analyzes dependencies and produces DAG files."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Deploy DAGs to your orchestrator",
+          "text": "Copy the generated DAG files to your Airflow, Dagster or Snowflake Tasks environment."
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# Orchestrate Load Jobs
+
+Starlake generates orchestration DAGs automatically from your YAML load and transform definitions. You do not write DAG code manually. The `starlake dag-generate` command analyzes job dependencies and produces ready-to-deploy DAG files for your orchestrator.
+
+Supported orchestrators:
+- **Airflow** -- Generates Python DAG files.
+- **Dagster** -- Generates Dagster job definitions.
+- **Snowflake Tasks** -- Generates Snowflake Task definitions.
+
+## Why automatic DAG generation matters
+
+In a traditional data pipeline, you must write and maintain orchestration code alongside your data logic. Starlake eliminates this duplication: your YAML definitions already declare the tables, domains and dependencies. The `dag-generate` command derives the execution graph from these declarations.
+
+This means:
+- Zero DAG code to write or maintain.
+- Dependencies between load and transform jobs are resolved automatically.
+- Adding a new table or domain updates the DAG on the next generation.
+
+## How to generate and deploy DAGs
+
+1. **Ensure all YAML configurations are complete** -- Table, domain and transform definitions must be in place.
+2. **Run the generation command:**
+
+```bash
+starlake dag-generate
+```
+
+3. **Deploy the generated files** -- Copy the output to your Airflow DAGs folder, Dagster repository or Snowflake Tasks environment.
+
+The command analyzes dependencies between your load and transform jobs and produces the correct execution order.
+
+## Next Steps
+
+- See the [Orchestration Tutorial](/guides/orchestrate/tutorial) for a complete walkthrough of DAG generation and deployment.
+- See [Customizing DAG Generation](/guides/orchestrate/customization) for advanced configuration per orchestrator (Airflow, Dagster, Snowflake Tasks).
+
+## Frequently Asked Questions
+
+### How do I generate DAGs for load jobs in Starlake?
+Run the `starlake dag-generate` command. It analyzes dependencies between load and transform jobs and produces DAG files for the configured orchestrator.
+
+### Which orchestrators does Starlake support for load jobs?
+Starlake supports Airflow, Dagster and Snowflake Tasks for load job orchestration.
+
+### Do I need to write Airflow DAGs manually for Starlake?
+No. The `starlake dag-generate` command automatically generates DAGs from the YAML definitions in your project.
+
+### Are dependencies between load and transform jobs handled automatically?
+Yes. DAG generation analyzes the dependencies declared in YAML files and produces a correct execution graph.
+
+### Where can I find the full orchestration documentation for Starlake?
+In the [Orchestration Tutorial](/guides/orchestrate/tutorial) and [DAG Customization](/guides/orchestrate/customization) pages.

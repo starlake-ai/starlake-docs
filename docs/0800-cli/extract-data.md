@@ -1,6 +1,13 @@
 ---
 sidebar_position: 140
 title: extract-data
+description: "Extract data from any database in parallel with support for partitioning, incremental exports, and configurable parallelism."
+keywords:
+  - starlake extract-data
+  - database extraction
+  - parallel data export
+  - incremental extraction
+  - data pipeline
 ---
 
 
@@ -10,24 +17,7 @@ title: extract-data
 
 ## Description
 
-Extract data from any database defined in mapping file.
-
-Extraction is done in parallel by default and use all the available processors. It can be changed using `parallelism` CLI config.
-Extraction of a table can be divided in smaller chunk and fetched in parallel by defining partitionColumn and its numPartitions.
-
-Examples
-========
-
-Objective: Extract data
-
-  starlake.sh extract-data --config my-config --outputDir $PWD/output
-
-Objective: Plan to fetch all data but with different scheduling (once a day for all and twice a day for some) with failure recovery like behavior.
-  starlake.sh extract-data --config my-config --outputDir $PWD/output --includeSchemas aSchema
-         --includeTables table1RefreshedTwiceADay,table2RefreshedTwiceADay --ifExtractedBefore "2023-04-21 12:00:00"
-         --clean
-
-
+Extract data from a JDBC database into CSV or Parquet files. Supports incremental extraction, parallel partitioning, and selective table filtering for efficient large-scale data exports. See [Extract Tutorial](/guides/extract/tutorial).
 
 ## Parameters
 

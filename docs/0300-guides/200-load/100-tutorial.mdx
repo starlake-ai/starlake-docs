@@ -1,32 +1,157 @@
-# Tutorial
+---
+title: "Load CSV, JSON and XML Files into Your Data Warehouse"
+description: "Step-by-step tutorial: load and validate CSV, JSON, and XML files into BigQuery, Snowflake, Databricks or DuckDB using Starlake autoload. Includes schema inference, data validation and write strategies."
+keywords: [starlake, load tutorial, data warehouse, autoload, CSV, JSON, XML, write strategies, BigQuery, Snowflake, Databricks, DuckDB, schema inference, data validation]
+---
 
-Load and validate, in one shot or incrementally, JSON, XML and CSV files into your datawarehouse using different write strategies.
+import Head from '@docusaurus/Head';
 
-## Prerequisites
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What file formats does Starlake support for loading?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports loading CSV, TSV, JSON, XML, Fixed-width, Parquet, and Avro files. The file format is auto-detected based on the file extension and content when using the autoload command."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the difference between autoload and load in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The autoload command is a shortcut that combines infer-schema, stage, and load into a single step. It automatically detects file types, infers schemas, and loads data. The manual load command requires you to run infer-schema and stage separately before loading."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Starlake validate data during loading?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Starlake automatically validates data against the inferred or user-defined schema during loading. Rejected records are stored in a separate audit table, and successfully validated records are loaded into the target table."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where do files go after being loaded by Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Once loaded, files are moved to the $SL_ROOT/datasets/archive folder if the SL_ARCHIVE environment variable is set to true (which is the default). You can replay them by moving them back to the incoming folder."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Starlake map files to database schemas and tables?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The folder name under incoming/ becomes the database schema (domain). Each file name (minus extension and date suffix) becomes the target table name."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I load data incrementally with Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Files with a date/time suffix (e.g., order_20240228.csv) are loaded incrementally using the APPEND write strategy. Files without a suffix default to OVERWRITE."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I review rejected records after loading?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Rejected records are stored in the audit.rejected table. Query it with SQL to see which records failed validation and the rejection reason."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
-If you skipped the extract step above, copy the folder and its files present in `$SL_ROOT/sample-data/` to the `$SL_ROOT/incoming/` folder.
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Load Data into a Data Warehouse with Starlake",
+      "description": "Step-by-step guide to loading and validating CSV, JSON, and XML files into your data warehouse using Starlake autoload.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Prepare incoming data files",
+          "text": "Copy your CSV, JSON, or XML files into $SL_ROOT/incoming/<domain>/. The folder name becomes the database schema. Each file name maps to a target table.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the autoload command",
+          "text": "Run 'starlake autoload' to automatically detect file types, infer schemas, stage files, and load them into target tables.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Query the loaded data",
+          "text": "Open the DuckDB shell with 'duckdb datasets/duckdb.db' and run SQL queries to verify the data has been loaded correctly.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Review rejected records",
+          "text": "Query the audit.rejected table to check which records failed validation and review the rejection reasons.",
+          "position": 4
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Optionally use manual load workflow",
+          "text": "Instead of autoload, you can run 'starlake infer-schema', then 'starlake stage', then 'starlake load' for more control over each step.",
+          "position": 5
+        }
+      ]
+    })}
+  </script>
+</Head>
 
+# Load CSV, JSON and XML Files into Your Data Warehouse
 
-The folder name `starbake` will be translated in to a schema name (dataset in BigQuery) in the datawarehouse.
+Starlake loads and validates CSV, JSON, XML, fixed-width, Parquet, and Avro files into BigQuery, Snowflake, Databricks, DuckDB, and other warehouses. The `autoload` command handles format detection, schema inference, staging, and loading in a single step. For more control, the manual workflow lets you run `infer-schema`, `stage`, and `load` separately.
 
-The files in the folder will be loaded into tables in the schema. Files will be loaded into tables with the same name in the schema.
-Tables suffixed by a date/time will be loaded incrementally.
+Every record is validated against the inferred or user-defined schema. Valid records go to the target table. Rejected records are stored in a dedicated `audit.rejected` table with the rejection reason.
 
-## Autoload
-The autoload command is used to load the files in the default incoming folder into the datawarehouse.
+## Prerequisites: Prepare Your Incoming Data Files
 
-The autoload command will:
-- detect the file type based on its extension and content
-- infer the schema of the target table
-- stage the files
-- load the files into the target tables
+If you skipped the extract step above, copy the folder and its files from `$SL_ROOT/sample-data/` to the `$SL_ROOT/incoming/` folder.
 
-Clean the metadata/load folder from any schema you generated previously and run the following command to autoload the files located the incoming folder.
+The directory structure under `incoming/` determines how files map to your warehouse:
+- The **folder name** (`starbake`) becomes the database schema (called "dataset" in BigQuery, "schema" in Snowflake/Databricks).
+- Each **file name** (minus extension and date suffix) becomes a target table name.
+- Files **suffixed by a date/time** (e.g., `order_20240228.csv`) are loaded incrementally using the APPEND write strategy. Files without a suffix default to OVERWRITE.
+
+```plaintext title="Expected directory structure"
+incoming/
+└── starbake/
+    ├── product.xml
+    ├── order_20240228.csv
+    └── order_line_20240228.csv
+```
+
+## Autoload: Load Files in One Command
+
+The `autoload` command loads all files from the default incoming folder into the warehouse. It performs four steps automatically:
+
+1. Detects the file type based on extension and content
+2. Infers the schema of each target table
+3. Stages the files for loading
+4. Loads the files into the target tables
+
+Clean the `metadata/load` folder from any schema you generated previously, then run:
 
 :::warning
-
-autoload will stop short of inferring the schema if the schema file already exists in the metadata/load folder.
-
+`autoload` skips schema inference if a `.sl.yml` schema file already exists in `metadata/load/`. Delete or move existing schema files to force re-inference.
 :::
 
 ```bash
@@ -34,23 +159,22 @@ starlake autoload
 ```
 
 :::note
-Starlake looks at files present in the $SL_ROOT/datasets/incoming folder.
+Starlake looks at files present in the `$SL_ROOT/datasets/incoming` folder.
 
-The default incoming folder may be changed by setting the SL_INCOMING environment variable.
+The default incoming folder can be changed by setting the `SL_INCOMING` environment variable or by configuring the `application.area.incoming` property in `metadata/application.sl.yml`.
 :::
 
+Once loaded, files are moved to `$SL_ROOT/datasets/archive/` if the `SL_ARCHIVE` environment variable is set to `true` (the default). To replay a load, move the files back to the `incoming/` folder.
 
-Once loaded, files are moved to the $SL_ROOT/datasets/archive folder if the SL_ARCHIVE environment variable is set to true (default).
-You can replay them by moving them back to the incoming folder.
+## Query Loaded Data with DuckDB
 
-
-## Query your datawarehouse
-That's it you have loaded the data into your datawarehouse and just need to query it.
-To query your database, open de DuckDB shell by running the following command:
+After loading, query your warehouse to verify the data.
 
 :::note
-Install [duckdb](https://duckdb.org/docs/installation/) if you haven't done it yet.
+Install [DuckDB](https://duckdb.org/docs/installation/) if you haven't done so already.
 :::
+
+Open the DuckDB shell:
 
 ```bash
 $ cd $SL_ROOT
@@ -59,7 +183,7 @@ v0.10.0 20b1486d11
 Enter ".help" for usage hints.
 ```
 
-You can now query your datawarehouse using SQL.
+List all loaded tables:
 
 ```bash
 D show;
@@ -85,6 +209,18 @@ D select * from starbake.order limit 5;
 │           6 │        4 │ Delivered │ 2024-01-17 19:31:22.917 │
 │          17 │        5 │ Pending   │ 2024-01-19 01:26:06.674 │
 └─────────────┴──────────┴───────────┴─────────────────────────┘
+```
+
+Count loaded records:
+
+```bash
+D SELECT COUNT(*) FROM starbake.order;
+```
+
+Check for rejected records:
+
+```bash
+D SELECT * FROM audit.rejected;
 ```
 
 To exit the DuckDB shell, type `.quit` and press Enter.
@@ -94,87 +230,73 @@ D .quit
 $
 ```
 
-## Manual load
+## Manual Load: Infer Schema, Stage and Load Separately
 
-The autoload command above is a shortcut to the infer-schema, stage and load commands below.
-If you used the autoload command, you can skip this section.
+The `autoload` command is a shortcut that combines three separate commands. If you already ran `autoload`, you can skip this section. Use the manual workflow when you need more control over schema customization before loading.
 
-### Infer schema
-This is done by running the following command:
+### Step 1: Infer Schema
+
+Generate YAML schema files from your data files:
 
 ```bash
 starlake infer-schema --input incoming/starbake/ --clean
 ```
 
-Your metadata `load` folder should now contain the folder `starbake` with following files:
-- products.sl.yml
-- orders.sl.yml
-- order_lines.yml
-- _config.sl.yml
+Your `metadata/load` folder now contains the `starbake` folder with the following files:
+- `products.sl.yml`
+- `orders.sl.yml`
+- `order_lines.sl.yml`
+- `_config.sl.yml`
 
-The ìnfer-schema` command has created a schema file for each of the files in the incoming folder trying to detect the schema of the files.
-These schema files are used to load the data into the datawarehouse.
+The `infer-schema` command detects column names, types, and parsing options from the source files. In a real scenario, review and adjust these schema files before loading.
 
-In a real life scenario, you may want to review the schema files and adjust them to your needs.
+### Step 2: Stage Before Loading
 
-### Stage before loading
-starlake can stage the files before loading them into the datawarehouse.
-This is useful when your files arrive in a different folder from the one where they are loaded into the datawarehouse.
-
-To move the incoming files to the stage folder. Run the following command:
+Starlake can stage files before loading them. This is useful when files arrive in a different folder from the one used for loading.
 
 ```bash
 starlake stage
 ```
 
+### Step 3: Load Data into Your Warehouse
 
-### Load data into your datawarehouse
-
-Run the following command to load the files in the incoming folder.
-Since we are target the DuckDB datawarehouse, we need to set the SL_ENV variable to `DUCKDB` to activate the env.DUCKDB.sl.yml configuration file.
+Run the load command. Since this tutorial targets DuckDB, set the `SL_ENV` variable to activate the `env.DUCKDB.sl.yml` configuration file:
 
 ```bash
-
 SL_ENV=DUCKDB starlake load
-
 ```
 
-## Query your loaded files in your datawarehouse
-That's it you have loaded the data into your datawarehouse and just need to query it.
-To query your database, you can use the following command:
+Your raw files are now loaded into the warehouse. You can now start to [transform your data to build insights](../transform/tutorial).
 
-```bash
-$ cd $SL_ROOT
-$ duckdb datasets/duckdb.db
-v0.10.0 20b1486d11
-Enter ".help" for usage hints.
-D show;
-┌──────────┬──────────┬─────────────────┬──────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────┬───────────┐
-│ database │  schema  │      name       │     column_names     │                                           column_types                                            │ temporary │
-│ varchar  │ varchar  │     varchar     │      varchar[]       │                                             varchar[]                                             │  boolean  │
-├──────────┼──────────┼─────────────────┼──────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┼───────────┤
-│ duckdb   │ audit    │ audit           │ [JOBID, PATHS, DOM…  │ [VARCHAR, VARCHAR, VARCHAR, VARCHAR, BOOLEAN, BIGINT, BIGINT, BIGINT, TIMESTAMP, INTEGER, VARCH…  │ false     │
-│ duckdb   │ audit    │ rejected        │ [JOBID, TIMESTAMP,…  │ [VARCHAR, TIMESTAMP, VARCHAR, VARCHAR, VARCHAR, VARCHAR]                                          │ false     │
-│ duckdb   │ starbake │ order           │ [customer_id, orde…  │ [BIGINT, BIGINT, VARCHAR, TIMESTAMP]                                                              │ false     │
-│ duckdb   │ starbake │ order_line      │ [order_id, product…  │ [BIGINT, BIGINT, BIGINT, DOUBLE]                                                                  │ false     │
-│ duckdb   │ starbake │ product         │ [category, cost, d…  │ [VARCHAR, DOUBLE, VARCHAR, VARCHAR, DOUBLE, BIGINT]                                               │ false     │
-└──────────┴──────────┴─────────────────┴──────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────┴───────────┘
+## Frequently Asked Questions
 
-D select * from starbake.order limit 5;
-┌─────────────┬──────────┬───────────┬─────────────────────────┐
-│ customer_id │ order_id │  status   │        timestamp        │
-│    int64    │  int64   │  varchar  │        timestamp        │
-├─────────────┼──────────┼───────────┼─────────────────────────┤
-│           6 │        1 │ Cancelled │ 2024-02-05 22:19:15.454 │
-│          23 │        2 │ Delivered │ 2024-01-02 11:44:37.59  │
-│          20 │        3 │ Delivered │ 2024-02-10 23:10:30.685 │
-│           6 │        4 │ Delivered │ 2024-01-17 19:31:22.917 │
-│          17 │        5 │ Pending   │ 2024-01-19 01:26:06.674 │
-└─────────────┴──────────┴───────────┴─────────────────────────┘
+### What file formats does Starlake support for loading?
+Starlake supports loading CSV, TSV, JSON, XML, Fixed-width, Parquet, and Avro files. The file format is auto-detected based on the file extension and content when using the `autoload` command.
 
-D .quit
-$
-```
+### What is the difference between autoload and load in Starlake?
+The `autoload` command is a shortcut that combines `infer-schema`, `stage`, and `load` into a single step. It automatically detects file types, infers schemas, and loads data. The manual `load` command requires you to run `infer-schema` and `stage` separately before loading.
 
-Our raw files have been loaded into the datawarehouse and we can now start to [transform our data to build insights](../transform/tutorial).
+### Does Starlake validate data during loading?
+Yes. Starlake validates every record against the inferred or user-defined schema. Valid records go to the target table. Rejected records are stored in the `audit.rejected` table with the rejection reason.
 
+### Where do files go after being loaded by Starlake?
+Once loaded, files are moved to the `$SL_ROOT/datasets/archive` folder if the `SL_ARCHIVE` environment variable is set to `true` (the default). You can replay them by moving them back to the `incoming` folder.
+
+### How does Starlake map files to database schemas and tables?
+The folder name under `incoming/` becomes the database schema (domain). Each file name (minus extension and date suffix) becomes the target table name.
+
+### Can I load data incrementally with Starlake?
+Yes. Files with a date/time suffix (e.g., `order_20240228.csv`) are loaded incrementally using the APPEND write strategy. Files without a suffix default to OVERWRITE.
+
+### How do I change the default incoming directory?
+Set the `SL_INCOMING` environment variable, or configure the `application.area.incoming` property in `metadata/application.sl.yml`.
+
+### How do I review rejected records?
+Query the `audit.rejected` table. It contains the job ID, timestamp, domain, table name, the rejected record, and the rejection reason.
+
+## Related
+
+- [Extract Data from Databases](../extract/tutorial) -- extract source data as CSV files before loading
+- [Transform Data with SQL](../transform/tutorial) -- build KPI tables from your loaded data
+- [Write Strategies](./write-strategies) -- control how data is written to tables (APPEND, OVERWRITE, UPSERT, SCD2)
+- [Unit Test Load Pipelines](../unit-tests/load-tests) -- validate loading logic locally with DuckDB

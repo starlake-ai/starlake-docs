@@ -1,6 +1,12 @@
 ---
 sidebar_position: 130
 title: extract-bq-schema
+description: "Extract BigQuery table schemas and dataset metadata with options to filter tables, set connections, and persist results."
+keywords:
+  - starlake extract-bq-schema
+  - BigQuery schema extraction
+  - dataset metadata
+  - schema export
 ---
 
 
@@ -10,6 +16,7 @@ title: extract-bq-schema
 
 ## Description
 
+Extract table schemas from BigQuery datasets and generate Starlake YAML configuration files. Use this to reverse-engineer existing BigQuery tables into Starlake domain definitions.
 
 ## Parameters
 

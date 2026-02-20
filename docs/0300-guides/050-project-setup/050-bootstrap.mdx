@@ -1,95 +1,143 @@
 ---
 id: starlake-project-setup
-title: Create Your First Starlake Project
-description: Learn how to bootstrap a new Starlake project and configure your data warehouse connection for pipelines
+title: "Create a New Starlake Project with Bootstrap"
+description: "Create a new Starlake project with starlake bootstrap. Generates YAML configuration for BigQuery, DuckDB, and other connections. Includes sample data and project structure."
 keywords: [starlake, data engineering, etl, bootstrap, project setup, data warehouse, bigquery, duckdb]
 sidebar_label: Start new project
 sidebar_position: 1
 ---
 
-# New Project Setup
-
+import Head from '@docusaurus/Head';
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What does starlake bootstrap do?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The starlake bootstrap command creates a new Starlake project with a default directory structure. It generates the metadata/ folder with configuration files, type mappings, and sample data in datasets/incoming/."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the default Starlake project structure?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A bootstrapped project contains: metadata/application.sl.yml (project configuration), metadata/env.sl.yml (default variables), environment-specific overrides (env.BQ.sl.yml, env.DUCKDB.sl.yml), and directories for extract, load, transform configurations. Sample data is placed in datasets/incoming/."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I switch between DuckDB and BigQuery in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Set the SL_ENV environment variable. Use SL_ENV=DUCKDB starlake <command> for DuckDB or SL_ENV=BQ starlake <command> for BigQuery. Each environment has its own override file (env.DUCKDB.sl.yml, env.BQ.sl.yml)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the application.sl.yml file?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "It is the main project configuration file in Starlake. It defines the list of database connections, the active connection reference, audit configuration, and environment-specific overrides."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I bootstrap a Starlake project in a custom directory?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Set the SL_ROOT environment variable to the desired path: SL_ROOT=/my/other/location starlake bootstrap."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I run Starlake bootstrap with Docker?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Create a directory, then run: docker run -v $(pwd):/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap."
+          }
+        }
+      ]
+    })}
+  </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to create a new Starlake project",
+      "step": [
+        {"@type": "HowToStep", "name": "Create an empty project directory", "text": "Create a new folder (e.g., mkdir $HOME/userguide) and navigate into it. This folder will contain the Starlake project structure."},
+        {"@type": "HowToStep", "name": "Run starlake bootstrap", "text": "Execute 'starlake bootstrap' from the CLI, or use Docker: 'docker run -v $(pwd):/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap'."},
+        {"@type": "HowToStep", "name": "Review the generated project structure", "text": "The command creates a metadata/ directory with application.sl.yml, environment files, type mappings, and sample data in datasets/incoming/."},
+        {"@type": "HowToStep", "name": "Configure your data warehouse connection", "text": "Edit metadata/application.sl.yml to define connections (DuckDB, BigQuery, Snowflake, etc.). Set SL_ENV to switch between environments."}
+      ]
+    })}
+  </script>
+</Head>
 
-To create a new project, first create an empty folder and run the starlake bootstrap CLI command:
+# Create a New Starlake Project with Bootstrap
+
+The `starlake bootstrap` command creates a new Starlake project with a standard directory structure. It generates the `metadata/` folder containing `application.sl.yml` (project configuration), environment override files, type mappings, and sample data in `datasets/incoming/`. The sample data includes JSON, CSV, and XML files so you can test loading different formats.
+
+## Run the Bootstrap Command
+
+Create an empty directory and run `starlake bootstrap`. The command generates the full project structure in the current directory. By default, Starlake uses the current working directory. To use a different location, set the `SL_ROOT` environment variable.
 
 <Tabs groupId="platforms">
 <TabItem value="linux_macos" label="Linux/MacOS">
 
 ```bash
-$ mkdir $HOME/userguide
-$ cd $HOME/userguide
-$ starlake bootstrap
+mkdir $HOME/userguide
+cd $HOME/userguide
+starlake bootstrap
+```
+
+To bootstrap in a custom directory:
+
+```bash
+SL_ROOT=/my/other/location starlake bootstrap
 ```
 
 </TabItem>
 <TabItem value="windows" label="Windows">
 
 ```powershell
-c:\> mkdir c:\userguide
-c:\> cd c:\userguide
-c:\> starlake bootstrap
+mkdir c:\userguide
+cd c:\userguide
+starlake bootstrap
 ```
 
 </TabItem>
 <TabItem value="docker" label="Docker">
 
 ```bash
-$ mkdir $HOME/userguide
-$ cd $HOME/userguide
-$ docker run -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap
+mkdir $HOME/userguide
+cd $HOME/userguide
+docker run -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap
 ```
 
 </TabItem>
 </Tabs>
 
-:::note
+## Default Starlake Project Directory Structure
 
-By default, the project will be created in the current working directory.
-To bootstrap the project in a different folder, set the SL_ROOT environment variable:
-
-:::
-
-<Tabs groupId="platforms">
-<TabItem value="linux_macos" label="Linux/MacOS">
-
-```bash
-$ SL_ROOT=/my/other/location starlake bootstrap
-```
-
-</TabItem>
-<TabItem value="windows" label="Windows">
-
-```powershell
-c:\> mkdir c:\my\other\location
-c:\> starlake bootstrap
-```
-
-</TabItem>
-<TabItem value="docker" label="Docker">
-
-```bash
-$ mkdir $HOME/userguide
-$ cd $HOME/userguide
-$ docker run -v `pwd`:/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap
-```
-
-</TabItem>
-</Tabs>
-
-## Project Structure
-
-Starlake will create a default project hierarchy that enables you to start extracting, loading, transforming and orchestrating your data pipelines:
+The bootstrap command creates the following hierarchy:
 
 ```text {2,5,7,8,9,10,11,12,13}
 .
 ├── metadata
 │   ├── application.sl.yml      # project configuration
 │   ├── env.sl.yml              # variables used in the project with their default values
-│   ├── env.BQ.sl.yml           # variables overriden for a BigQuery connection
-│   ├── env.DUCKDB.sl.yml       # variables overriden for a DuckDB connection
+│   ├── env.BQ.sl.yml           # variables overridden for a BigQuery connection
+│   ├── env.DUCKDB.sl.yml       # variables overridden for a DuckDB connection
 │   ├── expectations
 │   │   └── default.sl.yml      # expectations macros
 │   ├── extract
@@ -106,19 +154,19 @@ Starlake will create a default project hierarchy that enables you to start extra
 ```
 
 Key directories:
-- `incoming`: Contains files to be loaded into your warehouse
-- `metadata`: Contains extract, load and transform configuration files
-- `expectations`: Contains data validation rules for loaded/transformed data
+- **metadata/**: Contains all configuration files for extract, load, and transform pipelines
+- **metadata/expectations/**: Contains data validation rules applied during load and transform
+- **datasets/incoming/**: Contains files to be loaded into your data warehouse. The sample data uses the Starbake project (a bakery management demo)
 
-## Configure Your Data Warehouse Connection
+## Configure Your Data Warehouse Connection in application.sl.yml
 
-The project configuration is stored in `metadata/application.sl.yml`. This file contains:
-- Project version
-- List of connections to different data sinks
-- Active connection reference
-- Environment-specific configuration overrides
+The `metadata/application.sl.yml` file is the main project configuration. It defines:
+- The list of database connections (DuckDB, BigQuery, Snowflake, etc.)
+- The active connection reference (`connectionRef`)
+- Audit sink configuration
+- Environment-specific overrides
 
-Here's an example configuration:
+Here is the default configuration:
 
 ```yaml title="metadata/application.sl.yml"
 application:
@@ -145,29 +193,33 @@ application:
         writeMethod: "direct"
 ```
 
-The files `env.DUCKDB.sl.yml` and `env.BQ.sl.yml` override default values for DuckDB and BigQuery connections. Set the `SL_ENV` environment variable to switch between environments:
+The `connectionRef` uses a variable (`{{activeConnection}}`) that is resolved from the environment files. Each environment file sets this variable to point to the appropriate connection.
+
+## Switch Between DuckDB and BigQuery Environments
+
+The files `env.DUCKDB.sl.yml` and `env.BQ.sl.yml` override default variable values for their respective connections. Set the `SL_ENV` environment variable to select the active environment:
 
 <Tabs groupId="platforms">
 
 <TabItem value="linux_macos" label="Linux/MacOS">
 
 ```bash
-$ SL_ENV=DUCKDB starlake <command>
+SL_ENV=DUCKDB starlake <command>
 ```
 
 </TabItem>
 <TabItem value="windows" label="Windows">
 
 ```powershell
-c:> SET SL_ENV=DUCKDB
-c:> starlake <command>
+SET SL_ENV=DUCKDB
+starlake <command>
 ```
 
 </TabItem>
 <TabItem value="docker" label="Docker">
 
 ```bash
-$ docker run -v `pwd`:/app/userguide \
+docker run -v `pwd`:/app/userguide \
              -e SL_ROOT=/app/userguide \
              -e SL_ENV=DUCKDB \
              -it starlakeai/starlake:VERSION <command>
@@ -176,15 +228,35 @@ $ docker run -v `pwd`:/app/userguide \
 </TabItem>
 </Tabs>
 
-## Next Steps
+## Next Steps: Load, Transform, and Orchestrate Data
 
-You're now ready to start working with Starlake! The next steps are:
+With the project created, follow these guides:
 
 1. [Load data](../load/tutorial) into your warehouse
 2. [Transform data](../transform/tutorial) for analysis
 3. Run transformations from CLI and Airflow
 4. Generate project documentation
 
-We'll use the [Starbake](https://github.com/starlake-ai/StarBake/) sample project to demonstrate these capabilities:
+The tutorials use the [Starbake](https://github.com/starlake-ai/StarBake/) sample project. Starbake is a bakery management demo that ships with the bootstrap command and demonstrates Starlake's load, transform, and orchestration features.
 
 ![Starbake Architecture](/img/starbake.png)
+
+## Frequently Asked Questions
+
+### What does `starlake bootstrap` do?
+The `starlake bootstrap` command creates a new Starlake project with a default directory structure. It generates the `metadata/` folder with configuration files, type mappings, and sample data in `datasets/incoming/`.
+
+### What is the default Starlake project structure?
+A bootstrapped project contains: `metadata/application.sl.yml` (project configuration), `metadata/env.sl.yml` (default variables), environment-specific overrides (`env.BQ.sl.yml`, `env.DUCKDB.sl.yml`), and directories for extract, load, transform configurations. Sample data is placed in `datasets/incoming/`.
+
+### How do I switch between DuckDB and BigQuery in Starlake?
+Set the `SL_ENV` environment variable. Use `SL_ENV=DUCKDB starlake <command>` for DuckDB or `SL_ENV=BQ starlake <command>` for BigQuery. Each environment has its own override file (`env.DUCKDB.sl.yml`, `env.BQ.sl.yml`).
+
+### What is the `application.sl.yml` file?
+It is the main project configuration file in Starlake. It defines the list of database connections, the active connection reference, audit configuration, and environment-specific overrides.
+
+### Can I bootstrap a Starlake project in a custom directory?
+Yes. Set the `SL_ROOT` environment variable to the desired path: `SL_ROOT=/my/other/location starlake bootstrap`.
+
+### How do I run Starlake bootstrap with Docker?
+Create a directory, then run: `docker run -v $(pwd):/app/userguide -e SL_ROOT=/app/userguide -it starlakeai/starlake:VERSION bootstrap`.

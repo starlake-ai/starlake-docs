@@ -1,6 +1,12 @@
 ---
 sidebar_position: 60
 title: col-lineage
+description: "Build and export column-level data lineage for a specific task as JSON, helping trace data flow across transformations."
+keywords:
+  - starlake col-lineage
+  - column lineage
+  - data lineage
+  - data traceability
 ---
 
 
@@ -9,7 +15,8 @@ title: col-lineage
 **starlake col-lineage [options]**
 
 ## Description
-Build lineage
+
+Generate column-level lineage showing which source columns feed into each target column across transformations. Use this command to trace data flow and understand the provenance of computed fields.
 
 ## Parameters
 

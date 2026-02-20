@@ -1,6 +1,8 @@
 ---
 sidebar_position: 400
 title: yml2ddl
+description: "Generate DDL statements from Starlake YAML schemas for your target data warehouse, with optional JDBC apply support."
+keywords: [starlake yml2ddl, DDL generation, schema to SQL, data warehouse, database migration]
 ---
 
 
@@ -10,6 +12,7 @@ title: yml2ddl
 
 ## Description
 
+Generate SQL DDL statements (CREATE TABLE, etc.) from Starlake YAML table definitions.
 
 ## Parameters
 

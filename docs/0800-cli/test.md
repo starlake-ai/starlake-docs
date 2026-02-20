@@ -1,6 +1,8 @@
 ---
 sidebar_position: 350
 title: test
+description: "Run unit tests for load and transform tasks on specific domains and tables, with optional HTML report generation."
+keywords: [starlake test, data testing, unit tests, data validation, test report]
 ---
 
 
@@ -10,6 +12,7 @@ title: test
 
 ## Description
 
+Run unit tests for load and transform tasks using sample data and expected results. See [Unit Tests Guide](/guides/unit-tests/concepts).
 
 ## Parameters
 

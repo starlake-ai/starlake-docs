@@ -1,12 +1,136 @@
-# Access control
+---
+title: "Access Control in Starlake — Table, Row and Column Level Security for BigQuery and Databricks"
+description: "Define table ACL, row-level security (RLS) with SQL predicates, and column-level access policies (PII) in Starlake. YAML configuration for BigQuery and Databricks."
+keywords: [starlake, access control, ACL, row-level security, column-level security, BigQuery, Databricks, RLS, PII]
+---
 
+import Head from '@docusaurus/Head';
 
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I define access rights on a table in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the acl section in the table YAML definition. Specify a role (permission) and a list of grants (users, groups or service accounts)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I configure Row Level Security (RLS) in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Add an rls section in the table definition. Each RLS policy contains a name, a predicate (SQL expression evaluated for each row) and grants defining the beneficiaries."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Column Level Security supported on all warehouses?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Column Level Security is supported on BigQuery only. It uses BigQuery access policies to restrict access to specific columns."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I protect a column containing PII in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Add the accessPolicy: PII property on the attribute in the table definition. This feature uses BigQuery access policies."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the ACL syntax for BigQuery in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The role uses the BigQuery format (e.g., role/bigQueryViewer). Grants use the format user:, group: or serviceAccount: followed by the identifier."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the ACL syntax for Spark/Databricks in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The role corresponds to a SQL permission (e.g., SELECT). Grants are user or group identifiers without a type prefix."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I combine ACL, RLS and Column Level Security on the same table?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. All three security levels can be combined in the same table YAML definition."
+          }
+        }
+      ]
+    })}
+  </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to configure row-level security in Starlake",
+      "description": "Define row-level security policies with SQL predicates in the table YAML definition for BigQuery or Databricks.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Open the table YAML file",
+          "text": "Edit metadata/load/<domain>/<table>.sl.yml."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Add an rls section",
+          "text": "Under the table key, define one or more RLS policies."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Set a name and predicate",
+          "text": "The predicate is a SQL expression evaluated for each row, for example country = 'USA'."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Define grants",
+          "text": "List the users or groups that should see only the rows matching the predicate, for example group:mygroup."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the load",
+          "text": "Execute starlake load to apply the security configuration to the target table."
+        }
+      ]
+    })}
+  </script>
+</Head>
 
-## Table Level Security
-Security on a table is defined by the ACL section of the table definition. The ACL section defines the role and the grants for the role. The role is the permission that is granted to the grants. The grants can be users, groups or service accounts.
+# Access Control
 
-Below is an example of the ACL section of a table definition.
+Starlake provides three levels of declarative security applied automatically at each load:
 
+- **Table-level ACL** -- Grant roles to users, groups or service accounts.
+- **Row-level security (RLS)** -- Filter rows with SQL predicates per grantee.
+- **Column-level access policies** -- Restrict access to PII columns (BigQuery only).
+
+All three levels are combinable in a single table YAML definition. This declarative approach eliminates the need for manual security configuration after each deployment.
+
+For excluding sensitive columns from ingestion entirely, see also the [`ignore` attribute](/guides/load/transform) as an alternative to column-level security.
+
+## How to configure access control
+
+1. **Open the table YAML file** -- Edit `metadata/load/<domain>/<table>.sl.yml`.
+2. **Add an `acl` section** -- Define roles and grants for table-level access.
+3. **Add an `rls` section** -- Define row-level security policies with SQL predicates.
+4. **Add `accessPolicy` on attributes** -- Restrict specific columns (BigQuery only).
+5. **Run the load** -- Execute `starlake load` to apply the security configuration to the target table.
+
+## Table-level security (ACL)
+
+The `acl` section grants roles to users, groups or service accounts. The syntax differs between BigQuery and Spark/Databricks.
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -16,7 +140,7 @@ import TabItem from '@theme/TabItem';
 
 <TabItem value="bigquery" label="BigQuery">
 
-BigQuery Example
+BigQuery uses role-based access with typed grant identifiers:
 
 ```yaml {3-8}
 table:
@@ -25,13 +149,18 @@ table:
         - role: role/bigQueryViewer
           grants:
             - user:user@starlake.ai
-            - group:goup@starlake.ai
+            - group:group@starlake.ai
             - serviceAccount:service@gserviceaccount.google.com
 ```
+
+- **role**: BigQuery role format (e.g., `role/bigQueryViewer`).
+- **grants**: Prefixed with `user:`, `group:` or `serviceAccount:`.
 
 </TabItem>
 
 <TabItem value="spark" label="Spark">
+
+Spark/Databricks uses SQL permissions with simple identifiers:
 
 ```yaml{3-8}
 table:
@@ -43,19 +172,17 @@ table:
             - group
 ```
 
+- **role**: SQL permission (e.g., `SELECT`).
+- **grants**: User or group identifiers without a type prefix.
+
 </TabItem>
 
 </Tabs>
 
 
-## Row Level Security
+## Row-level security (RLS)
 
-You may also want to restrict access to specific rows in a table.
-This is done by defining a row level security policy.
-The policy is defined by a SQL expression that is evaluated for each row in the table.
-If the expression evaluates to true, the row is returned. If the expression evaluates to false, the row is not returned.
-
-Below is an example of a row level security policy.
+RLS policies restrict which rows a user or group can see. Each policy defines a SQL `predicate` evaluated for every row. If the predicate evaluates to `true`, the row is visible to the grantees. If `false`, the row is hidden.
 
 ```yaml
 table:
@@ -72,16 +199,25 @@ table:
           - "group:mygroup"
 ```
 
+In this example, members of `group:mygroup` only see rows where `country = 'USA'`.
 
-## Column Level Security
+## Column-level security (BigQuery only)
 
-You may also want to restrict access to specific columns in a table.
+Column-level security uses BigQuery access policies to restrict access to specific columns. Set the `accessPolicy` property on sensitive attributes.
 
-This is done by defining a column level security policy.
+```yaml
+table:
+    ...
+    attributes:
+        - name: "code0"
+          accessPolicy: PII
+          type: "string"
+    ...
+```
 
-This feature is supported on BigQuery only and makes use of access policies to restrict access to specific columns in a table.
+This restricts the `code0` column to users with the appropriate BigQuery access policy. Non-authorized users see `NULL` instead of the actual value.
 
-Below is an example of a column level security policy.
+### Full example: ACL + RLS + Column-level security
 
 ```yaml
 table:
@@ -103,3 +239,25 @@ table:
     ...
 ```
 
+## Frequently Asked Questions
+
+### How do I define access rights on a table in Starlake?
+Use the `acl` section in the table YAML definition. Specify a `role` (permission) and a list of `grants` (users, groups or service accounts).
+
+### How do I configure Row Level Security (RLS) in Starlake?
+Add an `rls` section in the table definition. Each RLS policy contains a `name`, a `predicate` (SQL expression evaluated for each row) and `grants` defining the beneficiaries.
+
+### Is Column Level Security supported on all warehouses?
+No. Column Level Security is supported on BigQuery only. It uses BigQuery access policies to restrict access to specific columns.
+
+### How do I protect a column containing PII in Starlake?
+Add the `accessPolicy: PII` property on the attribute in the table definition. This feature uses BigQuery access policies.
+
+### What is the ACL syntax for BigQuery in Starlake?
+The role uses the BigQuery format (e.g., `role/bigQueryViewer`). Grants use the format `user:`, `group:` or `serviceAccount:` followed by the identifier.
+
+### What is the ACL syntax for Spark/Databricks in Starlake?
+The role corresponds to a SQL permission (e.g., `SELECT`). Grants are user or group identifiers without a type prefix.
+
+### Can I combine ACL, RLS and Column Level Security on the same table?
+Yes. All three security levels can be combined in the same table YAML definition.

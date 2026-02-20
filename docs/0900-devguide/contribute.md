@@ -1,3 +1,7 @@
+---
+description: "How to contribute to Starlake: submit code changes, report issues, review pull requests, and improve documentation. Includes git workflow, commit conventions, and code style guide."
+---
+
 # How to contribute
 
 This guide documents the best way to make various types of contribution to Starlake Data Pipeline, including what is required before submitting a code change.

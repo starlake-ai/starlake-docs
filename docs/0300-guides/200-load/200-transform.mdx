@@ -1,30 +1,155 @@
-# Transform on load
+---
+title: "Transform on Load — Computed Columns, Ignore and Foreign Keys in Starlake"
+description: "Add computed columns, ignore sensitive fields (GDPR) and define foreign keys during data ingestion in Starlake. Use Spark SQL functions and file metadata to enrich records."
+keywords: [starlake, transform on load, computed columns, Spark SQL, metadata, enrichment, ignore, GDPR, foreign key]
+---
 
+import Head from '@docusaurus/Head';
 
-## Add new attributes
-You may add extra attributes during load. This is useful to add extra columns that are not present in the source file such as the current timestamp or the file name
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I add a computed column during load in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Add an attribute with a script property in the table YAML file. The script accepts any Spark SQL function and can reference other columns in the same record."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What functions are available in the script property?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "All Spark SQL functions are available, as well as the hidden _metadata column properties: file_name, file_path, file_size and file_modification_time."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I add the source file name as a column?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Define an attribute with script: \"_metadata.file_name\". The name of the file being loaded will be added as the value of that column."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I ignore columns during load?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Set ignore: true on an attribute. The column will not be loaded into the target table but remains usable in other columns' scripts."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can the ignore attribute help with GDPR compliance?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Ignoring an attribute containing sensitive data prevents it from being loaded into the target table. The ignored column can still be used in a script for intermediate computation."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I define a foreign key on a column?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the foreignKey property on the attribute. Supported syntaxes: \"<table>\", \"<domain>.<table>\", \"<domain>.<table>.<column>\", or \"<table>.<column>\"."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are foreign keys enforced on all warehouses?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Some data warehouses do not support foreign keys. In that case, the constraint is ignored at runtime but still appears in the auto-generated entity-relational diagram."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What file metadata properties are available during load?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Four properties: file_name (name), file_path (path), file_size (size in bytes), and file_modification_time (last modification date)."
+          }
+        }
+      ]
+    })}
+  </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to add computed columns on load in Starlake",
+      "description": "Enrich records during ingestion by adding computed columns using Spark SQL functions in the table YAML definition.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Open the table YAML file",
+          "text": "Edit metadata/load/<domain>/<table>.sl.yml."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Add an attribute with a script property",
+          "text": "The script accepts any Spark SQL expression and can reference other columns or _metadata properties (file_name, file_path, file_size, file_modification_time)."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Optionally ignore source columns",
+          "text": "Set ignore: true on any attribute you want to exclude from the target table while still using it in scripts."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Optionally declare foreign keys",
+          "text": "Add foreignKey: \"<table>.<column>\" on an attribute to create a relationship."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the load",
+          "text": "Execute starlake load to ingest files with the computed columns applied."
+        }
+      ]
+    })}
+  </script>
+</Head>
 
-You may use any Spark SQL function to define the value of the new column and this function may reference any column of the same record in the file being loaded including the ignored ones.
+# Transform on Load
 
-The new column will be added to the table with the name you provide in the `name` property and the value will be the result of the function you provide in the `script` property.
+Starlake enriches records during ingestion through three features declared in the table YAML:
 
-In addition to the [Spark SQL](https://spark.apache.org/docs/latest/api/sql/index.html#hex) functions you can reference any of the properties available in the `_metadata` hidden column.
+- **Computed columns** -- Add new columns using any Spark SQL expression.
+- **Ignore attribute** -- Exclude sensitive or unnecessary columns from the target table (useful for GDPR compliance).
+- **Foreign keys** -- Declare relationships between tables for documentation and ER diagram generation.
 
-Available metadata properties are :
+All transformations happen at load time, before data reaches the target table.
+
+## How to add computed columns
+
+1. **Open the table YAML file** -- Edit `metadata/load/<domain>/<table>.sl.yml`.
+2. **Add an attribute with a `script` property** -- The script accepts any Spark SQL expression and can reference other columns or `_metadata` properties.
+3. **Optionally ignore source columns** -- Set `ignore: true` on any attribute you want to exclude from the target table while still using it in scripts.
+4. **Optionally declare foreign keys** -- Add `foreignKey: "<table>.<column>"` on an attribute to create a relationship.
+5. **Run the load** -- Execute `starlake load` to ingest files with the computed columns applied.
+
+## Computed columns with the `script` property
+
+Add extra attributes that do not exist in the source file. The `script` property accepts any [Spark SQL function](https://spark.apache.org/docs/latest/api/sql/index.html#hex) and can reference any column in the same record, including ignored columns.
+
+### File metadata properties
+
+In addition to Spark SQL functions, you can reference properties from the hidden `_metadata` column:
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `file_name` | string | the name of the file being loaded |
-| `file_path` | string | the path of the file being loaded |
-| `file_size` | long | the size of the file being loaded |
-| `file_modification_time` | timestamp | the last modified date of the file being loaded |
+| `file_name` | string | Name of the file being loaded |
+| `file_path` | string | Path of the file being loaded |
+| `file_size` | long | Size of the file in bytes |
+| `file_modification_time` | timestamp | Last modified date of the file |
 
-
-<br/>
-
-Below is an example of how to add a new column `file_name` to the table that will contain the name of the file being loaded.
-
-<br/>
+### Example: computed columns and file metadata
 
 ```yaml title="metadata/load/<domain>/<table>.sl.yml" {8,10,12}
 table:
@@ -41,13 +166,17 @@ table:
 
 ```
 
-## Ignore attributes
-You may ignore columns during load. This is useful to avoid loading columns that are not needed in the target table or have sensitive data (GDPR).
+In this example:
+- `total_price` multiplies two source columns.
+- `quantity_in_hexadecimal` applies the `hex()` Spark SQL function.
+- `file_name` captures the name of the ingested file.
 
-To ignore a column, set the `ignore` attribute to `true` in the column definition.
+## Ignore columns
+
+Set `ignore: true` on an attribute to exclude it from the target table. The column is still available in other attributes' `script` expressions. This supports GDPR compliance by preventing sensitive data from reaching the data warehouse. See also [column-level security](/guides/load/security) for access control on BigQuery.
 
 :::tip
-You may ignore a column you use inside the `script` attribute of another column.
+You may ignore a column and still use it inside the `script` attribute of another column.
 :::
 
 
@@ -62,12 +191,9 @@ table:
     ignore: true
 ```
 
-## Foreign key attributes
+## Foreign key declarations
 
-You may define a foreign key on a column during load using the `foreignKey` property on an attribute. This will be set as a foreign key in the target table.
-Some databases may not support foreign keys, in this case, the foreign key will be ignored but will still appear in the autogenerated entity-relational diagram.
-
-<br/>
+Declare foreign keys on attributes using the `foreignKey` property. Starlake sets the constraint on warehouses that support it and generates an entity-relational diagram in all cases.
 
 ```yaml title="metadata/load/<domain>/<table>.sl.yml" {8}
 table:
@@ -80,16 +206,42 @@ table:
     foreignKey: "product.id"
 
 ```
-<br/>
 
-The `foreignKey` property is defined using one of the following syntax:
+### Supported `foreignKey` syntax
 
 | Syntax | Description |
 | --- | --- |
-| `foreign_key: "<table>"` | This will create a foreign key on the primary key of the specified table in the same domain. |
-| `foreign_key: "<domain>.<table>"` | This will create a foreign key on the column to primary key of the specified table of the specified domain. |
-| `foreign_key: "<domain>.<table>.<column>"` | This will create a foreign key on the column to the specified column in the specified table of the specified domain. |
-| `foreign_key: "<table>.<column>"` | This will create a foreign key on the column to the specified column in the specified table in the same domain |
+| `foreignKey: "<table>"` | Foreign key on the primary key of the specified table in the same domain. |
+| `foreignKey: "<domain>.<table>"` | Foreign key on the primary key of the specified table in the specified domain. |
+| `foreignKey: "<domain>.<table>.<column>"` | Foreign key on a specific column in the specified table and domain. |
+| `foreignKey: "<table>.<column>"` | Foreign key on a specific column in the specified table in the same domain. |
 
+:::note
+Some data warehouses do not support foreign keys. The constraint is ignored at runtime but still appears in the auto-generated entity-relational diagram.
+:::
 
+## Frequently Asked Questions
 
+### How do I add a computed column during load in Starlake?
+Add an attribute with a `script` property in the table YAML file. The script accepts any Spark SQL function and can reference other columns in the same record.
+
+### What functions are available in the script property?
+All Spark SQL functions are available, as well as the hidden `_metadata` column properties: `file_name`, `file_path`, `file_size` and `file_modification_time`.
+
+### How do I add the source file name as a column?
+Define an attribute with `script: "_metadata.file_name"`. The name of the file being loaded will be added as the value of that column.
+
+### Can I ignore columns during load?
+Yes. Set `ignore: true` on an attribute. The column will not be loaded into the target table but remains usable in other columns' scripts.
+
+### Can the ignore attribute help with GDPR compliance?
+Yes. Ignoring an attribute containing sensitive data prevents it from being loaded into the target table. The ignored column can still be used in a script for intermediate computation.
+
+### How do I define a foreign key on a column?
+Use the `foreignKey` property on the attribute. Supported syntaxes: `"<table>"`, `"<domain>.<table>"`, `"<domain>.<table>.<column>"`, or `"<table>.<column>"`.
+
+### Are foreign keys enforced on all warehouses?
+No. Some data warehouses do not support foreign keys. In that case, the constraint is ignored at runtime but still appears in the auto-generated entity-relational diagram.
+
+### What file metadata properties are available during load?
+Four properties: `file_name` (name), `file_path` (path), `file_size` (size in bytes), and `file_modification_time` (last modification date).

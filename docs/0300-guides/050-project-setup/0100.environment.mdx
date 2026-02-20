@@ -1,16 +1,106 @@
 ---
+title: "Starlake Environment Variables: Multi-Environment Configuration"
+description: "Configure Starlake environment variables for multi-environment pipelines. Use env.DEV.sl.yml and env.PROD.sl.yml files with variable substitution. Includes predefined date/time variables."
+keywords: [starlake, environment variables, configuration, env files, multi-environment, variable substitution]
 sidebar_position: 10
 ---
 
-# Environment
-## Env specific variables
+import Head from '@docusaurus/Head';
 
-Starlake allows you to use variables almost everywhere in the domain and job files.
-For example, you may need to set the folder name to watch to a different value
-in development and production environments. This is where variables may help. They are enclosed inside 
-`${}` or `{{}}`
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I define environment-specific variables in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Create a file named env.<ENV>.sl.yml in the metadata folder (e.g., env.DEV.sl.yml, env.PROD.sl.yml). Define variables under the env: key. Set SL_ENV=DEV or SL_ENV=PROD before running Starlake to apply the correct values."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the variable substitution syntax in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Variables can be referenced with ${} or {{}} syntax in domain and job YAML files. Example: directory: \"{{root_path}}/sales\"."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where do I define global variables in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Define global variables in metadata/env.sl.yml. These apply across all environments but can be overridden by environment-specific files (env.DEV.sl.yml, env.PROD.sl.yml)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What predefined variables does Starlake provide?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake provides date/time variables: sl_date (yyyyMMdd), sl_datetime (yyyyMMddHHmmss), sl_year, sl_month, sl_day, sl_hour, sl_minute, sl_second, sl_milli, sl_epoch_second, sl_epoch_milli. These are automatically set to the current date/time."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does environment override priority work in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Environment-specific variables (defined in env.<ENV>.sl.yml) override global variables (defined in env.sl.yml). The active environment is selected by setting the SL_ENV environment variable."
+          }
+        }
+      ]
+    })}
+  </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to configure environment variables in Starlake",
+      "step": [
+        {"@type": "HowToStep", "name": "Define global variables in env.sl.yml", "text": "Create or edit metadata/env.sl.yml to define variables that apply across all environments. Use the env: key to list variable names and default values."},
+        {"@type": "HowToStep", "name": "Create environment-specific override files", "text": "Create env.DEV.sl.yml and env.PROD.sl.yml in the metadata/ folder. Variables defined here override the global defaults for the corresponding environment."},
+        {"@type": "HowToStep", "name": "Reference variables in YAML configuration", "text": "Use {{variable_name}} or ${variable_name} syntax in domain and job YAML files. Example: directory: '{{root_path}}/sales'."},
+        {"@type": "HowToStep", "name": "Set the active environment", "text": "Export SL_ENV=DEV or SL_ENV=PROD before running Starlake commands. The corresponding env.<ENV>.sl.yml file will be loaded automatically."}
+      ]
+    })}
+  </script>
+</Head>
 
-Assuming we have a `sales` domain as follows:
+# Starlake Environment Variables
+
+Starlake uses YAML-based environment files to manage configuration across different environments (DEV, PROD, etc.). Global variables are defined in `metadata/env.sl.yml`. Environment-specific overrides live in files like `env.DEV.sl.yml` and `env.PROD.sl.yml`. Variables are referenced using `${}` or `{{}}` syntax and resolved at runtime based on the `SL_ENV` setting.
+
+## How Variable Resolution Works
+
+Starlake resolves variables in the following order:
+
+1. **Global defaults** -- Variables defined in `metadata/env.sl.yml` apply to all environments.
+2. **Environment overrides** -- Variables in `metadata/env.<ENV>.sl.yml` override the global defaults for the corresponding environment.
+3. **Runtime substitution** -- When Starlake runs, it replaces `{{variable_name}}` and `${variable_name}` references in domain and job YAML files with the resolved values.
+
+The `${}` and `{{}}` syntaxes are interchangeable. Both produce the same result.
+
+## Define Global Variables in env.sl.yml
+
+Define variables that apply across all environments in `metadata/env.sl.yml`. These serve as default values that can be overridden per environment.
+
+```yaml title="metadata/env.sl.yml"
+env:
+  root_path: "/tmp/default"
+  activeConnection: "duckdb"
+```
+
+## Define Environment-Specific Variables (DEV, PROD)
+
+Create separate files for each environment in the `metadata/` folder. Each file overrides specific variables for that environment.
+
+**Example**: A `sales` domain references a variable for its directory:
+
 ```yaml
 load:
   name: "sales"
@@ -18,51 +108,126 @@ load:
   ack: "ack"
 ```
 
-We create a file `env.DEV.sl.yml` in the metadata folder 
+The DEV environment file sets `root_path` to a local directory:
 
-```yaml
+```yaml title="metadata/env.DEV.sl.yml"
 env:
   root_path: "/tmp/userguide"
 ```
 
-and the file `env.PROD.sl.yml` in the metadata folder
+The PROD environment file sets `root_path` to a cluster directory:
 
-```yaml
+```yaml title="metadata/env.PROD.sl.yml"
 env:
   root_path: "/cluster/userguide"
 ```
 
-To apply the substitution in the DEV env set the SL_ENV variable before running Starlake as follows:
+When Starlake runs with `SL_ENV=DEV`, the `sales` domain directory resolves to `/tmp/userguide/sales`. With `SL_ENV=PROD`, it resolves to `/cluster/userguide/sales`.
+
+## Set the Active Environment with SL_ENV
+
+Set the `SL_ENV` environment variable before running Starlake to select which override file to load:
 
 ```shell
+# For development
 export SL_ENV=DEV
-```
 
-In Production set it rather to:
-
-```shell
+# For production
 export SL_ENV=PROD
 ```
 
-## Global Variables
-To define variables across environments, declare them in the `env.sl.yml` file in the `metadata` folder.
+Or inline with a command:
 
-Global variables definitions may be superseded by the env specific variables files.  
+```shell
+SL_ENV=DEV starlake load
+```
 
+## Starlake System Environment Variables
 
-## Predefined variables
-The following variables are preset to the current date/time and may be used anywhere:
+Starlake uses several system-level environment variables to control its behavior:
 
-| Date Time Variable | Format                                |
-|--------------------|---------------------------------------|
-| sl_date         | yyyyMMdd                              |
-| sl_datetime     | yyyyMMddHHmmss                        |
-| sl_year         | yy                                    |
-| sl_month        | MM                                    |
-| sl_day          | dd                                    |
-| sl_hour         | HH                                    |
-| sl_minute       | mm                                    |
-| sl_second       | ss                                    |
-| sl_milli        | SSS                                   |
-| sl_epoch_second | Number of seconds since 1/1/1970      |
-| sl_epoch_milli  | Number of milliseconds since 1/1/1970 |
+| Variable | Description |
+|----------|-------------|
+| `SL_ROOT` | Root directory of the Starlake project |
+| `SL_ENV` | Active environment name (e.g., DEV, PROD, BQ, DUCKDB) |
+| `SL_DATASETS` | Path to the datasets directory |
+| `SL_METRICS_ACTIVE` | Enable or disable metrics collection |
+| `SL_API_HTTP_PORT` | Port for the Starlake web UI (default: 9900) |
+| `SL_API_DOMAIN` | Domain or IP for remote web UI access |
+
+These variables can be set in your shell, in a `.env` file, or passed as Docker environment variables.
+
+## Predefined Date/Time Variables
+
+Starlake provides built-in variables set to the current date and time at execution. Use them in any YAML configuration file with `{{sl_date}}` or `${sl_date}` syntax.
+
+| Variable | Format |
+|----------|--------|
+| `sl_date` | yyyyMMdd |
+| `sl_datetime` | yyyyMMddHHmmss |
+| `sl_year` | yyyy |
+| `sl_month` | MM |
+| `sl_day` | dd |
+| `sl_hour` | HH |
+| `sl_minute` | mm |
+| `sl_second` | ss |
+| `sl_milli` | SSS |
+| `sl_epoch_second` | Number of seconds since 1/1/1970 |
+| `sl_epoch_milli` | Number of milliseconds since 1/1/1970 |
+
+## Complete Variable Substitution Example
+
+This example shows the full flow from variable definition to resolved output.
+
+**1. Define a global default in `env.sl.yml`:**
+
+```yaml title="metadata/env.sl.yml"
+env:
+  root_path: "/tmp/default"
+  report_date: "{{sl_date}}"
+```
+
+**2. Override for production in `env.PROD.sl.yml`:**
+
+```yaml title="metadata/env.PROD.sl.yml"
+env:
+  root_path: "/data/warehouse"
+```
+
+**3. Reference variables in a load configuration:**
+
+```yaml title="metadata/load/sales.sl.yml"
+load:
+  name: "sales"
+  directory: "{{root_path}}/sales/{{report_date}}"
+```
+
+**4. Result at runtime with `SL_ENV=PROD` on January 15, 2026:**
+
+The directory resolves to: `/data/warehouse/sales/20260115`
+
+## Frequently Asked Questions
+
+### How do I define environment-specific variables in Starlake?
+Create a file named `env.<ENV>.sl.yml` in the `metadata` folder (e.g., `env.DEV.sl.yml`, `env.PROD.sl.yml`). Define variables under the `env:` key. Set `SL_ENV=DEV` or `SL_ENV=PROD` before running Starlake to apply the correct values.
+
+### What is the variable substitution syntax in Starlake?
+Variables can be referenced with `${}` or `{{}}` syntax in domain and job YAML files. Example: `directory: "{{root_path}}/sales"`.
+
+### Where do I define global variables in Starlake?
+Define global variables in `metadata/env.sl.yml`. These apply across all environments but can be overridden by environment-specific files (`env.DEV.sl.yml`, `env.PROD.sl.yml`).
+
+### What predefined variables does Starlake provide?
+Starlake provides date/time variables: `sl_date` (yyyyMMdd), `sl_datetime` (yyyyMMddHHmmss), `sl_year`, `sl_month`, `sl_day`, `sl_hour`, `sl_minute`, `sl_second`, `sl_milli`, `sl_epoch_second`, `sl_epoch_milli`. These are automatically set to the current date/time.
+
+### How does environment override priority work in Starlake?
+Environment-specific variables (defined in `env.<ENV>.sl.yml`) override global variables (defined in `env.sl.yml`). The active environment is selected by setting the `SL_ENV` environment variable.
+
+### Are the `${}` and `{{}}` syntaxes interchangeable?
+Yes. Both `${variable_name}` and `{{variable_name}}` produce the same result. You can use either syntax in domain and job YAML files.
+
+## Related
+
+- [Configure Database Connections](./connections) -- define connections that use environment variables for credentials
+- [Load Tutorial](../load/tutorial) -- use `SL_ENV` to target different warehouses when loading data
+- [Transform Tutorial](../transform/tutorial) -- use predefined date variables like `sl_date` in SQL transforms

@@ -1,6 +1,8 @@
 ---
 sidebar_position: 360
 title: transform
+description: "Execute SQL-based transformation tasks with dry-run, recursive dependency resolution, and interactive output formats."
+keywords: [starlake transform, SQL transformation, data pipeline, ELT, BigQuery]
 ---
 
 
@@ -10,6 +12,7 @@ title: transform
 
 ## Description
 
+Execute a SQL or Python transformation task. Starlake resolves dependencies, compiles queries with variable substitutions, and writes results to the target table. Use `--recursive` for upstream dependencies. See [Transform Guide](/guides/transform/tutorial).
 
 ## Parameters
 

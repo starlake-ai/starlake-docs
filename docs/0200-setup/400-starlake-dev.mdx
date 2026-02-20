@@ -1,119 +1,186 @@
 ---
 id: starlake-dev
-title: "Starlake with Airflow / Dagster"
-description: "Get started with Starlake in minutes. Step-by-step installation guide for Docker, Linux, MacOS, and Windows with cloud integration examples."
-keywords: [starlake installation, data pipeline setup, etl quickstart, docker etl, cloud integration]
+title: "Set Up Starlake with Airflow or Dagster (Docker Compose)"
+description: "Deploy Starlake with Airflow or Dagster using Docker Compose. Clone, run docker compose up, and access the Starlake UI. Kubernetes and cloud deployments also available."
+keywords: [airflow setup, dagster setup, starlake orchestration, docker compose, data pipeline orchestration, starlake airflow, starlake dagster]
 ---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I set up Starlake with Airflow?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Clone the starlake-docker repository, navigate to the docker folder, and run 'docker compose up'. Airflow is automatically installed and configured. Access the Starlake UI at http://localhost."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I set up Starlake with Dagster instead of Airflow?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the Dagster-specific compose file: 'docker compose -f docker-compose-dagster.yml up'. Dagster replaces Airflow as the orchestrator in this configuration."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I deploy Starlake on Kubernetes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Kubernetes deployment is available. Contact the Starlake engineering team on Slack to get the latest Helm chart."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What orchestration tools does Starlake support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports Airflow and Dagster. Both are pre-configured in the Docker Compose setup."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I mount external projects in the Starlake Docker setup?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "On macOS, run setup_mac_nfs.sh to expose your folder via NFS. Then modify the docker-compose.yml to use the NFS volume mount instead of the default volume. External project folders must contain the Starlake project structure (metadata/ etc.)."
+          }
+        }
+      ]
+    })}
+  </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to set up Starlake with Airflow or Dagster",
+      "step": [
+        {"@type": "HowToStep", "name": "Clone the starlake-docker repository", "text": "Run 'git clone https://github.com/starlake-ai/starlake-docker.git' to download the Docker Compose configuration."},
+        {"@type": "HowToStep", "name": "Navigate to the docker folder", "text": "Run 'cd starlake-docker/docker' to enter the directory containing the compose files."},
+        {"@type": "HowToStep", "name": "Start the stack with Airflow or Dagster", "text": "Run 'docker compose up' for Airflow, or 'docker compose -f docker-compose-dagster.yml up' for Dagster. Both orchestrators are pre-configured."},
+        {"@type": "HowToStep", "name": "Access the Starlake UI", "text": "Open http://localhost in your browser. To use a different port, set the SL_UI_PORT environment variable before running docker compose."}
+      ]
+    })}
+  </script>
+</Head>
+
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-:::tip
-This is a Docker-based setup for Starlake with Airflow or Dagster pre-configured.
+# Set Up Starlake with Airflow or Dagster
 
-:::
+Starlake supports Airflow and Dagster as orchestration engines. The `starlake-docker` repository provides Docker Compose files that install and configure Starlake, the web UI, and the chosen orchestrator in a single command. This setup is designed for developers and data engineers who want a ready-to-use pipeline environment without manual orchestrator configuration.
 
-This is ideal for developers and data engineers 
-who want to quickly set up a data pipeline environment without the need to separately install and configure Airflow or Dagster.
-Airflow and Dagster wxill be automatically installed and configured as part of the Starlake setup.
-It provides a streamlined setup process, allowing you to focus on building and managing your data projects 
-rather than dealing with infrastructure configurations.
+The core project is open source: [starlake-ai/starlake](https://github.com/starlake-ai/starlake).
 
-The core project is open source and can be found at [starlake-ai/starlake](https://github.com/starlake-ai/starlake)
+## Deploy Starlake with Airflow or Dagster via Docker Compose
 
-Starlake may be installed on your own infrastructure, whether on your on-premises or in the cloud.
+### Prerequisites
 
-You may install it on a server or a developer workstation using the docker-compose file provided to run the Starlake UI with Airflow or Dagster.
-Three installation options are available for the following platforms:
-- Starlake on Docker Compose
-- Starlake on Kubernetes
-- Starlake on AWS / GCP / Azure
+- Docker and Docker Compose installed and running
+- Git installed (to clone the repository)
 
+### Step-by-Step Setup
 
-
-<Tabs groupId="small-data-setup-options">
-<TabItem value="docker-compose" label="🐳 Starlake on Docker Compose">
-## Starlake on Docker Compose
-
-1. Clone this repository
+1. **Clone the starlake-docker repository**
 ```bash
 git clone https://github.com/starlake-ai/starlake-docker.git
 ```
 
-2. Change directory to the cloned repository
+2. **Navigate to the docker directory**
 ```bash
 cd starlake-docker/docker
 ```
 
-3. Run the following command to start Starlake UI with Airflow
+3. **Start the stack**
+
+For Airflow:
 ```bash
 docker compose up
 ```
 
-to run Starlake UI with Dagster, run the following command
+For Dagster:
 ```bash
 docker compose -f docker-compose-dagster.yml up
 ```
 
+4. **Open the Starlake UI** -- Navigate to `http://localhost` in your browser.
 
-To run on a different port, set the `SL_UI_PORT` environment variable. For example, to run on port 8080, run the following command
+To run on a different port, set the `SL_UI_PORT` environment variable:
 ```bash
-SL_UI_PORT=8080 docker-compose up
+SL_UI_PORT=8080 docker compose up
 ```
 
-4. Open your browser and navigate to `http://localhost` or if you chose a different port `http://localhost:$SL_UI_PORT` to access Starlake UI
+### Stop the Starlake Docker Compose Stack
 
-That's it! You have successfully started Starlake on your own infrastructure.
-
-### Mounting external projects
-
-If you have any starlake container projects and want to mount it:
-- run `setup_mac_nfs.sh` if you are on mac in order to expose your folder via NFS.
-  Modify the root folder to share if necessary. By default it is set to /user.
-  This change is not specific to starlake and may be used in other container.
-- comment `- external_projects_data:/external_projects`
-- uncomment `- starlake-prj-nfs-mount:/external_projects`
-- go to the end of the file and modify the path of the volume to point to the starlake container folder
-
-Starlake container folder should contain the starlake project folder:
-
-```
- my_container_to_mount
-   |
-    - sl_project_1
-        |
-         - metadata
-         - ...
-   |
-    - sl_project_2
-        |
-         - metadata
-         - ...
-```
-
-If you have many container projects, create as many volume as needed.
-
-#### Limit
-
-- Currently, we cannot mount the starlake projects directory directly under the mounted `/external_projects`. Subfolders of the mounted external project can't be accessed correctly.
-- This feature has been tested only on MacOS and linux at the moment
-
-
-### Stopping Starlake UI
-To stop Starlake UI, run the following command in the same directory
+To stop all services, run in the same directory:
 ```bash
 docker compose down
 ```
 
-</TabItem>
-<TabItem value="k8s" label="&#x2752; Starlake on Kubernetes">
+## Mount External Starlake Projects in Docker
 
-Please contact our engineering team on [Slack](https://starlakeai.slack.com) to get the latest Helm chart for Starlake on Kubernetes.
+If you have existing Starlake projects and want to access them from the Docker setup, mount their parent folder as an NFS volume.
 
-</TabItem>
+### Steps for macOS
 
-<TabItem value="cloud" label="&#x2601; Starlake on  AWS / GCP / Azure">
+1. Run `setup_mac_nfs.sh` to expose your folder via NFS. Modify the root folder to share if needed (default: `/user`).
+2. In `docker-compose.yml`, comment out `- external_projects_data:/external_projects`.
+3. Uncomment `- starlake-prj-nfs-mount:/external_projects`.
+4. At the bottom of the file, modify the volume path to point to your parent folder.
 
-Please contact our engineering team on [Slack](https://starlakeai.slack.com) to get the latest Terraform scripts for Starlake on AWS / GCP / Azure.
+### Expected Folder Structure
 
-</TabItem>
-</Tabs>
+The mounted parent folder must contain one or more Starlake project directories, each with a `metadata/` subdirectory:
+
+```text
+my_parent_folder/
+├── sl_project_1/
+│   └── metadata/
+│       └── ...
+├── sl_project_2/
+│   └── metadata/
+│       └── ...
+```
+
+If you have multiple parent folders, create a separate volume for each one.
+
+### Known Limitations
+
+- You cannot mount Starlake projects directly under `/external_projects`. Place them inside a subfolder.
+- This feature has been tested on macOS and Linux only.
+
+## Deploy Starlake on Kubernetes
+
+Kubernetes deployment is available via Helm charts. Contact the Starlake engineering team on [Slack](https://starlakeai.slack.com) for the latest Helm chart and deployment instructions.
+
+## Deploy Starlake on AWS, GCP, or Azure
+
+Cloud deployment via Terraform is available. Contact the Starlake engineering team on [Slack](https://starlakeai.slack.com) for the latest Terraform scripts targeting AWS, GCP, or Azure.
+
+## Frequently Asked Questions
+
+### How do I set up Starlake with Airflow?
+Clone the `starlake-docker` repository, navigate to the `docker` folder, and run `docker compose up`. Airflow is automatically installed and configured. Access the Starlake UI at `http://localhost`.
+
+### How do I set up Starlake with Dagster instead of Airflow?
+Use the Dagster-specific compose file: `docker compose -f docker-compose-dagster.yml up`. Dagster replaces Airflow as the orchestrator in this configuration.
+
+### Can I deploy Starlake on Kubernetes?
+Kubernetes deployment is available. Contact the Starlake engineering team on Slack to get the latest Helm chart.
+
+### What orchestration tools does Starlake support?
+Starlake supports Airflow and Dagster. Both are pre-configured in the Docker Compose setup.
+
+### How do I mount external projects in the Starlake Docker setup?
+On macOS, run `setup_mac_nfs.sh` to expose your folder via NFS. Then modify the `docker-compose.yml` to use the NFS volume mount instead of the default volume. External project folders must contain the Starlake project structure (`metadata/` etc.).
+
+### How do I change the port for Starlake UI?
+Set the `SL_UI_PORT` environment variable before running Docker Compose. Example: `SL_UI_PORT=8080 docker compose up`.

@@ -2,35 +2,140 @@
 id: starlake-site-builder
 title: Starlake Site Builder
 sidebar_label: Site Builder
-description: A modern documentation portal for Starlake load domains and transform tasks.
+description: "Generate a documentation portal for your Starlake data pipelines. Browse load domains, table schemas, transform tasks with interactive ERD and lineage visualizations. Built with Next.js. Open source."
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to generate a documentation site with Starlake Site Builder",
+      "description": "Generate and deploy a documentation portal for your Starlake data pipelines with ERD and lineage visualizations.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Generate JSON metadata",
+          "text": "Run 'starlake site --outputDir /path/to/json_data --format json' to produce the JSON files needed by the portal.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Clone the Site Builder repository",
+          "text": "Run 'git clone https://github.com/starlake-ai/starlake-site-builder.git' and cd into the project directory.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Configure the data path",
+          "text": "Set the SITE_BASE_PATH environment variable or create a .env.local file pointing to your generated JSON data directory.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Install dependencies and run",
+          "text": "Run 'npm install' then 'SITE_BASE_PATH=/path/to/json_data npm run dev' for development or 'npm run build && npm run start' for production.",
+          "position": 4
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Starlake Site Builder?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A documentation portal built with Next.js that automatically generates a navigable interface for load domains, table definitions, and transformation tasks from Starlake metadata."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How to generate data for the Site Builder?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run 'starlake site --outputDir /path/to/json_data --format json'. This command produces the JSON files needed by the portal."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What visualizations are available?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The Site Builder provides ERD views (foreign key relationships between tables) and interactive lineage diagrams (upstream dependencies for transformation tasks)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What technologies are used?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Next.js 16, TypeScript, Tailwind CSS 4, React Flow (lineage diagrams), CodeMirror (SQL highlighting), and shadcn/ui (UI components)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the Site Builder include search?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. A global search is accessible via Cmd+K / Ctrl+K."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What directory structure is expected?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The SITE_BASE_PATH must contain a tables/ folder (with domains.json and per-table files) and a tasks/ folder (with tasks.json and per-task files)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can the Site Builder be deployed to production?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Build with 'npm run build' then launch with 'SITE_BASE_PATH=/path/to/data npm run start'."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
 # Starlake Site Builder
 
-**Starlake Site Builder** is a modern documentation portal designed for data teams using Starlake. It provides a clear, navigable interface for exploring load domains, table definitions, and transformation tasks.
+Starlake Site Builder generates a documentation portal from your pipeline metadata. It provides navigable views of load domains, table schemas, and transform tasks with interactive ERD and lineage visualizations. Built with Next.js 16, it supports dark/light mode and global search, and can be deployed as a static or server-rendered site.
 
-:::info
-This project is built with **Next.js 16**, **TypeScript**, and **Tailwind CSS**.
-:::
+## Quick start
+
+1. **Generate JSON metadata** -- Run `starlake site --outputDir /path/to/json_data --format json`.
+2. **Clone the repository** -- `git clone https://github.com/starlake-ai/starlake-site-builder.git`.
+3. **Configure the data path** -- Set `SITE_BASE_PATH` in `.env.local` or as an environment variable.
+4. **Install and run** -- `npm install`, then `npm run dev` (development) or `npm run build && npm run start` (production).
 
 ## Features
 
-- 📚 **Load Documentation**: Browse domains and tables from your Starlake metadata.
-- 🔄 **Transform Documentation**: Explore task domains and transformation logic.
-- 📊 **Visualizations**:
-  - **ERD Views**: Visualize foreign key relationships between tables.
-  - **Data Lineage**: Interactive diagrams showing upstream dependencies for tasks.
-- 🌙 **Dark/Light Mode**: Built-in theme toggling for comfortable viewing.
-- 🔎 **Search**: Fast, global documentation search (accessible via `Cmd+K` / `Ctrl+K`).
+- **Load documentation**: Browse domains and tables from your Starlake metadata.
+- **Transform documentation**: Explore task domains and transformation logic.
+- **ERD views**: Visualize foreign key relationships between tables.
+- **Data lineage**: Interactive diagrams showing upstream dependencies for tasks.
+- **Dark/Light mode**: Built-in theme toggling.
+- **Global search**: Fast documentation search accessible via `Cmd+K` / `Ctrl+K`.
 
 ## Getting Started
 
 ### Prerequisites
 
-Before running the site builder, you must generate the JSON Site Map using the Starlake CLI.
+Generate the JSON site map using the Starlake CLI:
 
 ```bash
 starlake site --outputDir /path/to/json_data --format json
@@ -38,7 +143,7 @@ starlake site --outputDir /path/to/json_data --format json
 
 ### Installation
 
-Clone the repository to get started:
+Clone the repository:
 
 ```bash
 git clone https://github.com/starlake-ai/starlake-site-builder.git
@@ -47,44 +152,44 @@ cd starlake-site-builder
 
 ### Configuration
 
-You need to tell the application where to find your generated JSON metadata. You can create a `.env.local` file in the root of the project:
+Tell the application where to find your generated JSON metadata. Create a `.env.local` file in the project root:
 
 ```env title=".env.local"
 SITE_BASE_PATH=/path/to/json_data
 ```
 
-:::tip Directory Structure
+:::tip Directory structure
 The application expects the following structure inside your `SITE_BASE_PATH`:
-- 📂 `tables/` — Contains `domains.json` and individual `{domain}.{table}.json` files.
-- 📂 `tasks/` — Contains `tasks.json` and individual `{domain}.{task}.json` files.
+- `tables/` -- Contains `domains.json` and individual `{domain}.{table}.json` files.
+- `tasks/` -- Contains `tasks.json` and individual `{domain}.{task}.json` files.
 :::
 
-### Running the Project
+### Running the project
 
-First, install the dependencies:
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-To view the documentation, you can run the development server with the `SITE_BASE_PATH` pointing to your generated JSON data:
+Run the development server with `SITE_BASE_PATH` pointing to your JSON data:
 
 ```bash
 SITE_BASE_PATH=/path/to/json_data npm run dev
 ```
 
-Or, to run the production build (recommended for deployment):
+Or build and run for production:
 
 ```bash
 npm run build
 SITE_BASE_PATH=/path/to/json_data npm run start
 ```
 
-Alternatively, if you have configured `.env.local`, you can simply run `npm run dev` (or `npm run build && npm run start`).
+If you configured `.env.local`, run `npm run dev` or `npm run build && npm run start` directly.
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to view the documentation portal.
+Open [http://localhost:3000](http://localhost:3000) to view the documentation portal.
 
-## Project Structure
+## Project structure
 
 The project follows a standard Next.js App Router structure:
 
@@ -99,15 +204,48 @@ starlake-site-builder/
 └── public/               # Static assets
 ```
 
-## Tech Stack
-
-The `starlake-site-builder` leverages a modern stack to deliver a fast and interactive experience:
+## Tech stack
 
 | Technology | Purpose |
 |------------|---------|
-| [Next.js 16](https://nextjs.org/) | App Framework & Routing |
-| [TypeScript](https://www.typescriptlang.org/) | Type Safety |
+| [Next.js 16](https://nextjs.org/) | App framework and routing |
+| [TypeScript](https://www.typescriptlang.org/) | Type safety |
 | [Tailwind CSS 4](https://tailwindcss.com/) | Styling |
-| [React Flow](https://reactflow.dev/) | Interactive Lineage Diagrams |
-| [CodeMirror](https://codemirror.net/) | SQL Syntax Highlighting |
-| [shadcn/ui](https://ui.shadcn.com/) | Accessible UI Components |
+| [React Flow](https://reactflow.dev/) | Interactive lineage diagrams |
+| [CodeMirror](https://codemirror.net/) | SQL syntax highlighting |
+| [shadcn/ui](https://ui.shadcn.com/) | Accessible UI components |
+
+## Related pages
+
+- [Starlake vs dbt](../comparisons/starlake-vs-dbt) -- Starlake includes free lineage and documentation generation.
+- [Deploy Starlake Pipelines](../deploy/tutorial) -- Deploy your project and documentation portal.
+
+## Frequently Asked Questions
+
+### What is Starlake Site Builder?
+
+A documentation portal built with Next.js that automatically generates a navigable interface for load domains, table definitions, and transformation tasks from Starlake metadata.
+
+### How to generate data for the Site Builder?
+
+Run `starlake site --outputDir /path/to/json_data --format json`. This command produces the JSON files needed by the portal.
+
+### What visualizations are available?
+
+The Site Builder provides ERD views (foreign key relationships between tables) and interactive lineage diagrams (upstream dependencies for transformation tasks).
+
+### What technologies are used?
+
+Next.js 16, TypeScript, Tailwind CSS 4, React Flow (lineage diagrams), CodeMirror (SQL highlighting), and shadcn/ui (UI components).
+
+### Does the Site Builder include search?
+
+Yes. A global search is accessible via `Cmd+K` / `Ctrl+K`.
+
+### What directory structure is expected?
+
+The `SITE_BASE_PATH` must contain a `tables/` folder (with `domains.json` and per-table files) and a `tasks/` folder (with `tasks.json` and per-task files).
+
+### Can the Site Builder be deployed to production?
+
+Yes. Build with `npm run build` then launch with `SITE_BASE_PATH=/path/to/data npm run start`.

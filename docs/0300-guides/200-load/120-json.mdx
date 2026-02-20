@@ -1,55 +1,156 @@
-# Load JSON Files
+---
+title: "Load JSON Files"
+description: "Load JSON files with nested and repeated attributes into BigQuery, Snowflake, or Databricks using Starlake. Supports JSON, JSON_FLAT, and JSON_ARRAY formats with automatic schema inference."
+keywords: [starlake, JSON, load, nested attributes, JSON_ARRAY, JSON_FLAT, schema inference, struct, array, BigQuery, Snowflake, Databricks]
+---
 
+import Head from '@docusaurus/Head';
 
-Loading a JSON file is similar to loading a CSV file except that JSON attributes may have nested attributes.
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What JSON formats does Starlake support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports three JSON formats: JSON (one object per line), JSON_FLAT (flat objects without nesting, faster parsing), and JSON_ARRAY (a single array of objects)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I load a JSON file with nested attributes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Define nested attributes using type: 'struct' in the YAML schema. For repeated (array) attributes, add array: true to the attribute definition."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the difference between JSON and JSON_FLAT in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "JSON_FLAT is optimized for files where no object contains nested or repeated fields. It parses faster than JSON. Use JSON when your data has nested structures."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Starlake detect if a JSON file is an array?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "During autoload, Starlake checks the first character of the file. If it starts with [, the format is JSON_ARRAY. If it starts with {, the format is JSON."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I infer the schema of a JSON file?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run 'starlake infer-schema --input incoming/<domain>'. The command detects nested structures and generates the corresponding YAML configuration."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which data warehouses support nested JSON attributes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "BigQuery and Databricks natively support nested and repeated attributes (STRUCT and ARRAY types). Snowflake supports them via VARIANT columns. Warehouses like Redshift require flattening."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
 
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Load a JSON File with Nested Attributes Using Starlake",
+      "description": "Load JSON files with nested and repeated attributes into your data warehouse using Starlake.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "Infer the JSON schema",
+          "text": "Run 'starlake infer-schema --input incoming/<domain>' to detect nested structures and generate a YAML configuration."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "Choose the JSON format",
+          "text": "Set metadata.format to JSON, JSON_FLAT (for flat objects), or JSON_ARRAY (for files containing a single array)."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "Define nested attributes",
+          "text": "For nested objects, set type to 'struct'. For arrays, add 'array: true'. Define child attributes under the 'attributes' key."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 4,
+          "name": "Run the load command",
+          "text": "Execute 'starlake load' to parse, validate, and load the JSON data into the target warehouse table."
+        }
+      ]
+    })}
+  </script>
+</Head>
 
-## Infer schema
+# Load JSON Files with Nested and Repeated Attributes
 
-The very first step is to infer the schema of the file from a data file as described in the [autoload section](autoload#how-autoload-detects-the-format-of-the-files) before you start customizing your configuration. This is done using the `infer-schema` command. This will bootstrap the configuration file for the table.
+Starlake loads JSON files into BigQuery, Snowflake, Databricks, DuckDB, and other warehouses with full support for nested and repeated attributes. It supports three JSON formats: `JSON` (one object per line), `JSON_FLAT` (flat objects, faster parsing), and `JSON_ARRAY` (a single array of objects). Schema inference automatically detects nested structures and generates the corresponding YAML configuration.
+
+Loading JSON is similar to loading [CSV](csv) files, with one key difference: JSON attributes can be nested (objects within objects) and repeated (arrays of objects).
+
+## Infer JSON Schema Automatically
+
+Start by inferring the schema from a sample file. The `infer-schema` command detects nested structures, column types, and generates a YAML configuration file.
 
 ```bash
-
-starlake infer-schema --input-path incoming/starbake
-
+starlake infer-schema --input incoming/starbake
 ```
 
-## Parsing JSON
+This bootstraps the configuration file for the table under `metadata/load/<domain>/`. Review and customize it before loading. See the [autoload format detection](autoload#how-autoload-detects-file-format-csv-json-xml) documentation for details on how JSON detection works.
 
-Like other file formats, JSON Parsing options are defined in the `metadata` section of the configuration file.
+## JSON Format Options: JSON, JSON_FLAT, JSON_ARRAY
 
-The `format`attribute may be set to one of the values below:
+The `format` property in the `metadata` section determines how Starlake parses the JSON file.
 
-| Format | Description |
-| --- | --- |
-| JSON | The JSON file is parsed as a list of objects, one object per line |
-| JSON_FLAT | The JSON objects do not contain any repeated or nested fields. Using this format instead of JSON makes file parsing faster |
-| JSON_ARRAY | The JSON file is parsed as a single array of objects |
-
-<br/>
+| Format | Description | When to use |
+| --- | --- | --- |
+| `JSON` | One JSON object per line (newline-delimited JSON) | Files with nested or repeated fields |
+| `JSON_FLAT` | Flat JSON objects with no nesting or arrays | Faster parsing for simple, flat data |
+| `JSON_ARRAY` | A single JSON array containing multiple objects | Files that start with `[` |
 
 ```yaml title="metadata/load/<domain>/<table>.sl.yml - parsing section"
 table:
-  pattern: "order_line.*.csv"
+  pattern: "order.*.json"
   metadata:
-    format: "JSON" # or "JSON_FLAT" since the JSON objects do not contain any repeated or nested fields
-    ...
+    format: "JSON" # or "JSON_FLAT" for flat objects, "JSON_ARRAY" for arrays
+    writeStrategy:
+      type: "APPEND"
   attributes:
     - ...
 ```
 
+During [autoload](autoload), Starlake auto-detects the format: if the file starts with `[`, it uses `JSON_ARRAY`; if it starts with `{`, it uses `JSON`.
 
-## Attributes validation
+## Define Nested and Array Attributes in YAML
 
-The `attributes` section of the configuration file is used to define the attributes of the JSON file.
-The `attributes` section is a list of objects, each object representing an attribute of the JSON file.
-In addition to the common attributes, the `attributes` section may contain the following attributes:
-- 'array' (optional): The attribute is an array of objects. The value of this attribute is a list of objects, each object representing an attribute of the array.
-- 'struct' (optional): The attribute is an object containing other attributes.
+JSON attributes can contain nested objects (`struct`) and arrays of objects. Define them in the `attributes` section using:
 
-<br/>
+- `type: "struct"` for nested objects
+- `array: true` for repeated elements (arrays)
 
-Given the Json record below:
+### Example: JSON with Nested Arrays
+
+Given this JSON record:
 
 ```json
 {
@@ -70,14 +171,15 @@ Given the Json record below:
 }
 ```
 
-The `attributes` section of the configuration file would be:
+The YAML configuration defines the nested structure:
 
 ```yaml title="metadata/load/<domain>/<table>.sl.yml - attributes section"
 table:
-  pattern: "order_line.*.csv"
+  pattern: "order.*.json"
   metadata:
     format: "JSON"
-    ...
+    writeStrategy:
+      type: "APPEND"
   attributes:
     - name: "order_id"
       type: "integer"
@@ -94,3 +196,43 @@ table:
         - name: "quantity"
           type: "integer"
 ```
+
+You can nest multiple levels deep. Each `struct` attribute can contain its own `attributes` list, with further `struct` or `array` definitions.
+
+### Warehouse Support for Nested Attributes
+
+Not all warehouses support nested types natively:
+
+| Warehouse | Nested support |
+|---|---|
+| BigQuery | Native STRUCT and ARRAY types |
+| Databricks | Native STRUCT and ARRAY types |
+| Snowflake | VARIANT columns |
+| Redshift | Requires flattening before loading |
+| DuckDB | Native STRUCT and ARRAY types |
+
+## Frequently Asked Questions
+
+### What JSON formats does Starlake support?
+Starlake supports three JSON formats: `JSON` (one object per line), `JSON_FLAT` (flat objects without nesting, faster parsing), and `JSON_ARRAY` (a single array of objects).
+
+### How do I load a JSON file with nested attributes?
+Define nested attributes using `type: "struct"` in the YAML schema. For repeated (array) attributes, add `array: true` to the attribute definition.
+
+### What is the difference between JSON and JSON_FLAT in Starlake?
+`JSON_FLAT` is optimized for files where no object contains nested or repeated fields. It parses faster than `JSON`. Use `JSON` when your data has nested structures.
+
+### How does Starlake detect if a JSON file is an array?
+During autoload, Starlake checks the first character of the file. If it starts with `[`, the format is `JSON_ARRAY`. If it starts with `{`, the format is `JSON`.
+
+### Can I load JSON files with mixed nesting levels?
+Yes. Define each nesting level in the `attributes` section using `type: "struct"` for objects and `array: true` for arrays of objects.
+
+### How do I infer the schema of a JSON file?
+Run `starlake infer-schema --input incoming/<domain>`. The command detects nested structures and generates the corresponding YAML configuration.
+
+### Which data warehouses support nested JSON attributes?
+BigQuery and Databricks natively support nested and repeated attributes (STRUCT and ARRAY types). Snowflake supports them via VARIANT columns. Warehouses like Redshift require flattening.
+
+### What write strategies are available for JSON loading?
+All Starlake write strategies work with JSON files: APPEND, OVERWRITE, OVERWRITE_BY_PARTITION, UPSERT_BY_KEY, UPSERT_BY_KEY_AND_TIMESTAMP, and SCD2.

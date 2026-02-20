@@ -1,6 +1,8 @@
 ---
 sidebar_position: 380
 title: xls2yml
+description: "Convert Excel files describing domains and schemas into Starlake YAML configuration files with optional IAM policy tags."
+keywords: [starlake xls2yml, Excel to YAML, schema generation, data modeling, IAM policy]
 ---
 
 
@@ -10,6 +12,7 @@ title: xls2yml
 
 ## Description
 
+Convert Excel spreadsheet domain definitions into Starlake YAML configuration files.
 
 ## Parameters
 

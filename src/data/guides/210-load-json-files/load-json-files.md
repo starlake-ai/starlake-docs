@@ -22,7 +22,7 @@ This schema will be created when executing your load if it does not already exis
 3. You may optionally add a description your domain. This is useful for documentation purposes and for AI assistance. This description will be saved in the database as a comment.
 4. Click "Create" to finalize the domain creation.
 
-![](/img/guides/load-json-files/step1.png)
+![Starlake UI creating a new domain for JSON data loading](/img/guides/load-json-files/step1.png)
 
 We are now ready to load our JSON files into the schema "starbake" of our database.
 
@@ -33,7 +33,7 @@ Prepare a sample JSON file with a few rows of data that represent the structure 
 
 1. Click on "Load" and select "CSV / JSON / XML".
 2. Choose the JSON file you want to load.
-![](/img/guides/load-json-files/step2.png)
+![Starlake JSON file preview with inferred table name and nested structure handling](/img/guides/load-json-files/step2.png)
 A preview of the file will be displayed.
 Starlake will also infer the table name from the filename. Update the table name if necessary.
 If A.I. is enabled, you may request it to suggest a description for the table by clicking on the "A.I." button inside the "Description" field.
@@ -50,7 +50,7 @@ On Snowflake, only single level JSON files are flattened to multiple columns. If
 
 Starlake will automatically infer the table schema from the JSON file. You can review and modify the inferred schema if necessary.
 
-![](/img/guides/load-json-files/step3.1.png)
+![Starlake inferred table schema from JSON with editable data types and primary key](/img/guides/load-json-files/step3.1.png)
 
 To customize the inferred schema, you can edit the data types, and invoke the A.I. assistant to suggest descriptions as needed. This allows you to ensure that the schema matches your requirements before loading the data.
 
@@ -60,7 +60,7 @@ Hit the "Finish" button to complete the process.
 
 If you kept the "Load Data" option enabled, Starlake will start loading the data from the JSON file into the specified table and display the results.
 
-![](/img/guides/load-json-files/step3.2.png)
+![Starlake JSON load results showing data successfully loaded into the database](/img/guides/load-json-files/step3.2.png)
 
 
 ## Going Further

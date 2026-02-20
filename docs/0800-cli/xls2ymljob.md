@@ -1,6 +1,8 @@
 ---
 sidebar_position: 390
 title: xls2ymljob
+description: "Convert Excel files describing job definitions into Starlake YAML job configuration files with IAM policy tag support."
+keywords: [starlake xls2ymljob, Excel to YAML, job generation, task configuration, IAM policy]
 ---
 
 
@@ -10,6 +12,7 @@ title: xls2ymljob
 
 ## Description
 
+Convert Excel spreadsheet job/task definitions into Starlake YAML transform configuration files.
 
 ## Parameters
 
