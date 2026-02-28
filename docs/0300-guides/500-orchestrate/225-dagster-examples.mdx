@@ -118,6 +118,40 @@ dag:
 
 Use `StarlakeDagsterCloudRunJob` to execute starlake commands via Cloud Run jobs. Best for serverless GCP deployments.
 
+### Prerequisites
+
+Before configuring Starlake to use Cloud Run, you must create the Cloud Run **job** in your GCP project. This is different from a Cloud Run *service* — jobs run to completion and exit, which is the execution model Starlake uses.
+
+```bash
+# Create the Cloud Run job with the starlake Docker image
+gcloud run jobs create starlake-load \
+  --image=gcr.io/my-gcp-project/starlake:latest \
+  --region=europe-west1 \
+  --project=my-gcp-project \
+  --service-account=starlake-sa@my-gcp-project.iam.gserviceaccount.com \
+  --memory=2Gi \
+  --cpu=1 \
+  --task-timeout=3600s \
+  --max-retries=0
+
+# Create a separate job for transforms (optional — you can reuse the same job)
+gcloud run jobs create starlake-transform \
+  --image=gcr.io/my-gcp-project/starlake:latest \
+  --region=europe-west1 \
+  --project=my-gcp-project \
+  --service-account=starlake-sa@my-gcp-project.iam.gserviceaccount.com \
+  --memory=4Gi \
+  --cpu=2 \
+  --task-timeout=7200s \
+  --max-retries=0
+```
+
+The `cloud_run_job_name` option in your DAG configuration must match the job name created above (e.g. `starlake-load`, `starlake-transform`).
+
+:::tip
+Set `--max-retries=0` on the Cloud Run job itself and let the orchestrator (Dagster) handle retries via the `retries` option. This avoids double retry loops.
+:::
+
 ### Load
 
 ```yaml title="metadata/dags/dagster_cloud_run_load.sl.yml"
