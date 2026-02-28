@@ -120,7 +120,7 @@ This guide covers Dagster-specific customization for Starlake DAG generation. It
 
 1. **Install prerequisites** -- Dagster 1.6.0+, starlake-dagster 0.1.2+, and starlake 1.0.1+.
 2. **Choose a factory class** -- Use `StarlakeDagsterShellJob` for local/on-premise or `StarlakeDagsterCloudRunJob` for GCP Cloud Run.
-3. **Configure DAG YAML** -- Create a configuration file in `metadata/dags` with the Dagster template, filename, and options (`run_dependencies_first`).
+3. **Configure DAG YAML** -- Create a configuration file in `metadata/dags` with the Dagster template, filename, and options ([`run_dependencies_first`](./options#run_dependencies_first)).
 4. **Generate and deploy** -- Run `starlake dag-generate --clean`, then deploy the generated files to your Dagster repository.
 
 For general DAG configuration concepts (references, properties, options), see the [Customizing DAG Generation](./200-customization.mdx) hub page. For a hands-on introduction, see the [Orchestration Tutorial](./100-tutorial.mdx).
@@ -165,7 +165,7 @@ Additional options for the Cloud Run job:
 
 ## Pre-load strategy visualizations
 
-The pre-load strategy options (NONE, IMPORTED, PENDING, ACK) are described in the [hub page](./200-customization.mdx#pre-load-strategy). Below are the Dagster-specific visualizations for each strategy.
+The [`pre_load_strategy`](./options#pre_load_strategy) options (NONE, IMPORTED, PENDING, ACK) are described in the [hub page](./200-customization.mdx#pre-load-strategy). Below are the Dagster-specific visualizations for each strategy.
 
 ### NONE
 
@@ -239,7 +239,7 @@ Three Dagster concrete templates exist:
 
 Starlake calculates all dependencies for each transformation by **analyzing SQL queries**.
 
-The **run_dependencies_first** option controls whether dependencies are generated inline or handled through the **Dagster Multi Asset Sensor** mechanism (default: `False`).
+The [**run_dependencies_first**](./options#run_dependencies_first) option controls whether dependencies are generated inline or handled through the **Dagster Multi Asset Sensor** mechanism (default: `False`).
 
 All dependencies are available in the generated DAG via the Python dictionary variable **task_deps**:
 
@@ -285,13 +285,13 @@ task_deps=json.loads("""[ {
 
 ### Inline dependencies
 
-With **run_dependencies_first** = *True*, all dependencies are included in the same Dagster job.
+With [**run_dependencies_first**](./options#run_dependencies_first) = *True*, all dependencies are included in the same Dagster job.
 
 ![Dagster job with inline transform dependencies in a single job](/img/orchestration/dagster/transformWithDependencies.png)
 
 ### Multi Asset Sensor
 
-With **run_dependencies_first** = *False* (default), a **sensor** checks whether all dependent assets have been materialized before triggering execution.
+With [**run_dependencies_first**](./options#run_dependencies_first) = *False* (default), a **sensor** checks whether all dependent assets have been materialized before triggering execution.
 
 ```python title="src/main/resources/template/dags/transform/__dagster_scheduled_task_tpl.py.j2"
 #...

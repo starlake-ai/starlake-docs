@@ -265,7 +265,7 @@ jobs = [
 
 ## Dependencies
 
-Starlake analyzes SQL queries to compute the full dependency tree for every transformation. The `run_dependencies_first` option controls how these dependencies are handled.
+Starlake analyzes SQL queries to compute the full dependency tree for every transformation. The [`run_dependencies_first`](./options#run_dependencies_first) option controls how these dependencies are handled.
 
 All dependencies are available in the generated DAG via the `task_deps` Python variable:
 
@@ -298,7 +298,7 @@ task_deps = json.loads("""[{
 
 ### Inline strategy
 
-When `run_dependencies_first` = `true`, **all dependencies are generated as tasks within the same DAG**.
+When [`run_dependencies_first`](./options#run_dependencies_first) = `true`, **all dependencies are generated as tasks within the same DAG**.
 
 This creates a self-contained DAG that runs the entire pipeline (loads + transforms) in the correct order.
 
@@ -317,7 +317,7 @@ This creates a self-contained DAG that runs the entire pipeline (loads + transfo
 
 ### External state change strategy
 
-When `run_dependencies_first` = `false` (the default), the orchestrator's **native data-aware scheduling** mechanism is used. The transform DAG only runs when its upstream dependencies have been satisfied.
+When [`run_dependencies_first`](./options#run_dependencies_first) = `false` (the default), the orchestrator's **native data-aware scheduling** mechanism is used. The transform DAG only runs when its upstream dependencies have been satisfied.
 
 <Tabs groupId="schedulers">
 <TabItem value="airflow" label="Airflow">
@@ -333,7 +333,7 @@ end = sl_job.dummy_op(
 )
 ```
 
-The `dataset_triggering_strategy` option controls how multiple upstream Assets are combined:
+The [`dataset_triggering_strategy`](./options#dataset_triggering_strategy) option controls how multiple upstream Assets are combined:
 - `any` &mdash; Any single Asset update triggers the DAG
 - `all` &mdash; All Assets must be updated
 - Custom boolean expression (e.g., `dataset1 & (dataset2 | dataset3)`)

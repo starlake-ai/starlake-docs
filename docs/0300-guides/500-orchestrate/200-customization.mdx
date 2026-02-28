@@ -317,7 +317,7 @@ Some options are **common** to all templates.
 
 ##### Starlake environment variables
 
-**sl_env_var** defines Starlake environment variables passed as an encoded JSON string:
+[**sl_env_var**](./options#sl_env_var) defines Starlake environment variables passed as an encoded JSON string:
 
 ```yaml
 dag:
@@ -328,7 +328,7 @@ dag:
 
 ##### Pre-load strategy
 
-**pre_load_strategy** conditionally loads the tables of a domain within the DAG. Four strategies are available:
+[**pre_load_strategy**](./options#pre_load_strategy) conditionally loads the tables of a domain within the DAG. Four strategies are available:
 
 ###### NONE
 :::note NONE
@@ -381,7 +381,7 @@ dag:
 
 ##### Run dependencies first
 
-**run_dependencies_first** controls whether the generator recursively includes all **dependencies** associated with each task in the DAG (*False* by default).
+[**run_dependencies_first**](./options#run_dependencies_first) controls whether the generator recursively includes all **dependencies** associated with each task in the DAG (*False* by default).
 
 ```yaml
 dag:

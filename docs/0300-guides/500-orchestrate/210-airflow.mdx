@@ -135,7 +135,7 @@ This guide explains how to configure Starlake DAG generation for Apache Airflow.
 
 1. **Install prerequisites** -- Apache Airflow 2.4.0+, starlake-airflow 0.1.2.1+, and starlake 1.0.1+.
 2. **Choose a factory class** -- Use `StarlakeAirflowBashJob` for on-premise or `StarlakeAirflowCloudRunJob` for GCP Cloud Run.
-3. **Configure DAG YAML** -- Create a configuration file in `metadata/dags` with template, filename, and options (`pre_load_strategy`, `run_dependencies_first`).
+3. **Configure DAG YAML** -- Create a configuration file in `metadata/dags` with template, filename, and options ([`pre_load_strategy`](./options#pre_load_strategy), [`run_dependencies_first`](./options#run_dependencies_first)).
 4. **Customize templates if needed** -- Extend Jinja2 templates for transform parameters, user-defined macros, or Terraform variable injection.
 5. **Generate and deploy** -- Run `starlake dag-generate --clean`, then copy DAG files to your Airflow DAGs folder.
 
@@ -155,7 +155,7 @@ Each concrete factory class extends `ai.starlake.airflow.StarlakeAirflowJob` and
 
 :::note Default pool
 
-For all templates that instantiate `StarlakeAirflowJob`, the **default_pool** option defines the Airflow pool used for all tasks in the DAG.
+For all templates that instantiate `StarlakeAirflowJob`, the [**default_pool**](./options#default_pool) option defines the Airflow pool used for all tasks in the DAG.
 
 :::
 
@@ -205,7 +205,7 @@ When the execution is **asynchronous**, an `ai.starlake.airflow.gcp.CloudRunJobC
 
 ## Pre-load strategy visualizations
 
-The pre-load strategy options (NONE, IMPORTED, PENDING, ACK) are described in the [hub page](./200-customization.mdx#pre-load-strategy). Below are the Airflow-specific DAG visualizations for each strategy.
+The [`pre_load_strategy`](./options#pre_load_strategy) options (NONE, IMPORTED, PENDING, ACK) are described in the [hub page](./200-customization.mdx#pre-load-strategy). Below are the Airflow-specific DAG visualizations for each strategy.
 
 ### NONE
 
@@ -499,7 +499,7 @@ resource "google_storage_bucket_object" "composer_storage_objects" {
 
 Starlake calculates all dependencies for each transformation by **analyzing SQL queries**.
 
-The **run_dependencies_first** option controls whether dependencies are generated inline or handled through Airflow's data-aware scheduling (default: `False`).
+The [**run_dependencies_first**](./options#run_dependencies_first) option controls whether dependencies are generated inline or handled through Airflow's data-aware scheduling (default: `False`).
 
 All dependencies are available in the generated DAG via the Python dictionary variable **task_deps**:
 
@@ -545,13 +545,13 @@ task_deps=json.loads("""[ {
 
 ### Inline dependencies
 
-With **run_dependencies_first** = *True*, all dependencies are included in the same DAG.
+With [**run_dependencies_first**](./options#run_dependencies_first) = *True*, all dependencies are included in the same DAG.
 
 ![Airflow DAG with inline transform dependencies in a single DAG](/img/orchestration/airflow/transformWithDependencies.png)
 
 ### Data-aware scheduling
 
-With **run_dependencies_first** = *False* (default), Airflow uses **Datasets** to trigger the transform DAG when its dependencies are met.
+With [**run_dependencies_first**](./options#run_dependencies_first) = *False* (default), Airflow uses **Datasets** to trigger the transform DAG when its dependencies are met.
 
 A schedule is created using **Airflow Datasets**:
 
@@ -658,7 +658,7 @@ Apache Airflow 2.4.0 minimum. Airflow 2.6.0 or higher is recommended for Cloud R
 
 ### How does data-aware scheduling work with Starlake?
 
-When `run_dependencies_first` is `False` (default), Starlake generates Airflow Datasets for each load and transform. The transformation DAG only executes when all its dependencies have been materialized.
+When [`run_dependencies_first`](./options#run_dependencies_first) is `False` (default), Starlake generates Airflow Datasets for each load and transform. The transformation DAG only executes when all its dependencies have been materialized.
 
 ### What is the difference between inline and data-aware scheduling?
 
@@ -674,7 +674,7 @@ Use Terraform variables to inject the `jobs` parameters into templates via `temp
 
 ### Can I define a specific Airflow pool?
 
-Yes. The `default_pool` option in the DAG configuration defines the Airflow pool used for all tasks in the DAG.
+Yes. The [`default_pool`](./options#default_pool) option in the DAG configuration defines the Airflow pool used for all tasks in the DAG.
 
 ### How does asynchronous Cloud Run execution work?
 
