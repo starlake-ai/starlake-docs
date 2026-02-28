@@ -93,84 +93,79 @@ import Head from '@docusaurus/Head';
   </script>
 </Head>
 
-# Generate and Deploy DAGs
+# Tutorial
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Starlake automates DAG generation for Apache Airflow, Dagster, and Snowflake Tasks directly from your load and transform pipeline definitions. A single `dag-generate` command produces ready-to-deploy DAG files with correct task dependencies. You can dry-run, deploy, or backfill them before going to production.
-
 :::note
-Starlake is not an orchestrator. It generates DAG files that you deploy and run on the orchestrator of your choice.
+Starlake is not an orchestrator. It generates DAGs for you to run on your orchestrator of choice.
 :::
 
+Now that our load and transform are working, we can run them on our orchestrator.
+
+Starlake can generate DAGs for different orchestrators: **Airflow**, **Dagster**, and **Snowflake Tasks**.
+
 ## Prerequisites
+Make sure you run the [Transform step](../transform/tutorial) first to get the data in the database.
 
-Complete the [Transform step](../transform/tutorial) first to have data in the database.
+On Snowflake, you need to login with a role with the `CREATE TASK` and `USAGE` privileges.
 
-On Snowflake, connect with a role that has the `CREATE TASK` and `USAGE` privileges.
-
-## Generate DAG files
-
-The `dag-generate` command reads your YAML configuration in `metadata/dags` and produces DAG files. Run:
+## Running the DAG
+Using starlake `dag-generate` command, we can generate a DAG file that will run our load and transform tasks.
 
 ```bash
 starlake dag-generate --clean
 ```
 
-This generates DAG files in the `dags/generated` directory.
+This will generate your DAG files in the root of the `dags/generated` directory.
 
-## Dry-run the DAGs
-
-Before deploying, validate the generated DAGs with a dry-run:
+You may also 'dry-run' the DAGs to see if they are working as expected.
 
 ```bash
 python -m ai.starlake.orchestration --file {{file}} dry-run
 ```
 
-Replace `{{file}}` with the path to the DAG file (e.g., a file from `dags/generated`).
+where `{{file}}` is the path to the DAG file you want to run (`dags/generated` in our example).
 
 :::note
-- **Snowflake**: Displays all the SQL commands that will run.
-- **Airflow**: Runs the DAG in test mode.
-- **Dagster**: Runs the DAG in local mode.
+- In Snowflake: This will display all the SQL commands that will be run.
+- In Airflow: This will run the DAG in test mode.
+- In Dagster: This will run the DAG in local mode.
 :::
 
-## Deploy to your orchestrator
-
-Deploy the generated DAGs directly to your orchestrator:
-
+We are now ready to deploy the DAGs directly on our orchestrator.
 ```bash
 python -m ai.starlake.orchestration --file {{file}} deploy
 ```
 
-This pushes the DAGs to your target orchestrator.
+This will deploy the DAGs to your orchestrator.
+
 
 <Tabs groupId="schedulers">
 <TabItem value="airflow" label="Airflow">
 
-![Starlake-generated Airflow DAGs list in the Airflow web UI](/img/orchestration/airflow/airflow-dags.png)
+![](/img/orchestration/airflow/airflow-dags.png)
 
-![Airflow DAG graph view showing Starlake transform task dependencies](/img/orchestration/airflow/transformWithDependencies2.png)
+![](/img/orchestration/airflow/transformWithDependencies2.png)
 
 </TabItem>
 
 <TabItem value="dagster" label="Dagster">
 
-![Starlake-generated Dagster job graph with asset dependencies](/img/orchestration/dagster/dagster-dags.jpeg)
+![](/img/orchestration/dagster/dagster-dags.jpeg)
 
 </TabItem>
 <TabItem value="snowflake" label="Snowflake Tasks">
 
-![Starlake-generated Snowflake Tasks DAG with task dependencies](/img/orchestration/snowflake/snowflake-dags.png)
+![](/img/orchestration/snowflake/snowflake-dags.png)
 
 </TabItem>
 </Tabs>
 
-## Backfill DAGs on a date range
 
-Run DAGs retroactively on a specific date range:
-
+### Backfilling
+You can backfill the DAGs to run them on a specific date range.
 ```bash
 python -m ai.starlake.orchestration  \
         --file {{file}} backfill     \
@@ -178,11 +173,16 @@ python -m ai.starlake.orchestration  \
         --end-date {{end_date}}
 ```
 
-Replace `{{start_date}}` and `{{end_date}}` with the boundaries of the range. Starlake executes the DAGs for each date in the specified range.
+Where `{{start_date}}` and `{{end_date}}` are the start and end dates of the range you want to run the DAGs on.
 
 ## Configuration
 
-DAG generation relies on configuration files in the `metadata/dags` directory. Reference them globally in `metadata/application.sl.yml` or per task via the `dagRef` attribute.
+The DAG generation is based on configuration files located in the `metadata/dags` directory.
+You put there the configuration files for the DAGs you want to generate and reference them globally in the `metadata/application.sl.yml` file
+or specifically for each load or transform task through the `dagRef` attribute.
+
+See the [Configuration](./configuration) page for details on how to structure DAG configurations and the [Options Reference](./options) for a complete list of available options.
+
 
 <Tabs groupId="schedulers">
 <TabItem value="airflow" label="Airflow">
@@ -257,51 +257,8 @@ dag:
 </TabItem>
 </Tabs>
 
-### Configuration options
-
-**`pre_load_strategy`** (default: `none`): Conditionally loads a domain based on file presence. Valid values:
-
-- **`imported`**: Loads files from the stage directory.
-- **`ack`**: Loads files only if an acknowledgment file is present.
-- **`pending`**: Loads files from the pending directory.
-- **`none`**: Disables preloading.
-
-The pre-load strategy acts as a lightweight pre-check. If no matching files are found, the process exits silently without raising an error.
-
-**`run_dependencies_first`**: When set to `"true"`, the DAG generator includes dependent tables or tasks in the generated DAG file, ensuring correct execution order.
-
-**`template`**: The template file used to generate the DAG. This may reference:
-
-- An absolute path on the filesystem
-- A relative path to the `metadata/dags/templates/` directory
-- A built-in template from the Starlake library ([load templates](https://github.com/starlake-ai/starlake/tree/master/src/main/resources/templates/dags/load), [transform templates](https://github.com/starlake-ai/starlake/tree/master/src/main/resources/templates/dags/transform))
-
-Load and transform tasks run as bash commands on the orchestrator by default. Change the template to use a different executor or build your own. On Snowflake, tasks run as native Snowpark tasks.
-
-## Next steps
-
-- [Customize DAG generation](./200-customization.mdx) -- Configure dagRef, templates, filename patterns, and advanced options.
-- [Customize Airflow DAGs](./210-airflow.mdx) -- BashOperator, Cloud Run, data-aware scheduling, and Terraform integration.
-- [Customize Dagster DAGs](./220-dagster.mdx) -- Shell jobs, Cloud Run, and Multi Asset Sensor.
-- [Customize Snowflake Task DAGs](./230-snowflake-tasks.mdx) -- Native Snowpark task generation.
-
-## Frequently Asked Questions
-
-### Which orchestrators does Starlake support?
-Starlake supports DAG generation for Apache Airflow, Dagster, and Snowflake Tasks. It is not an orchestrator itself but generates DAG files that you deploy to your orchestrator of choice.
-
-### How does Starlake generate DAGs?
-Starlake uses the `dag-generate` command to produce DAG files based on YAML configuration templates in the `metadata/dags` directory. It automatically analyzes SQL task dependencies to build the correct execution order.
-
-### Can I customize the generated DAG templates?
-Yes, you can use built-in templates, modify them, or create your own custom templates. Templates can be referenced as absolute paths, relative paths to `metadata/dags/templates/`, or built-in templates from the Starlake library.
-
-### Does Starlake support DAG backfilling?
-Yes, Starlake supports backfilling by specifying a start date and end date. This allows you to run your DAGs retroactively on a specific date range using the `backfill` command.
-
-## Related
-
-- [Extract Data from Databases](../extract/tutorial) -- extract source data before loading and transforming
-- [Load Data into Your Warehouse](../load/tutorial) -- load files that the generated DAGs will orchestrate
-- [Transform Data with SQL](../transform/tutorial) -- write the SQL transforms that DAGs execute
-- [Unit Testing Data Pipelines](../unit-tests/concepts) -- test your pipelines locally before deploying DAGs
+The `options` property is where all the magic happens. It allows you to configure the behavior of the generated DAGs.
+The next pages cover:
+- [Configuration](./configuration) &mdash; DAG configuration structure, references, and properties
+- [Options Reference](./options) &mdash; Complete reference for all available options
+- [Customization](./customization) &mdash; Templates, advanced customization, and dependency management
