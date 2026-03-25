@@ -99,6 +99,11 @@ const config = {
           to: "/",
         },
         !isBlog ? {
+          to: "/skills/getting-started",
+          label: "Skills",
+          position: "left",
+        } : null,
+        !isBlog ? {
           to: "/guides",
           label: "Guides",
           position: "left",

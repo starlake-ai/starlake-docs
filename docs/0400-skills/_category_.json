@@ -1,0 +1,8 @@
+{
+  "label": "Starlake Skills",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Claude Code plugin for Starlake data pipelines — 48 specialized skills for building, configuring, and operating data pipelines."
+  }
+}

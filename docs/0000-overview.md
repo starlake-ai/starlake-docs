@@ -1,6 +1,6 @@
 ---
 id: overview
-slug: /
+slug: /overview
 sidebar_position: 1
 sidebar_label: "Overview"
 description: "Discover how Starlake revolutionizes data pipelines with its declarative tool for seamless data loading, transformation and orchestration."
