@@ -1,4 +1,4 @@
-# Starlake — Test Capabilities
+# Test Capabilities
 
 ## 1. Local Execution with DuckDB
 

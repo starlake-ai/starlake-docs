@@ -1,4 +1,4 @@
-# Starlake — Orchestration Capabilities
+# Orchestration Capabilities
 
 ## 1. DAG Generation
 

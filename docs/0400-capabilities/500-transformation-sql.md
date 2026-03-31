@@ -1,4 +1,4 @@
-# Starlake — Transformation Capabilities for SQL
+# Transformation Capabilities for SQL
 
 ## 1. SELECT Materialization
 

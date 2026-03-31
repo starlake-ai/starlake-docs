@@ -1,4 +1,4 @@
-# Starlake — Ingestion Checks for POSITION (Fixed-Width) Files
+# Ingestion Checks for POSITION (Fixed-Width) Files
 
 ## 1. Column Boundary Parsing
 

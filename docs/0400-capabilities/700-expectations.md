@@ -1,4 +1,4 @@
-# Starlake — Data Quality Expectations
+# Data Quality Expectations
 
 Expectations are data quality assertions evaluated after data is written to the target table. Each expectation references a Jinja2 SQL macro and checks a condition on the result. Set `failOnError: true` on any expectation to halt the pipeline on failure.
 

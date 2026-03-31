@@ -1,4 +1,4 @@
-# Starlake — Ingestion Checks for CSV/DSV Files
+# Ingestion Checks for CSV/DSV Files
 
 ## 1. Delimiter Parsing
 

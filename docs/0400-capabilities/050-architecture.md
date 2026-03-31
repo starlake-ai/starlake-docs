@@ -1,4 +1,4 @@
-# Starlake — Architecture
+# Architecture
 
 ## 1. Declarative Pipeline Model
 

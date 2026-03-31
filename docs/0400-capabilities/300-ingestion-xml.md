@@ -1,4 +1,4 @@
-# Starlake — Ingestion Checks for XML Files
+# Ingestion Checks for XML Files
 
 ## 1. Row Tag Detection
 

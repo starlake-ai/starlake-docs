@@ -1,4 +1,4 @@
-# Starlake — Ingestion Checks for JSON Files
+# Ingestion Checks for JSON Files
 
 ## 1. Format Detection
 

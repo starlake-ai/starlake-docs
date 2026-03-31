@@ -1,4 +1,4 @@
-# Starlake — Transformation Capabilities for Python
+# Transformation Capabilities for Python
 
 ## 1. PySpark Runtime
 
