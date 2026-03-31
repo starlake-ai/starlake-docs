@@ -89,7 +89,7 @@ Starlake lets data engineers build production data pipelines without writing Pyt
 
 ## Comparisons
 
-- [Starlake vs dbt](https://docs.starlake.ai/guides/comparisons/starlake-vs-dbt): Feature comparison between Starlake and dbt
+- [Starlake vs dbt](https://docs.starlake.ai/comparisons/starlake-vs-dbt): Feature comparison between Starlake and dbt
 
 ## CLI Reference
 

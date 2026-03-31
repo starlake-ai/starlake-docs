@@ -124,7 +124,7 @@ Starlake uses **standard SQL** paired with YAML configuration for metadata (writ
 
 dbt Core does not include a built-in orchestrator. Teams typically use dbt Cloud's scheduler, Airflow with the dbt operator, Dagster's dbt integration, or Prefect. Wiring DAG dependencies requires manual configuration.
 
-Starlake **automatically analyzes SQL dependencies** and generates ready-to-deploy DAGs for [Airflow](../orchestrate/airflow), [Dagster](../orchestrate/dagster), [Snowflake Tasks](../orchestrate/snowflake-tasks), and other orchestrators. Select a template and Starlake produces the orchestration code.
+Starlake **automatically analyzes SQL dependencies** and generates ready-to-deploy DAGs for [Airflow](../guides/orchestrate/airflow), [Dagster](../guides/orchestrate/dagster), [Snowflake Tasks](../guides/orchestrate/snowflake-tasks), and other orchestrators. Select a template and Starlake produces the orchestration code.
 
 ### Production-grade data loading
 
@@ -153,9 +153,9 @@ Starlake provides **production-grade data loading** with support for CSV, JSON, 
 
 ## Related pages
 
-- [Orchestration Tutorial](../orchestrate/tutorial) -- Generate and deploy DAGs automatically.
-- [Unit Testing](../unit-tests/concepts) -- Test pipelines locally on DuckDB.
-- [Starlake Site Builder](../documentation/starlake-site-builder) -- Generate a documentation portal with ERD and lineage.
+- [Orchestration Tutorial](../guides/orchestrate/tutorial) -- Generate and deploy DAGs automatically.
+- [Unit Testing](../guides/unit-tests/concepts) -- Test pipelines locally on DuckDB.
+- [Starlake Site Builder](../guides/documentation/starlake-site-builder) -- Generate a documentation portal with ERD and lineage.
 
 ## Frequently Asked Questions
 
