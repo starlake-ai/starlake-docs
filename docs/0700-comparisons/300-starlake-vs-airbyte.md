@@ -39,7 +39,7 @@ Starlake and Airbyte are both open-source data integration tools, but they serve
 | **Definition** | Explicit YAML schema with typed attributes | Automatic inference from source catalog |
 | **Evolution** | Manual or via `syncStrategy` (NONE, ADD, ALL) | Automatic: propagate or ignore column changes |
 | **Nested data** | `struct` / `array` types in schema | Auto-flattening or raw JSON column (normalization) |
-| **Validation** | Regex-based type checking per value | Basic type coercion; delegates validation to downstream |
+| **Validation** | Regex-based type checking per value | Basic type coercion |
 
 ## Write Strategies
 
@@ -58,7 +58,7 @@ Starlake and Airbyte are both open-source data integration tools, but they serve
 
 | | Starlake | Airbyte |
 |---|---|---|
-| **SQL transforms** | Built-in: SELECT materialization, incremental modelling, variable substitution, dialect transpilation | — (delegates to dbt) |
+| **SQL transforms** | Built-in: SELECT materialization, incremental modelling, variable substitution, dialect transpilation | — |
 | **Python transforms** | PySpark scripts with `SL_THIS` view | — |
 | **Computed columns** | `script` property (Spark SQL expressions) | — |
 | **Pre/Post hooks** | `presql` / `postsql` | — |
@@ -79,10 +79,10 @@ Starlake and Airbyte are both open-source data integration tools, but they serve
 
 | | Starlake | Airbyte |
 |---|---|---|
-| **Column masking** | HIDE, MD5, SHA1, SHA256, SHA512, AES, SQL expressions | — (delegates to destination) |
-| **Row-level security** | Declarative RLS with predicates and grants | — (delegates to destination) |
-| **Column-level access** | `accessPolicy` (BigQuery policy tags) | — (delegates to destination) |
-| **Table ACL** | Declarative ACL with roles and grants | — (delegates to destination) |
+| **Column masking** | HIDE, MD5, SHA1, SHA256, SHA512, AES, SQL expressions | — |
+| **Row-level security** | Declarative RLS with predicates and grants | — |
+| **Column-level access** | `accessPolicy` (BigQuery policy tags) | — |
+| **Table ACL** | Declarative ACL with roles and grants | — |
 | **Secrets** | Environment variables | Built-in secrets management (Cloud), env vars (OSS) |
 
 ## Orchestration

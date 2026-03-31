@@ -56,7 +56,7 @@ Starlake and dlt are both open-source data pipeline tools, but they take fundame
 
 | | Starlake | dlt |
 |---|---|---|
-| **SQL transforms** | Built-in: SELECT materialization, incremental modelling, variable substitution, dialect transpilation | Delegates to dbt or raw SQL on destination |
+| **SQL transforms** | Built-in: SELECT materialization, incremental modelling, variable substitution, dialect transpilation | — |
 | **Python transforms** | PySpark scripts with `SL_THIS` view | Pre-load Python transformations on data stream |
 | **Computed columns** | `script` property (Spark SQL expressions) | Python `add_map()` / `add_filter()` |
 | **Pre/Post hooks** | `presql` / `postsql` | — |
@@ -77,9 +77,9 @@ Starlake and dlt are both open-source data pipeline tools, but they take fundame
 | | Starlake | dlt |
 |---|---|---|
 | **Column masking** | HIDE, MD5, SHA1, SHA256, SHA512, AES, SQL expressions | Pseudonymization via `add_map()` (manual) |
-| **Row-level security** | Declarative RLS with predicates and grants | Delegates to destination |
-| **Column-level access** | `accessPolicy` (BigQuery policy tags) | Delegates to destination |
-| **Table ACL** | Declarative ACL with roles and grants | Delegates to destination |
+| **Row-level security** | Declarative RLS with predicates and grants | — |
+| **Column-level access** | `accessPolicy` (BigQuery policy tags) | — |
+| **Table ACL** | Declarative ACL with roles and grants | — |
 
 ## Orchestration
 
@@ -89,7 +89,7 @@ Starlake and dlt are both open-source data pipeline tools, but they take fundame
 | **Airflow** | Auto-generated DAGs (Bash, Cloud Run, Dataproc, Fargate) | Manual DAG with dlt calls |
 | **Dagster** | Auto-generated assets (Shell, Cloud Run, Dataproc, Fargate) | `dagster-dlt` library maps sources to assets |
 | **Snowflake Tasks** | Auto-generated native tasks | — |
-| **Scheduling** | Cron, data cycles, pre-load strategies (ACK, IMPORTED, PENDING) | Delegates to orchestrator |
+| **Scheduling** | Cron, data cycles, pre-load strategies (ACK, IMPORTED, PENDING) | — |
 
 ## Testing
 
