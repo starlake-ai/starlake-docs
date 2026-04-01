@@ -1,5 +1,5 @@
 ---
-sidebar_position: 280
+sidebar_position: 300
 title: secure
 description: "Apply security rules and access controls on specified domains and tables, including row-level and column-level security."
 keywords: [starlake secure, data security, access control, row-level security, column masking]
@@ -11,8 +11,7 @@ keywords: [starlake secure, data security, access control, row-level security, c
 **starlake secure [options]**
 
 ## Description
-
-Apply Row-Level Security (RLS) and Column-Level Security (CLS) policies to warehouse tables. See [Security Guide](/guides/load/security).
+Load data files from the pending directory into the data warehouse using schema definitions. See [Load Tutorial](/guides/load/tutorial).
 
 ## Parameters
 
@@ -28,3 +27,5 @@ Parameter|Cardinality|Description
 --files `<value>`|*Optional*|load this file only
 --primaryKeys `<value>`|*Optional*|primary keys to set on the table schema
 --scheduledDate `<value>`|*Optional*|Scheduled date for the job, in format yyyy-MM-dd'T'HH:mm:ss.SSSZ
+--inPlace `<value>`|*Optional*|Ingest files from their current location without moving them. Requires --files
+--reportFormat `<value>`|*Optional*|Report format: console, json, html

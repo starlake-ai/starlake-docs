@@ -1,12 +1,8 @@
 ---
-sidebar_position: 190
+sidebar_position: 200
 title: infer-schema
 description: "Automatically infer and generate YAML schema definitions from input datasets in CSV, JSON, XML, or Parquet format."
-keywords:
-  - starlake infer-schema
-  - schema inference
-  - YAML schema generation
-  - data type detection
+keywords: [starlake infer-schema, schema inference, YAML generation, data discovery]
 ---
 
 
@@ -15,7 +11,6 @@ keywords:
 **starlake infer-schema [options]**
 
 ## Description
-
 Infer a Starlake table schema from a sample data file (CSV, JSON, etc.) and generate the corresponding YAML configuration. See [Load Tutorial](/guides/load/tutorial).
 
 ## Parameters
@@ -29,7 +24,8 @@ Parameter|Cardinality|Description
 --write `<value>`|*Optional*|One of Set(OVERWRITE, APPEND)
 --format `<value>`|*Optional*|Force input file format
 --rowTag `<value>`|*Optional*|row tag to use if detected format is XML
---variant|*Optional*|Infer schema as a single variant attribute
---clean|*Optional*|Delete previous YML before writing
+--variant `<value>`|*Optional*|Infer schema as a single variant attribute
+--clean `<value>`|*Optional*|Delete previous YML before writing
 --encoding `<value>`|*Optional*|Input file encoding. Default to UTF-8
---from-json-schema|*Optional*|Input file is a valid JSON Schema
+--from-json-schema `<value>`|*Optional*|Input file is a valid JSON Schema
+--reportFormat `<value>`|*Optional*|Report format: console, json, html

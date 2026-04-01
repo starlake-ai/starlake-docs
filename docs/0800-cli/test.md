@@ -1,5 +1,5 @@
 ---
-sidebar_position: 350
+sidebar_position: 370
 title: test
 description: "Run unit tests for load and transform tasks on specific domains and tables, with optional HTML report generation."
 keywords: [starlake test, data testing, unit tests, data validation, test report]
@@ -11,7 +11,6 @@ keywords: [starlake test, data testing, unit tests, data validation, test report
 **starlake test [options]**
 
 ## Description
-
 Run unit tests for load and transform tasks using sample data and expected results. See [Unit Tests Guide](/guides/unit-tests/concepts).
 
 ## Parameters
@@ -26,3 +25,4 @@ Parameter|Cardinality|Description
 --site `<value>`|*Optional*|Generate the results of the tests as a website
 --outputDir `<value>`|*Optional*|Where to output the tests
 --accessToken `<value>`|*Optional*|Access token to use for authentication
+--reportFormat `<value>`|*Optional*|Report format: console, json, html

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 300
+sidebar_position: 320
 title: settings
 description: "Display and validate Starlake project settings, including testing database and warehouse connection configurations."
 keywords: [starlake settings, project configuration, connection test, data warehouse setup]
@@ -11,7 +11,6 @@ keywords: [starlake settings, project configuration, connection test, data wareh
 **starlake settings [options]**
 
 ## Description
-
 Print the resolved Starlake settings or test a database connection.
 
 ## Parameters
@@ -19,3 +18,4 @@ Print the resolved Starlake settings or test a database connection.
 Parameter|Cardinality|Description
 ---|---|---
 --test-connection `<value>`|*Optional*|Test this connection
+--reportFormat `<value>`|*Optional*|Report format: console, json, html

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 230
+sidebar_position: 250
 title: load
 description: "Ingest raw files into your data warehouse by watching specified domains and tables with schema validation and options."
 keywords: [starlake load, data ingestion, file loading, schema validation, ETL]
@@ -11,7 +11,6 @@ keywords: [starlake load, data ingestion, file loading, schema validation, ETL]
 **starlake load [options]**
 
 ## Description
-
 Load data files from the pending directory into the data warehouse using schema definitions. See [Load Tutorial](/guides/load/tutorial).
 
 ## Parameters
@@ -28,3 +27,5 @@ Parameter|Cardinality|Description
 --files `<value>`|*Optional*|load this file only
 --primaryKeys `<value>`|*Optional*|primary keys to set on the table schema
 --scheduledDate `<value>`|*Optional*|Scheduled date for the job, in format yyyy-MM-dd'T'HH:mm:ss.SSSZ
+--inPlace `<value>`|*Optional*|Ingest files from their current location without moving them. Requires --files
+--reportFormat `<value>`|*Optional*|Report format: console, json, html

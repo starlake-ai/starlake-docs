@@ -1,12 +1,8 @@
 ---
-sidebar_position: 170
+sidebar_position: 160
 title: freshness
 description: "Check data freshness across tables and datasets with configurable connections, write modes, and optional result persistence."
-keywords:
-  - starlake freshness
-  - data freshness
-  - table freshness check
-  - data quality monitoring
+keywords: [starlake freshness, data freshness, table monitoring, data quality]
 ---
 
 
@@ -16,7 +12,6 @@ keywords:
 
 ## Description
 
-Check data freshness by verifying when tables were last updated. Works across all supported warehouses (not just BigQuery).
 
 ## Parameters
 
@@ -29,3 +24,4 @@ Parameter|Cardinality|Description
 --tables `<value>`|*Optional*|List of datasetName.tableName1,datasetName.tableName2 ...
 --accessToken `<value>`|*Optional*|Access token to use for authentication
 --persist `<value>`|*Optional*|Persist results ?
+--reportFormat `<value>`|*Optional*|Report format: console, json, html

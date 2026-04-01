@@ -1,12 +1,8 @@
 ---
-sidebar_position: 150
+sidebar_position: 140
 title: extract-schema
 description: "Extract database table schemas and output them as YAML definition files with optional snake_case naming and parallelism control."
-keywords:
-  - starlake extract-schema
-  - schema extraction
-  - YAML schema output
-  - database reverse engineering
+keywords: [starlake extract-schema, schema extraction, database schema, YAML generation]
 ---
 
 
@@ -15,7 +11,6 @@ keywords:
 **starlake extract-schema [options]**
 
 ## Description
-
 Extract table schemas from a JDBC database and generate Starlake YAML configuration files. Use this to reverse-engineer existing database tables into domain definitions with optional snake_case naming. See [Extract Tutorial](/guides/extract/tutorial).
 
 ## Parameters
@@ -30,3 +25,4 @@ Parameter|Cardinality|Description
 --external `<value>`|*Optional*|Should we output YML files in the external folder
 --parallelism `<value>`|*Optional*|parallelism level of the extraction process. By default equals to the available cores
 --snakecase `<value>`|*Optional*|Apply snake case when name sanitization is done
+--reportFormat `<value>`|*Optional*|Report format: console, json, html

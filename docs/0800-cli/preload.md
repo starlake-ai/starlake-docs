@@ -1,5 +1,5 @@
 ---
-sidebar_position: 270
+sidebar_position: 290
 title: preload
 description: "Pre-load domains and tables using a configurable strategy before the main ingestion step, with global ack file support."
 keywords: [starlake preload, data pre-loading, ingestion preparation, ETL pipeline]
@@ -11,7 +11,6 @@ keywords: [starlake preload, data pre-loading, ingestion preparation, ETL pipeli
 **starlake preload [options]**
 
 ## Description
-
 Check for new files in the landing area and prepare them for loading.
 
 ## Parameters
@@ -23,3 +22,4 @@ Parameter|Cardinality|Description
 --strategy `<value>`|*Optional*|pre load strategy
 --globalAckFilePath `<value>`|*Optional*|Global ack file path
 --options `k1=v1,k2=v2...`|*Optional*|Pre load arguments to be used as substitutions
+--reportFormat `<value>`|*Optional*|Report format: console, json, html

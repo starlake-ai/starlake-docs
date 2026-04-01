@@ -1,5 +1,5 @@
 ---
-sidebar_position: 360
+sidebar_position: 380
 title: transform
 description: "Execute SQL-based transformation tasks with dry-run, recursive dependency resolution, and interactive output formats."
 keywords: [starlake transform, SQL transformation, data pipeline, ELT, BigQuery]
@@ -11,18 +11,18 @@ keywords: [starlake transform, SQL transformation, data pipeline, ELT, BigQuery]
 **starlake transform [options]**
 
 ## Description
-
 Execute a SQL or Python transformation task. Starlake resolves dependencies, compiles queries with variable substitutions, and writes results to the target table. Use `--recursive` for upstream dependencies. See [Transform Guide](/guides/transform/tutorial).
 
 ## Parameters
 
 Parameter|Cardinality|Description
 ---|---|---
+--action `<value>`|*Optional*|May take one of run (default) or create. When action is set to 'create', only parameters 'name' and 'query' are meaningful
 --name `<value>`|*Required*|Task Name in the form domain.task
 --compile `<value>`|*Optional*|Return final query only
 --sync-apply `<value>`|*Optional*|Update YAML attributes to match SQL query
 --sync-preview `<value>`|*Optional*|Preview YAML attributes to match SQL query
---query `<value>`|*Optional*|Run this query instead of the one in the task
+--query `<value>`|*Optional*|if action is 'create', this is the query used to initialize th SQL file. If action is set to 'run', run this query instead of the one in the task
 --dry-run `<value>`|*Optional*|Dry run only (supported on BigQuery only)
 --tags `<value>`|*Optional*|Return final query only
 --format `<value>`|*Optional*|pretty print the final query and update sql file
@@ -36,3 +36,4 @@ Parameter|Cardinality|Description
 --accessToken `<value>`|*Optional*|Access token to use for authentication
 --options `k1=v1,k2=v2...`|*Optional, Unbounded*|Job arguments to be used as substitutions
 --scheduledDate `<value>`|*Optional*|Scheduled date for the job, in format yyyy-MM-dd'T'HH:mm:ss.SSSZ
+--reportFormat `<value>`|*Optional*|Report format: console, json, html

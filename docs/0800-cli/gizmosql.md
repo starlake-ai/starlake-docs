@@ -1,6 +1,8 @@
 ---
-sidebar_position: 180
+sidebar_position: 170
 title: gizmosql
+description: "Run SQL queries on any database using JDBC with Spark, supporting session parameters and variable substitutions."
+keywords: [starlake gizmosql, SQL runner, JDBC query, database query]
 ---
 
 

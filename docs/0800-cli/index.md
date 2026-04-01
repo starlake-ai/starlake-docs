@@ -1,6 +1,8 @@
 ---
-sidebar_position: 200
+sidebar_position: 190
 title: index
+description: "Alias for esload. Load datasets into Elasticsearch indices."
+keywords: [starlake index, Elasticsearch, index loading]
 ---
 
 
@@ -9,7 +11,7 @@ title: index
 **starlake index [options]**
 
 ## Description
-
+Load data into an Elasticsearch index from Parquet, JSON, or JSON-array files. Supports custom mappings, document IDs, and timestamp-based index suffixes via Spark-Elasticsearch configuration.
 
 ## Parameters
 

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 340
+sidebar_position: 360
 title: table-dependencies
 description: "Generate GraphViz dependency diagrams from domain and schema YAML files, with SVG, PNG, and JSON output options."
 keywords: [starlake table-dependencies, schema dependencies, GraphViz, entity relationship, data modeling]
@@ -11,8 +11,9 @@ keywords: [starlake table-dependencies, schema dependencies, GraphViz, entity re
 **starlake table-dependencies [options]**
 
 ## Description
-
 Generate a table dependency graph showing foreign key and lineage relationships between tables.
+
+Generate GraphViz files from Domain / Schema YAML files
 
 ## Parameters
 
@@ -27,3 +28,4 @@ Parameter|Cardinality|Description
 --tables `<value>`|*Optional*|Which tables should we include in the dot file ?
 --all `<value>`|*Optional*|Include all tables in the dot file ? All by default
 --json `<value>`|*Optional*|JSON output ?
+--reportFormat `<value>`|*Optional*|Report format: console, json, html

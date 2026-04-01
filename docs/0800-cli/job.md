@@ -1,6 +1,8 @@
 ---
-sidebar_position: 230
+sidebar_position: 220
 title: job
+description: "Execute a named Spark or BigQuery job with configurable options, parameters, and interactive output formats."
+keywords: [starlake job, job execution, Spark job, BigQuery job]
 ---
 
 
@@ -9,7 +11,7 @@ title: job
 **starlake job [options]**
 
 ## Description
-
+Execute a SQL or Python transformation task. Starlake resolves dependencies, compiles queries with variable substitutions, and writes results to the target table. Use `--recursive` for upstream dependencies. See [Transform Guide](/guides/transform/tutorial).
 
 ## Parameters
 

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 400
+sidebar_position: 420
 title: yml2ddl
 description: "Generate DDL statements from Starlake YAML schemas for your target data warehouse, with optional JDBC apply support."
 keywords: [starlake yml2ddl, DDL generation, schema to SQL, data warehouse, database migration]
@@ -11,7 +11,6 @@ keywords: [starlake yml2ddl, DDL generation, schema to SQL, data warehouse, data
 **starlake yml2ddl [options]**
 
 ## Description
-
 Generate SQL DDL statements (CREATE TABLE, etc.) from Starlake YAML table definitions.
 
 ## Parameters
@@ -26,3 +25,4 @@ Parameter|Cardinality|Description
 --schemas `<value>`|*Optional*|List of schemas to generate DDL for. All by default
 --apply `<value>`|*Optional*|Does the file contain a header (For CSV files only)
 --parallelism `<value>`|*Optional*|parallelism level. By default equals to the available cores: 16
+--reportFormat `<value>`|*Optional*|Report format: console, json, html
