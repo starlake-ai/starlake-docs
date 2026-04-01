@@ -1,4 +1,4 @@
-# Transformation Capabilities for SQL
+# SQL Transformations
 
 ## 1. SELECT Materialization
 

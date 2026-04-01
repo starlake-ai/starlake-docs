@@ -1,4 +1,4 @@
-# Ingestion Checks for JSON Files
+# JSON Files Ingestion
 
 ## 1. Format Detection
 

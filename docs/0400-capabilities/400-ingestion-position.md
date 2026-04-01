@@ -1,4 +1,4 @@
-# Ingestion Checks for POSITION (Fixed-Width) Files
+# POSITION (Fixed-Width) Files Ingestion
 
 ## 1. Column Boundary Parsing
 

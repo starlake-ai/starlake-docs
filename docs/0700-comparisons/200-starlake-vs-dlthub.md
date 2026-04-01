@@ -1,4 +1,4 @@
-# Starlake vs dlt (dltHub)
+# Starlake vs dlt
 
 Starlake and dlt are both open-source data pipeline tools, but they take fundamentally different approaches.
 
@@ -15,7 +15,7 @@ Starlake and dlt are both open-source data pipeline tools, but they take fundame
 
 | | Starlake | dlt |
 |---|---|---|
-| **Files** | CSV, JSON, XML, Parquet, fixed-width | CSV, JSON, Parquet (XML and fixed-width not native) |
+| **Files** | CSV, JSON, XML, Parquet, fixed-width | CSV, JSON, Parquet |
 | **Databases** | JDBC extraction with incremental support | 100+ databases via SQLAlchemy |
 | **APIs** | — | REST API declarative source, 60+ verified connectors |
 | **Streams** | Kafka / Kafka Streams | — |
@@ -106,7 +106,7 @@ Starlake and dlt are both open-source data pipeline tools, but they take fundame
 | | Starlake | dlt |
 |---|---|---|
 | **Install** | Java CLI (`starlake` binary) | Python package (`pip install dlt`) |
-| **Runtime** | JVM (Spark, standalone) or native engine | Python process |
+| **Runtime** | native engine or Spark | Python process |
 | **Infrastructure** | On-premise, Cloud Run, Dataproc, Fargate, Snowflake | Anywhere Python runs (Lambda, Cloud Functions, K8s, laptop) |
 
 ## When to Choose
