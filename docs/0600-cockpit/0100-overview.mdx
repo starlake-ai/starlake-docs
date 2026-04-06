@@ -38,6 +38,28 @@ import Head from '@docusaurus/Head';
 
 The Starlake Cockpit is a web-based interface for managing your data projects end-to-end. It connects to the Starlake REST API backend and provides a visual environment for every stage of the data pipeline: extraction, loading, transformation, orchestration, testing, and monitoring.
 
+## Architecture
+
+Users interact with Starlake through two entry points: the **Cockpit Web UI** or the **VS Code Extension**. Both connect to the Starlake REST API, which orchestrates the underlying data engine and manages project metadata.
+
+```mermaid
+graph LR
+    User((User))
+
+    User --> WebUI["Cockpit Web UI<br/>(Browser)"]
+    User --> VSCode["VS Code Extension"]
+
+    WebUI --> API["Starlake REST API<br/>(starlake serve)"]
+    VSCode --> API
+
+    API --> Core["Starlake Core Engine"]
+    API --> DB["PostgreSQL<br/>(User & Project metadata)"]
+
+    Core --> Orchestrator["Orchestrator<br/>(Airflow / Dagster / Snowflake)"]
+    Core --> AI["AI Service<br/>(OpenAI / Gemini / Claude)"]
+    Core --> DataWarehouse["Data Warehouse<br/>(BigQuery / Snowflake / DuckDB / Redshift)"]
+```
+
 ## Setup
 
 Launch the Cockpit with:
