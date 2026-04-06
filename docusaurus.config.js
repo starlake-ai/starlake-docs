@@ -99,8 +99,8 @@ const config = {
           to: "/",
         },
         !isBlog ? {
-          to: "/skills/getting-started",
-          label: "Skills",
+          to: "/overview",
+          label: "Overview",
           position: "left",
         } : null,
         !isBlog ? {
