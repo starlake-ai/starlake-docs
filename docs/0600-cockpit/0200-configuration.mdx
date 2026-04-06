@@ -1,0 +1,172 @@
+---
+id: cockpit-configuration
+title: "Cockpit Configuration"
+description: "Configure the Starlake Cockpit REST API: deployment modes, HTTP server, sessions, database, authentication providers (OAuth, OIDC), email, AI integration, orchestration, and storage."
+keywords: [starlake cockpit configuration, authentication, oauth, oidc, api configuration, session management, smtp, ai integration]
+---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What authentication providers does the Starlake Cockpit support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The Cockpit supports email/password (built-in), Google OAuth, GitHub OAuth, Azure OAuth, generic OIDC, and Snowflake OAuth. Configure each provider with its client ID and secret via environment variables."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What database does the Starlake Cockpit use for user management?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The Cockpit uses PostgreSQL for user management, project metadata, and configuration storage. Configure the connection with SL_API_JDBC_URL, SL_API_JDBC_USER, and SL_API_JDBC_PASSWORD environment variables."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# Cockpit Configuration
+
+This page documents the environment variables and settings for deploying the Starlake Cockpit and its REST API backend. All settings are configured through environment variables.
+
+## Deployment Modes
+
+The `SL_API_MODE` variable controls which authentication methods are available:
+
+| Mode | Description |
+|------|-------------|
+| `LOCAL` | On-premises deployment. Only email/password authentication is enabled. This is the default. |
+| `CLOUD` | Cloud deployment. OAuth providers are enabled. |
+| `ALL` | Both on-premises and cloud authentication methods are available. |
+| `SAAS` | Multi-tenant SaaS mode with user isolation, disk quotas, and all authentication methods. |
+
+## HTTP Server
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SL_API_HTTP_PORT` | Port the API server listens on | `9900` |
+| `SL_API_HTTP_INTERFACE` | Network interface to bind to | `0.0.0.0` |
+| `SL_API_HTTP_FRONT_URL` | Public URL of the Cockpit frontend | `http://localhost:9900` |
+| `SL_API_FILE_UPLOAD_MAX_CONTENT_LENGTH` | Maximum file upload size | `1000 MiB` |
+
+## Session and Cookies
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SL_API_SERVER_SECRET` | Secret key used to encrypt session cookies. **Change this in production.** | Built-in default |
+| `SL_API_DOMAIN` | Cookie domain for session cookies | `starlake.ai` |
+| `SL_API_SECURE` | Set to `true` to require HTTPS for cookies | `true` |
+| `SL_API_SESSION_AS_HEADER` | Send session data as a header in addition to the cookie | `true` |
+| `SL_API_MAX_AGE_MINUTES` | Session expiration time in minutes | `120` |
+
+## Database
+
+The Cockpit stores user accounts, project metadata, and configuration in a PostgreSQL database.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SL_API_JDBC_URL` | JDBC connection URL | *Required* |
+| `SL_API_JDBC_USER` | Database username | *Required* |
+| `SL_API_JDBC_PASSWORD` | Database password | *Required* |
+| `SL_API_JDBC_DRIVER` | JDBC driver class | `org.postgresql.Driver` |
+| `SL_API_JDBC_HOST` | Database host | `starlake-db` |
+| `SL_API_JDBC_PORT` | Database port | `5432` |
+
+Database schema migrations are applied automatically on startup using Flyway.
+
+## Authentication Providers
+
+### Email and Password
+
+Built-in authentication with no additional configuration required. Users register with an email address and password. Accounts are locked after 10 consecutive failed login attempts (configurable via `SL_API_AUTH_MAX_FAILURES`).
+
+### Google OAuth
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SL_API_GOOGLE_CLIENT_ID` | Google OAuth 2.0 client ID | *Empty — disabled* |
+| `SL_API_GOOGLE_CLIENT_SECRET` | Google OAuth 2.0 client secret | *Empty — disabled* |
+
+Set both variables to enable Google sign-in. Create credentials in the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) with the callback URL `<front-url>/api/v1/auth/google/callback`.
+
+### GitHub OAuth
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SL_API_GITHUB_CLIENT_ID` | GitHub OAuth app client ID | *Empty — disabled* |
+| `SL_API_GITHUB_CLIENT_SECRET` | GitHub OAuth app client secret | *Empty — disabled* |
+
+Set both variables to enable GitHub sign-in. Create an OAuth app in [GitHub Settings](https://github.com/settings/developers) with the callback URL `<front-url>/api/v1/auth/github/callback`.
+
+### Azure OAuth
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SL_API_AZURE_CLIENT_ID` | Azure AD application (client) ID | *Empty — disabled* |
+| `SL_API_AZURE_CLIENT_SECRET` | Azure AD client secret | *Empty — disabled* |
+
+Set both variables to enable Azure sign-in. Register an application in the [Azure Portal](https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps) with the callback URL `<front-url>/api/v1/auth/azure/callback`.
+
+### OIDC (Generic)
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SL_API_OIDC_CLIENT_ID` | OIDC client ID | *Empty — disabled* |
+| `SL_API_OIDC_CLIENT_SECRET` | OIDC client secret | *Empty — disabled* |
+| `SL_API_OIDC_DISCOVERY_URL` | OpenID Connect discovery URL (e.g., `https://idp.example.com/.well-known/openid-configuration`) | *Empty — disabled* |
+
+Set all three variables to enable generic OIDC sign-in. This works with any OIDC-compliant identity provider (Okta, Auth0, Keycloak, etc.).
+
+### Snowflake OAuth
+
+Snowflake OAuth is configured through the platform settings table in the database rather than environment variables. It supports automatic token refresh when tokens expire.
+
+## Email (SMTP)
+
+Configure SMTP to enable email notifications, magic link sign-up, and password reset.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SL_API_MAIL_FROM` | Sender email address | `contact@starlake.ai` |
+| `SL_API_MAIL_HOST` | SMTP server hostname | `smtp.gmail.com` |
+| `SL_API_MAIL_PORT` | SMTP server port | `587` |
+| `SL_API_MAIL_USER` | SMTP authentication username | *Required* |
+| `SL_API_MAIL_PASSWORD` | SMTP authentication password | *Required* |
+| `SL_API_MAIL_TLS` | Enable TLS for SMTP connections | `true` |
+
+## AI Integration
+
+The AI assistant requires a running LLM service endpoint.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SL_API_AI_URL` | URL of the AI/LLM service | `http://localhost:8000` |
+| `SL_API_AI_MODEL` | Default model name | `llama3:latest` |
+| `SL_AI_APPLICATION_KEY` | Application key for the AI service | `unknown` |
+| `SL_API_AI_MODEL_NAMES` | Comma-separated list of enabled AI providers | `openai,gemini,claude,anthropic` |
+
+## Orchestrator
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SL_API_ORCHESTRATOR_URL` | Orchestrator web UI URL (Airflow, Dagster) | `http://localhost/airflow/` |
+| `SL_API_ORCHESTRATOR_PRIVATE_URL` | Internal orchestrator API URL (if different from public URL) | *Empty* |
+| `SL_API_AIRFLOW_USER` | Airflow basic auth username | `airflow` |
+| `SL_API_AIRFLOW_PASSWORD` | Airflow basic auth password | `airflow` |
+
+## Storage and Limits
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SL_API_PROJECTS_ROOT` | Root directory for all project files on the server | *Empty* |
+| `SL_API_MAX_USER_SPACE_MB` | Maximum disk space per user in MB (SAAS mode) | `1` |
+| `SL_API_DAG_FOLDER` | Directory name for generated DAG files relative to project root | `dags` |
