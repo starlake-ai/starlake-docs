@@ -40,6 +40,7 @@ const config = {
           path: 'docs',  // Regular docs directory
           sidebarPath: require.resolve("./sidebars.js"),
           routeBasePath: '/',
+          exclude: ['superpowers/**'],
         },
         blog: isBlog ? {
           blogSidebarTitle: 'All posts',

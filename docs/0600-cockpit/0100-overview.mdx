@@ -38,13 +38,39 @@ import Head from '@docusaurus/Head';
 
 The Starlake Cockpit is a web-based interface for managing your data projects end-to-end. It connects to the Starlake REST API backend and provides a visual environment for every stage of the data pipeline: extraction, loading, transformation, orchestration, testing, and monitoring.
 
-To launch the Cockpit, run:
+## Setup
+
+Launch the Cockpit with:
 
 ```bash
 starlake serve
 ```
 
-Then open `http://localhost:9900` in your browser. See the [Configuration](./0200-configuration.mdx) page for deployment options and authentication setup.
+Then open `http://localhost:9900` in your browser.
+
+### Command Options
+
+```bash
+starlake serve [options]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--host <value>` | Address on which the server listens | `127.0.0.1` |
+| `--port <value>` | Port on which the server listens | `9900` |
+| `--reportFormat <value>` | Report format: `console`, `json`, or `html` | `console` |
+
+The host and port can also be set through environment variables `SL_HTTP_HOST` and `SL_HTTP_PORT`.
+
+### Examples
+
+Listen on all interfaces on port 11000:
+
+```bash
+starlake serve --host 0.0.0.0 --port 11000
+```
+
+See the [Configuration](./0200-configuration.mdx) page for deployment options, authentication providers, and all environment variables.
 
 ## Projects
 
