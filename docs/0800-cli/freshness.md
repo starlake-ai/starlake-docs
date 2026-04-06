@@ -1,5 +1,5 @@
 ---
-sidebar_position: 160
+sidebar_position: 170
 title: freshness
 description: "Check data freshness across tables and datasets with configurable connections, write modes, and optional result persistence."
 keywords: [starlake freshness, data freshness, table monitoring, data quality]

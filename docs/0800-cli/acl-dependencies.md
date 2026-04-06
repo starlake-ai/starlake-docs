@@ -1,5 +1,5 @@
 ---
-sidebar_position: 10
+sidebar_position: 20
 title: acl-dependencies
 description: "Generate GraphViz dot, SVG, PNG or JSON files visualizing ACL dependencies from Domain and Schema YAML definitions."
 keywords: [starlake acl-dependencies, ACL dependencies, GraphViz, access control, data governance]

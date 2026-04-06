@@ -1,5 +1,5 @@
 ---
-sidebar_position: 180
+sidebar_position: 190
 title: iam-policies
 description: "Generate and apply IAM policies for your Starlake project resources, managing access control with authentication tokens."
 keywords: [starlake iam-policies, IAM policies, access control, security]

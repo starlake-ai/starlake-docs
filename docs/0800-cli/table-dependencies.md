@@ -1,5 +1,5 @@
 ---
-sidebar_position: 360
+sidebar_position: 370
 title: table-dependencies
 description: "Generate GraphViz dependency diagrams from domain and schema YAML files, with SVG, PNG, and JSON output options."
 keywords: [starlake table-dependencies, schema dependencies, GraphViz, entity relationship, data modeling]

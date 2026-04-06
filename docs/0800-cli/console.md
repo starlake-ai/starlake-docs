@@ -1,5 +1,5 @@
 ---
-sidebar_position: 80
+sidebar_position: 90
 title: console
 description: "Launch the Starlake interactive console for exploring and managing your data project from a local web-based interface."
 keywords: [starlake console, interactive console, web interface, data exploration]

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 300
+sidebar_position: 310
 title: secure
 description: "Apply security rules and access controls on specified domains and tables, including row-level and column-level security."
 keywords: [starlake secure, data security, access control, row-level security, column masking]

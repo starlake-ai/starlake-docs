@@ -1,5 +1,5 @@
 ---
-sidebar_position: 60
+sidebar_position: 70
 title: col-lineage
 description: "Build and export column-level data lineage for a specific task as JSON, helping trace data flow across transformations."
 keywords: [starlake col-lineage, column lineage, data lineage, data tracing]

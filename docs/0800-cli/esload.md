@@ -1,5 +1,5 @@
 ---
-sidebar_position: 110
+sidebar_position: 120
 title: esload
 description: "Load datasets in parquet, JSON, or JSON-array format into Elasticsearch indices with custom mappings and Spark configuration."
 keywords: [starlake esload, Elasticsearch, index loading, search engine]

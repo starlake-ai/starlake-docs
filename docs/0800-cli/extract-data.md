@@ -1,5 +1,5 @@
 ---
-sidebar_position: 130
+sidebar_position: 140
 title: extract-data
 description: "Extract data from any database in parallel with support for partitioning, incremental exports, and configurable parallelism."
 keywords: [starlake extract-data, data extraction, database export, parallel extraction]

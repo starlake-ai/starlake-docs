@@ -1,5 +1,5 @@
 ---
-sidebar_position: 280
+sidebar_position: 290
 title: parquet2csv
 description: "Convert Parquet files to CSV format with configurable partitions, write modes, and Spark options like delimiter and header."
 keywords: [starlake parquet2csv, parquet to csv, file conversion, data export, spark]

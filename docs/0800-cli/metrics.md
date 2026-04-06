@@ -1,5 +1,5 @@
 ---
-sidebar_position: 260
+sidebar_position: 270
 title: metrics
 description: "Compute and publish data quality metrics for a given domain and schema, with optional Google Cloud authentication."
 keywords: [starlake metrics, data quality, schema metrics, data profiling]
