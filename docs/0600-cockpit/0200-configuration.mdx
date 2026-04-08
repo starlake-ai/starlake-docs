@@ -18,7 +18,7 @@ import Head from '@docusaurus/Head';
           "name": "What authentication providers does the Starlake Cockpit support?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "The Cockpit supports email/password (built-in), Google OAuth, GitHub OAuth, Azure OAuth, generic OIDC, and Snowflake OAuth. Configure each provider with its client ID and secret via environment variables."
+            "text": "The Cockpit supports email/password (built-in), Google OAuth, GitHub OAuth, Azure OAuth, generic OIDC (compatible with Okta, Auth0, Keycloak, Amazon Cognito, and others), and Snowflake OAuth. Configure each provider with its client ID and secret via environment variables."
           }
         },
         {
@@ -124,7 +124,31 @@ Set both variables to enable Azure sign-in. Register an application in the [Azur
 | `SL_API_OIDC_CLIENT_SECRET` | OIDC client secret | *Empty — disabled* |
 | `SL_API_OIDC_DISCOVERY_URL` | OpenID Connect discovery URL (e.g., `https://idp.example.com/.well-known/openid-configuration`) | *Empty — disabled* |
 
-Set all three variables to enable generic OIDC sign-in. This works with any OIDC-compliant identity provider (Okta, Auth0, Keycloak, etc.).
+Set all three variables to enable generic OIDC sign-in. This works with any OIDC-compliant identity provider (Okta, Auth0, Keycloak, Amazon Cognito, etc.).
+
+#### Auth0
+
+To use Auth0 as your OIDC provider, create an application in the [Auth0 Dashboard](https://manage.auth0.com/) and add the callback URL `<front-url>/api/v1/auth/oidc/callback` to the allowed callback URLs. Then set:
+
+- `SL_API_OIDC_CLIENT_ID` — the Auth0 application client ID
+- `SL_API_OIDC_CLIENT_SECRET` — the Auth0 application client secret
+- `SL_API_OIDC_DISCOVERY_URL` — `https://<your-tenant>.auth0.com/.well-known/openid-configuration`
+
+#### Keycloak
+
+To use Keycloak as your OIDC provider, create a client in your Keycloak realm with **Client authentication** enabled and add the callback URL `<front-url>/api/v1/auth/oidc/callback` as a valid redirect URI. Then set:
+
+- `SL_API_OIDC_CLIENT_ID` — the Keycloak client ID
+- `SL_API_OIDC_CLIENT_SECRET` — the Keycloak client secret (from the **Credentials** tab)
+- `SL_API_OIDC_DISCOVERY_URL` — `https://<keycloak-host>/realms/<realm-name>/.well-known/openid-configuration`
+
+#### Amazon Cognito
+
+To use Amazon Cognito as your OIDC provider, create a User Pool in the [AWS Console](https://console.aws.amazon.com/cognito/) and configure an app client with the callback URL `<front-url>/api/v1/auth/oidc/callback`. Then set:
+
+- `SL_API_OIDC_CLIENT_ID` — the Cognito app client ID
+- `SL_API_OIDC_CLIENT_SECRET` — the Cognito app client secret
+- `SL_API_OIDC_DISCOVERY_URL` — `https://cognito-idp.<region>.amazonaws.com/<user-pool-id>/.well-known/openid-configuration`
 
 ### Snowflake OAuth
 
