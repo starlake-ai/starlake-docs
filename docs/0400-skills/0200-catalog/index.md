@@ -2,12 +2,12 @@
 id: skills-catalog
 sidebar_position: 1
 title: Skills Catalog
-description: Browse all 48 Starlake Skills organized by category
+description: Browse all 47 Starlake Skills organized by category
 ---
 
 # Skills Catalog
 
-Starlake Skills provides **48 specialized skills** organized into 10 categories. Each skill contains deep knowledge about a specific Starlake CLI command, configuration pattern, or operational workflow.
+Starlake Skills provides **47 specialized skills** organized into 11 categories. Each skill contains deep knowledge about a specific Starlake CLI command, configuration pattern, or operational workflow.
 
 ## At a Glance
 
@@ -16,13 +16,14 @@ Starlake Skills provides **48 specialized skills** organized into 10 categories.
 | [Ingestion & Loading](./ingestion.md) | 9 | Ingest data from files, APIs, Kafka, and Elasticsearch |
 | [Transformation](./transformation.md) | 2 | SQL and Python data transformations |
 | [Extraction](./extraction.md) | 5 | Extract schemas and data from databases |
-| [Schema Management](./schema-management.md) | 5 | Bootstrap projects, convert formats, generate DDL |
+| [Schema Management](./schema-management.md) | 6 | Bootstrap projects, convert formats, generate DDL |
 | [Data Quality](./data-quality.md) | 1 | Expectation macros and validation patterns |
 | [Lineage & Dependencies](./lineage.md) | 4 | Column-level, table-level, and ACL lineage |
 | [Operations](./operations.md) | 8 | Validation, metrics, freshness, migrations |
 | [Security](./security.md) | 2 | IAM policies, RLS, CLS, privacy |
 | [Orchestration](./orchestration.md) | 2 | Airflow and Dagster DAG management |
-| [Utilities](./utilities.md) | 5 | Format conversion, comparison, site generation |
+| [Utilities](./utilities.md) | 6 | Format conversion, comparison, testing, site generation |
+| [Configuration](./configuration.md) | 2 | Configuration reference and database connections |
 
 ## How Skills Work
 

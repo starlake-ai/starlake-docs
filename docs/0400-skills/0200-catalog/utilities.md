@@ -6,7 +6,7 @@ description: Utility skills for format conversion, comparison, and documentation
 
 # Utilities
 
-5 skills for format conversion, data comparison, documentation generation, and testing.
+6 skills for format conversion, data comparison, documentation generation, and testing.
 
 ## Skills
 

@@ -69,7 +69,7 @@ You: /esload Configure loading product data into an Elasticsearch index
 
 ### index
 
-**Alternative Elasticsearch loading skill.** Similar to `esload` with additional indexing options.
+**Alias for `esload`.** The `starlake index` command is identical to `starlake esload` — all options and behavior are the same. See [esload](#esload) for full details.
 
 ---
 

@@ -6,7 +6,7 @@ description: Skills for project bootstrapping, schema inference, and format conv
 
 # Schema Management
 
-5 skills for creating projects, inferring schemas, and converting between formats.
+6 skills for creating projects, inferring schemas, and converting between formats.
 
 ## Skills
 
