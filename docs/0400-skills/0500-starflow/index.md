@@ -26,13 +26,23 @@ For quick, targeted tasks (loading a file, writing a transform), use the [CLI sk
 
 Starflow organizes work into four phases, each with dedicated skills:
 
-```mermaid
-graph LR
-    A[1. Discovery] --> B[2. Architecture]
-    B --> C[3. Pipeline Design]
-    C --> D[4. Implementation]
-    D --> E[Quality Review]
-    E -->|iterate| C
+```
+        1. Discovery
+             │
+             ▼
+        2. Architecture
+             │
+             ▼
+  ┌──▶  3. Pipeline Design
+  │          │
+  │          ▼
+  │     4. Implementation
+  │          │
+  │          ▼
+  │     Quality Review
+  │          │
+  └──────────┘
+       iterate
 ```
 
 ### Phase 1: Discovery
