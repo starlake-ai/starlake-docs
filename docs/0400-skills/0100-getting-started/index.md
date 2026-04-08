@@ -48,9 +48,15 @@ Whether you're setting up a new data project, configuring ingestion pipelines, w
 ### Data Formats
 CSV, JSON, XML, Parquet, Elasticsearch indices, Kafka topics
 
-## How It Works
+## Skills and Starflow: Two Ways to Work
 
-Starlake Skills integrates directly into Claude Code as a plugin. Once installed, you can ask Claude natural-language questions about any Starlake topic and receive expert guidance with production-ready configurations.
+Starlake Skills provides two complementary approaches depending on the scope of your work:
+
+### Starlake Skills — Direct Access to Every Command
+
+Skills integrate directly into Claude Code as a plugin. Each of the 48 skills gives you deep expertise on a specific Starlake capability — CLI syntax, YAML configuration, write strategies, engine-specific behaviors, and production best practices.
+
+Use skills when you have a **targeted task**: loading a file, writing a transformation, generating a DAG, or configuring a connection.
 
 ```
 You: How do I load CSV files from GCS into BigQuery with deduplication?
@@ -60,15 +66,35 @@ Claude: [Uses the `load` skill to provide complete YAML configuration
          and schema definitions]
 ```
 
-Each skill contains detailed knowledge about:
-- CLI command syntax and all available options
-- YAML configuration patterns with examples
-- Write strategies, sink configurations, and engine-specific behaviors
-- Best practices for production deployments
-- Troubleshooting guidance
+### Starflow — Guided Methodology for End-to-End Projects
+
+[Starflow](../0500-starflow/index.md) is an optional guided methodology layer built on top of Starlake Skills. Where individual skills answer *"how do I do X?"*, Starflow answers *"what should I do next and why?"*
+
+Starflow organizes data pipeline projects into four phases — **Discovery**, **Architecture**, **Pipeline Design**, and **Implementation** — each with dedicated skills and specialized agent personas that guide you through the full lifecycle.
+
+Use Starflow when you're tackling a **broader initiative**: starting a new data platform, migrating from legacy ETL, onboarding a team, or reviewing an existing architecture.
+
+```
+You: /starflow-data-architect Design a data platform for our e-commerce analytics
+
+Winston: [Guides you through architecture decisions — layers, engines,
+          storage, governance — then hands off to implementation skills]
+```
+
+### How They Fit Together
+
+| | **Starlake Skills** | **Starflow** |
+|---|---|---|
+| **Scope** | Single task or command | Multi-step project lifecycle |
+| **Approach** | Direct — ask and get an answer | Guided — phased workflow with recommendations |
+| **Best for** | Loading, transforming, configuring, deploying | Discovery, architecture, planning, reviews |
+| **Personas** | None — you drive | 5 agent personas (Lea, Winston, Amelia, Quinn, Max) |
+
+Starflow skills call on the underlying Starlake Skills during implementation, so the two layers work together seamlessly. You can start with Starflow for planning and architecture, then drop into individual skills for hands-on configuration — or skip Starflow entirely and use skills directly for quick tasks.
 
 ## Next Steps
 
 - **[Quickstart](./quickstart.md)** — Install and use your first skill in 5 minutes
 - **[Setup](./setup.md)** — Detailed installation and configuration options
 - **[Skills Catalog](../0200-catalog/index.md)** — Browse all 48 skills by category
+- **[Starflow Method](../0500-starflow/index.md)** — Guided methodology for end-to-end projects
