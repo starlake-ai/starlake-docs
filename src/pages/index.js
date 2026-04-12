@@ -17,7 +17,7 @@ function HeroSection() {
         <div className="hero__buttons">
           <Link
             className="button--starlake button--starlake-primary"
-            to="/skills/getting-started">
+            to="/setup/starlake-core-setup">
             Get Started
           </Link>
           <Link
