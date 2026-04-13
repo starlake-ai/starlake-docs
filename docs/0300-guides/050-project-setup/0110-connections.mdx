@@ -64,6 +64,7 @@ Starlake supports connections to BigQuery, Snowflake, Databricks/Spark, Amazon R
 - [Apache Spark / Databricks](#connect-starlake-to-spark-and-databricks)
 - [Amazon Redshift](#connect-starlake-to-amazon-redshift)
 - [DuckDB / DuckLake](#connect-starlake-to-duckdb-and-ducklake)
+- [Google Cloud Logging (Audit)](#connect-starlake-to-google-cloud-logging-audit)
 - [PostgreSQL / Any JDBC Database](#connect-starlake-to-any-jdbc-database)
 
 ## Connect Starlake to the Local File System
@@ -317,6 +318,37 @@ application:
 
 For DuckLake, the `preActions` setting attaches the DuckLake metadata catalog before running any queries.
 
+## Connect Starlake to Google Cloud Logging (Audit)
+
+Starlake can send audit logs to [Google Cloud Logging](https://cloud.google.com/logging) instead of a database table. This is useful when you want audit data in Cloud Logging where it can be routed to BigQuery, Pub/Sub, or Cloud Storage via log sinks.
+
+```yaml
+application:
+  connections:
+    gcplog:
+      type: "GCPLOG"
+      options:
+        projectId: "my-gcp-project"
+
+  audit:
+    active: true
+    domain: "starlake-audit"  # Cloud Logging log name
+    sink:
+      connectionRef: "gcplog"
+```
+
+With this configuration:
+- Audit entries are sent to Cloud Logging under `projects/my-gcp-project/logs/starlake-audit`
+- Each entry is a JSON payload with fields: `jobid`, `domain`, `schema`, `success`, `count`, `countAccepted`, `countRejected`, `timestamp`, `duration`, `message`, `step`, `tenant`
+- Entries are labeled with `type=audit` and `app=starlake`
+- Authentication uses [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials) (same as `gcloud auth application-default login` or a service account via `GOOGLE_APPLICATION_CREDENTIALS`)
+
+The `domain` field defaults to `"audit"` if omitted. Logs are chunked into 9 MB batches to respect Cloud Logging API limits.
+
+:::tip
+To route audit logs from Cloud Logging to BigQuery for querying, create a [log sink](https://cloud.google.com/logging/docs/export/configure_export_v2) with filter `logName="projects/my-gcp-project/logs/starlake-audit"`.
+:::
+
 ## Connect Starlake to Any JDBC Database
 
 Starlake connects to any JDBC-compliant database (PostgreSQL, MySQL, etc.) using the generic `jdbc` connection type. The example below uses PostgreSQL.
@@ -355,6 +387,9 @@ Yes, Starlake supports DuckDB as a JDBC connection. Configure it with the DuckDB
 
 ### What BigQuery authentication methods does Starlake support?
 Starlake supports three methods: APPLICATION_DEFAULT (default credentials), SERVICE_ACCOUNT_JSON_KEYFILE (JSON key file), and ACCESS_TOKEN (direct GCP access token).
+
+### How do I send Starlake audit logs to Google Cloud Logging?
+Define a connection of type `GCPLOG` with a `projectId` option, then set `audit.sink.connectionRef` to that connection in `application.sl.yml`. Audit entries are sent as structured JSON to Cloud Logging under the log name specified in `audit.domain`.
 
 ### How do I configure a Redshift connection in Starlake?
 Use a JDBC connection with `url: "jdbc:redshift://<account>.<region>.redshift.amazonaws.com:5439/<database>"` and `driver: com.amazon.redshift.Driver`. Provide the password, a temporary S3 bucket, and an IAM role ARN.
