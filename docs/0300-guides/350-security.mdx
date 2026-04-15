@@ -1,0 +1,488 @@
+---
+title: "Access Control in Starlake — Table, Row and Column Level Security for BigQuery and Databricks"
+description: "Define table ACL, row-level security (RLS) with SQL predicates, and column-level access policies (PII) in Starlake. YAML configuration for BigQuery and Databricks."
+keywords: [starlake, access control, ACL, row-level security, column-level security, BigQuery, Databricks, RLS, PII, taxonomy, policy tags]
+---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I define access rights on a table in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the acl section in the table YAML definition. Specify a role (permission) and a list of grants (users, groups or service accounts)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I configure Row Level Security (RLS) in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Add an rls section in the table definition. Each RLS policy contains a name, a predicate (SQL expression evaluated for each row) and grants defining the beneficiaries."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Column Level Security supported on all warehouses?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Column Level Security is supported on BigQuery only. It uses BigQuery policy tags from a Data Catalog taxonomy to restrict access to specific columns."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I protect a column containing PII in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Add the accessPolicy property on the attribute in the table definition with the name of the policy tag (e.g. PII). Configure the taxonomy in accessPolicies settings."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the ACL syntax for BigQuery in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The role uses the BigQuery format (e.g., roles/bigquery.dataViewer). Grants use the format user:, group: or serviceAccount: followed by the identifier."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the ACL syntax for Spark/Databricks in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The role corresponds to a SQL permission (e.g., SELECT). Grants are user or group identifiers without a type prefix."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I combine ACL, RLS and Column Level Security on the same table?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. All three security levels can be combined in the same table YAML definition."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I configure the taxonomy for Column Level Security?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Set the accessPolicies section in application.sl.yml with the taxonomy name, GCP project and location. Then reference policy tag names on column attributes with accessPolicy."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# Access Control
+
+Starlake provides three levels of declarative security applied automatically at each load or transform:
+
+- **Table-level ACL** -- Grant roles to users, groups or service accounts.
+- **Row-level security (RLS)** -- Filter rows with SQL predicates per grantee.
+- **Column-level security (CLS)** -- Restrict access to sensitive columns using policy tags (BigQuery only).
+
+All three levels are combinable in a single table or task YAML definition. This declarative approach eliminates the need for manual security configuration after each deployment.
+
+For excluding sensitive columns from ingestion entirely, see also the [`ignore` attribute](/guides/load/transform) as an alternative to column-level security.
+
+## Global configuration
+
+Enable and configure access policies in `metadata/application.sl.yml`:
+
+```yaml
+version: 1
+application:
+  accessPolicies:
+    apply: true                    # Enable access policy enforcement
+    location: "europe-west1"       # GCP region where the taxonomy is stored
+    database: "my-gcp-project"     # GCP project ID containing the taxonomy
+    taxonomy: "GDPR"               # Taxonomy display name in BigQuery Data Catalog
+```
+
+When `accessPolicies.apply` is `false`, all RLS, CLS and ACL definitions are ignored.
+
+### Environment variable overrides
+
+| Setting | Environment Variable |
+|---------|---------------------|
+| `accessPolicies.apply` | `SL_ACCESS_POLICIES_APPLY` |
+| `accessPolicies.location` | `SL_ACCESS_POLICIES_LOCATION` |
+| `accessPolicies.database` | `SL_ACCESS_POLICIES_PROJECT_ID` |
+| `accessPolicies.taxonomy` | `SL_ACCESS_POLICIES_TAXONOMY` |
+
+## Table-level security (ACL)
+
+The `acl` section grants roles to users, groups or service accounts. The syntax differs between BigQuery and Spark/Databricks.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+
+<TabItem value="bigquery" label="BigQuery">
+
+BigQuery uses role-based access with typed grant identifiers:
+
+```yaml {3-8}
+table:
+    ...
+    acl:
+        - role: roles/bigquery.dataViewer
+          grants:
+            - user:analyst@company.com
+            - group:readers@company.com
+            - serviceAccount:sa@project.iam.gserviceaccount.com
+```
+
+- **role**: BigQuery role (e.g., `roles/bigquery.dataViewer`, `roles/bigquery.dataEditor`).
+- **grants**: Prefixed with `user:`, `group:`, `serviceAccount:` or `domain:`.
+
+</TabItem>
+
+<TabItem value="spark" label="Spark / Databricks">
+
+Spark/Databricks uses SQL permissions with simple identifiers:
+
+```yaml {3-8}
+table:
+    ...
+    acl:
+        - role: SELECT
+          grants:
+            - user@company.com
+            - analysts
+```
+
+- **role**: SQL permission (e.g., `SELECT`).
+- **grants**: User or group identifiers without a type prefix.
+
+</TabItem>
+
+</Tabs>
+
+## Row-level security (RLS)
+
+RLS policies restrict which rows a user or group can see. Each policy defines a SQL `predicate` evaluated for every row. If the predicate evaluates to `true`, the row is visible to the grantees. Users not listed in any policy see zero rows.
+
+### In load tables
+
+```yaml
+table:
+    ...
+    rls:
+      - name: "emea_only"
+        predicate: "region = 'EMEA'"
+        description: "Restrict to EMEA region"
+        grants:
+          - "group:emea-team@company.com"
+      - name: "full_access"
+        predicate: "TRUE"
+        grants:
+          - "group:data-admins@company.com"
+```
+
+### In transform tasks
+
+RLS can also be applied to tables created by transform tasks:
+
+```yaml
+task:
+    name: "revenue_summary"
+    domain: "sales_kpi"
+    table: "revenue_summary"
+    rls:
+      - name: "region_filter"
+        predicate: "region = 'EMEA'"
+        grants:
+          - "user:emea-lead@company.com"
+          - "group:emea-team@company.com"
+```
+
+### Grant types
+
+Grants follow the format `type:principal`:
+
+| Type | Example | Description |
+|------|---------|-------------|
+| `user` | `user:alice@company.com` | Individual user |
+| `group` | `group:analysts@company.com` | Google Group |
+| `serviceAccount` | `serviceAccount:sa@project.iam.gserviceaccount.com` | Service account |
+| `domain` | `domain:company.com` | All users in a domain |
+
+### How RLS works on BigQuery
+
+When Starlake loads or transforms data, it executes:
+
+```sql
+-- Remove all existing row access policies
+DROP ALL ROW ACCESS POLICIES ON `project.dataset.table`;
+
+-- Create a policy for each RLS definition
+CREATE ROW ACCESS POLICY emea_only
+  ON `project.dataset.table`
+  GRANT TO ("group:emea-team@company.com")
+  FILTER USING (region = 'EMEA');
+
+CREATE ROW ACCESS POLICY full_access
+  ON `project.dataset.table`
+  GRANT TO ("group:data-admins@company.com")
+  FILTER USING (TRUE);
+```
+
+## Column-level security (CLS) -- BigQuery only
+
+Column-level security uses **BigQuery policy tags** from a **Data Catalog taxonomy** to restrict access to specific columns. Users without the required IAM role on the policy tag get an access denied error when querying the protected column.
+
+### Step 1: Create a taxonomy in BigQuery
+
+Before using CLS, create a taxonomy and policy tags in Google Cloud Data Catalog.
+
+**Using the Google Cloud Console:**
+
+1. Go to **BigQuery > Data Catalog > Policy Tags**
+2. Create a taxonomy (e.g., `GDPR`) in your chosen region
+3. Add policy tags under it (e.g., `PII`, `SENSITIVE`, `CONFIDENTIAL`)
+
+**Using gcloud CLI:**
+
+```bash
+# Create taxonomy
+gcloud data-catalog taxonomies create \
+  --location=europe-west1 \
+  --project=my-gcp-project \
+  --display-name="GDPR"
+
+# Add policy tags (use the taxonomy ID returned above)
+gcloud data-catalog taxonomies policy-tags create \
+  --taxonomy=TAXONOMY_ID \
+  --location=europe-west1 \
+  --project=my-gcp-project \
+  --display-name="PII"
+
+gcloud data-catalog taxonomies policy-tags create \
+  --taxonomy=TAXONOMY_ID \
+  --location=europe-west1 \
+  --project=my-gcp-project \
+  --display-name="SENSITIVE"
+```
+
+### Step 2: Configure Starlake
+
+Point Starlake to the taxonomy in `metadata/application.sl.yml`:
+
+```yaml
+application:
+  accessPolicies:
+    apply: true
+    location: "europe-west1"       # Must match taxonomy location
+    database: "my-gcp-project"     # Must match taxonomy project
+    taxonomy: "GDPR"               # Must match taxonomy display name
+```
+
+### Step 3: Tag columns with policy tags
+
+Set `accessPolicy` on individual attributes in your table or task YAML. The value must match a policy tag display name in the taxonomy.
+
+**In load tables:**
+
+```yaml
+table:
+    name: "customers"
+    attributes:
+        - name: "customer_id"
+          type: "long"
+        - name: "email"
+          type: "string"
+          accessPolicy: "PII"
+        - name: "phone"
+          type: "string"
+          accessPolicy: "PII"
+        - name: "credit_score"
+          type: "integer"
+          accessPolicy: "SENSITIVE"
+        - name: "name"
+          type: "string"
+```
+
+**In transform tasks:**
+
+```yaml
+task:
+    name: "customer_summary"
+    domain: "analytics"
+    table: "customer_summary"
+    attributes:
+        - name: "email"
+          accessPolicy: "PII"
+        - name: "revenue"
+          accessPolicy: "SENSITIVE"
+```
+
+### How CLS works
+
+When Starlake creates or updates a table:
+
+1. Looks up the taxonomy (e.g., `GDPR`) in the configured project and location
+2. Finds the policy tag (e.g., `PII`) within that taxonomy
+3. Attaches the policy tag to the column in the BigQuery table schema
+
+Users without the `roles/datacatalog.categoryFineGrainedReader` role on the policy tag will receive an access denied error when querying that column.
+
+## IAM policy tags
+
+For fine-grained control over who can access which policy tags, create a `metadata/iam-policy-tags.sl.yml` file:
+
+```yaml
+iamPolicyTags:
+  - policyTag: "PII"
+    role: "roles/datacatalog.categoryFineGrainedReader"
+    members:
+      - "user:data-engineer@company.com"
+      - "group:pii-readers@company.com"
+  - policyTag: "SENSITIVE"
+    role: "roles/datacatalog.categoryFineGrainedReader"
+    members:
+      - "user:cfo@company.com"
+      - "group:finance-leads@company.com"
+```
+
+| Field | Description | Default |
+|-------|-------------|---------|
+| `policyTag` | Display name of the policy tag in the taxonomy | required |
+| `members` | IAM principals (`user:`, `group:`, `serviceAccount:`) | required |
+| `role` | IAM role to grant on the policy tag | `roles/datacatalog.categoryFineGrainedReader` |
+
+Apply the IAM bindings:
+
+```bash
+starlake apply-iam-policy-tags
+```
+
+This sets the IAM policy on each policy tag in the taxonomy so that only the listed members can read columns protected by that tag.
+
+## Complete example
+
+Combining all three security levels on a single table:
+
+### `metadata/application.sl.yml`
+
+```yaml
+version: 1
+application:
+  accessPolicies:
+    apply: true
+    location: "europe-west1"
+    database: "my-gcp-project"
+    taxonomy: "GDPR"
+```
+
+### `metadata/load/sales/customers.sl.yml`
+
+```yaml
+version: 1
+table:
+  name: "customers"
+  pattern: "customers.*"
+  acl:
+    - role: "roles/bigquery.dataViewer"
+      grants:
+        - "group:all-analysts@company.com"
+  rls:
+    - name: "emea_customers"
+      predicate: "region = 'EMEA'"
+      grants:
+        - "group:emea-team@company.com"
+    - name: "full_access"
+      predicate: "TRUE"
+      grants:
+        - "group:data-admins@company.com"
+  attributes:
+    - name: "customer_id"
+      type: "long"
+    - name: "name"
+      type: "string"
+    - name: "email"
+      type: "string"
+      accessPolicy: "PII"
+    - name: "phone"
+      type: "string"
+      accessPolicy: "PII"
+    - name: "region"
+      type: "string"
+    - name: "credit_score"
+      type: "integer"
+      accessPolicy: "SENSITIVE"
+```
+
+### `metadata/iam-policy-tags.sl.yml`
+
+```yaml
+iamPolicyTags:
+  - policyTag: "PII"
+    members:
+      - "group:pii-authorized@company.com"
+  - policyTag: "SENSITIVE"
+    members:
+      - "group:finance@company.com"
+      - "user:cfo@company.com"
+```
+
+### Access matrix
+
+| User | Can see table? | Rows visible | email / phone | credit_score |
+|------|:-:|:-:|:-:|:-:|
+| EMEA analyst (in emea-team + all-analysts) | Yes | EMEA only | Only if in pii-authorized | No |
+| Data admin (in data-admins + all-analysts) | Yes | All rows | Only if in pii-authorized | Only if in finance |
+| CFO (in finance + all-analysts) | Yes | No rows (no RLS grant) | No | Yes |
+| External user | No | -- | -- | -- |
+
+## Engine support
+
+| Feature | BigQuery | Snowflake | Spark / Databricks | JDBC |
+|---------|:--------:|:---------:|:------------------:|:----:|
+| Table ACL | Yes (IAM) | Via GRANT | Via GRANT | -- |
+| Row Level Security | Yes | Via views | -- | -- |
+| Column Level Security | Yes (policy tags) | -- | -- | -- |
+| IAM Policy Tags | Yes | -- | -- | -- |
+
+## Related CLI commands
+
+| Command | Description |
+|---------|-------------|
+| `starlake load` | Loads data and applies RLS / CLS / ACL automatically |
+| `starlake transform` | Runs transforms and applies RLS / CLS / ACL automatically |
+| `starlake apply-iam-policy-tags` | Applies IAM bindings from `iam-policy-tags.sl.yml` |
+| `starlake acl --export` | Exports ACL / RLS definitions as YAML |
+
+## Frequently Asked Questions
+
+### How do I define access rights on a table in Starlake?
+Use the `acl` section in the table YAML definition. Specify a `role` (permission) and a list of `grants` (users, groups or service accounts).
+
+### How do I configure Row Level Security (RLS) in Starlake?
+Add an `rls` section in the table definition. Each RLS policy contains a `name`, a `predicate` (SQL expression evaluated for each row) and `grants` defining the beneficiaries.
+
+### Is Column Level Security supported on all warehouses?
+No. Column Level Security is supported on BigQuery only. It uses BigQuery policy tags from a Data Catalog taxonomy to restrict access to specific columns.
+
+### How do I protect a column containing PII in Starlake?
+1. Create a taxonomy with a `PII` policy tag in BigQuery Data Catalog.
+2. Configure `accessPolicies` in `application.sl.yml` with the taxonomy name, project and location.
+3. Add `accessPolicy: PII` on the attribute in the table definition.
+
+### How do I configure the taxonomy for Column Level Security?
+Set the `accessPolicies` section in `application.sl.yml` with the `taxonomy` name, `database` (GCP project) and `location` (GCP region). The taxonomy must already exist in BigQuery Data Catalog.
+
+### Can I combine ACL, RLS and Column Level Security on the same table?
+Yes. All three security levels can be combined in the same table YAML definition. ACL controls who can access the table, RLS controls which rows they see, and CLS controls which columns they can read.
+
+### Can I apply security to transform tasks?
+Yes. Both `acl` and `rls` sections can be added to transform task definitions. Column-level security is applied via `accessPolicy` on task attributes.
