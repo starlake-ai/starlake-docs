@@ -31,10 +31,6 @@ function HeroSection() {
             View on GitHub
           </Link>
         </div>
-
-        <div className="install-command">
-          <code>git clone https://github.com/starlake-ai/starlake-skills.git ~/.claude/skills/starlake-skills</code>
-        </div>
       </div>
     </section>
   );
