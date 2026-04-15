@@ -96,6 +96,18 @@ starlake serve --host 0.0.0.0 --port 11000
 
 See the [Configuration](./0200-configuration.mdx) page for deployment options, authentication providers, and all environment variables.
 
+:::tip Store data outside the installation folder
+When creating projects through the Cockpit UI, projects and the management database are stored in the `starlake` installation folder by default. To ensure they survive reinstalls and upgrades, configure an external location using these environment variables before creating any projects:
+
+- **`SL_API_PROJECTS_ROOT`** — path where projects are stored
+- **`SL_API_JDBC_URL`** — JDBC URL for the user and project management database (PostgreSQL)
+
+```bash
+export SL_API_PROJECTS_ROOT=/path/to/my/projects
+export SL_API_JDBC_URL=jdbc:postgresql://localhost:5432/starlake
+```
+:::
+
 ## Projects
 
 The home screen lists all projects in your workspace. From here you can create new projects, switch between existing ones, and manage workspace-level users. Each project has its own settings, connections, and pipeline definitions.
