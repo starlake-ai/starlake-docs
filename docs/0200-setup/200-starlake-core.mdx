@@ -65,7 +65,7 @@ import Head from '@docusaurus/Head';
         {"@type": "HowToStep", "name": "Choose an installation method", "text": "Select Docker, Linux/macOS, or Windows as your installation method. Docker requires only Docker installed. Linux/macOS and Windows require Java 17 or higher."},
         {"@type": "HowToStep", "name": "Run the installation command", "text": "For Linux/macOS, run the setup.sh script via curl. For Windows, run setup.ps1 via PowerShell as administrator. For Docker, pull the starlakeai/starlake:latest image."},
         {"@type": "HowToStep", "name": "Verify the installation", "text": "Run 'starlake --version' to confirm the CLI is installed correctly. You should see the Starlake version number."},
-        {"@type": "HowToStep", "name": "Start the Starlake UI (optional)", "text": "Run 'starlake serve' to launch the web UI, then open http://localhost:9900 in your browser."}
+        {"@type": "HowToStep", "name": "Start the Starlake Cockpit (optional)", "text": "Run 'starlake serve' to launch the Cockpit, then open http://localhost:9900 in your browser."}
       ]
     })}
   </script>
@@ -76,7 +76,7 @@ import TabItem from '@theme/TabItem';
 
 # Install Starlake CLI
 
-Starlake CLI is the command-line interface for the Starlake data pipeline platform. It runs on Linux, macOS, and Windows, and is also available as a Docker image. The CLI requires Java 17 or higher, except for Docker which includes all dependencies. Once installed, the CLI provides commands to bootstrap projects, load data, run SQL transformations, and start the web UI.
+Starlake CLI is the command-line interface for the Starlake data pipeline platform. It runs on Linux, macOS, and Windows, and is also available as a Docker image. The CLI requires Java 17 or higher, except for Docker which includes all dependencies. Once installed, the CLI provides commands to bootstrap projects, load data, run SQL transformations, and start the Cockpit.
 
 ## Install Starlake on Linux, macOS, Windows, or Docker
 
@@ -87,7 +87,7 @@ Choose the method that matches your environment. Docker is the fastest option be
 1. **Choose an installation method** -- Docker (no Java needed), Linux/macOS (Java 17+), or Windows (Java 17+ and PowerShell 5.0+).
 2. **Run the installation command** -- See the platform-specific tabs below.
 3. **Verify the installation** -- Run `starlake --version`. The output should display the version number.
-4. **Start the web UI (optional)** -- Run `starlake serve` and open `http://localhost:9900`.
+4. **Start the Cockpit (optional)** -- Run `starlake serve` and open `http://localhost:9900`.
 
 <Tabs groupId="installation-methods">
 
@@ -298,9 +298,9 @@ Expected output:
 Starlake Version 1.3.4
 ```
 
-## Start the Starlake Web UI
+## Start the Starlake Cockpit
 
-Launch the web UI with:
+Launch the Cockpit with:
 
 ```bash
 starlake serve
@@ -314,11 +314,23 @@ To use a different port, set the `SL_API_HTTP_PORT` environment variable:
 SL_API_HTTP_PORT=11000 starlake serve
 ```
 
-To access the web UI from a remote machine, set `SL_API_DOMAIN` to your server's domain or IP address:
+To access the Cockpit from a remote machine, set `SL_API_DOMAIN` to your server's domain or IP address:
 
 ```bash
 SL_API_DOMAIN=your.domain.com starlake serve
 ```
+
+:::tip Store data outside the installation folder
+When creating projects through the Cockpit, projects and the management database are stored in the `starlake` installation folder by default. To ensure they survive reinstalls and upgrades, configure an external location using these environment variables before creating any projects:
+
+- **`SL_API_PROJECTS_ROOT`** — path where projects are stored
+- **`SL_API_JDBC_URL`** — JDBC URL for the user and project management database (PostgreSQL)
+
+```bash
+export SL_API_PROJECTS_ROOT=/path/to/my/projects
+export SL_API_JDBC_URL=jdbc:postgresql://localhost:5432/starlake
+```
+:::
 
 ## Starlake VS Code Extension
 
@@ -337,6 +349,10 @@ The extension provides:
 - SQL transformation snippets
 - Pipeline visualization
 - Starlake Skills for AI-assisted data pipeline development in Claude Code, GitHub Copilot, and other AI coding assistants
+
+:::note
+The VS Code extension requires the Starlake Cockpit to be running in the background. Start it with `starlake serve` before using the extension.
+:::
 
 ## Upgrade Starlake to a Newer Version
 
