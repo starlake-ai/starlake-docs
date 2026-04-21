@@ -1,0 +1,458 @@
+---
+title: "Extract Data from REST APIs with Starlake"
+description: "Learn how to extract data from any REST API using Starlake. Covers authentication, pagination, rate limiting, incremental extraction, and parent-child endpoints."
+keywords: [starlake, REST API, API extraction, pagination, bearer auth, OAuth2, data pipeline, SaaS integration]
+---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What REST APIs does Starlake support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports any REST API that returns JSON or XML responses. You configure the base URL, authentication, pagination strategy, and response structure in a YAML file."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What authentication methods are supported for REST API extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports bearer tokens, API keys (in custom headers), HTTP Basic authentication, and OAuth2 client credentials with automatic token refresh."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What pagination strategies does Starlake support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Four strategies: offset-based (limit/offset), cursor-based (cursor from response body), Link header (RFC 5988 rel=next), and page number pagination."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can Starlake extract data from REST APIs incrementally?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Configure an incrementalField on the endpoint and run with --incremental. Starlake tracks the max value between runs in a state file and passes it as a query parameter on the next run."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the output format of REST API extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Data is extracted into CSV files organized by domain: {outputDir}/{domain}/{tableName}-{timestamp}.csv. Nested JSON objects are flattened using dot notation (e.g., address.city). The files can be loaded using starlake load."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do parent-child endpoints work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Child endpoints use {parent.fieldName} placeholders in their path. For each parent record, Starlake calls the child endpoint with the parent field value substituted. For example, /orders/{parent.id}/items fetches items for each order."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Extract Data from REST APIs with Starlake",
+      "description": "Configure and run REST API data extraction with Starlake using YAML configuration for authentication, pagination, and incremental extraction.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Create the REST API extraction config",
+          "text": "Create a YAML file in metadata/extract/ with baseUrl, auth, pagination, and endpoint definitions.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Extract schemas from API responses",
+          "text": "Run starlake extract-rest-schema --config my-api to infer table schemas from sample API responses.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Extract data to CSV files",
+          "text": "Run starlake extract-rest-data --config my-api --outputDir /tmp/output to fetch all data.",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Load into warehouse",
+          "text": "Run starlake load to ingest the extracted CSV files into your target database.",
+          "position": 4
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# REST API Data Extraction
+
+Starlake can extract data from any REST API that returns JSON or XML. You define endpoints, authentication, pagination, and response structure in a YAML configuration file. Starlake handles the HTTP requests, pagination, rate limiting, and writes the results as CSV files ready for ingestion.
+
+This covers both `extract-rest-schema` (infer table definitions) and `extract-rest-data` (fetch actual data).
+
+## Quick Start
+
+### 1. Create the extraction config
+
+```yaml title="metadata/extract/my-api.sl.yml"
+version: 1
+extract:
+  restAPI:
+    baseUrl: "https://api.example.com/v2"
+    auth:
+      type: bearer
+      token: "{{API_TOKEN}}"
+    rateLimit:
+      requestsPerSecond: 10
+    defaults:
+      pagination:
+        type: offset
+        limitParam: "limit"
+        offsetParam: "offset"
+        pageSize: 100
+    endpoints:
+      - path: "/customers"
+        as: "customer"
+        domain: "crm"
+        responsePath: "$.data"
+        incrementalField: "updated_at"
+```
+
+### 2. Extract schemas (optional)
+
+```bash
+starlake extract-rest-schema --config my-api
+```
+
+This fetches a sample from each endpoint and generates Starlake YAML table definitions in `metadata/load/`.
+
+### 3. Extract data
+
+```bash
+starlake extract-rest-data --config my-api --outputDir /tmp/api-data
+```
+
+### 4. Load into warehouse
+
+```bash
+starlake load
+```
+
+## Authentication
+
+Configure authentication in the `auth` section. All credential values support `{{ENV_VAR}}` syntax for environment variable substitution.
+
+### Bearer Token
+
+```yaml
+auth:
+  type: bearer
+  token: "{{API_TOKEN}}"
+```
+
+### API Key
+
+```yaml
+auth:
+  type: api_key
+  key: "{{API_KEY}}"
+  header: "X-API-Key"           # Header name (default: X-API-Key)
+```
+
+### Basic Auth
+
+```yaml
+auth:
+  type: basic
+  username: "{{API_USER}}"
+  password: "{{API_PASSWORD}}"
+```
+
+### OAuth2 Client Credentials
+
+```yaml
+auth:
+  type: oauth2_client_credentials
+  tokenUrl: "https://auth.example.com/oauth/token"
+  clientId: "{{OAUTH_CLIENT_ID}}"
+  clientSecret: "{{OAUTH_CLIENT_SECRET}}"
+  scope: "read:data"            # Optional
+```
+
+Starlake automatically fetches tokens, caches them, and refreshes on expiry or 401 responses.
+
+## Pagination
+
+Configure pagination per endpoint or set a default for all endpoints.
+
+### Offset Pagination
+
+For APIs using `?limit=100&offset=200`:
+
+```yaml
+pagination:
+  type: offset
+  limitParam: "limit"           # Query param for page size
+  offsetParam: "offset"         # Query param for offset
+  pageSize: 100
+```
+
+### Cursor Pagination
+
+For APIs returning a cursor in the response body:
+
+```yaml
+pagination:
+  type: cursor
+  cursorParam: "after"          # Query param to pass cursor value
+  cursorPath: "$.meta.next_cursor"  # JSONPath to extract cursor from response
+  pageSize: 50
+  limitParam: "per_page"        # Optional: query param for page size
+```
+
+### Link Header Pagination
+
+For APIs using RFC 5988 `Link` headers with `rel="next"`:
+
+```yaml
+pagination:
+  type: link_header
+  pageSize: 100
+  limitParam: "per_page"        # Optional
+```
+
+### Page Number Pagination
+
+For APIs using `?page=3`:
+
+```yaml
+pagination:
+  type: page_number
+  pageParam: "page"
+  pageSize: 25
+  limitParam: "per_page"        # Optional
+```
+
+## Endpoint Configuration
+
+### Basic Endpoint
+
+```yaml
+endpoints:
+  - path: "/customers"          # API path (required)
+    as: "customer"              # Table name (default: derived from path)
+    domain: "crm"               # Domain grouping (default: "default")
+    responsePath: "$.data"      # JSONPath to data array in response
+```
+
+### POST Endpoint with Request Body
+
+```yaml
+endpoints:
+  - path: "/search"
+    method: "POST"
+    as: "search_results"
+    domain: "catalog"
+    requestBody: '{"query": "active", "filters": {"status": "published"}}'
+    responsePath: "$.hits"
+```
+
+### Custom Headers and Query Parameters
+
+```yaml
+endpoints:
+  - path: "/reports"
+    as: "report"
+    domain: "analytics"
+    headers:
+      X-Custom-Header: "value"
+    queryParams:
+      format: "detailed"
+      status: "active"
+```
+
+### Field Exclusion
+
+```yaml
+endpoints:
+  - path: "/users"
+    as: "user"
+    domain: "iam"
+    excludeFields:
+      - "password_hash"
+      - "internal_.*"           # Regex patterns supported
+```
+
+## Parent-Child Endpoints
+
+Use `{parent.fieldName}` placeholders to fetch related data for each parent record:
+
+```yaml
+endpoints:
+  - path: "/orders"
+    as: "order"
+    domain: "sales"
+    responsePath: "$.data"
+    children:
+      - path: "/orders/{parent.id}/items"
+        as: "order_item"
+        domain: "sales"
+        responsePath: "$.items"
+      - path: "/orders/{parent.id}/payments"
+        as: "order_payment"
+        domain: "sales"
+```
+
+For each order returned by `/orders`, Starlake calls `/orders/{id}/items` and `/orders/{id}/payments` with the parent order's `id` field substituted.
+
+## Incremental Extraction
+
+Track changes between runs using `incrementalField`:
+
+```yaml
+endpoints:
+  - path: "/customers"
+    as: "customer"
+    domain: "crm"
+    incrementalField: "updated_at"  # Field to track
+```
+
+Run with the `--incremental` flag:
+
+```bash
+starlake extract-rest-data --config my-api --outputDir /tmp/api-data --incremental
+```
+
+**How it works:**
+1. **First run**: Extracts all data. Saves the max value of `updated_at` to a state file at `{outputDir}/.state/crm/customer.json`.
+2. **Next run**: Reads the last value from the state file and passes it as a query parameter (`?updated_at=2024-01-15`), so the API only returns newer records.
+
+## Rate Limiting and Retries
+
+### Rate Limiting
+
+```yaml
+rateLimit:
+  requestsPerSecond: 10         # Max requests per second
+```
+
+### Automatic Retries
+
+Starlake automatically retries on:
+- **HTTP 429** (Too Many Requests) -- with exponential backoff
+- **HTTP 5xx** (Server errors) -- up to 3 retries with backoff
+- **Connection failures** -- up to 3 retries
+
+## Defaults
+
+Set default pagination, headers, and query params for all endpoints:
+
+```yaml
+defaults:
+  pagination:
+    type: offset
+    limitParam: "limit"
+    offsetParam: "offset"
+    pageSize: 100
+  headers:
+    X-API-Version: "2"
+  queryParams:
+    format: "json"
+```
+
+Individual endpoints can override any default.
+
+## Output Format
+
+Data is written as CSV files:
+
+```
+/tmp/api-data/
+  crm/
+    customer-20240115103000.csv
+    order-20240115103000.csv
+    order_item-20240115103000.csv
+  catalog/
+    product-20240115103000.csv
+```
+
+Nested JSON objects are flattened using dot notation:
+
+```csv
+"id","name","address.city","address.country"
+"1","Alice","Paris","France"
+```
+
+## XML Response Support
+
+REST APIs returning `Content-Type: application/xml` are automatically parsed and converted to JSON for processing. XML elements become JSON fields, repeated elements become arrays, and attributes are prefixed with `@`.
+
+## Full Configuration Reference
+
+| Field | Location | Description |
+|-------|----------|-------------|
+| `baseUrl` | `restAPI` | Base URL of the API (required) |
+| `auth` | `restAPI` | Authentication config |
+| `auth.type` | `restAPI.auth` | `bearer`, `api_key`, `basic`, `oauth2_client_credentials` |
+| `headers` | `restAPI` | Global HTTP headers |
+| `rateLimit.requestsPerSecond` | `restAPI.rateLimit` | Max requests/second (default: 10) |
+| `defaults.pagination` | `restAPI.defaults` | Default pagination for all endpoints |
+| `defaults.headers` | `restAPI.defaults` | Default headers for all endpoints |
+| `defaults.queryParams` | `restAPI.defaults` | Default query params for all endpoints |
+| `endpoints[].path` | `restAPI.endpoints` | API endpoint path (required) |
+| `endpoints[].method` | `restAPI.endpoints` | `GET` (default) or `POST` |
+| `endpoints[].as` | `restAPI.endpoints` | Table name override |
+| `endpoints[].domain` | `restAPI.endpoints` | Domain name (default: `default`) |
+| `endpoints[].headers` | `restAPI.endpoints` | Endpoint-specific headers |
+| `endpoints[].queryParams` | `restAPI.endpoints` | Endpoint-specific query params |
+| `endpoints[].requestBody` | `restAPI.endpoints` | JSON body for POST requests |
+| `endpoints[].pagination` | `restAPI.endpoints` | Endpoint-specific pagination |
+| `endpoints[].responsePath` | `restAPI.endpoints` | JSONPath to data array (e.g. `$.data`) |
+| `endpoints[].incrementalField` | `restAPI.endpoints` | Field for incremental tracking |
+| `endpoints[].children` | `restAPI.endpoints` | Child endpoints with `{parent.field}` placeholders |
+| `endpoints[].excludeFields` | `restAPI.endpoints` | Regex patterns to exclude fields |
+
+## CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| [`extract-rest-schema`](/cli/extract-rest-schema) | Infer table schemas from API sample responses |
+| [`extract-rest-data`](/cli/extract-rest-data) | Extract data to CSV files |
+
+## Frequently Asked Questions
+
+### What REST APIs does Starlake support?
+Any REST API returning JSON or XML. You configure the base URL, authentication, pagination, and response structure in YAML.
+
+### What authentication methods are supported?
+Bearer tokens, API keys (in custom headers), HTTP Basic, and OAuth2 client credentials with automatic token refresh.
+
+### What pagination strategies are available?
+Offset (limit/offset), cursor (cursor from response body), Link header (RFC 5988), and page number.
+
+### Can I extract data incrementally?
+Yes. Set `incrementalField` on the endpoint and run with `--incremental`. State is tracked in a JSON file between runs.
+
+### How are nested JSON objects handled?
+Objects are flattened to dot notation in CSV (e.g., `address.city`). Arrays and deeply nested objects are serialized as JSON strings.
+
+### How do parent-child endpoints work?
+Child endpoints use `{parent.fieldName}` in their path. For each parent record, the child endpoint is called with the field value substituted.

@@ -2,6 +2,6 @@
   "label": "Extract",
   "link": {
     "type": "generated-index",
-    "description": "Extract tables in one shot and incrementally from a database as a set of files."
+    "description": "Extract tables from databases and REST APIs, in one shot or incrementally, as a set of files."
   }
 }
