@@ -17,7 +17,7 @@ Starlake and dlt are both open-source data pipeline tools, but they take fundame
 |---|---|---|
 | **Files** | CSV, JSON, XML, Parquet, fixed-width | CSV, JSON, Parquet |
 | **Databases** | JDBC extraction with incremental support | 100+ databases via SQLAlchemy |
-| **APIs** | — | REST API declarative source, 60+ verified connectors |
+| **APIs** | REST API extraction (any JSON/XML API) with auth, pagination, rate limiting, incremental support | REST API declarative source, 60+ verified connectors |
 | **Streams** | Kafka / Kafka Streams | — |
 
 ## Destinations
@@ -117,6 +117,6 @@ Starlake and dlt are both open-source data pipeline tools, but they take fundame
 - You need comprehensive data quality (53 expectation macros, type validation, rejection routing)
 - You need built-in security (column masking, RLS, ACL)
 - You want auto-generated orchestration DAGs
-- Your sources are primarily files (CSV, JSON, XML, fixed-width) or JDBC databases
+- Your sources are primarily files (CSV, JSON, XML, fixed-width), JDBC databases, or REST APIs
 - You work across multiple SQL engines and need dialect transpilation
 

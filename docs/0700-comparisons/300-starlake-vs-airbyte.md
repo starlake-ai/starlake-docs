@@ -15,12 +15,12 @@ Starlake and Airbyte are both open-source data integration tools, but they serve
 
 | | Starlake | Airbyte |
 |---|---|---|
-| **Connectors** | Files, JDBC databases, Kafka | 400+ pre-built connectors (SaaS, APIs, databases, files) |
+| **Connectors** | Files, JDBC databases, REST APIs, Kafka | 400+ pre-built connectors (SaaS, APIs, databases, files) |
 | **Files** | CSV, JSON, XML, Parquet, fixed-width | CSV, JSON, Parquet, Avro (via File/S3/GCS sources) |
 | **Databases** | JDBC extraction with incremental support | CDC (Debezium), incremental, full refresh per connector |
-| **APIs** | — | REST APIs, GraphQL, SaaS platforms (Salesforce, HubSpot, Stripe, etc.) |
+| **APIs** | REST API extraction (any JSON/XML API) with auth, pagination, rate limiting, incremental support | REST APIs, GraphQL, SaaS platforms (Salesforce, HubSpot, Stripe, etc.) |
 | **Streams** | Kafka / Kafka Streams | — |
-| **Custom sources** | — | Connector Builder (low-code) or Connector Development Kit (Python) |
+| **Custom sources** | OpenAPI schema extraction for automatic table generation | Connector Builder (low-code) or Connector Development Kit (Python) |
 
 ## Destinations
 
@@ -122,5 +122,5 @@ Starlake and Airbyte are both open-source data integration tools, but they serve
 - You need comprehensive data quality (53 expectation macros, type validation, rejection routing)
 - You need built-in security (column masking, RLS, ACL)
 - You want auto-generated orchestration DAGs
-- Your sources are primarily files (CSV, JSON, XML, fixed-width), JDBC databases, or Kafka streams
+- Your sources are primarily files (CSV, JSON, XML, fixed-width), JDBC databases, REST APIs, or Kafka streams
 - You work across multiple SQL engines and need dialect transpilation

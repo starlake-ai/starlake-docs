@@ -91,7 +91,7 @@ Both projects have active communities and are used in production by companies of
 
 | Feature | Starlake | dbt |
 |---|---|---|
-| **Extract (EL)** | Built-in zero-code extraction from any JDBC/ODBC source | Not included -- requires external tools (Fivetran, Airbyte, etc.) |
+| **Extract (EL)** | Built-in zero-code extraction from JDBC/ODBC sources and REST APIs (with auth, pagination, rate limiting, incremental support) | Not included -- requires external tools (Fivetran, Airbyte, etc.) |
 | **Load** | Built-in multi-format loading (CSV, JSON, XML, Parquet, Avro, Fixed-width) with schema validation, encryption and write strategies | CSV seed files only (intended for small reference data) |
 | **Transform** | Standard SQL with YAML configuration -- no templating language | Jinja-templated SQL with YAML configuration |
 | **Testing** | Unit tests run locally on DuckDB; load and transform tests with expected results | Built-in generic and singular tests; community packages extend testing |
