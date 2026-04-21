@@ -1,5 +1,5 @@
 ---
-sidebar_position: 155
+sidebar_position: 160
 title: extract-rest-schema
 description: "Extract schemas from REST API endpoints by fetching sample data and inferring the structure."
 keywords: [starlake extract-rest-schema, REST API, schema extraction, API schema]
@@ -12,16 +12,17 @@ keywords: [starlake extract-rest-schema, REST API, schema extraction, API schema
 
 ## Description
 
-Extract schemas from REST API endpoints by fetching sample responses and inferring the data structure. Generates Starlake YAML configuration files (domain + table definitions) that can be used for subsequent data extraction and ingestion.
+Extract schemas from REST API endpoints by fetching sample responses and inferring
+the data structure. Generates Starlake YAML configuration files (domain + table definitions)
+that can be used for subsequent data extraction and ingestion.
 
-See [REST API Extraction Guide](/guides/extract/extract-rest-api).
+Examples
+========
 
-## Examples
+  starlake.sh extract-rest-schema --config my-rest-api
+  starlake.sh extract-rest-schema --config my-rest-api --outputDir /tmp/schemas
 
-```bash
-starlake extract-rest-schema --config my-rest-api
-starlake extract-rest-schema --config my-rest-api --outputDir /tmp/schemas
-```
+
 
 ## Parameters
 

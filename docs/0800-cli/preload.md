@@ -1,5 +1,5 @@
 ---
-sidebar_position: 300
+sidebar_position: 320
 title: preload
 description: "Pre-load domains and tables using a configurable strategy before the main ingestion step, with global ack file support."
 keywords: [starlake preload, data pre-loading, ingestion preparation, ETL pipeline]

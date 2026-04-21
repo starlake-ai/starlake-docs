@@ -1,5 +1,5 @@
 ---
-sidebar_position: 160
+sidebar_position: 180
 title: extract-script
 description: "Generate database extraction scripts from domain schemas using Mustache templates for tools like sqlplus or pgsql export."
 keywords: [starlake extract-script, extraction scripts, SQL generation, database export]

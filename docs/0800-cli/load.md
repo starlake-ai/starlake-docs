@@ -1,5 +1,5 @@
 ---
-sidebar_position: 260
+sidebar_position: 280
 title: load
 description: "Ingest raw files into your data warehouse by watching specified domains and tables with schema validation and options."
 keywords: [starlake load, data ingestion, file loading, schema validation, ETL]
