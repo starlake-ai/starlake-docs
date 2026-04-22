@@ -354,12 +354,98 @@ rateLimit:
   requestsPerSecond: 10         # Max requests per second
 ```
 
-### Automatic Retries
+### Retry Configuration
+
+```yaml
+retry:
+  maxRetries: 5                  # Default: 3
+  initialBackoffMs: 2000         # Default: 1000 (doubles on each retry)
+  maxBackoffMs: 60000            # Default: 30000
+```
 
 Starlake automatically retries on:
 - **HTTP 429** (Too Many Requests) -- with exponential backoff
-- **HTTP 5xx** (Server errors) -- up to 3 retries with backoff
-- **Connection failures** -- up to 3 retries
+- **HTTP 5xx** (Server errors) -- up to `maxRetries` with backoff
+- **Connection failures** -- up to `maxRetries`
+
+### Timeout Configuration
+
+```yaml
+timeout:
+  connectTimeoutMs: 15000        # Default: 30000 (30s)
+  readTimeoutMs: 120000          # Default: 60000 (60s)
+```
+
+## Proxy Support
+
+For APIs behind corporate proxies:
+
+```yaml
+proxy:
+  host: "proxy.corp.example.com"
+  port: 8080
+  username: "{{PROXY_USER}}"     # Optional
+  password: "{{PROXY_PASS}}"     # Optional
+```
+
+## TLS / mTLS Configuration
+
+For APIs requiring custom CA certificates or mutual TLS (client certificates):
+
+```yaml
+tls:
+  trustStorePath: "/path/to/truststore.jks"
+  trustStorePassword: "{{TRUST_STORE_PASS}}"
+  keyStorePath: "/path/to/keystore.jks"       # For mTLS client cert
+  keyStorePassword: "{{KEY_STORE_PASS}}"
+```
+
+For development/testing only (not recommended for production):
+
+```yaml
+tls:
+  insecure: true                 # Trust all certificates
+```
+
+## Response Validation
+
+Some APIs return errors inside HTTP 200 responses. Use `errorPath` to detect these:
+
+```yaml
+endpoints:
+  - path: "/data"
+    as: "data"
+    domain: "api"
+    errorPath: "$.error"          # If $.error is non-null, treat as error
+```
+
+## Resume on Failure
+
+If extraction fails mid-way (e.g., network error on page 50 of 100), resume from where it stopped:
+
+```bash
+starlake extract-rest-data --config my-api --outputDir /tmp/api-data --resume
+```
+
+Starlake tracks the number of pages extracted per endpoint in the state file. On `--resume`, it skips already-extracted pages and continues from the next one.
+
+## Output Formats
+
+### CSV (default)
+
+```bash
+starlake extract-rest-data --config my-api --outputDir /tmp/api-data
+```
+
+Nested JSON objects are flattened using dot notation (e.g., `address.city`).
+
+### JSON Lines
+
+```bash
+starlake extract-rest-data --config my-api --outputDir /tmp/api-data --outputFormat jsonl
+```
+
+Writes one JSON object per line, preserving the full nested structure. Better for complex/array data.
 
 ## Defaults
 
@@ -380,27 +466,6 @@ defaults:
 
 Individual endpoints can override any default.
 
-## Output Format
-
-Data is written as CSV files:
-
-```
-/tmp/api-data/
-  crm/
-    customer-20240115103000.csv
-    order-20240115103000.csv
-    order_item-20240115103000.csv
-  catalog/
-    product-20240115103000.csv
-```
-
-Nested JSON objects are flattened using dot notation:
-
-```csv
-"id","name","address.city","address.country"
-"1","Alice","Paris","France"
-```
-
 ## XML Response Support
 
 REST APIs returning `Content-Type: application/xml` are automatically parsed and converted to JSON for processing. XML elements become JSON fields, repeated elements become arrays, and attributes are prefixed with `@`.
@@ -414,6 +479,16 @@ REST APIs returning `Content-Type: application/xml` are automatically parsed and
 | `auth.type` | `restAPI.auth` | `bearer`, `api_key`, `basic`, `oauth2_client_credentials` |
 | `headers` | `restAPI` | Global HTTP headers |
 | `rateLimit.requestsPerSecond` | `restAPI.rateLimit` | Max requests/second (default: 10) |
+| `retry.maxRetries` | `restAPI.retry` | Max retry attempts (default: 3) |
+| `retry.initialBackoffMs` | `restAPI.retry` | Initial backoff ms (default: 1000) |
+| `retry.maxBackoffMs` | `restAPI.retry` | Max backoff ms (default: 30000) |
+| `timeout.connectTimeoutMs` | `restAPI.timeout` | Connection timeout ms (default: 30000) |
+| `timeout.readTimeoutMs` | `restAPI.timeout` | Read timeout ms (default: 60000) |
+| `proxy.host` | `restAPI.proxy` | Proxy hostname |
+| `proxy.port` | `restAPI.proxy` | Proxy port |
+| `tls.trustStorePath` | `restAPI.tls` | Path to trust store (JKS) |
+| `tls.keyStorePath` | `restAPI.tls` | Path to key store for mTLS |
+| `tls.insecure` | `restAPI.tls` | Trust all certs (dev only) |
 | `defaults.pagination` | `restAPI.defaults` | Default pagination for all endpoints |
 | `defaults.headers` | `restAPI.defaults` | Default headers for all endpoints |
 | `defaults.queryParams` | `restAPI.defaults` | Default query params for all endpoints |
@@ -429,6 +504,7 @@ REST APIs returning `Content-Type: application/xml` are automatically parsed and
 | `endpoints[].incrementalField` | `restAPI.endpoints` | Field for incremental tracking |
 | `endpoints[].children` | `restAPI.endpoints` | Child endpoints with `{parent.field}` placeholders |
 | `endpoints[].excludeFields` | `restAPI.endpoints` | Regex patterns to exclude fields |
+| `endpoints[].errorPath` | `restAPI.endpoints` | JSONPath to error indicator in 200 responses |
 
 ## CLI Commands
 

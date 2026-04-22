@@ -1,8 +1,8 @@
 ---
 sidebar_position: 150
 title: extract-rest-data
-description: "Extract data from REST API endpoints into CSV files with support for pagination, authentication, and rate limiting."
-keywords: [starlake extract-rest-data, REST API, data extraction, API data]
+description: "Extract data from REST API endpoints into CSV or JSON Lines files with pagination, authentication, rate limiting, proxy, mTLS, incremental extraction, and resume on failure."
+keywords: [starlake extract-rest-data, REST API, data extraction, API data, JSON Lines, incremental]
 ---
 
 
@@ -33,6 +33,8 @@ Parameter|Cardinality|Description
 --config `<value>`|*Required*|REST API extraction config file (in metadata/extract/)
 --outputDir `<value>`|*Required*|Where to output CSV files
 --limit `<value>`|*Optional*|Limit number of records per endpoint
---parallelism `<value>`|*Optional*|Parallelism level for endpoint extraction. Default: 16
---incremental `<value>`|*Optional*|Only extract new data since last extraction. Uses incrementalField from endpoint config.
+--parallelism `<value>`|*Optional*|Parallelism level for endpoint extraction. Default: available CPU cores
+--incremental|*Optional*|Only extract new data since last extraction. Uses incrementalField from endpoint config.
+--resume|*Optional*|Resume extraction from where a previous run failed, skipping already-extracted pages.
+--outputFormat `<value>`|*Optional*|Output format: `csv` (default) or `jsonl` (JSON Lines, preserves nested structures)
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
