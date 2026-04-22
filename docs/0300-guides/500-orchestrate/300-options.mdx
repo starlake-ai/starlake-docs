@@ -150,6 +150,64 @@ Related options for ACK strategy:
 </TabItem>
 </Tabs>
 
+### pre_load_not_ready_sentinel_path
+
+Opt-in feature that disambiguates "files not ready yet" from "real error" when the pre-load step runs inside a Cloud Run job.
+
+**Applies to:** `StarlakeAirflowCloudRunJob`, `StarlakeDagsterCloudRunJob` (GCP Cloud Run runner only). Other runners fall through to the legacy behavior.
+
+| | |
+|---|---|
+| **Type** | string (GCS URI prefix) |
+| **Default** | *(unset &mdash; feature off)* |
+| **Required** | No |
+
+#### The problem it solves
+
+When a Cloud Run pre-load job exits with code 1, that same exit code is produced by two very different outcomes:
+
+1. **"Not ready"** &mdash; files haven't arrived yet (IMPORTED/PENDING find zero files, ACK file missing). The DAG should wait and retry.
+2. **Real error** &mdash; the pre-load crashed, config is invalid, permissions denied. The DAG should fail fast.
+
+Without this option, the Cloud Run console shows red "Failed" executions for every routine "not ready" poll, and neither Airflow nor Dagster can distinguish the two cases.
+
+#### How it works
+
+When set, the orchestration layer:
+
+1. Appends `--notReadySentinel <resolved-path>` to the Cloud Run container arguments. The Starlake CLI writes a zero-byte marker at that path **only when the pre-load decides files are not yet ready**, and exits `0`. Genuine crashes still exit non-zero and never write the sentinel.
+2. After the Cloud Run task succeeds, the Airflow `CloudRunJobCompletionSensor` (or the Dagster Cloud Run op) checks GCS for the sentinel. If present, it deletes the sentinel and raises an exception so the orchestrator's task-retry machinery re-fires the whole TaskGroup after `retry_delay_in_seconds` &mdash; that's how "wait for files" is expressed.
+3. If the sentinel is absent, the sensor/op passes and downstream load tasks run.
+
+You gain:
+
+- **Clean Cloud Run console.** Only genuine crashes show red; "not ready" polls all show green executions.
+- **Unambiguous "real error" signal.** Any non-zero Cloud Run exit now unambiguously means a crash / config error.
+- **Cross-runner contract.** Airflow and Dagster consume the same sentinel via one DagInfo option.
+
+#### Path contract
+
+The user supplies only a **parent prefix**. Orchestration automatically appends `<domain>/<run_id>.notready`, producing concrete paths like `gs://my-bucket/_sl/preload/sales/scheduled__2026-04-22T06-00-00.notready`. Domain scoping and per-run uniqueness are non-negotiable &mdash; these prevent two common footguns (cross-domain collisions, concurrent-run collisions). The run id is resolved by Airflow Jinja on the Airflow side and by an explicit `OpExecutionContext.run_id` substitution on the Dagster side.
+
+#### Example
+
+```yaml
+dag:
+  options:
+    # Point at a parent prefix — <domain>/<run_id>.notready is appended automatically.
+    pre_load_not_ready_sentinel_path: "gs://my-bucket/_sl/preload"
+    # Tune the "wait for files" window. Defaults (retries=0, no retries) mean
+    # the task fails immediately on the first "not ready" signal — set retries > 0.
+    # On Cloud Run, retry_delay is overridden per-task by retry_delay_in_seconds.
+    retries: "12"
+    retry_delay_in_seconds: "300"  # 12 retries × 5 min = ~1h polling window
+```
+
+#### Recommended hygiene
+
+- Add a GCS lifecycle rule on the `_sl/preload/` prefix (e.g., delete after 7 days) as a safety net for orphan sentinels &mdash; the sensor normally deletes on detection, but a failed orchestrator restart could leave one behind.
+- The Starlake CLI version running inside your Cloud Run container must support `--notReadySentinel` (introduced alongside this feature). Earlier CLI versions will reject the unknown flag.
+
 ### run_dependencies_first
 
 When set to `true`, all dependencies (upstream tables and tasks) for each transformation are **generated as tasks within the same DAG**. When `false` (the default), the orchestrator's native data-aware scheduling mechanism is used instead.
@@ -175,8 +233,10 @@ Number of times to retry a failed task.
 | | |
 |---|---|
 | **Type** | integer (as string) |
-| **Default** | `1` |
+| **Default** | `0` |
 | **Required** | No |
+
+`0` means a failed task fails the DAG immediately &mdash; no implicit retries. Set explicitly when you want retry behavior (e.g., when using [`pre_load_not_ready_sentinel_path`](#pre_load_not_ready_sentinel_path), you must set `retries > 0` to provide a "wait for files" window).
 
 ### retry_delay
 
@@ -187,6 +247,10 @@ Delay in seconds between retries.
 | **Type** | integer (as string) |
 | **Default** | `300` |
 | **Required** | No |
+
+:::note
+For the GCP Cloud Run runner, per-task `retry_delay` is overridden by [`retry_delay_in_seconds`](#gcp-cloud-run) (default `10`s) &mdash; so setting `retry_delay` at the general level has no effect on Cloud Run tasks. Tune `retry_delay_in_seconds` instead.
+:::
 
 ### start_date
 
@@ -347,7 +411,7 @@ Overrides for the default Airflow DAG arguments, as a JSON-encoded string.
 | | |
 |---|---|
 | **Type** | JSON string |
-| **Default** | `{"depends_on_past": false, "email_on_failure": false, "email_on_retry": false, "retries": 1, "retry_delay": 300}` |
+| **Default** | `{"depends_on_past": false, "email_on_failure": false, "email_on_retry": false, "retries": 0, "retry_delay": 300}` |
 | **Required** | No |
 
 ```yaml
@@ -397,8 +461,9 @@ Executes starlake commands by running a **Cloud Run job**.
 | `cloud_run_service_account` | `""` | No | Service account for the Cloud Run job |
 | `cloud_run_async` | `true` | No | Run the job asynchronously (Airflow only) |
 | `cloud_run_async_poke_interval` | `10` | No | Polling interval in seconds when async (Airflow only) |
-| `retry_on_failure` | `false` | No | Retry the Cloud Run job on failure |
-| `retry_delay_in_seconds` | `10` | No | Delay in seconds before retrying |
+| `retry_on_failure` | `false` | No | *(Legacy; no longer consulted by the sensor after the execution-failure fix.)* |
+| `retry_delay_in_seconds` | `10` | No | Per-task delay in seconds between Airflow retries for this Cloud Run task. **Overrides the general [`retry_delay`](#retry_delay) option** for Cloud Run tasks. |
+| `pre_load_not_ready_sentinel_path` | *(unset)* | No | Opt-in sentinel for pre-load "not ready" signaling. See [the dedicated section](#pre_load_not_ready_sentinel_path). |
 
 ```yaml title="Airflow Cloud Run example"
 dag:
