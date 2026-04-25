@@ -18,7 +18,7 @@ Starlake and Fivetran both move data into cloud warehouses, but they differ in s
 |---|---|---|
 | **Connectors** | Files, JDBC databases, REST APIs, Kafka | 500+ pre-built connectors (SaaS, APIs, databases, files, events) |
 | **Files** | CSV, JSON, XML, Parquet, fixed-width | CSV, JSON, Parquet, Avro, XLSX (via S3/GCS/Azure/SFTP/Box/Dropbox) |
-| **Databases** | JDBC extraction with incremental support | Log-based CDC for Postgres, MySQL, Oracle, SQL Server, MongoDB, etc. |
+| **Databases** | JDBC extraction with incremental support and [CDC](/guides/load/cdc) (push via Debezium/Kafka, pull via watermark) | Log-based CDC for Postgres, MySQL, Oracle, SQL Server, MongoDB, etc. |
 | **APIs** | REST API extraction (any JSON/XML API) with auth, pagination, rate limiting, incremental support | SaaS connectors (Salesforce, HubSpot, NetSuite, Workday, Stripe, etc.) |
 | **Streams** | Kafka / Kafka Streams | Kafka, Kinesis, Confluent Cloud |
 | **Custom sources** | OpenAPI schema extraction for automatic table generation | Connector SDK (Python) and Cloud Functions connectors |
@@ -54,6 +54,18 @@ Starlake and Fivetran both move data into cloud warehouses, but they differ in s
 | Delete then insert | DELETE_THEN_INSERT | — |
 | SCD2 | SCD2 | History Mode (Type 2 change tracking) |
 | Adaptive (runtime) | ADAPTATIVE | — |
+
+## CDC (Change Data Capture)
+
+| | Starlake | Fivetran |
+|---|---|---|
+| **Push-based CDC** | Debezium/Kafka ingestion with automatic offset tracking | Built-in log-based CDC (managed Debezium) for supported databases |
+| **Pull-based CDC** | Incremental JDBC extraction with `SL_LAST_EXPORT` watermark tracking | Cursor-based incremental sync |
+| **File-based CDC** | Load change files with operation column, merge via transform | — |
+| **Delete propagation** | `presql` for delete handling, soft-delete support | `_fivetran_deleted` soft-delete column |
+| **SCD2 history** | Built-in SCD2 write strategy with configurable start/end timestamps | History Mode (append-only with `_fivetran_active`, `_fivetran_start`, `_fivetran_end`) |
+| **Deduplication** | `SOURCE_AND_TARGET` deduplicates within batch before merge | Managed deduplication per connector |
+| **CDC engines** | Any database via Debezium + Kafka, or JDBC watermark | Proprietary connectors per database |
 
 ## Transformations
 

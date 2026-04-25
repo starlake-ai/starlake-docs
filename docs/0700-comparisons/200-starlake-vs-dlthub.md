@@ -16,7 +16,7 @@ Starlake and dlt are both open-source data pipeline tools, but they take fundame
 | | Starlake | dlt |
 |---|---|---|
 | **Files** | CSV, JSON, XML, Parquet, fixed-width | CSV, JSON, Parquet |
-| **Databases** | JDBC extraction with incremental support | 100+ databases via SQLAlchemy |
+| **Databases** | JDBC extraction with incremental support and [CDC](/guides/load/cdc) (push via Debezium/Kafka, pull via watermark) | 100+ databases via SQLAlchemy |
 | **APIs** | REST API extraction (any JSON/XML API) with auth, pagination, rate limiting, incremental support | REST API declarative source, 60+ verified connectors |
 | **Streams** | Kafka / Kafka Streams | — |
 
@@ -51,6 +51,16 @@ Starlake and dlt are both open-source data pipeline tools, but they take fundame
 | Delete then insert | DELETE_THEN_INSERT | `merge` + `delete-insert` strategy |
 | SCD2 | SCD2 | `merge` + `scd2` strategy |
 | Adaptive (runtime) | ADAPTATIVE | — |
+
+## CDC (Change Data Capture)
+
+| | Starlake | dlt |
+|---|---|---|
+| **Push-based CDC** | Debezium/Kafka ingestion with automatic offset tracking | — |
+| **Pull-based CDC** | Incremental JDBC extraction with `SL_LAST_EXPORT` watermark tracking | Incremental loading via `last_value` state |
+| **File-based CDC** | Load change files with operation column, merge via transform | — |
+| **Delete propagation** | `presql` for delete handling, soft-delete support | `hard_delete` hint on merge |
+| **Deduplication** | `SOURCE_AND_TARGET` deduplicates within batch before merge | Deduplication via `merge` disposition |
 
 ## Transformations
 
