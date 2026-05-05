@@ -11,6 +11,13 @@ description: Guided methodology for planning and implementing data pipelines wit
 Starflow is currently in **preview**. The methodology and skills are available for early adopters, but APIs and workflows may change.
 :::
 
+:::caution Preview limitations
+- Skill names, the manifest schema (`_config/starflow-help.csv`), and config layering rules may change between releases.
+- The layered config resolver requires Python 3 with PyYAML on the host running the skill.
+- Step-file workflows assume the artifact lives under `planning-artifacts/` or `implementation-artifacts/` (configurable, see below) — moving the file mid-workflow breaks resume.
+- Persona voices are tuned for Claude; behavior on other assistants (Copilot, Gemini) may diverge.
+:::
+
 Starflow is an optional guided methodology layer that helps you plan and implement data pipelines step-by-step. While Starlake Skills give you direct access to every CLI command, Starflow provides a structured workflow with specialized agent personas that guide you through the full lifecycle — from domain discovery to production deployment.
 
 ## When to Use Starflow
@@ -37,12 +44,13 @@ Starflow organizes work into four phases, each with dedicated skills:
   │          │
   │          ▼
   │     4. Implementation
-  │          │
-  │          ▼
-  │     Quality Review + Retrospective
-  │          │
+  │          │  sprint → dev → review → retro
   └──────────┘
-       iterate
+        next epic
+
+  Quality Review (cross-cutting, run at any phase):
+    • starflow-data-quality-review
+    • starflow-lineage-review
 ```
 
 ### Phase 1: Discovery
@@ -56,7 +64,7 @@ Map your data landscape before writing any configuration.
 
 ### Phase 2: Architecture
 
-Design the platform and schemas that will support your pipelines.
+Design the platform and schemas that will support your pipelines. See also: [Schema Management](../0200-catalog/schema-management.md).
 
 | Skill | Description |
 |---|---|
@@ -65,7 +73,7 @@ Design the platform and schemas that will support your pipelines.
 
 ### Phase 3: Pipeline Design
 
-Specify pipelines end-to-end before implementation.
+Specify pipelines end-to-end before implementation. See also: [Ingestion](../0200-catalog/ingestion.md), [Transformation](../0200-catalog/transformation.md), [Orchestration](../0200-catalog/orchestration.md).
 
 | Skill | Description |
 |---|---|
@@ -75,7 +83,7 @@ Specify pipelines end-to-end before implementation.
 
 ### Phase 4: Implementation
 
-Build, test, deploy, and reflect on your pipelines.
+Build, test, deploy, and reflect on your pipelines. See also: [Ingestion](../0200-catalog/ingestion.md), [Transformation](../0200-catalog/transformation.md).
 
 | Skill | Description |
 |---|---|
@@ -86,12 +94,35 @@ Build, test, deploy, and reflect on your pipelines.
 
 ### Quality Review
 
-Cross-cutting skills for validating pipelines at any phase.
+Cross-cutting skills for validating pipelines at any phase. See also: [Data Quality](../0200-catalog/data-quality.md), [Lineage](../0200-catalog/lineage.md).
 
 | Skill | Description |
 |---|---|
 | `starflow-data-quality-review` | Review expectations coverage and identify gaps across pipelines |
 | `starflow-lineage-review` | Trace and document data lineage across pipeline stages |
+
+## What Starflow Produces
+
+Each skill writes a markdown artifact you can read, version, and iterate on. The default output layout (configurable — see [Layered Configuration](#layered-configuration) below) is:
+
+```
+{project-root}/starflow-output/
+├── planning-artifacts/
+│   ├── domain-discovery-*.md       # Phase 1
+│   ├── source-analysis-*.md        # Phase 1
+│   ├── data-architecture-*.md      # Phase 2
+│   └── schema-design-*.md          # Phase 2
+└── implementation-artifacts/
+    ├── pipeline-spec-*.md          # Phase 3 (step-file workflow)
+    ├── transform-design-*.md       # Phase 3
+    ├── orchestration-design-*.md   # Phase 3
+    ├── sprint-plan-*.md            # Phase 4
+    ├── *-implementation/           # Phase 4 — generated YAML + SQL
+    ├── review-*.md                 # Phase 4 — adversarial review report
+    └── retrospective-epic-*.md     # Phase 4 — end-of-epic retro
+```
+
+Artifacts produced by step-file workflows (`pipeline-spec-*.md`, `review-*.md`, `retrospective-epic-*.md`) carry a `stepsCompleted: [...]` list in their frontmatter so the workflow can resume across sessions.
 
 ## Agent Personas
 
@@ -136,6 +167,21 @@ Starflow defaults are resolved from three layers (highest wins):
 3. **Personal** — `.agents/starflow/config/custom/starflow.user.yaml` (gitignored)
 
 The same model applies to each skill's `customize.yaml`. Skills resolve config at runtime via `python3 .agents/starflow/scripts/resolve_config.py --starflow-root <path>`, which deep-merges mappings and merges sequences of mappings by their `code` or `id` key — so a team can override a single agent's `description` without re-listing the others. See [`.agents/starflow/config/README.md`](https://github.com/starlake-ai/starlake-skills/blob/main/.agents/starflow/config/README.md) in the skills repo for full merge semantics.
+
+For example, to set the team's default engine to Snowflake and tighten Winston's voice without re-declaring the other personas, drop this in `.agents/starflow/config/custom/starflow.yaml`:
+
+```yaml
+default_engine: snowflake
+target_engines:
+  - snowflake
+  - bigquery
+
+agents:
+  - code: data-architect
+    description: "Channels Kimball at the whiteboard. Always names a recommended option, never just trade-offs."
+```
+
+The `agents` list merges by `code`: only `data-architect` is touched; Lea, Amelia, Quinn, and Max keep their base values.
 
 ## Getting Started
 
