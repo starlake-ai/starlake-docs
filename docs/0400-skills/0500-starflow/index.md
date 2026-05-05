@@ -39,7 +39,7 @@ Starflow organizes work into four phases, each with dedicated skills:
   │     4. Implementation
   │          │
   │          ▼
-  │     Quality Review
+  │     Quality Review + Retrospective
   │          │
   └──────────┘
        iterate
@@ -60,7 +60,7 @@ Design the platform and schemas that will support your pipelines.
 
 | Skill | Description |
 |---|---|
-| `starflow-create-data-architecture` | Design layers (landing, bronze, silver, gold), engines, storage, and governance |
+| `starflow-create-data-architecture` | Design layers (raw, staging, mart), engines, storage, and governance |
 | `starflow-schema-design` | Design Starlake-compatible table schemas with types, constraints, privacy, and expectations |
 
 ### Phase 3: Pipeline Design
@@ -71,17 +71,18 @@ Specify pipelines end-to-end before implementation.
 |---|---|
 | `starflow-create-pipeline-spec` | Create complete pipeline specifications covering extract, load, transform, and orchestrate |
 | `starflow-transform-design` | Design SQL transformations with quality checks and dependency management |
-| `starflow-orchestration-design` | Design DAGs for scheduling and managing pipeline execution |
+| `starflow-orchestration-design` | Design DAGs, schedules, and retry/timeout policies for pipeline execution |
 
 ### Phase 4: Implementation
 
-Build, test, and deploy your pipelines.
+Build, test, deploy, and reflect on your pipelines.
 
 | Skill | Description |
 |---|---|
-| `starflow-dev-pipeline` | Generate Starlake configuration files (YAML + SQL) from specifications |
 | `starflow-sprint-planning` | Break down pipeline work into sprint-sized tasks with dependency ordering |
-| `starflow-code-review` | Review configurations and SQL across five layers before deployment |
+| `starflow-dev-pipeline` | Generate Starlake configuration files (YAML + SQL) from specifications |
+| `starflow-code-review` | Adversarial parallel review (Winston + Amelia + Quinn) before deployment |
+| `starflow-retrospective` | End-of-epic retrospective that checks follow-through on the previous retro's action items |
 
 ### Quality Review
 
@@ -108,17 +109,38 @@ Talk to a specialized agent for guided assistance. Each agent coordinates multip
 You: /starflow-data-architect Design a data platform for our e-commerce analytics
 ```
 
-## Navigation
+## How Starflow Works
 
-Use `starflow-help` at any time to get recommendations on what to do next based on your project's current state:
+### Step-File Workflows
+
+The heavier workflows — `starflow-create-pipeline-spec`, `starflow-code-review`, and `starflow-retrospective` — use a **step-file architecture**. Each step lives in its own `steps/step-NN-*.md` file with explicit halt-for-input checkpoints, and progress persists in a `stepsCompleted: [...]` list in the output document's frontmatter. A workflow can therefore resume cleanly across sessions or context windows: rerun the skill on the same output file and it picks up at the next uncompleted step.
+
+### Adversarial Parallel Code Review
+
+`starflow-code-review` spawns three independent persona subagents in parallel — **Winston** (architecture), **Amelia** (engineering), **Quinn** (data quality) — each with a focused prompt and the same code under review. Findings are then deduplicated and triaged into BLOCKER / WARNING / SUGGESTION / APPROVED. The independence is the point: each reviewer applies a different lens, surfacing issues a single-pass review would miss.
+
+### Adaptive Help
+
+`starflow-help` is more than a menu. It reads the skill manifest at `.agents/starflow/_config/starflow-help.csv` (with `phase`, `after`, `before`, `required`, `output-location`, and `outputs` columns) and scans your artifacts directory to detect which steps are already done. It then recommends the **next required skill** based on dependencies — not a hard-coded order — so it works whether you started with discovery or jumped in mid-stream.
 
 ```
 You: /starflow-help What should I work on next?
 ```
+
+### Layered Configuration
+
+Starflow defaults are resolved from three layers (highest wins):
+
+1. **Base** — `.agents/starflow/config/starflow.yaml` (installer-managed, treat as read-only)
+2. **Team** — `.agents/starflow/config/custom/starflow.yaml` (committed to your repo)
+3. **Personal** — `.agents/starflow/config/custom/starflow.user.yaml` (gitignored)
+
+The same model applies to each skill's `customize.yaml`. Skills resolve config at runtime via `python3 .agents/starflow/scripts/resolve_config.py --starflow-root <path>`, which deep-merges mappings and merges sequences of mappings by their `code` or `id` key — so a team can override a single agent's `description` without re-listing the others. See [`.agents/starflow/config/README.md`](https://github.com/starlake-ai/starlake-skills/blob/main/.agents/starflow/config/README.md) in the skills repo for full merge semantics.
 
 ## Getting Started
 
 1. Run `/starflow-help` to assess your project state and get recommendations
 2. Begin with `/starflow-domain-discovery` to map your data landscape
 3. Follow the phases in order, or jump to the phase you need
-4. Each Starflow skill references the relevant Starlake CLI skills for implementation details
+4. After shipping an epic, run `/starflow-retrospective` to capture lessons and check follow-through on the previous retro
+5. Each Starflow skill references the relevant Starlake CLI skills for implementation details
