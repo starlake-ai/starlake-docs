@@ -102,6 +102,6 @@ cd ~/.claude/skills/starlake-skills && git pull
 
 ## Next Steps
 
-- **[Setup](setup)** — Advanced installation options and configuration
-- **[Skills Catalog](../0200-catalog/index.md)** — Full reference for all 48 skills
-- **[Configuration](../0300-configure/index.md)** — Connection and warehouse setup
+- **[Setup](setup)**: Advanced installation options and configuration
+- **[Skills Catalog](../0200-catalog/index.md)**: Full reference for all 48 skills
+- **[Configuration](../0300-configure/index.md)**: Connection and warehouse setup

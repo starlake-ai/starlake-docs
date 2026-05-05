@@ -14,18 +14,18 @@ Starflow is currently in **preview**. The methodology and skills are available f
 :::caution Preview limitations
 - Skill names, the manifest schema (`_config/starflow-help.csv`), and config layering rules may change between releases.
 - The layered config resolver requires Python 3 with PyYAML on the host running the skill.
-- Step-file workflows assume the artifact lives under `planning-artifacts/` or `implementation-artifacts/` (configurable, see below) — moving the file mid-workflow breaks resume.
+- Step-file workflows assume the artifact lives under `planning-artifacts/` or `implementation-artifacts/` (configurable, see below). Moving the file mid-workflow breaks resume.
 - Persona voices are tuned for Claude; behavior on other assistants (Copilot, Gemini) may diverge.
 :::
 
-Starflow is an optional guided methodology layer that helps you plan and implement data pipelines step-by-step. While Starlake Skills give you direct access to every CLI command, Starflow provides a structured workflow with specialized agent personas that guide you through the full lifecycle — from domain discovery to production deployment.
+Starflow is an optional guided methodology layer that helps you plan and implement data pipelines step-by-step. While Starlake Skills give you direct access to every CLI command, Starflow provides a structured workflow with specialized agent personas that guide you through the full lifecycle, from domain discovery to production deployment.
 
 ## When to Use Starflow
 
-- **Greenfield projects** — Starting a new data platform from scratch
-- **Complex migrations** — Moving from legacy ETL to Starlake
-- **Team onboarding** — Structured approach for teams new to Starlake
-- **Architecture reviews** — Systematic evaluation of existing pipelines
+- **Greenfield projects**: starting a new data platform from scratch
+- **Complex migrations**: moving from legacy ETL to Starlake
+- **Team onboarding**: structured approach for teams new to Starlake
+- **Architecture reviews**: systematic evaluation of existing pipelines
 
 For quick, targeted tasks (loading a file, writing a transform), use the [CLI skills](../0200-catalog/index.md) directly.
 
@@ -103,7 +103,7 @@ Cross-cutting skills for validating pipelines at any phase. See also: [Data Qual
 
 ## What Starflow Produces
 
-Each skill writes a markdown artifact you can read, version, and iterate on. The default output layout (configurable — see [Layered Configuration](#layered-configuration) below) is:
+Each skill writes a markdown artifact you can read, version, and iterate on. The default output layout (configurable; see [Layered Configuration](#layered-configuration) below) is:
 
 ```
 {project-root}/starflow-output/
@@ -117,9 +117,9 @@ Each skill writes a markdown artifact you can read, version, and iterate on. The
     ├── transform-design-*.md       # Phase 3
     ├── orchestration-design-*.md   # Phase 3
     ├── sprint-plan-*.md            # Phase 4
-    ├── *-implementation/           # Phase 4 — generated YAML + SQL
-    ├── review-*.md                 # Phase 4 — adversarial review report
-    └── retrospective-epic-*.md     # Phase 4 — end-of-epic retro
+    ├── *-implementation/           # Phase 4 (generated YAML + SQL)
+    ├── review-*.md                 # Phase 4 (adversarial review report)
+    └── retrospective-epic-*.md     # Phase 4 (end-of-epic retro)
 ```
 
 Artifacts produced by step-file workflows (`pipeline-spec-*.md`, `review-*.md`, `retrospective-epic-*.md`) carry a `stepsCompleted: [...]` list in their frontmatter so the workflow can resume across sessions.
@@ -144,15 +144,15 @@ You: /starflow-data-architect Design a data platform for our e-commerce analytic
 
 ### Step-File Workflows
 
-The heavier workflows — `starflow-create-pipeline-spec`, `starflow-code-review`, and `starflow-retrospective` — use a **step-file architecture**. Each step lives in its own `steps/step-NN-*.md` file with explicit halt-for-input checkpoints, and progress persists in a `stepsCompleted: [...]` list in the output document's frontmatter. A workflow can therefore resume cleanly across sessions or context windows: rerun the skill on the same output file and it picks up at the next uncompleted step.
+The heavier workflows (`starflow-create-pipeline-spec`, `starflow-code-review`, and `starflow-retrospective`) use a **step-file architecture**. Each step lives in its own `steps/step-NN-*.md` file with explicit halt-for-input checkpoints, and progress persists in a `stepsCompleted: [...]` list in the output document's frontmatter. A workflow can therefore resume cleanly across sessions or context windows: rerun the skill on the same output file and it picks up at the next uncompleted step.
 
 ### Adversarial Parallel Code Review
 
-`starflow-code-review` spawns three independent persona subagents in parallel — **Winston** (architecture), **Amelia** (engineering), **Quinn** (data quality) — each with a focused prompt and the same code under review. Findings are then deduplicated and triaged into BLOCKER / WARNING / SUGGESTION / APPROVED. The independence is the point: each reviewer applies a different lens, surfacing issues a single-pass review would miss.
+`starflow-code-review` spawns three independent persona subagents in parallel: **Winston** (architecture), **Amelia** (engineering), and **Quinn** (data quality). Each has a focused prompt and the same code under review. Findings are then deduplicated and triaged into BLOCKER / WARNING / SUGGESTION / APPROVED. The independence is the point: each reviewer applies a different lens, surfacing issues a single-pass review would miss.
 
 ### Adaptive Help
 
-`starflow-help` is more than a menu. It reads the skill manifest at `.agents/starflow/_config/starflow-help.csv` (with `phase`, `after`, `before`, `required`, `output-location`, and `outputs` columns) and scans your artifacts directory to detect which steps are already done. It then recommends the **next required skill** based on dependencies — not a hard-coded order — so it works whether you started with discovery or jumped in mid-stream.
+`starflow-help` is more than a menu. It reads the skill manifest at `.agents/starflow/_config/starflow-help.csv` (with `phase`, `after`, `before`, `required`, `output-location`, and `outputs` columns) and scans your artifacts directory to detect which steps are already done. It then recommends the **next required skill** based on dependencies, not a hard-coded order, so it works whether you started with discovery or jumped in mid-stream.
 
 ```
 You: /starflow-help What should I work on next?
@@ -162,11 +162,11 @@ You: /starflow-help What should I work on next?
 
 Starflow defaults are resolved from three layers (highest wins):
 
-1. **Base** — `.agents/starflow/config/starflow.yaml` (installer-managed, treat as read-only)
-2. **Team** — `.agents/starflow/config/custom/starflow.yaml` (committed to your repo)
-3. **Personal** — `.agents/starflow/config/custom/starflow.user.yaml` (gitignored)
+1. **Base**: `.agents/starflow/config/starflow.yaml` (installer-managed, treat as read-only)
+2. **Team**: `.agents/starflow/config/custom/starflow.yaml` (committed to your repo)
+3. **Personal**: `.agents/starflow/config/custom/starflow.user.yaml` (gitignored)
 
-The same model applies to each skill's `customize.yaml`. Skills resolve config at runtime via `python3 .agents/starflow/scripts/resolve_config.py --starflow-root <path>`, which deep-merges mappings and merges sequences of mappings by their `code` or `id` key — so a team can override a single agent's `description` without re-listing the others. See [`.agents/starflow/config/README.md`](https://github.com/starlake-ai/starlake-skills/blob/main/.agents/starflow/config/README.md) in the skills repo for full merge semantics.
+The same model applies to each skill's `customize.yaml`. Skills resolve config at runtime via `python3 .agents/starflow/scripts/resolve_config.py --starflow-root <path>`, which deep-merges mappings and merges sequences of mappings by their `code` or `id` key, so a team can override a single agent's `description` without re-listing the others. See [`.agents/starflow/config/README.md`](https://github.com/starlake-ai/starlake-skills/blob/main/.agents/starflow/config/README.md) in the skills repo for full merge semantics.
 
 For example, to set the team's default engine to Snowflake and tighten Winston's voice without re-declaring the other personas, drop this in `.agents/starflow/config/custom/starflow.yaml`:
 

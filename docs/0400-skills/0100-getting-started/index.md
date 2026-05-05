@@ -29,21 +29,21 @@ Whether you're setting up a new data project, configuring ingestion pipelines, w
 ## Supported Platforms
 
 ### Data Warehouses
-- **BigQuery** — Native and Spark loaders
-- **Snowflake** — JDBC connectivity
-- **DuckDB** — Embedded SQL engine
-- **PostgreSQL** — JDBC connectivity
-- **Redshift** — JDBC connectivity
-- **Databricks** — FS and Spark engines
+- **BigQuery**: Native and Spark loaders
+- **Snowflake**: JDBC connectivity
+- **DuckDB**: Embedded SQL engine
+- **PostgreSQL**: JDBC connectivity
+- **Redshift**: JDBC connectivity
+- **Databricks**: FS and Spark engines
 
 ### Processing Engines
-- **Spark** — Distributed processing
-- **Native** — Built-in Starlake engine
-- **DuckDB** — Embedded analytical SQL
+- **Spark**: Distributed processing
+- **Native**: Built-in Starlake engine
+- **DuckDB**: Embedded analytical SQL
 
 ### Orchestration
-- **Apache Airflow** — Python DAG generation
-- **Dagster** — Asset-based orchestration
+- **Apache Airflow**: Python DAG generation
+- **Dagster**: Asset-based orchestration
 
 ### Data Formats
 CSV, JSON, XML, Parquet, Elasticsearch indices, Kafka topics
@@ -52,7 +52,7 @@ CSV, JSON, XML, Parquet, Elasticsearch indices, Kafka topics
 
 Starlake Skills provides two complementary approaches depending on the scope of your work:
 
-### Starlake Skills — Direct Access to Every Command
+### Starlake Skills: Direct Access to Every Command
 
 Skills integrate directly into Claude Code as a plugin. Each of the 48 skills gives you deep expertise on a specific Starlake capability — CLI syntax, YAML configuration, write strategies, engine-specific behaviors, and production best practices.
 
@@ -66,11 +66,11 @@ Claude: [Uses the `load` skill to provide complete YAML configuration
          and schema definitions]
 ```
 
-### Starflow — Guided Methodology for End-to-End Projects
+### Starflow: Guided Methodology for End-to-End Projects
 
 [Starflow](../0500-starflow/index.md) is an optional guided methodology layer built on top of Starlake Skills. Where individual skills answer *"how do I do X?"*, Starflow answers *"what should I do next and why?"*
 
-Starflow organizes data pipeline projects into four phases — **Discovery**, **Architecture**, **Pipeline Design**, and **Implementation** — each with dedicated skills and specialized agent personas that guide you through the full lifecycle.
+Starflow organizes data pipeline projects into four phases — **Discovery**, **Architecture**, **Pipeline Design**, and **Implementation**: each with dedicated skills and specialized agent personas that guide you through the full lifecycle.
 
 Use Starflow when you're tackling a **broader initiative**: starting a new data platform, migrating from legacy ETL, onboarding a team, or reviewing an existing architecture.
 
@@ -94,7 +94,7 @@ Starflow skills call on the underlying Starlake Skills during implementation, so
 
 ## Next Steps
 
-- **[Quickstart](./quickstart.md)** — Install and use your first skill in 5 minutes
-- **[Setup](./setup.md)** — Detailed installation and configuration options
-- **[Skills Catalog](../0200-catalog/index.md)** — Browse all 48 skills by category
-- **[Starflow Method](../0500-starflow/index.md)** — Guided methodology for end-to-end projects
+- **[Quickstart](./quickstart.md)**: Install and use your first skill in 5 minutes
+- **[Setup](./setup.md)**: Detailed installation and configuration options
+- **[Skills Catalog](../0200-catalog/index.md)**: Browse all 48 skills by category
+- **[Starflow Method](../0500-starflow/index.md)**: Guided methodology for end-to-end projects

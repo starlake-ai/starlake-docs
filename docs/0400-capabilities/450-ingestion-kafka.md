@@ -66,8 +66,8 @@ Supported triggers:
 
 Messages can be serialized/deserialized as:
 
-- **JSON** — human-readable, schema-flexible
-- **Avro** — compact binary format, integrated with Schema Registry
+- **JSON**: human-readable, schema-flexible
+- **Avro**: compact binary format, integrated with Schema Registry
 
 The format is controlled via the `--format` (read) and `--write-format` (write) options.
 

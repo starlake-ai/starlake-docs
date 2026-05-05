@@ -280,9 +280,9 @@ user_defined_macros = {
 
 ## 13. Deployment Workflow
 
-1. **Generate** — `starlake dag-generate` analyzes YAML configs and SQL dependencies, produces Python/SQL files.
-2. **Deploy** — copy generated files to the orchestrator (Airflow `dags/` folder, Dagster repository, or Snowflake stage).
-3. **Backfill** (optional) — replay historical intervals with correct `sl_start_date` / `sl_end_date` values.
+1. **Generate**: `starlake dag-generate` analyzes YAML configs and SQL dependencies, produces Python/SQL files.
+2. **Deploy**: copy generated files to the orchestrator (Airflow `dags/` folder, Dagster repository, or Snowflake stage).
+3. **Backfill** (optional): replay historical intervals with correct `sl_start_date` / `sl_end_date` values.
 
 ---
 

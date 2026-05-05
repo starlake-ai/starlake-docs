@@ -19,11 +19,11 @@ You: /config Show me all available environment variables for configuring Starlak
 ```
 
 **Covers:**
-- **Environment variables** — `SL_ROOT`, `SL_ENV`, `SL_DATASETS`, and component-specific variables
-- **Application configuration** — Complete `application.sl.yml` structure with write formats, load strategies, timezone, storage paths, audit, connections, expectations, metrics
-- **Attribute types catalog** — Primitive types (string, int, long, decimal, boolean), date/time formats (ISO, RFC 1123), and custom types
-- **Storage patterns** — S3/MinIO/SeaweedFS configuration for Spark and DuckDB
-- **Best practices** — Variable substitution, environment separation, custom types, partitioning, privacy transformations
+- **Environment variables**: `SL_ROOT`, `SL_ENV`, `SL_DATASETS`, and component-specific variables
+- **Application configuration**: Complete `application.sl.yml` structure with write formats, load strategies, timezone, storage paths, audit, connections, expectations, metrics
+- **Attribute types catalog**: Primitive types (string, int, long, decimal, boolean), date/time formats (ISO, RFC 1123), and custom types
+- **Storage patterns**: S3/MinIO/SeaweedFS configuration for Spark and DuckDB
+- **Best practices**: Variable substitution, environment separation, custom types, partitioning, privacy transformations
 
 ---
 

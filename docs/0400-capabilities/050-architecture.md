@@ -190,9 +190,9 @@ The same write strategy YAML works identically on BigQuery, Snowflake, Spark, an
 
 Starlake automatically parses SQL `FROM` and `JOIN` clauses to build a directed acyclic graph (DAG) of table dependencies. This powers:
 
-- **Recursive execution** — `starlake transform --recursive` runs all upstream dependencies first.
-- **DAG generation** — `starlake dag-generate` produces orchestration code with correct task ordering.
-- **Lineage visualization** — `starlake lineage` outputs table and column dependency graphs (text, SVG, PNG, JSON).
+- **Recursive execution**: `starlake transform --recursive` runs all upstream dependencies first.
+- **DAG generation**: `starlake dag-generate` produces orchestration code with correct task ordering.
+- **Lineage visualization**: `starlake lineage` outputs table and column dependency graphs (text, SVG, PNG, JSON).
 
 ## 10. Validation and Audit
 

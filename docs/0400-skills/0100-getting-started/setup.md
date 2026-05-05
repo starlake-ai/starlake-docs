@@ -152,6 +152,6 @@ This will verify:
 
 ## Next Steps
 
-- **[Skills Catalog](../0200-catalog/index.md)** — Browse all available skills
-- **[Connections](../0300-configure/connections.md)** — Detailed connection setup
-- **[Warehouses](../0300-configure/warehouses.md)** — Warehouse-specific guides
+- **[Skills Catalog](../0200-catalog/index.md)**: Browse all available skills
+- **[Connections](../0300-configure/connections.md)**: Detailed connection setup
+- **[Warehouses](../0300-configure/warehouses.md)**: Warehouse-specific guides

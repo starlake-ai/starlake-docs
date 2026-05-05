@@ -19,9 +19,9 @@ You: /secure Set up row-level security on the customers table by region
 ```
 
 **Capabilities:**
-- **Row-Level Security (RLS)** — Restrict row access based on user attributes
-- **Column-Level Security (CLS)** — Hide or mask columns per role
-- **Privacy transformations** — Hash, encrypt, or anonymize sensitive data
+- **Row-Level Security (RLS)**: Restrict row access based on user attributes
+- **Column-Level Security (CLS)**: Hide or mask columns per role
+- **Privacy transformations**: Hash, encrypt, or anonymize sensitive data
 
 ### Privacy Transforms
 

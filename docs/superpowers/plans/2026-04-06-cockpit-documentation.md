@@ -140,14 +140,14 @@ The AI Assistant is available across the Loading and Transformation sections as 
 
 The Settings section groups all project configuration:
 
-- **General** — project name, description, and metadata
-- **Application** — application YAML configuration with validation
-- **Connections** — database connection templates and credentials
-- **Environment Variables** — project-level key-value pairs for pipeline configuration
-- **Custom Types** — user-defined data types alongside built-in defaults
-- **Schedule** — job scheduling configuration
-- **Members** — project team members, roles, and invitations
-- **Git References** — branch and tag management
+- **General**: project name, description, and metadata
+- **Application**: application YAML configuration with validation
+- **Connections**: database connection templates and credentials
+- **Environment Variables**: project-level key-value pairs for pipeline configuration
+- **Custom Types**: user-defined data types alongside built-in defaults
+- **Schedule**: job scheduling configuration
+- **Members**: project team members, roles, and invitations
+- **Git References**: branch and tag management
 ```
 
 - [ ] **Step 2: Commit**

@@ -145,7 +145,7 @@ gcloud run jobs create starlake-load \
   --task-timeout=3600s \
   --max-retries=0
 
-# Create a separate job for transforms (optional — you can reuse the same job)
+# Create a separate job for transforms (optional: you can reuse the same job)
 gcloud run jobs create starlake-transform \
   --image=gcr.io/my-gcp-project/starlake:latest \
   --region=europe-west1 \

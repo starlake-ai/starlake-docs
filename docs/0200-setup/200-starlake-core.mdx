@@ -323,8 +323,8 @@ SL_API_DOMAIN=your.domain.com starlake serve
 :::tip Store data outside the installation folder
 When creating projects through the Cockpit, projects and the management database are stored in the `starlake` installation folder by default. To ensure they survive reinstalls and upgrades, configure an external location using these environment variables before creating any projects:
 
-- **`SL_API_PROJECTS_ROOT`** — path where projects are stored
-- **`SL_API_JDBC_URL`** — JDBC URL for the user and project management database (PostgreSQL)
+- **`SL_API_PROJECTS_ROOT`**: path where projects are stored
+- **`SL_API_JDBC_URL`**: JDBC URL for the user and project management database (PostgreSQL)
 
 ```bash
 export SL_API_PROJECTS_ROOT=/path/to/my/projects

@@ -19,8 +19,8 @@ You: /dag-generate Create Airflow DAGs for all domains with daily schedule and e
 ```
 
 **Supported orchestrators:**
-- **Apache Airflow** — Python DAG files with operators
-- **Dagster** — Asset-based pipeline definitions
+- **Apache Airflow**: Python DAG files with operators
+- **Dagster**: Asset-based pipeline definitions
 
 **Generated outputs:**
 - DAG definition files with correct task dependencies

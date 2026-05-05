@@ -99,8 +99,8 @@ See the [Configuration](./0200-configuration.mdx) page for deployment options, a
 :::tip Store data outside the installation folder
 When creating projects through the Cockpit UI, projects and the management database are stored in the `starlake` installation folder by default. To ensure they survive reinstalls and upgrades, configure an external location using these environment variables before creating any projects:
 
-- **`SL_API_PROJECTS_ROOT`** — path where projects are stored
-- **`SL_API_JDBC_URL`** — JDBC URL for the user and project management database (PostgreSQL)
+- **`SL_API_PROJECTS_ROOT`**: path where projects are stored
+- **`SL_API_JDBC_URL`**: JDBC URL for the user and project management database (PostgreSQL)
 
 ```bash
 export SL_API_PROJECTS_ROOT=/path/to/my/projects
@@ -154,11 +154,11 @@ The AI Assistant is available across the Loading and Transformation sections as 
 
 The Settings section groups all project configuration:
 
-- **General** — project name, description, and metadata
-- **Application** — application YAML configuration with validation
-- **Connections** — database connection templates and credentials
-- **Environment Variables** — project-level key-value pairs for pipeline configuration
-- **Custom Types** — user-defined data types alongside built-in defaults
-- **Schedule** — job scheduling configuration
-- **Members** — project team members, roles, and invitations
-- **Git References** — branch and tag management
+- **General**: project name, description, and metadata
+- **Application**: application YAML configuration with validation
+- **Connections**: database connection templates and credentials
+- **Environment Variables**: project-level key-value pairs for pipeline configuration
+- **Custom Types**: user-defined data types alongside built-in defaults
+- **Schedule**: job scheduling configuration
+- **Members**: project team members, roles, and invitations
+- **Git References**: branch and tag management
