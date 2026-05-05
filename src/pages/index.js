@@ -6,13 +6,12 @@ function HeroSection() {
   return (
     <section className="hero--starlake">
       <div className="container">
-        <h1 className="hero__title">Pipelines as configuration, not code.</h1>
+        <h1 className="hero__title">Prompt in plain English. Starflow AI ships.</h1>
         <p className="hero__subtitle" style={{ fontSize: '1.4rem', marginBottom: '1rem' }}>
           The <strong>what</strong>, not the <strong>how</strong>.
         </p>
         <p className="hero__subtitle" style={{ maxWidth: '780px', margin: '0 auto 2rem', textAlign: 'center' }}>
-          Five AI personas. Forty-nine CLI skills.<br />
-          Zero glue code.
+          Pipelines as configuration, not code.
         </p>
 
         <div className="hero__buttons">
