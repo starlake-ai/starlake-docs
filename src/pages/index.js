@@ -72,7 +72,7 @@ function TwoPathsSection() {
   const paths = [
     {
       icon: '🧭',
-      title: 'Starflow (Preview)',
+      title: 'Starflow',
       description:
         'Guided methodology layer. Five expert personas (Lea, Winston, Amelia, Quinn, Max) walk you through Discovery → Architecture → Pipeline Design → Implementation, with adversarial code review and end-of-epic retrospectives.',
       cta: 'Open the Starflow guide',
@@ -256,7 +256,7 @@ function StarflowSection() {
   return (
     <section className="features-section" style={{ background: 'var(--sl-color-surface)' }}>
       <div className="container">
-        <h2 className="features-section__title">Starflow: Guided Methodology (Preview)</h2>
+        <h2 className="features-section__title">Starflow: Guided Methodology</h2>
         <p className="features-section__subtitle">
           Four phases, five expert personas, persistent step-file workflows that resume across sessions.
         </p>

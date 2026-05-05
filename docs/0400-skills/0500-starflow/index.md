@@ -1,22 +1,11 @@
 ---
 id: starflow-overview
 sidebar_position: 1
-title: "Starflow Method (Preview)"
+title: "Starflow Method"
 description: Guided methodology for planning and implementing data pipelines with Starlake
 ---
 
-# Starflow Method (Preview)
-
-:::info Preview
-Starflow is currently in **preview**. The methodology and skills are available for early adopters, but APIs and workflows may change.
-:::
-
-:::caution Preview limitations
-- Skill names, the manifest schema (`_config/starflow-help.csv`), and config layering rules may change between releases.
-- The layered config resolver requires Python 3 with PyYAML on the host running the skill.
-- Step-file workflows assume the artifact lives under `planning-artifacts/` or `implementation-artifacts/` (configurable, see below). Moving the file mid-workflow breaks resume.
-- Persona voices are tuned for Claude; behavior on other assistants (Copilot, Gemini) may diverge.
-:::
+# Starflow Method
 
 Starflow is an optional guided methodology layer that helps you plan and implement data pipelines step-by-step. While Starlake Skills give you direct access to every CLI command, Starflow provides a structured workflow with specialized agent personas that guide you through the full lifecycle, from domain discovery to production deployment.
 
