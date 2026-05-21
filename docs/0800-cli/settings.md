@@ -1,5 +1,5 @@
 ---
-sidebar_position: 350
+sidebar_position: 360
 title: settings
 description: "Display and validate Starlake project settings, including testing database and warehouse connection configurations."
 keywords: [starlake settings, project configuration, connection test, data warehouse setup]

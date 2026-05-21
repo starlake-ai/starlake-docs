@@ -19,7 +19,6 @@ Actions: start, stop, list, stop-all
 Parameter|Cardinality|Description
 ---|---|---
 --action `<value>`|*Required*|Action to perform: start, stop, list, stop-all
---connection `<value>`|*Optional*|Connection name (required for start)
---process-name `<value>`|*Optional*|Process name (required for stop)
+--connection `<value>`|*Optional*|Connection name (required for start and stop)
 --port `<value>`|*Optional*|Port for the GizmoSQL process (optional, for start)
 --reportFormat `<value>`|*Optional*|Report format: console, json, html

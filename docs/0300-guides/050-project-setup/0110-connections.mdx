@@ -318,6 +318,81 @@ application:
 
 For DuckLake, the `preActions` setting attaches the DuckLake metadata catalog before running any queries.
 
+### Quack (DuckDB remote)
+
+[Quack](https://duckdb.org/docs/extensions/quack) is a DuckDB extension that turns a DuckDB instance into a query server. The recommended way to expose a DuckLake lakehouse without sharing object-storage credentials with clients.
+
+**Client connection** (consumer, no DuckLake, no S3):
+
+```yaml
+connections:
+  warehouse-quack:
+    type: JDBC
+    options:
+      url: "jdbc:duckdb:"
+      driver: "org.duckdb.DuckDBDriver"
+      preActions: |
+        INSTALL quack; LOAD quack;
+        CREATE SECRET (TYPE quack, TOKEN '{{quackToken}}');
+        ATTACH 'quack:warehouse-host:9494' AS remote;
+      quote: "\""
+```
+
+**Server connection — local file catalog + S3 data** (producer, single server, file-based DuckLake catalog):
+
+```yaml
+connections:
+  warehouse-server:
+    type: JDBC
+    options:
+      url: "jdbc:duckdb:"
+      driver: "org.duckdb.DuckDBDriver"
+      preActions: |
+        INSTALL ducklake; LOAD ducklake; INSTALL quack; LOAD quack;
+        CREATE SECRET (TYPE s3, KEY_ID '{{s3Key}}', SECRET '{{s3Secret}}', REGION 'eu-west-1');
+        ATTACH 'ducklake:my_catalog.ducklake' AS lake (DATA_PATH 's3://my-bucket/data/');
+      quackServerToken: "{{quackToken}}"
+      quackBind: "127.0.0.1"
+      quackPort: "9494"
+      quote: "\""
+```
+
+**Server connection — PostgreSQL catalog + S3 data** (producer, shared catalog in Postgres, durable across server restarts and shareable between multiple Quack servers):
+
+```yaml
+connections:
+  warehouse-server-pg:
+    type: JDBC
+    options:
+      url: "jdbc:duckdb:"
+      driver: "org.duckdb.DuckDBDriver"
+      preActions: |
+        INSTALL POSTGRES; LOAD POSTGRES;
+        INSTALL ducklake; LOAD ducklake;
+        INSTALL quack;    LOAD quack;
+        CREATE SECRET (
+          TYPE s3,
+          KEY_ID '{{s3Key}}',
+          SECRET '{{s3Secret}}',
+          REGION 'eu-west-1'
+        );
+        ATTACH 'ducklake:postgres:
+            dbname={{pgDatabase}}
+            host={{pgHost}}
+            port={{pgPort}}
+            user={{pgUser}}
+            password={{pgPassword}}' AS lake
+          (DATA_PATH 's3://my-bucket/data/');
+      quackServerToken: "{{quackToken}}"
+      quackBind: "127.0.0.1"
+      quackPort: "9494"
+      quote: "\""
+```
+
+The connection-string fields inside `ATTACH 'ducklake:postgres:...'` (`dbname`, `host`, `port`, `user`, `password`) are interpreted by DuckLake's Postgres backend — they don't need to be top-level connection options. Substitute them via Jinja from your env profile (`metadata/env.*.sl.yml`).
+
+See [`starlake quack`](../../0800-cli/quack.md) for the server-lifecycle CLI.
+
 ## Connect Starlake to Google Cloud Logging (Audit)
 
 Starlake can send audit logs to [Google Cloud Logging](https://cloud.google.com/logging) instead of a database table. This is useful when you want audit data in Cloud Logging where it can be routed to BigQuery, Pub/Sub, or Cloud Storage via log sinks.
