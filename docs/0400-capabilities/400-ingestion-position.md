@@ -195,7 +195,7 @@ Attributes can be tagged with a `metricType` to compute statistics during ingest
 
 ## 19. BigQuery Native Mode
 
-POSITION files can also be loaded directly to BigQuery without going through Spark by setting `loader: native` (at table, domain, or project scope — see [Native Load Mode](../0300-guides/200-load/170-native.md)). This pushes parsing entirely into BigQuery and avoids the JVM `String` overhead that Spark incurs when reading large fixed-width files.
+POSITION files can also be loaded directly to BigQuery without going through Spark by setting `loader: native` (at table, domain, or project scope — see [Native Load Mode](../0300-guides/200-load/170-native.mdx)). This pushes parsing entirely into BigQuery and avoids the JVM `String` overhead that Spark incurs when reading large fixed-width files.
 
 How it works internally:
 
