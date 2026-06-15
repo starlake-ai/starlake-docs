@@ -32,6 +32,44 @@ table:
   filter: "status != 'DELETED'"
 ```
 
+For POSITION files specifically, the filter is evaluated against the raw line — the source column is named `value`. This is the recommended way to skip header banners, footer/trailer records, comment lines, or short/truncated rows.
+
+```yaml
+table:
+  filter: "LENGTH(value) >= 80 AND SUBSTR(value, 1, 2) = '01'"
+```
+
+Common patterns:
+
+| Goal | Expression |
+|---|---|
+| Skip header banner | `SUBSTR(value, 1, 2) != '00'` |
+| Skip trailer record | `SUBSTR(value, 1, 2) != '99'` |
+| Skip comment lines | `value NOT LIKE '#%'` |
+| Drop short/truncated lines | `LENGTH(value) >= 80` |
+| Keep only detail records | `SUBSTR(value, 1, 2) = '01'` |
+
+### Regex filtering
+
+For pattern-based skipping you need a regex predicate — for example, keep only lines whose first 8 bytes are a valid `YYYYMMDD` date and drop everything else (banners, summaries, blanks):
+
+```yaml title="BigQuery native mode"
+table:
+  loader: native
+  filter: "REGEXP_CONTAINS(value, r'^[0-9]{8}')"
+```
+
+```yaml title="Spark mode"
+table:
+  filter: "value RLIKE '^[0-9]{8}'"
+```
+
+Both expressions skip the same rows; only the function name differs between the engines.
+
+:::note Dialect portability
+The expression is passed through to the active engine without dialect translation. `LIKE`, `SUBSTR`, and `LENGTH` work the same in Spark and BigQuery. Regex predicates differ: Spark accepts `value RLIKE 'pattern'`, BigQuery requires `REGEXP_CONTAINS(value, r'pattern')`. Keep expressions portable, or maintain one variant per mode if you may switch between Spark and native modes.
+:::
+
 ## 4. Trimming per Attribute
 
 A `trim` strategy is applied to each extracted value. Supported values: `NONE`, `LEFT`, `RIGHT`, `BOTH`. Particularly useful for space-padded string fields from COBOL/mainframe exports.
@@ -155,6 +193,29 @@ Attributes can be tagged with a `metricType` to compute statistics during ingest
 - `DISCRETE` — count distinct, category frequency, category count.
 - `TEXT` — text field statistics.
 
+## 19. BigQuery Native Mode
+
+POSITION files can also be loaded directly to BigQuery without going through Spark by setting `loader: native` (at table, domain, or project scope — see [Native Load Mode](../0300-guides/200-load/170-native.md)). This pushes parsing entirely into BigQuery and avoids the JVM `String` overhead that Spark incurs when reading large fixed-width files.
+
+How it works internally:
+
+1. **First step.** Starlake issues a BigQuery LoadJob that reads each line as a single `STRING` column named `value`. The field delimiter is set to a control character (``) that is vanishingly unlikely to appear in fixed-width data, so each line becomes one row in a temporary table.
+2. **Second step.** A `CREATE TABLE AS SELECT` projects each attribute via `SUBSTR(value, first+1, length)` into the typed target table. Non-string types are wrapped in `SAFE_CAST(...)` so that a short or malformed line yields `NULL` for the affected cells instead of aborting the whole load.
+3. **Filter.** The `filter` expression is applied as a `WHERE` clause in the second step (see Section 3).
+
+Trade-offs vs Spark mode for POSITION:
+
+| Capability | Spark mode | BigQuery native |
+|---|---|---|
+| Per-row rejection to `audit.rejected` | Yes | No (bad cells become NULL) |
+| Type validation via regex | Yes | No |
+| Computed columns (`script`) | Yes | Yes (via second-step SQL) |
+| Privacy transformations | Yes (UDFs + SQL) | SQL-prefix only |
+| Encoding support | Any JVM Charset | UTF-8, ISO-8859-1, UTF-16 |
+| Throughput on multi-GB files | Standard | Significantly faster |
+
+If you need full per-row rejection or use privacy UDFs that aren't `SQL:` prefixed, keep the default Spark mode.
+
 ---
 
 ## Summary
@@ -178,3 +239,4 @@ Attributes can be tagged with a `metricType` to compute statistics during ingest
 | Post-load expectations | Post-load |
 | Freshness monitoring | Post-load |
 | Ingestion metrics | Post-load |
+| BigQuery native loading (two-step `SUBSTR` + `SAFE_CAST`) | Load |
