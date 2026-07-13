@@ -107,14 +107,14 @@ const content = {
 // }
 
 import React from "react";
-import { FaGithub, FaLinkedin, FaSlack } from "react-icons/fa"; // Using react-icons for icons
+import { FaGithub, FaLinkedin, FaDiscord } from "react-icons/fa"; // Using react-icons for icons
 
 // import "./Footer.css"; // Import the custom CSS file
 
 export default function Footer() {
   const handleClickJoin = () => {
     window.open(
-      "https://join.slack.com/t/starlakeai/shared_invite/zt-28vf5d49s-rnyuh70OrJjcX_2Vz2mafw",
+      "https://discord.gg/xHj9D6Rebp",
       "_blank"
     );
   };
@@ -153,7 +153,7 @@ export default function Footer() {
                 <FaLinkedin size={24} className="me-2" />
               </a>
               <a onClick={handleClickJoin} className="footer-link">
-                <FaSlack size={24} className="me-2" />
+                <FaDiscord size={24} className="me-2" />
               </a>
               <a onClick={handleClickTry} className="footer-link">
                 <FaGithub size={24} className="me-2" />
