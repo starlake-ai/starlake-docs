@@ -22,7 +22,7 @@ Specifically, this article tackles the challenges of loading files into Snowflak
 
 Although Starlake supports transformation activities, the scope of this article is limited to data loading.
 
-{/_ truncate _/}
+{/* truncate */}
 
 ## Data Loading Challenges
 
