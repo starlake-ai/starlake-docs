@@ -137,9 +137,9 @@ const config = {
           "aria-label": "GitHub repository",
         },
         {
-          href: "https://join.slack.com/t/starlakeai/shared_invite/zt-28vf5d49s-rnyuh70OrJjcX_2Vz2mafw",
+          href: "https://discord.gg/xHj9D6Rebp",
           position: "right",
-          className: "header-slack-link header-icon-link",
+          className: "header-discord-link header-icon-link",
           "aria-label": "Community",
         },
       ].filter(Boolean),
