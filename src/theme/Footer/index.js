@@ -114,7 +114,7 @@ import { FaGithub, FaLinkedin, FaDiscord } from "react-icons/fa"; // Using react
 export default function Footer() {
   const handleClickJoin = () => {
     window.open(
-      "https://discord.gg/xHj9D6Rebp",
+      "https://discord.gg/6tNa7yCNqw",
       "_blank"
     );
   };

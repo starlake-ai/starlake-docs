@@ -106,6 +106,6 @@ This model allows us to offer long-term value, rapid innovation, and community a
 ## 💬 Questions?
 
 We’d love to hear from you.  
-Ask us anything on [Discord](https://discord.gg/xHj9D6Rebp), GitHub, or via [hello@starlake.ai](mailto:hello@starlake.ai)
+Ask us anything on [Discord](https://discord.gg/6tNa7yCNqw), GitHub, or via [hello@starlake.ai](mailto:hello@starlake.ai)
 
 
