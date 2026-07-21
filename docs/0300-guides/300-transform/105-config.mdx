@@ -204,7 +204,7 @@ Add assertions that Starlake evaluates after the transform runs. If `failOnError
 task:
   ...
   expectations:
-    - expect: "is_col_value_not_unique('id') => result(0) == 1"
+    - expect: "is_col_value_not_unique('id')"
       failOnError: true
 ```
 

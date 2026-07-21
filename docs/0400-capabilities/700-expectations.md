@@ -1,23 +1,17 @@
 # Data Quality Expectations
 
-Expectations are data quality assertions evaluated after data is written to the target table. Each expectation references a Jinja2 SQL macro and checks a condition on the result. Set `failOnError: true` on any expectation to halt the pipeline on failure.
+Expectations are data quality assertions evaluated after data is written to the target table. Each expectation references a Jinja2 SQL macro whose query returns a single value: `0` means the expectation is satisfied, any other value fails it. Set `failOnError: true` on any expectation to halt the pipeline on failure.
 
 ```yaml
 expectations:
-  - expect: "expect_column_values_to_be_unique('order_id') => result(0) == 0"
+  - expect: "expect_column_values_to_be_unique('order_id')"
     failOnError: true
-  - expect: "expect_table_row_count_to_be_between(100, 10000) => result(0) == 0"
+  - expect: "expect_table_row_count_to_be_between(100, 10000)"
 ```
-
-## Condition Variables
-
-- `count` — number of result rows.
-- `result` — first row as a collection.
-- `results` — all rows as nested collections.
 
 ## Custom Macros
 
-Custom expectations are defined as `.j2` (Jinja2) template files in the `metadata/expectations/` directory. The placeholder `SL_THIS` refers to the target table name.
+Custom expectations are defined as `.j2` (Jinja2) template files in the `metadata/expectations/` directory. The placeholder `SL_THIS` refers to the target table name. The generated query must return a single value, with `0` meaning the expectation is satisfied.
 
 ---
 

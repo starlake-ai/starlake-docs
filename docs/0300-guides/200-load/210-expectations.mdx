@@ -25,7 +25,7 @@ import Head from '@docusaurus/Head';
           "name": "How do I define an expectation in the table YAML file?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Add an expectations section with a list of entries. Each entry contains expect (query name + condition) and optionally failOnError: true to halt the pipeline on failure."
+            "text": "Add an expectations section with a list of entries. Each entry contains expect (a macro call) and optionally failOnError: true to halt the pipeline on failure."
           }
         },
         {
@@ -33,7 +33,7 @@ import Head from '@docusaurus/Head';
           "name": "What is the format of an expectation expression?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "The format is <query_name>(<params>) => <condition>. The query_name references a Jinja template defined in the expectations directory. The condition uses the variables count, result or results."
+            "text": "The format is <query_name>(<params>). The query_name references a Jinja macro defined in the expectations directory. The macro generates a SQL query whose single-value result determines the outcome: 0 means the expectation is satisfied, any other value fails it."
           }
         },
         {
@@ -46,10 +46,10 @@ import Head from '@docusaurus/Head';
         },
         {
           "@type": "Question",
-          "name": "What variables are available in an expectation condition?",
+          "name": "How does Starlake decide whether an expectation passed?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Three variables: count (number of rows in the result), result (first row as a collection of values), and results (all rows as a collection of collections)."
+            "text": "The expectation query must return a single value. 0 means the expectation is satisfied; any other value marks it as failed."
           }
         },
         {
@@ -96,7 +96,7 @@ import Head from '@docusaurus/Head';
         {
           "@type": "HowToStep",
           "name": "Write the expectation expression",
-          "text": "Use the format <query_name>(<params>) => <condition>. Available condition variables are count, result and results."
+          "text": "Use the format <query_name>(<params>). The macro must generate a SQL query returning a single value: 0 means success, any other value means failure."
         },
         {
           "@type": "HowToStep",
@@ -117,14 +117,14 @@ import Head from '@docusaurus/Head';
 
 Expectations are post-load data quality assertions that run automatically after Starlake writes data to the target table. They complement [pre-load type validation](/guides/load/validate) by checking business rules on the loaded dataset: uniqueness, row count ranges, value distributions and custom conditions.
 
-Each expectation references a reusable Jinja2 SQL macro, passes parameters and evaluates a condition on the query result. Set `failOnError: true` to halt the pipeline on failure, turning expectations into a lightweight data quality gate.
+Each expectation references a reusable Jinja2 SQL macro and passes it parameters. The macro generates a SQL query whose result determines the outcome: `0` means the expectation is satisfied, any other value fails it. Set `failOnError: true` to halt the pipeline on failure, turning expectations into a lightweight data quality gate.
 
 ## How to add data quality expectations
 
 1. **Create or reuse an expectation macro** -- Place a `.j2` Jinja2 template in the `expectations` directory. Use `SL_THIS` as a placeholder for the target table name.
 2. **Open the table YAML file** -- Edit `metadata/load/<domain>/<table>.sl.yml`.
 3. **Add an `expectations` section** -- Under the `table` key, define a list of entries.
-4. **Write the expectation expression** -- Use the format `<query_name>(<params>) => <condition>`. Available condition variables are `count`, `result` and `results`.
+4. **Write the expectation expression** -- Use the format `<query_name>(<params>)`. The macro must generate a SQL query returning a single value: `0` means success, any other value means failure.
 5. **Set `failOnError`** -- Set to `true` to halt the pipeline on failure, or `false` to log and continue.
 6. **Run the load** -- Execute `starlake load`. Expectations are evaluated after the data has been written.
 
@@ -140,7 +140,7 @@ table:
           type: integer
         ...
     expectations:
-      - expect: "is_col_value_not_unique('id') => result(0) == 1"
+      - expect: "is_col_value_not_unique('id')"
         failOnError: true # or false if you want to continue
 ```
 
@@ -149,20 +149,17 @@ table:
 The expectation expression follows this pattern:
 
 ```
-<query_name>(<param>*) => <condition>
+<query_name>(<param>*)
 ```
 
 - **`query_name`** -- Name of a Jinja2 macro defined in the `expectations` directory. The macro generates a SQL `SELECT` statement run against the target table.
 - **`param`** -- Parameters passed to the macro, separated by commas.
-- **`condition`** -- A boolean expression evaluated against the query result.
 
-### Condition variables
+The generated query must return a single value. `0` means the expectation is satisfied; any other value marks it as failed.
 
-| Variable | Type | Description |
-|---|---|---|
-| `count` | Long | Number of rows in the result |
-| `result` | Seq[Any] | First row as a collection of values (one per column) |
-| `results` | Seq[Seq[Any]] | All rows as a collection of rows, each row as a collection of values |
+:::caution Deprecated syntax
+Earlier versions documented the form `<query_name>(<params>) => <condition>` with the condition variables `count`, `result` and `results`. This syntax is deprecated: write macros that return `0` on success instead.
+:::
 
 ## Writing expectation query macros
 
@@ -173,50 +170,56 @@ Expectation queries are Jinja2 macros stored as `.j2` files in the `expectations
 Starlake provides the following reusable macros. They are customizable and extensible.
 
 ```jinja
+{# Passes (returns 0) when every value of the column is unique #}
 {% macro is_col_value_not_unique(col, table='SL_THIS') %}
-    SELECT max(cnt)
+    SELECT count(*)
     FROM (SELECT {{ col }}, count(*) as cnt FROM {{ table }}
     GROUP BY {{ col }}
-    HAVING cnt > 1)
+    HAVING count(*) > 1)
 {% endmacro %}
 
+{# Passes (returns 0) when the row count is within the given range #}
 {% macro is_row_count_to_be_between(min_value, max_value, table_name = 'SL_THIS') -%}
     select
         case
-            when count(*) between {{min_value}} and {{max_value}} then 1
+            when count(*) between {{min_value}} and {{max_value}} then 0
         else
-            0
+            1
         end
     from {{table_name}}
 {%- endmacro %}
 
+{# Passes (returns 0) when no value of the column occurs more than min_count times #}
 {% macro col_value_count_greater_than(col, min_count, table_name='SL_THIS') %}
-    SELECT {{ col }}, count(*) FROM {{ table_name }}
-    GROUP BY {{ col }}
-    HAVING count(*) > {{ min_count }}
+    SELECT count(*)
+    FROM (
+        SELECT {{ col }} FROM {{ table_name }}
+        GROUP BY {{ col }}
+        HAVING count(*) > {{ min_count }}
+    )
 {% endmacro %}
 
-
+{# Passes (returns 0) when no row matches the given value #}
 {% macro count_by_value(col, value, table='SL_THIS') %}
     SELECT count(*)
     FROM {{ table }}
     WHERE {{ col }} LIKE '{{ value }}'
 {% endmacro %}
 
-
+{# Passes (returns 0) when every value of the column occurs exactly the given number of times #}
 {% macro column_occurs(col, times, table='SL_THIS') %}
-    SELECT max(cnt)
+    SELECT count(*)
     FROM  (
         SELECT {{ col }}, count(*) as cnt FROM {{ table }}
         GROUP BY {{ col }}
-        HAVING cnt == {{ times }}
+        HAVING cnt <> {{ times }}
     )
 {% endmacro %}
 ```
 
 ### Creating your own macros
 
-Create a `.j2` file in the `expectations` directory. Define a Jinja2 macro that generates a SQL `SELECT` statement. Use `SL_THIS` as the table placeholder. The query result is evaluated against the condition in the expectation expression.
+Create a `.j2` file in the `expectations` directory. Define a Jinja2 macro that generates a SQL `SELECT` statement. Use `SL_THIS` as the table placeholder. The query must return a single value: `0` means the expectation is satisfied, any other value marks it as failed.
 
 ## Expectations vs type validation
 
@@ -235,16 +238,16 @@ Use both for comprehensive data quality: type validation catches format errors a
 An expectation is a post-load assertion executed after data loading. It consists of a SQL query evaluated on the target table, whose result is compared to an expected condition.
 
 ### How do I define an expectation in the table YAML file?
-Add an `expectations` section with a list of entries. Each entry contains `expect` (query name + condition) and optionally `failOnError: true` to halt the pipeline on failure.
+Add an `expectations` section with a list of entries. Each entry contains `expect` (a macro call) and optionally `failOnError: true` to halt the pipeline on failure.
 
 ### What is the format of an expectation expression?
-The format is `<query_name>(<params>) => <condition>`. The `query_name` references a Jinja template defined in the `expectations` directory. The condition uses the variables `count`, `result` or `results`.
+The format is `<query_name>(<params>)`. The `query_name` references a Jinja macro defined in the `expectations` directory. The macro generates a SQL query whose single-value result determines the outcome: `0` means the expectation is satisfied, any other value fails it.
 
 ### How do I write an expectation query template?
-Templates are Jinja2 macros with a `.j2` extension placed in the `expectations` directory. They generate SQL. The `SL_THIS` placeholder represents the target table.
+Templates are Jinja2 macros with a `.j2` extension placed in the `expectations` directory. They generate SQL returning a single value (`0` = pass). The `SL_THIS` placeholder represents the target table.
 
-### What variables are available in an expectation condition?
-Three variables: `count` (number of rows in the result), `result` (first row as a collection of values), and `results` (all rows as a collection of collections).
+### How does Starlake decide whether an expectation passed?
+The expectation query must return a single value. `0` means the expectation is satisfied; any other value marks it as failed.
 
 ### Can I stop the pipeline if an expectation fails?
 Yes. Set `failOnError: true` on the expectation. If the condition is not satisfied, the pipeline halts with an error.
