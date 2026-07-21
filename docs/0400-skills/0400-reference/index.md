@@ -20,7 +20,7 @@ Technical reference documentation for Starlake Skills and the Starlake platform.
 | [GitHub Repository](https://github.com/starlake-ai/starlake-skills) | Source code and issues |
 | [Starlake Examples](https://github.com/starlake-ai/starlake-examples) | Sample projects |
 
-## All 48 Skills
+## All Skills
 
 | Skill | Category | Description |
 |---|---|---|
@@ -42,6 +42,8 @@ Technical reference documentation for Starlake Skills and the Starlake platform.
 | `extract-bq-schema` | Extraction | BigQuery schema extraction |
 | `extract-data` | Extraction | Data export to files |
 | `extract-schema` | Extraction | JDBC schema extraction |
+| `extract-rest-data` | Extraction | REST API data extraction (pagination, auth, incremental) |
+| `extract-rest-schema` | Extraction | REST API schema inference from sample responses |
 | `extract-script` | Extraction | Extraction script generation |
 | `freshness` | Operations | Data freshness monitoring |
 | `gizmosql` | Operations | DuckLake SQL endpoint management |
@@ -57,12 +59,13 @@ Technical reference documentation for Starlake Skills and the Starlake platform.
 | `migrate` | Operations | Schema migration |
 | `parquet2csv` | Utilities | Parquet to CSV conversion |
 | `preload` | Ingestion | Landing area checks |
+| `quack` | Operations | Quack FlightSQL server management |
 | `secure` | Security | RLS, CLS, privacy transforms |
+| `semantic` | Semantic Layer | Business semantic models in metadata/semantic |
 | `serve` | Operations | Data serving config |
 | `settings` | Operations | Application settings |
 | `site` | Utilities | Documentation site generation |
 | `stage` | Ingestion | File staging (landing → pending) |
-| `starlake-skills` | Meta | About this plugin |
 | `summarize` | Utilities | Project summarization |
 | `table-dependencies` | Lineage | Table dependency analysis |
 | `test` | Utilities | Pipeline testing |

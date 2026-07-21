@@ -10,43 +10,41 @@ Get Starlake Skills running in under 5 minutes.
 
 ## Prerequisites
 
-- [Claude Code](https://claude.ai/code) installed and configured
+- An AI coding assistant: [Claude Code](https://claude.ai/code), GitHub Copilot, or Gemini CLI (examples below use Claude Code syntax)
 - A Starlake project (or use `bootstrap` to create one)
 
-## Step 1: Install the Plugin
+## Step 1: Install the Skills
 
-### Global Installation (recommended)
+### Quick Install from a Release (recommended)
 
-Available across all your projects:
-
-```bash
-git clone https://github.com/starlake-ai/starlake-skills.git ~/.claude/skills/starlake-skills
-```
-
-### Project-Local Installation
-
-Available only in the current project:
+Downloads the latest [GitHub Release](https://github.com/starlake-ai/starlake-skills/releases) and links the skills into Claude Code, GitHub Copilot, and Gemini CLI. No git or Node required:
 
 ```bash
-git clone https://github.com/starlake-ai/starlake-skills.git .claude/skills/starlake-skills
+curl -fsSL https://raw.githubusercontent.com/starlake-ai/starlake-skills/main/scripts/install-remote.sh | bash
 ```
 
-### From Claude Code Marketplace
+On Windows, use `scripts/install-remote.ps1`. Pass `--pin vX.Y.Z` for an exact release, or `--platforms claude` to install for one assistant only.
+
+### From a Git Clone (contributors)
+
+Skills are symlinked from the clone, so edits and `git pull` are live immediately:
 
 ```bash
-# Coming soon
-claude plugin install starlake-skills
+git clone https://github.com/starlake-ai/starlake-skills.git ~/.starlake-skills
+~/.starlake-skills/scripts/install.sh
 ```
+
+Add `--local` to install into the current project instead of your home directory.
 
 ## Step 2: Verify Installation
 
-Open Claude Code and ask:
+Open your assistant and ask:
 
 ```
 You: What Starlake skills are available?
 ```
 
-Claude will list all 48 available skills organized by category.
+Claude will list the available skills organized by category.
 
 ## Step 3: Try Your First Skill
 
@@ -94,14 +92,10 @@ Try these common workflows:
 
 ## Updating
 
-Pull the latest skills:
-
-```bash
-cd ~/.claude/skills/starlake-skills && git pull
-```
+Release installs: re-run the quick-install one-liner. Git clones: `git pull`, then `scripts/install.sh --update` if skills were added or removed. Check the installed version any time with `scripts/install.sh --version`.
 
 ## Next Steps
 
 - **[Setup](setup)**: Advanced installation options and configuration
-- **[Skills Catalog](../0200-catalog/index.md)**: Full reference for all 48 skills
+- **[Skills Catalog](../0200-catalog/index.md)**: Full reference for all skills
 - **[Configuration](../0300-configure/index.md)**: Connection and warehouse setup

@@ -9,6 +9,8 @@ description: Guided methodology for planning and implementing data pipelines wit
 
 Starflow is an optional guided methodology layer that helps you plan and implement data pipelines step-by-step. While Starlake Skills give you direct access to every CLI command, Starflow provides a structured workflow with specialized agent personas that guide you through the full lifecycle, from domain discovery to production deployment.
 
+Like the core skills, Starflow works with **Claude Code**, **GitHub Copilot**, and **Gemini CLI**: it is plain markdown plus a small Python config resolver, and the installer links it into all three assistants by default. Claude Code offers the richest experience (parallel subagents for the adversarial code review); on assistants without subagent support, the review falls back to generated reviewer prompts you run separately.
+
 ## When to Use Starflow
 
 - **Greenfield projects**: starting a new data platform from scratch
@@ -69,6 +71,7 @@ Specify pipelines end-to-end before implementation. See also: [Ingestion](../020
 | `starflow-create-pipeline-spec` | Create complete pipeline specifications covering extract, load, transform, and orchestrate |
 | `starflow-transform-design` | Design SQL transformations with quality checks and dependency management |
 | `starflow-orchestration-design` | Design DAGs, schedules, and retry/timeout policies for pipeline execution |
+| `starflow-semantic-model-design` | Design a business semantic model (dimensions, facts, metrics, relationships) over pipeline tables, written to `metadata/semantic/` |
 
 ### Phase 4: Implementation
 
@@ -105,6 +108,7 @@ Each skill writes a markdown artifact you can read, version, and iterate on. The
     ├── pipeline-spec-*.md          # Phase 3 (step-file workflow)
     ├── transform-design-*.md       # Phase 3
     ├── orchestration-design-*.md   # Phase 3
+    ├── semantic-model-design-*.md  # Phase 3 (model YAML goes to metadata/semantic/)
     ├── sprint-plan-*.md            # Phase 4
     ├── *-implementation/           # Phase 4 (generated YAML + SQL)
     ├── review-*.md                 # Phase 4 (adversarial review report)
@@ -138,6 +142,20 @@ The heavier workflows (`starflow-create-pipeline-spec`, `starflow-code-review`, 
 ### Adversarial Parallel Code Review
 
 `starflow-code-review` spawns three independent persona subagents in parallel: **Winston** (architecture), **Amelia** (engineering), and **Quinn** (data quality). Each has a focused prompt and the same code under review. Findings are then deduplicated and triaged into BLOCKER / WARNING / SUGGESTION / APPROVED. The independence is the point: each reviewer applies a different lens, surfacing issues a single-pass review would miss.
+
+For small diffs, the workflow offers an explicit **light pass**: one reviewer covering all three lenses, faster and cheaper, never chosen silently. On assistants without subagent support, the workflow generates the three reviewer prompts as files for you to run in separate sessions and paste back.
+
+### Scale-Adaptive Depth
+
+Pipeline specs carry a `scale` field (`light` / `standard` / `deep`) classified at the start of the workflow from simple heuristics (sources, tables, transforms, environments, SLA). Light pipelines skip optional ceremony and merge confirmation checkpoints; deep pipelines get extra rigor prompts (failure modes, backfill strategy, SLA math, per-column privacy review). Standard is the workflow exactly as written.
+
+### Unattended Mode
+
+Setting `unattended: true` in the layered config (or asking for it per run) lets step-file workflows run without halting at confirmation checkpoints: each checkpoint documents a default, the workflow takes it and logs the decision to an `autoDecisions:` list in the output frontmatter. Questions that gather facts (names, connections, credentials) still halt, and unattended specs finish as `ready-for-review`, never `ready-for-dev`, so a human always reviews the decision log before implementation starts.
+
+### Extending Starflow
+
+`starflow-builder` scaffolds your own extensions without forking the bundle: new agent personas (coached toward the same philosophy-and-voice style as the built-in five, written into the team config layer), new workflow skills (flat or step-file, from templates), and customizations of existing skills through the layered config.
 
 ### Adaptive Help
 

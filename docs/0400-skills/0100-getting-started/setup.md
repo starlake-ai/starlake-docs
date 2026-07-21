@@ -8,33 +8,43 @@ description: Detailed installation, configuration, and project structure for Sta
 
 ## Installation Methods
 
-### Global Installation
+Both methods end in the same state: every skill folder is symlinked into the skills directory of each AI assistant (`~/.claude/skills/`, `~/.copilot/skills/`, `~/.gemini/skills/`), where it is discovered automatically from its `SKILL.md` frontmatter. No build step or registration is involved.
 
-Install once, use everywhere. Skills are available in all Claude Code sessions:
+### Quick Install from a Release (recommended)
+
+Downloads the latest versioned archive from [GitHub Releases](https://github.com/starlake-ai/starlake-skills/releases) into `~/.starlake-skills` and links the skills. Only `curl` and `tar` required (PowerShell 5.1+ on Windows):
 
 ```bash
-git clone https://github.com/starlake-ai/starlake-skills.git ~/.claude/skills/starlake-skills
+curl -fsSL https://raw.githubusercontent.com/starlake-ai/starlake-skills/main/scripts/install-remote.sh | bash
+```
+
+Options pass through to the inner installer: `--pin vX.Y.Z` for an exact release, `--platforms claude,copilot`, `--local`, `--uninstall`.
+
+### From a Git Clone (contributors)
+
+Symlinks point into the clone, so edits to any `SKILL.md` and every `git pull` are live immediately:
+
+```bash
+git clone https://github.com/starlake-ai/starlake-skills.git ~/.starlake-skills
+~/.starlake-skills/scripts/install.sh
+```
+
+### Versions and Channels
+
+```bash
+~/.starlake-skills/scripts/install.sh --update --channel stable   # newest release tag
+~/.starlake-skills/scripts/install.sh --update --channel latest   # main branch
+~/.starlake-skills/scripts/install.sh --pin v1.2.0                # exact release
+~/.starlake-skills/scripts/install.sh --version                   # installed version
 ```
 
 ### Project-Local Installation
 
-Scope skills to a specific project. Useful when you want version-pinned skills:
+Scope skills to a specific project with `--local`: links go into `./.claude/skills/` (and the other assistants' local folders) instead of `$HOME`:
 
 ```bash
 cd your-starlake-project
-git clone https://github.com/starlake-ai/starlake-skills.git .claude/skills/starlake-skills
-```
-
-Add to `.gitignore` if you don't want to commit the plugin:
-
-```
-.claude/skills/
-```
-
-### Marketplace (Coming Soon)
-
-```bash
-claude plugin install starlake-skills
+~/.starlake-skills/scripts/install.sh --local
 ```
 
 ## Starlake Project Structure

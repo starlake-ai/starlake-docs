@@ -2,29 +2,30 @@
 id: getting-started-overview
 sidebar_position: 1
 title: Overview
-description: Get started with Starlake Skills — the Claude Code plugin for Starlake data pipelines
+description: Get started with Starlake Skills — AI assistant skills for Starlake data pipelines (Claude Code, GitHub Copilot, Gemini CLI)
 ---
 
 # Getting Started
 
-**Starlake Skills** is an open-source Claude Code plugin that provides **48 specialized skills** for building, configuring, and operating [Starlake](https://starlake.ai) data pipelines.
+**Starlake Skills** is an open-source skills bundle that gives your AI coding assistant deep expertise in building, configuring, and operating [Starlake](https://starlake.ai) data pipelines: a skill for every CLI command and configuration pattern. It works with **Claude Code**, **GitHub Copilot**, and **Gemini CLI**; the installer links the skills into all three by default.
 
 Whether you're setting up a new data project, configuring ingestion pipelines, writing transformations, or deploying orchestration DAGs — Starlake Skills gives your AI assistant deep expertise in every aspect of the Starlake platform.
 
 ## What You Can Do
 
-| Category | Skills | Examples |
-|---|---|---|
-| **Ingestion & Loading** | 9 skills | Auto-infer schemas, load CSV/JSON/XML, Kafka, Elasticsearch |
-| **Transformation** | 2 skills | SQL/Python transformations with write strategies |
-| **Extraction** | 5 skills | Extract schemas and data from BigQuery, JDBC sources |
-| **Schema Management** | 5 skills | Bootstrap projects, Excel-to-YAML, DDL generation |
-| **Data Quality** | 1 skill | Expectations with Jinja2 macros and validation patterns |
-| **Lineage** | 4 skills | Column-level, table-level, and ACL dependency tracking |
-| **Operations** | 8 skills | Validation, metrics, freshness, GizmoSQL, migrations |
-| **Security** | 2 skills | IAM policies, RLS, CLS, privacy transformations |
-| **Orchestration** | 2 skills | Airflow and Dagster DAG generation and deployment |
-| **Utilities** | 5 skills | Parquet conversion, comparisons, site generation |
+| Category | Examples |
+|---|---|
+| **Ingestion & Loading** | Auto-infer schemas, load CSV/JSON/XML, Kafka, Elasticsearch |
+| **Transformation** | SQL/Python transformations with write strategies |
+| **Extraction** | Extract schemas and data from BigQuery, JDBC sources, REST APIs |
+| **Schema Management** | Bootstrap projects, Excel-to-YAML, DDL generation |
+| **Data Quality** | Expectations with Jinja2 macros and validation patterns |
+| **Semantic Layer** | Business models for BI tools and AI agents in `metadata/semantic/` |
+| **Lineage** | Column-level, table-level, and ACL dependency tracking |
+| **Operations** | Validation, metrics, freshness, GizmoSQL, migrations |
+| **Security** | IAM policies, RLS, CLS, privacy transformations |
+| **Orchestration** | Airflow and Dagster DAG generation and deployment |
+| **Utilities** | Parquet conversion, comparisons, site generation |
 
 ## Supported Platforms
 
@@ -54,7 +55,7 @@ Starlake Skills provides two complementary approaches depending on the scope of 
 
 ### Starlake Skills: Direct Access to Every Command
 
-Skills integrate directly into Claude Code as a plugin. Each of the 48 skills gives you deep expertise on a specific Starlake capability — CLI syntax, YAML configuration, write strategies, engine-specific behaviors, and production best practices.
+Skills integrate directly into your assistant (Claude Code, GitHub Copilot, or Gemini CLI). Each skill gives you deep expertise on a specific Starlake capability — CLI syntax, YAML configuration, write strategies, engine-specific behaviors, and production best practices. Examples in these docs use Claude Code syntax; the same skills trigger from natural language in every supported assistant.
 
 Use skills when you have a **targeted task**: loading a file, writing a transformation, generating a DAG, or configuring a connection.
 
@@ -96,5 +97,5 @@ Starflow skills call on the underlying Starlake Skills during implementation, so
 
 - **[Quickstart](./quickstart.md)**: Install and use your first skill in 5 minutes
 - **[Setup](./setup.md)**: Detailed installation and configuration options
-- **[Skills Catalog](../0200-catalog/index.md)**: Browse all 48 skills by category
+- **[Skills Catalog](../0200-catalog/index.md)**: Browse all skills by category
 - **[Starflow Method](../0500-starflow/index.md)**: Guided methodology for end-to-end projects
