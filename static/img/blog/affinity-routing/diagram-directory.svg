@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 250" role="img" aria-label="The placement directory inside the manager maps each table to its home node, and the query follows the map">
+  <style>
+    .lbl{font:600 13px ui-sans-serif,system-ui,sans-serif;fill:#1c2733}
+    .sub{font:500 11px ui-sans-serif,system-ui,sans-serif;fill:#5a6672}
+    .mono{font:400 10.5px ui-monospace,Menlo,Consolas,monospace;fill:#5a6672}
+    .monoink{font:500 10.5px ui-monospace,Menlo,Consolas,monospace;fill:#1c2733}
+    .badge{font:500 11px ui-monospace,Menlo,Consolas,monospace}
+  </style>
+  <rect x="0.5" y="0.5" width="799" height="249" rx="14" fill="#ffffff" stroke="#e2e5e1"/>
+  <defs>
+    <marker id="di-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1c2733"/>
+    </marker>
+    <marker id="di-arr-warm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8862e"/>
+    </marker>
+    <pattern id="di-hatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+      <rect width="6" height="6" fill="#fbe9d7"/>
+      <rect width="3" height="6" fill="#e8862e"/>
+    </pattern>
+  </defs>
+
+  <rect x="30" y="102" width="190" height="30" rx="15" fill="#f1f2ef" stroke="#e2e5e1"/>
+  <text x="125" y="121" text-anchor="middle" class="monoink">SELECT … customer, orders</text>
+  <path d="M220,117 L268,117" fill="none" stroke="#1c2733" stroke-width="1.6" marker-end="url(#di-arr)"/>
+  <text x="244" y="106" text-anchor="middle" class="sub">parse</text>
+
+  <rect x="272" y="34" width="256" height="170" rx="12" fill="#ffffff" stroke="#1c2733" stroke-width="1.6"/>
+  <text x="400" y="60" text-anchor="middle" class="lbl">manager placement directory</text>
+  <line x1="292" y1="72" x2="508" y2="72" stroke="#e2e5e1"/>
+  <text x="300" y="94" class="monoink">customer -> node B</text>
+  <rect x="448" y="80" width="52" height="20" rx="10" fill="#fbe9d7"/>
+  <text x="474" y="94" text-anchor="middle" class="badge" fill="#c96a15">fresh</text>
+  <text x="300" y="124" class="monoink">orders -> node B</text>
+  <rect x="448" y="110" width="52" height="20" rx="10" fill="url(#di-hatch)"/>
+  <text x="474" y="124" text-anchor="middle" class="badge" fill="#7a4104">stale</text>
+  <text x="300" y="154" class="monoink">lineitem -> node A</text>
+  <rect x="448" y="140" width="52" height="20" rx="10" fill="#fbe9d7"/>
+  <text x="474" y="154" text-anchor="middle" class="badge" fill="#c96a15">fresh</text>
+
+  <path d="M528,117 L596,117" fill="none" stroke="#e8862e" stroke-width="2" marker-end="url(#di-arr-warm)"/>
+  <text x="562" y="106" text-anchor="middle" class="sub">route</text>
+
+  <rect x="600" y="88" width="150" height="60" rx="10" fill="#ffffff" stroke="#e8862e" stroke-width="2"/>
+  <text x="675" y="112" text-anchor="middle" class="lbl">node B</text>
+  <rect x="614" y="122" width="122" height="13" rx="4" fill="#e8862e"/>
+</svg>

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" role="img" aria-label="Least-loaded routing sends three identical queries to three different nodes, causing three separate downloads from object storage">
+  <style>
+    .lbl{font:600 13px ui-sans-serif,system-ui,sans-serif;fill:#1c2733}
+    .lblw{font:600 13px ui-sans-serif,system-ui,sans-serif;fill:#ffffff}
+    .lblb{font:600 13px ui-sans-serif,system-ui,sans-serif;fill:#2c5d7c}
+    .sub{font:500 11px ui-sans-serif,system-ui,sans-serif;fill:#5a6672}
+    .mono{font:400 10.5px ui-monospace,Menlo,Consolas,monospace;fill:#5a6672}
+    .monob{font:400 10.5px ui-monospace,Menlo,Consolas,monospace;fill:#2c5d7c}
+    .monoink{font:500 10.5px ui-monospace,Menlo,Consolas,monospace;fill:#1c2733}
+    .badge{font:500 11px ui-monospace,Menlo,Consolas,monospace}
+  </style>
+  <rect x="0.5" y="0.5" width="799" height="339" rx="14" fill="#ffffff" stroke="#e2e5e1"/>
+  <defs>
+    <marker id="ll-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1c2733"/>
+    </marker>
+    <marker id="ll-arr-cold" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4e93be"/>
+    </marker>
+  </defs>
+
+  <rect x="60" y="18" width="180" height="30" rx="15" fill="#f1f2ef" stroke="#e2e5e1"/>
+  <text x="150" y="37" text-anchor="middle" class="monoink">q1. SELECT … customer</text>
+  <rect x="310" y="18" width="180" height="30" rx="15" fill="#f1f2ef" stroke="#e2e5e1"/>
+  <text x="400" y="37" text-anchor="middle" class="monoink">q2. SELECT … customer</text>
+  <rect x="560" y="18" width="180" height="30" rx="15" fill="#f1f2ef" stroke="#e2e5e1"/>
+  <text x="650" y="37" text-anchor="middle" class="monoink">q3. SELECT … customer</text>
+
+  <rect x="330" y="82" width="140" height="42" rx="10" fill="#1c2733"/>
+  <text x="400" y="108" text-anchor="middle" class="lblw">manager</text>
+
+  <path d="M150,48 C150,70 320,74 342,84" fill="none" stroke="#1c2733" stroke-width="1.6" marker-end="url(#ll-arr)"/>
+  <path d="M400,48 L400,78" fill="none" stroke="#1c2733" stroke-width="1.6" marker-end="url(#ll-arr)"/>
+  <path d="M650,48 C650,70 480,74 458,84" fill="none" stroke="#1c2733" stroke-width="1.6" marker-end="url(#ll-arr)"/>
+
+  <path d="M355,124 C300,150 190,150 155,168" fill="none" stroke="#1c2733" stroke-width="1.6" marker-end="url(#ll-arr)"/>
+  <path d="M400,124 L400,168" fill="none" stroke="#1c2733" stroke-width="1.6" marker-end="url(#ll-arr)"/>
+  <path d="M445,124 C500,150 610,150 645,168" fill="none" stroke="#1c2733" stroke-width="1.6" marker-end="url(#ll-arr)"/>
+
+  <rect x="80" y="172" width="140" height="66" rx="10" fill="#ffffff" stroke="#1c2733" stroke-width="1.4"/>
+  <text x="150" y="196" text-anchor="middle" class="lbl">node A</text>
+  <rect x="94" y="208" width="112" height="14" rx="4" fill="#e0edf5" stroke="#4e93be" stroke-dasharray="3 3"/>
+  <text x="150" y="253" text-anchor="middle" class="sub">cold: downloads everything</text>
+
+  <rect x="330" y="172" width="140" height="66" rx="10" fill="#ffffff" stroke="#1c2733" stroke-width="1.4"/>
+  <text x="400" y="196" text-anchor="middle" class="lbl">node B</text>
+  <rect x="344" y="208" width="112" height="14" rx="4" fill="#e0edf5" stroke="#4e93be" stroke-dasharray="3 3"/>
+  <text x="400" y="253" text-anchor="middle" class="sub">cold: downloads everything</text>
+
+  <rect x="580" y="172" width="140" height="66" rx="10" fill="#ffffff" stroke="#1c2733" stroke-width="1.4"/>
+  <text x="650" y="196" text-anchor="middle" class="lbl">node C</text>
+  <rect x="594" y="208" width="112" height="14" rx="4" fill="#e0edf5" stroke="#4e93be" stroke-dasharray="3 3"/>
+  <text x="650" y="253" text-anchor="middle" class="sub">cold: downloads everything</text>
+
+  <path d="M150,238 L150,262 L360,290" fill="none" stroke="#4e93be" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ll-arr-cold)"/>
+  <path d="M400,242 L400,284" fill="none" stroke="#4e93be" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ll-arr-cold)"/>
+  <path d="M650,238 L650,262 L440,290" fill="none" stroke="#4e93be" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ll-arr-cold)"/>
+
+  <rect x="330" y="288" width="140" height="38" rx="19" fill="#e0edf5" stroke="#4e93be" stroke-width="1.4"/>
+  <text x="400" y="307" text-anchor="middle" class="lblb">object storage</text>
+  <text x="400" y="320" text-anchor="middle" class="monob">slow</text>
+
+  <rect x="585" y="292" width="200" height="30" rx="8" fill="#ffffff" stroke="#4e93be"/>
+  <text x="687" y="311" text-anchor="middle" class="badge" fill="#2c5d7c">same table downloaded 3 times</text>
+</svg>

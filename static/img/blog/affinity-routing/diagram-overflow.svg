@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 270" role="img" aria-label="Node B is over the load cap, so the query overflows to idle node C, which becomes a second warm home for the table">
+  <style>
+    .lbl{font:600 13px ui-sans-serif,system-ui,sans-serif;fill:#1c2733}
+    .lblw{font:600 13px ui-sans-serif,system-ui,sans-serif;fill:#ffffff}
+    .sub{font:500 11px ui-sans-serif,system-ui,sans-serif;fill:#5a6672}
+    .mono{font:400 10.5px ui-monospace,Menlo,Consolas,monospace;fill:#5a6672}
+    .monoink{font:500 10.5px ui-monospace,Menlo,Consolas,monospace;fill:#1c2733}
+    @media (prefers-reduced-motion: no-preference){
+      .pulse{animation:opulse 2.4s ease-in-out infinite}
+      @keyframes opulse{0%,100%{opacity:1}50%{opacity:.45}}
+    }
+  </style>
+  <rect x="0.5" y="0.5" width="799" height="269" rx="14" fill="#ffffff" stroke="#e2e5e1"/>
+  <defs>
+    <marker id="ov-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1c2733"/>
+    </marker>
+    <marker id="ov-arr-warm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8862e"/>
+    </marker>
+  </defs>
+
+  <rect x="40" y="30" width="180" height="30" rx="15" fill="#f1f2ef" stroke="#e2e5e1"/>
+  <text x="130" y="49" text-anchor="middle" class="monoink">q9. SELECT … customer</text>
+  <path d="M220,45 L288,45" fill="none" stroke="#1c2733" stroke-width="1.6" marker-end="url(#ov-arr)"/>
+
+  <rect x="292" y="24" width="140" height="42" rx="10" fill="#1c2733"/>
+  <text x="362" y="50" text-anchor="middle" class="lblw">manager</text>
+
+  <path d="M340,66 C300,100 240,110 210,126" fill="none" stroke="#5a6672" stroke-width="1.6" stroke-dasharray="4 4"/>
+  <text x="238" y="96" class="sub">warm, but ... </text>
+  <text x="278" y="120" text-anchor="middle" font-size="15" fill="#1c2733">✕</text>
+
+  <path d="M390,66 C450,100 520,108 560,128" fill="none" stroke="#e8862e" stroke-width="2" marker-end="url(#ov-arr-warm)"/>
+  <text x="510" y="96" class="sub">overflow => new home</text>
+
+  <rect x="80" y="130" width="180" height="92" rx="10" fill="#ffffff" stroke="#e8862e" stroke-width="2"/>
+  <text x="170" y="152" text-anchor="middle" class="lbl">node B — over the cap</text>
+  <rect x="96" y="162" width="148" height="12" rx="4" fill="#e8862e"/>
+  <rect x="96" y="182" width="42" height="16" rx="8" fill="#f1f2ef" stroke="#e2e5e1"/>
+  <rect x="144" y="182" width="42" height="16" rx="8" fill="#f1f2ef" stroke="#e2e5e1"/>
+  <rect x="192" y="182" width="42" height="16" rx="8" fill="#f1f2ef" stroke="#e2e5e1"/>
+  <text x="170" y="214" text-anchor="middle" class="mono">queue: 6 running, cap: 4</text>
+
+  <line x1="60" y1="238" x2="740" y2="238" stroke="#e2e5e1"/>
+  <text x="400" y="257" text-anchor="middle" class="mono">load cap: a node may hold at most c × pool average (default c = 2)</text>
+
+  <rect x="560" y="130" width="180" height="92" rx="10" fill="#ffffff" stroke="#e8862e" stroke-width="2"/>
+  <text x="650" y="152" text-anchor="middle" class="lbl">node C — second home</text>
+  <rect x="576" y="162" width="60" height="12" rx="4" fill="#e8862e" class="pulse"/>
+  <rect x="640" y="162" width="84" height="12" rx="4" fill="#f1f2ef"/>
+  <text x="650" y="192" text-anchor="middle" class="sub">reads once, then serves</text>
+  <text x="650" y="208" text-anchor="middle" class="sub">“customer” warm too</text>
+</svg>

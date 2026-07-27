@@ -1,0 +1,136 @@
+---
+date: 2026-07-28
+title: "Warm seats: how QoD routes queries to the node that already has the data"
+description: "Affinity routing in Quack on Demand, explained with a library, three colors, and no math beyond counting to two."
+slug: qod-affinity-routing
+authors: [hayssams]
+tags: [qod, duckdb, ducklake, engineering, routing]
+image: static/img/blog/affinity-routing/diagram-affinity.svg
+---
+
+export const Chip = ({color, hatch, cold, children}) => (
+  <span style={{
+    display: 'inline-flex', alignItems: 'center', gap: '7px',
+    border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: '999px',
+    padding: '3px 12px', marginRight: '8px', marginBottom: '6px',
+    fontSize: '0.8rem', fontFamily: 'var(--ifm-font-family-monospace)'
+  }}>
+    <span style={{
+      width: '10px', height: '10px', borderRadius: '3px', flex: 'none',
+      background: hatch
+        ? 'repeating-linear-gradient(45deg, #e8862e 0 3px, #fbe9d7 3px 6px)'
+        : (cold ? '#e0edf5' : color),
+      border: cold ? '1.5px solid #4e93be' : 'none'
+    }}></span>
+    {children}
+  </span>
+);
+
+QoD is a gateway that sits between your BI tools and a pool of DuckDB nodes. Every query you send arrives at a **manager**, 
+which picks which node runs it. This post is about how it picks.
+
+{/* truncate */}
+
+The data itself lives in object storage (S3, GCS, Azure). 
+Reading from object storage is slow. So when a node reads a table, 
+it keeps a copy of those files on its local disk. 
+That local copy is the node's **cache**. Three temperatures come up throughout this post:
+
+<p>
+  <Chip color="#e8862e">**warm**: data cached on the node</Chip>
+  <Chip hatch>**stale**: cached, but written since</Chip>
+  <Chip cold>**cold**: must download from object storage</Chip>
+</p>
+
+## Think of a library
+
+Picture a library with one archive in the basement and three librarians at the front desk. 
+Every book request goes through a receptionist, who hands it to a librarian. 
+Fetching a book from the basement takes ten minutes, but once a librarian has fetched it, the book stays *on their desk*.
+
+**Before**: "least loaded." three people in a row ask for the same book. 
+The receptionist's old rule was simple: 
+**hand each request to whoever looks least busy.**
+
+![Least-loaded routing sends three identical queries to three different nodes, each downloading the same table from object storage](/img/blog/affinity-routing/diagram-least-loaded.svg)
+
+*Three identical queries, three different nodes, 
+and the same table pulled from object storage three times. 
+Every librarian walks to the basement for the same book.*
+
+
+That's what QoD used to do. Least-loaded routing keeps everyone equally busy thus equally cold. 
+The cluster as a whole ends up holding three constantly churning half-copies of your working set.
+
+The fix is what the receptionist should obviously do: **remember which librarian already has the book on their desk, 
+and send the next reader there.** That's affinity routing we just implemented:
+
+![Affinity routing sends all three identical queries to the same node; only the first downloads, the next two are warm hits](/img/blog/affinity-routing/diagram-affinity.svg)
+
+**After**: affinity. 
+*The first query pays the download once; the second and third find everything already on node B's disk. 
+"customer" now has a home.*
+
+## The receptionist's notebook
+
+How does the manager remember? an in-memory map called the **placement directory**. One line per table: *this table lives on that node.* Nothing is stored on disk, nothing is shared, nothing needs a database.
+
+When a query arrives, the manager already parses the SQL (it does this for access control anyway), so it knows which tables you're touching. It looks each one up in the directory, and routes accordingly. If a table has never been seen before, whichever node wins the pick *claims* it.
+
+![The placement directory inside the manager maps each table to its home node; the query follows the map](/img/blog/affinity-routing/diagram-directory.svg)
+
+*The whole mechanism is a lookup: parse the tables out of the SQL, check the notebook, follow it. Both tables in this query call node B home, so node B it is.*
+
+## What happens when someone writes to the table?
+
+Here's the tricky part. When a table is updated, is node B's cache now useless? **Almost never!** 
+DuckLake tables are stored as immutable Parquet files.  a write adds a few new files and leaves the rest untouched. 
+After a typical insert, node B still holds, say, 95% of the current table. 
+Throwing away its home status would waste all of that.
+
+So the directory doesn't forget on a write, the home is **stale** still mostly warm, just missing the newest files. 
+The next read is still routed there and downloads only the delta to make the home fresh again. The book didn't change; it grew a new chapter, and the librarian fetches just that chapter.
+
+![A fresh home becomes stale after a write and returns to fresh after the next read fetches only the new files](/img/blog/affinity-routing/diagram-epochs.svg)
+
+*A write doesn't scatter the table to a new node, it just downgrades the home's confidence one notch. 
+The next read tops up the cache and restores it. Self-healing, no timers, no background jobs.*
+
+
+## The safety valve: nobody queues behind a warm seat
+
+One fear should be nagging you: if *everything* about a hot table goes to node B, 
+doesn't node B drown while A and C sit idle? 
+Back in the library, if the book stays on one librarian's desk, a line forms in front of that desk 
+while two librarians file their nails.
+
+The rule that prevents it is one comparison: a node may only win if its current work is **at most `c` times the pool average** (the default is 2). 
+If the warm node is over that cap, the manager doesn't wait, 
+it sends the query to the least-loaded node instead, *and updates the notebook*: 
+that table's home moves to the node that's about to read it. The formerly-hot table now has warmth on two nodes, and traffic splits naturally. 
+Popular tables spread themselves; unpopular ones stay put. No replication settings, no tuning. the overload itself is the signal.
+
+![Node B is over the load cap, so the query overflows to idle node C, which becomes a second warm home for the table](/img/blog/affinity-routing/diagram-overflow.svg)
+
+*The load cap in action. 
+Node B is warm but drowning, so the query overflows to idle node C, which claims the table, warms up, and shares the load from now on. 
+Hot tables spread; nothing needed configuring.*
+
+## Everything else falls out for free
+
+**A node dies?** Its lines in the notebook point nowhere; the next query on each table simply claims a new home. No repair job, no rebalancing sweep.
+
+**A node joins?** It has zero load, so it wins every overflow and every unclaimed table and warms itself up just by doing the work it wins. There is no "warm-up phase" because warm-up *is* routing.
+
+**The manager restarts?** The notebook is gone, on purpose. One pass of ordinary traffic rewrites it. And when two managers run side by side for high availability, 
+each keeps its own notebook and they never talk. Worst case, a table ends up warm on two nodes, which for immutable files is not a bug but free redundancy.
+
+:::tip The whole design in one sentence
+
+Remember where each table was read last, doubt that memory a little after every write, and abandon it entirely the moment it would make anyone queue.
+
+:::
+
+
+---
+
