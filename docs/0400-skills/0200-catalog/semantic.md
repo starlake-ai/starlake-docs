@@ -64,6 +64,20 @@ verified_queries:
 - Columns carrying privacy annotations (`HIDE`, `SHA256`, `MD5`, `AES`) must not appear as dimensions or in `sample_values`.
 - Only mark `verified_queries` you have actually executed.
 
+## semantic-export
+
+**Export semantic models to the Apache Ossie interchange format.** Converts every model in `metadata/semantic/` (or one, with `--model`) to Ossie YAML so any Ossie-compatible BI tool, query engine, or AI agent can consume it. Attributes with no Ossie equivalent (filters, sample values, verified query SQL...) are preserved in `custom_extensions` blocks under the `STARLAKE` vendor name, so the conversion is lossless.
+
+```bash
+starlake semantic-export                              # all models to metadata/semantic/export/ossie/
+starlake semantic-export --model ecommerce_analytics  # one model
+starlake semantic-export --output /tmp/ossie-models   # custom output directory
+```
+
+```
+You: /semantic-export Export my semantic models to Ossie format
+```
+
 ### Designing Models with Starflow
 
 For a guided path from pipeline tables to a complete semantic model (column classification, vocabulary coaching, privacy gating, relationships from foreign keys), use the [`starflow-semantic-model-design`](../0500-starflow/index.md) workflow skill.

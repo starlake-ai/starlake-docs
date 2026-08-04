@@ -1,5 +1,5 @@
 ---
-sidebar_position: 430
+sidebar_position: 440
 title: validate
 description: "Validate your Starlake project configuration by reloading all YAML files from disk and checking for errors or warnings."
 keywords: [starlake validate, project validation, YAML validation, configuration check]

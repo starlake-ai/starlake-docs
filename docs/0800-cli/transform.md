@@ -1,5 +1,5 @@
 ---
-sidebar_position: 420
+sidebar_position: 430
 title: transform
 description: "Execute SQL-based transformation tasks with dry-run, recursive dependency resolution, and interactive output formats."
 keywords: [starlake transform, SQL transformation, data pipeline, ELT, BigQuery]

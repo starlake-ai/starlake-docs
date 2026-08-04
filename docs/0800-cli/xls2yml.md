@@ -1,5 +1,5 @@
 ---
-sidebar_position: 440
+sidebar_position: 450
 title: xls2yml
 description: "Convert Excel files describing domains, schemas and attributes into Starlake YAML configuration files."
 keywords: [starlake xls2yml, Excel to YAML, schema generation, data modeling, domain definition]

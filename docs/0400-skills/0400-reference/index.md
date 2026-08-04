@@ -62,6 +62,7 @@ Technical reference documentation for Starlake Skills and the Starlake platform.
 | `quack` | Operations | Quack FlightSQL server management |
 | `secure` | Security | RLS, CLS, privacy transforms |
 | `semantic` | Semantic Layer | Business semantic models in metadata/semantic |
+| `semantic-export` | Semantic Layer | Export semantic models to Apache Ossie format |
 | `serve` | Operations | Data serving config |
 | `settings` | Operations | Application settings |
 | `site` | Utilities | Documentation site generation |
