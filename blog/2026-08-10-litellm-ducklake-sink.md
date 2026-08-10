@@ -1,8 +1,8 @@
 ---
-title: "Your LLM spend is a table you own"
+title: "LiteLLM telemetry in DuckLake, without an export pipeline"
 description: "litellm-ducklake-sink writes LiteLLM proxy telemetry to DuckLake, so traces and cost land as Parquet in your own object store."
 slug: litellm-ducklake-sink
-tags: [ducklake, llm, observability, qod]
+tags: [ducklake, llm, litellm, observability, qod]
 authors: [hayssams]
 ---
 
