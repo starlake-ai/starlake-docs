@@ -64,6 +64,7 @@ Starlake supports connections to BigQuery, Snowflake, Databricks/Spark, Amazon R
 - [Apache Spark / Databricks](#connect-starlake-to-spark-and-databricks)
 - [Amazon Redshift](#connect-starlake-to-amazon-redshift)
 - [DuckDB / DuckLake](#connect-starlake-to-duckdb-and-ducklake)
+- [Arrow Flight SQL](#connect-starlake-to-an-arrow-flight-sql-endpoint)
 - [Google Cloud Logging (Audit)](#connect-starlake-to-google-cloud-logging-audit)
 - [PostgreSQL / Any JDBC Database](#connect-starlake-to-any-jdbc-database)
 
@@ -573,6 +574,35 @@ Regex-on-SQL is reliable for kind-level matches (`SELECT` vs `INSERT`) but fragi
 :::
 
 See [`starlake quack`](../../0800-cli/quack.md) for the server-lifecycle CLI.
+
+## Connect Starlake to an Arrow Flight SQL Endpoint
+
+Starlake can act as a client of any [Arrow Flight SQL](https://arrow.apache.org/docs/format/FlightSql.html) server: a quack-on-demand gateway, GizmoSQL, Dremio, Doris, or any other engine fronted by Flight SQL. The primary scenario is a DuckDB or DuckLake lakehouse exposed through a Flight SQL server: the server attaches the catalog and holds the object-storage credentials, while Starlake stays a pure remote client that only ever speaks SQL.
+
+```yaml
+application:
+  connections:
+    qod_bi:
+      type: jdbc
+      options:
+        url: "jdbc:arrow-flight-sql://localhost:31338?useEncryption=true&disableCertificateVerification=true&tenant=acme&pool=bi&superuser=true"
+        user: "{{FLIGHT_USER}}"
+        password: "{{FLIGHT_PASSWORD}}"
+        # dialect: duckdb   # optional, duckdb is the default
+        # driver: "..."     # optional, defaults to the Arrow Flight SQL JDBC driver
+```
+
+Everything after `host:port` is passed to the Arrow driver untouched: `useEncryption` and `disableCertificateVerification` are TLS flags consumed by the driver itself, while parameters such as `tenant`, `pool` and `superuser` are forwarded to the server (quack-on-demand uses them for routing). Connections with different query strings get distinct connection pools.
+
+**The `dialect` option.** Flight SQL is a transport, not a dialect: the endpoint fronts a real engine whose SQL Starlake must generate. The `dialect` option selects the engine profile used for DDL, merge strategies, audit tables and identifier quoting. It defaults to `duckdb`, which is what quack-on-demand and GizmoSQL front; set `dialect: postgresql`, `dialect: snowflake`, etc. for other backends. `mariadb` normalizes to the `mysql` profile and `databricks` to `spark`, following Starlake's usual engine aliasing.
+
+**Driver installation.** The Arrow Flight SQL JDBC driver is not bundled in the Starlake assembly. The setup tool downloads it into `bin/deps` when `ENABLE_FLIGHTSQL` is on (the default); pin another driver version with `FLIGHT_SQL_JDBC_VERSION`. The driver class defaults to `org.apache.arrow.driver.jdbc.ArrowFlightJdbcDriver`.
+
+**The client stays fully remote.** Starlake never runs `ATTACH 'ducklake:...'` on a Flight SQL connection and skips all local DuckDB session setup (S3 secrets, `home_directory`); credentials live server-side, exactly as in the [Quack isolation model](#quack-duckdb-remote). `preActions` and `postActions`, if present, still run as plain session SQL over the remote connection.
+
+:::note
+With a duckdb dialect, load SQL such as `read_csv(...)` executes on the server, so file paths referenced by load jobs must be visible to the server (object storage it has credentials for, or a shared filesystem). Paths that only exist on the client machine fail with the server's error.
+:::
 
 ## Connect Starlake to Google Cloud Logging (Audit)
 

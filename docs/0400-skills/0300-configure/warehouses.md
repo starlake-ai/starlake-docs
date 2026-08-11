@@ -76,7 +76,7 @@ application:
 **DuckDB-specific features:**
 - In-memory processing
 - Direct Parquet/CSV reading
-- GizmoSQL endpoint serving
+- Arrow Flight SQL and Quack remote serving
 - Embedded analytics
 
 ---

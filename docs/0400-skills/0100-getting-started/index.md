@@ -22,7 +22,7 @@ Whether you're setting up a new data project, configuring ingestion pipelines, w
 | **Data Quality** | Expectations with Jinja2 macros and validation patterns |
 | **Semantic Layer** | Business models for BI tools and AI agents in `metadata/semantic/` |
 | **Lineage** | Column-level, table-level, and ACL dependency tracking |
-| **Operations** | Validation, metrics, freshness, GizmoSQL, migrations |
+| **Operations** | Validation, metrics, freshness, migrations |
 | **Security** | IAM policies, RLS, CLS, privacy transformations |
 | **Orchestration** | Airflow and Dagster DAG generation and deployment |
 | **Utilities** | Parquet conversion, comparisons, site generation |

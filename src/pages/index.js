@@ -168,8 +168,8 @@ function SkillsOverviewSection() {
     {
       icon: '⚙️',
       title: 'Operations',
-      count: 8,
-      skills: ['validate', 'metrics', 'freshness', 'gizmosql', 'console', 'serve', 'settings', 'migrate'],
+      count: 7,
+      skills: ['validate', 'metrics', 'freshness', 'console', 'serve', 'settings', 'migrate'],
       link: '/skills/catalog/operations',
     },
     {

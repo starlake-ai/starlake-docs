@@ -47,22 +47,6 @@ You: /freshness Configure freshness checks for the analytics domain with a 4-hou
 
 ---
 
-### gizmosql
-
-**GizmoSQL process management.** Manage DuckLake SQL endpoints for serving data via SQL interfaces.
-
-```
-You: /gizmosql Set up a GizmoSQL endpoint for the analytics database
-```
-
-**Capabilities:**
-- Start/stop SQL endpoints
-- Configure connection pooling
-- Manage DuckDB-based SQL serving
-- Monitor active queries
-
----
-
 ### migrate
 
 **Schema migration.** Manage database schema changes and migrations across environments.

@@ -46,7 +46,6 @@ Technical reference documentation for Starlake Skills and the Starlake platform.
 | `extract-rest-schema` | Extraction | REST API schema inference from sample responses |
 | `extract-script` | Extraction | Extraction script generation |
 | `freshness` | Operations | Data freshness monitoring |
-| `gizmosql` | Operations | DuckLake SQL endpoint management |
 | `iam-policies` | Security | IAM policy configuration |
 | `index` | Ingestion | Elasticsearch indexing |
 | `infer-schema` | Schema | Schema inference from files |
