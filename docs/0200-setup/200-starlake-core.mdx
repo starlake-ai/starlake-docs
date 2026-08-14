@@ -42,7 +42,7 @@ import Head from '@docusaurus/Head';
           "name": "How do I upgrade Starlake to a newer version?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Run 'starlake upgrade' to fetch the latest versions from Maven Central and Sonatype Snapshots. The command lets you choose which version to install and automatically updates the configuration and downloads the new JAR files."
+            "text": "Run 'starlake upgrade' to fetch the latest versions from GitHub Releases. The command lets you choose which version to install and automatically updates the configuration and downloads the new JAR files."
           }
         },
         {
@@ -363,9 +363,13 @@ starlake upgrade
 ```
 
 The upgrade process performs three steps:
-1. **Version selection** -- Retrieves the latest snapshot version and the five most recent release versions. You choose which one to install.
+1. **Version selection** -- Retrieves the most recent release versions from GitHub Releases. You choose which one to install.
 2. **Configuration update** -- Updates `SL_VERSION` in your `versions.sh` (or `versions.bat`) file.
 3. **Artifact download** -- Deletes old JARs and downloads the new `starlake-core` and `starlake-api` files to `./bin/sl/` and `./bin/api/lib/`.
+
+:::info Where artifacts live
+All Starlake artifacts are distributed from [GitHub Releases](https://github.com/starlake-ai/starlake/releases): each release tag `vX.Y.Z` carries the `starlake-core` assembly jar and the `starlake-api` zip with `.sha256` checksum companions. Development snapshots are published the same way, as a rolling pre-release tagged `v<version>-SNAPSHOT` whose assets are overwritten on every snapshot build. Snapshots never appear in the upgrade menu; to install one explicitly, set `SL_VERSION` to the snapshot version (for example `SL_VERSION=1.7.1-SNAPSHOT`) before running the setup script. Nothing is published to Maven Central or Sonatype anymore.
+:::
 
 ## Troubleshooting Starlake Installation
 
@@ -418,7 +422,7 @@ Yes, Docker is the fastest way to get started with Starlake. Pull the image with
 Starlake requires Java 17 or higher. You can use either Oracle JDK or OpenJDK. Verify your version with `java -version`.
 
 ### How do I upgrade Starlake to a newer version?
-Run `starlake upgrade` to fetch the latest versions from Maven Central and Sonatype Snapshots. The command lets you choose which version to install and automatically updates the configuration and downloads the new JAR files.
+Run `starlake upgrade` to fetch the latest versions from GitHub Releases. The command lets you choose which version to install and automatically updates the configuration and downloads the new JAR files.
 
 ### Can I install Starlake without Java?
 Yes. Use the Docker installation method. The Docker image includes all dependencies, so you do not need to install Java separately.
