@@ -148,7 +148,7 @@ Invoke-WebRequest -Uri "https://starlake.ai/setup.ps1" -OutFile setup.ps1
 .\setup.ps1 --version=1.7.1
 ```
 
-On Windows the requested version must be one of the recent releases the script lists; for an older release, install any listed version and then run `starlake upgrade --version X.Y.Z`.
+`--version` accepts any released version, not just the ones shown in the menu, and the installation is fully pinned to that release exactly as on Linux/macOS.
 
 </TabItem>
 
