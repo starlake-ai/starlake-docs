@@ -18,7 +18,7 @@ import Head from '@docusaurus/Head';
           "name": "What are the prerequisites to install Starlake?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "For Linux and macOS, you need Java 17 or higher installed. For Windows, you also need PowerShell 5.0 or later and administrator privileges. The Docker installation requires only Docker to be installed and running."
+            "text": "None beyond a shell: the setup script checks for Java 17 or higher and, if none is found, installs an embedded portable JDK inside the Starlake directory (no root or administrator rights needed). Windows additionally needs PowerShell 5.0 or later. The Docker installation requires only Docker to be installed and running."
           }
         },
         {
@@ -34,7 +34,7 @@ import Head from '@docusaurus/Head';
           "name": "Which Java version does Starlake require?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Starlake requires Java 17 or higher. You can use either Oracle JDK or OpenJDK. Verify your version with 'java -version'."
+            "text": "Starlake requires Java 17 or higher. If your machine has none, the setup script installs an embedded portable Temurin 17 JDK inside the Starlake directory automatically. You can also use your own Oracle JDK or OpenJDK; verify with 'java -version'."
           }
         },
         {
@@ -42,7 +42,7 @@ import Head from '@docusaurus/Head';
           "name": "How do I upgrade Starlake to a newer version?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Run 'starlake upgrade' to fetch the latest versions from GitHub Releases. The command lets you choose which version to install and automatically updates the configuration and downloads the new JAR files."
+            "text": "Run 'starlake upgrade' and pick a version from the menu, or run 'starlake upgrade --version X.Y.Z' non-interactively. The command works in both directions (upgrade and downgrade) and re-provisions the core JAR, connectors, and the Spark runtime when the target release pins a different Spark."
           }
         },
         {
@@ -62,8 +62,8 @@ import Head from '@docusaurus/Head';
       "@type": "HowTo",
       "name": "How to install Starlake CLI",
       "step": [
-        {"@type": "HowToStep", "name": "Choose an installation method", "text": "Select Docker, Linux/macOS, or Windows as your installation method. Docker requires only Docker installed. Linux/macOS and Windows require Java 17 or higher."},
-        {"@type": "HowToStep", "name": "Run the installation command", "text": "For Linux/macOS, run the setup.sh script via curl. For Windows, run setup.ps1 via PowerShell as administrator. For Docker, pull the starlakeai/starlake:latest image."},
+        {"@type": "HowToStep", "name": "Choose an installation method", "text": "Select Docker, Linux/macOS, or Windows as your installation method. Docker requires only Docker installed. On Linux/macOS and Windows the setup script installs an embedded Java 17 JDK if none is found."},
+        {"@type": "HowToStep", "name": "Run the installation command", "text": "For Linux/macOS, run the setup.sh script via curl. For Windows, run setup.ps1 via PowerShell. For Docker, pull the starlakeai/starlake:latest image."},
         {"@type": "HowToStep", "name": "Verify the installation", "text": "Run 'starlake --version' to confirm the CLI is installed correctly. You should see the Starlake version number."},
         {"@type": "HowToStep", "name": "Start the Starlake Cockpit (optional)", "text": "Run 'starlake serve' to launch the Cockpit, then open http://localhost:9900 in your browser."}
       ]
@@ -76,7 +76,7 @@ import TabItem from '@theme/TabItem';
 
 # Install Starlake CLI
 
-Starlake CLI is the command-line interface for the Starlake data pipeline platform. It runs on Linux, macOS, and Windows, and is also available as a Docker image. The CLI requires Java 17 or higher, except for Docker which includes all dependencies. Once installed, the CLI provides commands to bootstrap projects, load data, run SQL transformations, and start the Cockpit.
+Starlake CLI is the command-line interface for the Starlake data pipeline platform. It runs on Linux, macOS, and Windows, and is also available as a Docker image. The CLI requires Java 17 or higher; the setup script installs an embedded JDK automatically if none is found, and the Docker image includes all dependencies. Once installed, the CLI provides commands to bootstrap projects, load data, run SQL transformations, and start the Cockpit.
 
 ## Install Starlake on Linux, macOS, Windows, or Docker
 
@@ -84,7 +84,7 @@ Choose the method that matches your environment. Docker is the fastest option be
 
 ### Step-by-Step Overview
 
-1. **Choose an installation method** -- Docker (no Java needed), Linux/macOS (Java 17+), or Windows (Java 17+ and PowerShell 5.0+).
+1. **Choose an installation method** -- Docker (no Java needed), Linux/macOS, or Windows (PowerShell 5.0+). If no Java 17+ is found, the installer provisions an embedded JDK for you.
 2. **Run the installation command** -- See the platform-specific tabs below.
 3. **Verify the installation** -- Run `starlake --version`. The output should display the version number.
 4. **Start the Cockpit (optional)** -- Run `starlake serve` and open `http://localhost:9900`.
@@ -94,12 +94,7 @@ Choose the method that matches your environment. Docker is the fastest option be
 <TabItem value="linux_macos" label="Linux/MacOS">
 
 ### Prerequisites for Linux and macOS
-- Java 17+ installed
-  ```bash
-  # Verify Java version
-  java -version
-  ```
-- If needed, install Java from [Oracle JDK](https://www.oracle.com/java/technologies/javase-jdk17-downloads.html) or [OpenJDK](https://adoptopenjdk.net/)
+- Java 17+ is recommended but not required: if `java -version` reports nothing or a version below 17, the installer downloads an embedded portable Temurin 17 JDK into the install directory (`starlake/jdk`), with no root rights needed. The `starlake` launcher picks it up automatically whenever `JAVA_HOME` is not set.
 
 ### Install Starlake on Linux or macOS
 
@@ -108,6 +103,16 @@ Run the one-line installation script:
 ```bash
 bash <(curl -sL https://starlake.ai/setup.sh)
 ```
+
+The script asks for an installation directory, then shows the most recent release versions to choose from.
+
+To script the installation, both prompts can be answered with flags:
+
+```bash
+bash <(curl -sL https://starlake.ai/setup.sh) --target=$HOME/starlake --version=1.7.1
+```
+
+`--version` accepts any released version, not just the ones shown in the menu. The installer fetches every component (core JAR, connectors, Spark runtime) at that exact release's pinned versions, so there is no need to install the latest version first and downgrade afterwards.
 
 The script creates the following directory structure:
 ```text
@@ -123,21 +128,27 @@ starlake/
 <TabItem value="windows" label="Windows">
 
 ### Prerequisites for Windows
-- Java 17+ installed
-  ```powershell
-  # Verify Java version
-  java -version
-  ```
 - PowerShell 5.0 or later
-- Administrator privileges
+- Java 17+ is recommended but not required: if none is found, the installer downloads an embedded portable Temurin 17 JDK into the install directory (`starlake\jdk`), with no administrator rights needed. The `starlake` launcher picks it up automatically whenever `JAVA_HOME` is not set.
 
 ### Install Starlake on Windows
 
-Run in PowerShell as administrator:
+Run in PowerShell:
 
 ```powershell
 Invoke-Expression (Invoke-WebRequest -Uri "https://starlake.ai/setup.ps1").Content
 ```
+
+The script asks for an installation directory, then for the version to install among the most recent releases.
+
+To install a specific version non-interactively, download the script first and pass `--version=`:
+
+```powershell
+Invoke-WebRequest -Uri "https://starlake.ai/setup.ps1" -OutFile setup.ps1
+.\setup.ps1 --version=1.7.1
+```
+
+On Windows the requested version must be one of the recent releases the script lists; for an older release, install any listed version and then run `starlake upgrade --version X.Y.Z`.
 
 </TabItem>
 
@@ -293,10 +304,13 @@ Run the following command to confirm the CLI is installed:
 starlake --version
 ```
 
-Expected output:
+Expected output (the exact versions depend on the release you installed):
 ```
-Starlake Version 1.3.4
+Starlake 1.8.1
+Spark 4.1.3
+...
 ```
+The command also lists the versions of the bundled components (Spark, Hadoop, and the enabled connector drivers).
 
 ## Start the Starlake Cockpit
 
@@ -356,16 +370,25 @@ The VS Code extension requires the Starlake Cockpit to be running in the backgro
 
 ## Upgrade Starlake to a Newer Version
 
-Run the `upgrade` command to fetch and install a newer version:
+Run the `upgrade` command to switch an existing installation to another version:
 
 ```bash
 starlake upgrade
 ```
 
-The upgrade process performs three steps:
-1. **Version selection** -- Retrieves the most recent release versions from GitHub Releases. You choose which one to install.
-2. **Configuration update** -- Updates `SL_VERSION` in your `versions.sh` (or `versions.bat`) file.
-3. **Artifact download** -- Deletes old JARs and downloads the new `starlake-core` and `starlake-api` files to `./bin/sl/` and `./bin/api/lib/`.
+For scripted or CI usage, pass the version directly instead of using the interactive menu (the `SL_UPGRADE_VERSION` environment variable works too):
+
+```bash
+starlake upgrade --version 1.7.1
+```
+
+The upgrade process performs four steps:
+1. **Version selection** -- Retrieves the most recent release versions from GitHub Releases. You choose which one to install, or pass `--version` to skip the menu.
+2. **Launcher self-update** -- Replaces the `starlake` script itself with the latest published one.
+3. **Runtime check** -- Reads the target release's own version pins and replaces the embedded Spark runtime in `./bin/spark` when the target pins a different Spark; otherwise it is kept as-is.
+4. **Re-provisioning** -- Downloads the target release's installer and lets it replace the core JAR, the API, and the connector JARs at that release's pinned versions, then regenerates `versions.sh` (or `versions.cmd`) from scratch.
+
+Upgrades work in both directions: selecting an older version downgrades the installation, including the Spark runtime (for example moving from a 1.8.x release on Spark 4 back to 1.7.x on Spark 3.5). Only the connectors that are already installed are refreshed; a selective installation stays selective.
 
 :::info Where artifacts live
 All Starlake artifacts are distributed from [GitHub Releases](https://github.com/starlake-ai/starlake/releases): each release tag `vX.Y.Z` carries the `starlake-core` assembly jar and the `starlake-api` zip with `.sha256` checksum companions. Development snapshots are published the same way, as a rolling pre-release tagged `v<version>-SNAPSHOT` whose assets are overwritten on every snapshot build. Snapshots never appear in the upgrade menu; to install one explicitly, set `SL_VERSION` to the snapshot version (for example `SL_VERSION=1.7.1-SNAPSHOT`) before running the setup script. Nothing is published to Maven Central or Sonatype anymore.
@@ -413,16 +436,19 @@ Continue with the CLI by following the tutorials below:
 ## Frequently Asked Questions
 
 ### What are the prerequisites to install Starlake?
-For Linux and macOS, you need Java 17 or higher installed. For Windows, you also need PowerShell 5.0 or later and administrator privileges. The Docker installation requires only Docker to be installed and running.
+None beyond a shell: the setup script checks for Java 17 or higher and, if none is found, installs an embedded portable JDK inside the Starlake directory (no root or administrator rights needed). Windows additionally needs PowerShell 5.0 or later. The Docker installation requires only Docker to be installed and running.
 
 ### Can I install Starlake using Docker?
 Yes, Docker is the fastest way to get started with Starlake. Pull the image with `docker pull starlakeai/starlake:latest` and run commands by mounting your project directory to `/starlake` in the container.
 
 ### Which Java version does Starlake require?
-Starlake requires Java 17 or higher. You can use either Oracle JDK or OpenJDK. Verify your version with `java -version`.
+Starlake requires Java 17 or higher. If your machine has none, the setup script installs an embedded portable Temurin 17 JDK inside the Starlake directory automatically. You can also use your own Oracle JDK or OpenJDK; verify with `java -version`.
 
 ### How do I upgrade Starlake to a newer version?
-Run `starlake upgrade` to fetch the latest versions from GitHub Releases. The command lets you choose which version to install and automatically updates the configuration and downloads the new JAR files.
+Run `starlake upgrade` and pick a version from the menu, or run `starlake upgrade --version X.Y.Z` non-interactively. The command works in both directions (upgrade and downgrade) and re-provisions the core JAR, connectors, and the Spark runtime when the target release pins a different Spark.
+
+### How do I install a specific (older) version of Starlake?
+Pass the version to the setup script directly, for example `bash <(curl -sL https://starlake.ai/setup.sh) --version=1.7.1` on Linux/macOS. On an existing installation, `starlake upgrade --version 1.7.1` switches to that version. In both cases every component (core JAR, connectors, Spark runtime) is installed at that release's pinned versions; there is no need to install the latest version first.
 
 ### Can I install Starlake without Java?
 Yes. Use the Docker installation method. The Docker image includes all dependencies, so you do not need to install Java separately.
