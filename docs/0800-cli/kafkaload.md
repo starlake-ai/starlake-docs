@@ -1,5 +1,5 @@
 ---
-sidebar_position: 260
+sidebar_position: 250
 title: kafkaload
 description: "Load and offload data between Kafka topics and BigQuery, files, or other sinks in batch or streaming mode."
 keywords: [starlake kafkaload, kafka ingestion, spark streaming, kafka batch offload, BigQuery, data pipeline]

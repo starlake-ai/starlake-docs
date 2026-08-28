@@ -1,5 +1,5 @@
 ---
-sidebar_position: 330
+sidebar_position: 320
 title: quack
 description: "Manage Quack DuckDB query servers — serve in foreground or detach as a background daemon."
 keywords: [starlake quack, quack server, DuckLake, DuckDB remote, Quack extension]

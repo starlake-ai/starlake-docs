@@ -1,5 +1,5 @@
 ---
-sidebar_position: 220
+sidebar_position: 210
 title: index
 description: "Alias for esload. Load datasets into Elasticsearch indices."
 keywords: [starlake index, Elasticsearch, index loading]

@@ -1,8 +1,8 @@
 ---
-sidebar_position: 350
+sidebar_position: 340
 title: semantic-export
-description: "Export semantic models from metadata/semantic to a vendor-neutral interchange format (Apache Ossie)."
-keywords: [starlake semantic-export, semantic model, semantic layer, apache ossie, open semantic interchange, BI, AI agents]
+description: "Export semantic models from metadata/semantic to Apache Ossie, a LookML project or a Power BI TMDL folder."
+keywords: [starlake semantic-export, semantic model, semantic layer, apache ossie, lookml, looker, tmdl, power bi, open semantic interchange, BI, AI agents]
 ---
 
 
@@ -12,20 +12,28 @@ keywords: [starlake semantic-export, semantic model, semantic layer, apache ossi
 
 ## Description
 
-Export the semantic models stored in metadata/semantic/ to a vendor-neutral
-interchange format. Currently supported format: ossie (Apache Ossie, incubating,
-formerly Open Semantic Interchange).
+Export the semantic models stored in metadata/semantic/ to another semantic
+format. Supported formats: ossie (Apache Ossie, incubating), lookml (a Looker
+project: one view file per table plus a model file with explores) and tmdl
+(a Power BI TMDL folder: database.tmdl, model.tmdl, relationships.tmdl and
+one tables/<table>.tmdl per table).
 
-Fields, primary keys, relationships, and metrics are mapped to their Ossie
-equivalents; Starlake-specific attributes with no Ossie counterpart (filters,
-sample values, verified query SQL, join types...) are preserved in
-custom_extensions blocks under the STARLAKE vendor name so no information is lost.
+For ossie, Starlake-specific attributes with no Ossie counterpart are
+preserved in custom_extensions blocks under the STARLAKE vendor name.
+
+For lookml, --connection sets the Looker connection name in the model file.
+
+For tmdl, --connection names the Starlake connection used to derive each
+table's Power Query source; simple aggregate metrics are translated to DAX
+and anything else becomes a BLANK() measure carrying the original SQL in a
+TODO comment.
 
 ````shell
 starlake semantic-export
-         --format ossie
+         --format tmdl
          --model ecommerce_analytics
-         --output /tmp/ossie-models
+         --connection snowflake_prod
+         --output /tmp/tmdl-models
 ````
 
 
@@ -33,7 +41,8 @@ starlake semantic-export
 
 Parameter|Cardinality|Description
 ---|---|---
---format `<value>`|*Optional*|Target interchange format. Only 'ossie' is supported for now (default)
+--format `<value>`|*Optional*|Target format: ossie (default), lookml or tmdl
 --model `<value>`|*Optional*|Name of a single semantic model to export (model 'name' field or file basename). All models by default
 --output `<value>`|*Optional*|Output directory. Defaults to metadata/semantic/export/ with one subfolder per format
+--connection `<value>`|*Optional*|lookml: Looker connection name written to the model file; tmdl: Starlake connection used to derive the Power Query source. Defaults to the project's connectionRef
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
