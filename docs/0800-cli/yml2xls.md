@@ -11,7 +11,7 @@ keywords: [starlake yml2xls-iam-policy-tags, IAM policy tags, Excel export, acce
 **starlake $command [options]**
 
 ## Description
-Export Starlake YAML domain and table definitions to an Excel spreadsheet.
+Export Starflow YAML domain and table definitions to an Excel spreadsheet.
 
 ## Parameters
 

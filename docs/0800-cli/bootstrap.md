@@ -1,7 +1,7 @@
 ---
 sidebar_position: 40
 title: bootstrap
-description: "Create a new Starlake project from scratch or from a template such as quickstart or userguide with a single command."
+description: "Create a new Starflow project from scratch or from a template such as quickstart or userguide with a single command."
 keywords: [starlake bootstrap, project setup, quickstart, project template]
 ---
 
@@ -12,7 +12,7 @@ keywords: [starlake bootstrap, project setup, quickstart, project template]
 
 ## Description
 
-Create a new Starlake project from a template. Generates the required directory structure and sample configuration files to get started quickly. See [Project Setup Guide](/guides/project-setup/starlake-project-setup).
+Create a new Starflow project from a template. Generates the required directory structure and sample configuration files to get started quickly. See [Project Setup Guide](/guides/project-setup/starlake-project-setup).
 
 Create a new project optionally based on a specific template eq. quickstart / userguide
 

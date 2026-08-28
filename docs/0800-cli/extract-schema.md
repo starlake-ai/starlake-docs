@@ -11,7 +11,7 @@ keywords: [starlake extract-schema, schema extraction, database schema, YAML gen
 **starlake extract-schema [options]**
 
 ## Description
-Extract table schemas from a JDBC database and generate Starlake YAML configuration files. Use this to reverse-engineer existing database tables into domain definitions with optional snake_case naming. See [Extract Tutorial](/guides/extract/tutorial).
+Extract table schemas from a JDBC database and generate Starflow YAML configuration files. Use this to reverse-engineer existing database tables into domain definitions with optional snake_case naming. See [Extract Tutorial](/guides/extract/tutorial).
 
 ## Parameters
 

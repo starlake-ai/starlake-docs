@@ -1,7 +1,7 @@
 ---
 sidebar_position: 80
 title: compare
-description: "Compare two versions of a Starlake project using file paths, git commits, or tags and generate a diff report with templates."
+description: "Compare two versions of a Starflow project using file paths, git commits, or tags and generate a diff report with templates."
 keywords: [starlake compare, project comparison, diff report, version comparison]
 ---
 
@@ -11,7 +11,7 @@ keywords: [starlake compare, project comparison, diff report, version comparison
 **starlake compare [options]**
 
 ## Description
-Compare two versions of a Starlake project to identify configuration differences. You can compare by file path, git commit, or git tag, and render the diff report using a custom template.
+Compare two versions of a Starflow project to identify configuration differences. You can compare by file path, git commit, or git tag, and render the diff report using a custom template.
 
 ## Parameters
 
