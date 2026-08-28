@@ -137,7 +137,7 @@ Starlake provides **production-grade data loading** with support for CSV, JSON, 
 
 dbt does not handle CDC -- it assumes data has already been extracted and loaded by another tool. Teams typically rely on Fivetran, Airbyte, or Debezium to capture changes before dbt transforms them.
 
-Starlake provides **end-to-end CDC pipelines** in a single tool. It supports [push-based CDC](/guides/load/cdc) (consuming Debezium events from Kafka), pull-based CDC (incremental JDBC extraction with watermark tracking), and file-based CDC. Changes are merged into target tables using write strategies -- `UPSERT_BY_KEY_AND_TIMESTAMP` for current-state tables, `SCD2` for full change history, or `DELETE_THEN_INSERT` for key-based replacement. Source-and-target deduplication handles multiple events per key within a single batch.
+Starlake provides **end-to-end CDC pipelines** in a single tool. It supports [push-based CDC](/starflow/guides/load/cdc) (consuming Debezium events from Kafka), pull-based CDC (incremental JDBC extraction with watermark tracking), and file-based CDC. Changes are merged into target tables using write strategies -- `UPSERT_BY_KEY_AND_TIMESTAMP` for current-state tables, `SCD2` for full change history, or `DELETE_THEN_INSERT` for key-based replacement. Source-and-target deduplication handles multiple events per key within a single batch.
 
 ## When to choose Starlake
 

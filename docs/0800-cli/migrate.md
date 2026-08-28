@@ -1,7 +1,7 @@
 ---
 sidebar_position: 290
 title: migrate
-description: "Migrate your Starlake project to the latest version, with warnings for breaking changes that require manual attention."
+description: "Migrate your Starflow project to the latest version, with warnings for breaking changes that require manual attention."
 keywords: [starlake migrate, project migration, version upgrade, schema evolution]
 ---
 
@@ -11,7 +11,7 @@ keywords: [starlake migrate, project migration, version upgrade, schema evolutio
 **starlake migrate [options]**
 
 ## Description
-Migrate the Starlake project configuration files to the latest version format.
+Migrate the Starflow project configuration files to the latest version format.
 
 ## Parameters
 

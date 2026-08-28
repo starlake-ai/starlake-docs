@@ -1,7 +1,7 @@
 ---
 sidebar_position: 200
 title: iam-policies
-description: "Generate and apply IAM policies for your Starlake project resources, managing access control with authentication tokens."
+description: "Generate and apply IAM policies for your Starflow project resources, managing access control with authentication tokens."
 keywords: [starlake iam-policies, IAM policies, access control, security]
 ---
 
@@ -11,7 +11,7 @@ keywords: [starlake iam-policies, IAM policies, access control, security]
 **starlake iam-policies [options]**
 
 ## Description
-Apply IAM (Identity and Access Management) policies defined in Starlake YAML configuration to the target warehouse.
+Apply IAM (Identity and Access Management) policies defined in Starflow YAML configuration to the target warehouse.
 
 ## Parameters
 

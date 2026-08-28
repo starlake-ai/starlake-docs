@@ -17,7 +17,7 @@ Starlake and Airbyte are both open-source data integration tools, but they serve
 |---|---|---|
 | **Connectors** | Files, JDBC databases, REST APIs, Kafka | 400+ pre-built connectors (SaaS, APIs, databases, files) |
 | **Files** | CSV, JSON, XML, Parquet, fixed-width | CSV, JSON, Parquet, Avro (via File/S3/GCS sources) |
-| **Databases** | JDBC extraction with incremental support and [CDC](/guides/load/cdc) (push via Debezium/Kafka, pull via watermark) | CDC (Debezium), incremental, full refresh per connector |
+| **Databases** | JDBC extraction with incremental support and [CDC](/starflow/guides/load/cdc) (push via Debezium/Kafka, pull via watermark) | CDC (Debezium), incremental, full refresh per connector |
 | **APIs** | REST API extraction (any JSON/XML API) with auth, pagination, rate limiting, incremental support | REST APIs, GraphQL, SaaS platforms (Salesforce, HubSpot, Stripe, etc.) |
 | **Streams** | Kafka / Kafka Streams | — |
 | **Custom sources** | OpenAPI schema extraction for automatic table generation | Connector Builder (low-code) or Connector Development Kit (Python) |

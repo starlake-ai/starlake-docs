@@ -13,7 +13,7 @@ keywords: [starlake extract-rest-schema, REST API, schema extraction, API schema
 ## Description
 
 Extract schemas from REST API endpoints by fetching sample responses and inferring
-the data structure. Generates Starlake YAML configuration files (domain + table definitions)
+the data structure. Generates Starflow YAML configuration files (domain + table definitions)
 that can be used for subsequent data extraction and ingestion.
 
 Examples

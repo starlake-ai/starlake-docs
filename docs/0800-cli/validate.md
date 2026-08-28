@@ -1,7 +1,7 @@
 ---
 sidebar_position: 430
 title: validate
-description: "Validate your Starlake project configuration by reloading all YAML files from disk and checking for errors or warnings."
+description: "Validate your Starflow project configuration by reloading all YAML files from disk and checking for errors or warnings."
 keywords: [starlake validate, project validation, YAML validation, configuration check]
 ---
 
@@ -11,7 +11,7 @@ keywords: [starlake validate, project validation, YAML validation, configuration
 **starlake validate [options]**
 
 ## Description
-Validate the Starlake project configuration files and optionally test database connections.
+Validate the Starflow project configuration files and optionally test database connections.
 
 ## Parameters
 

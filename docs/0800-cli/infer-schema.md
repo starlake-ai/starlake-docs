@@ -11,7 +11,7 @@ keywords: [starlake infer-schema, schema inference, YAML generation, data discov
 **starlake infer-schema [options]**
 
 ## Description
-Infer a Starlake table schema from a sample data file (CSV, JSON, etc.) and generate the corresponding YAML configuration. See [Load Tutorial](/guides/load/tutorial).
+Infer a Starflow table schema from a sample data file (CSV, JSON, etc.) and generate the corresponding YAML configuration. See [Load Tutorial](/starflow/guides/load/tutorial).
 
 ## Parameters
 

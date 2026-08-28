@@ -1,7 +1,7 @@
 ---
 sidebar_position: 90
 title: console
-description: "Launch the Starlake interactive console for exploring and managing your data project from a local web-based interface."
+description: "Launch the Starflow interactive console for exploring and managing your data project from a local web-based interface."
 keywords: [starlake console, interactive console, web interface, data exploration]
 ---
 
@@ -11,7 +11,7 @@ keywords: [starlake console, interactive console, web interface, data exploratio
 **starlake console [options]**
 
 ## Description
-Start an interactive Starlake console for exploring metadata and running commands from a local web-based interface. Use this to browse domains, tables, and task definitions in your project.
+Start an interactive Starflow console for exploring metadata and running commands from a local web-based interface. Use this to browse domains, tables, and task definitions in your project.
 
 ## Parameters
 
