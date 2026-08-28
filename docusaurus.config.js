@@ -95,7 +95,7 @@ const config = {
         } : {
           type: "docSidebar",
           sidebarId: "starlakeSidebar",
-          label: "Documentation",
+          label: "Starflow",
           position: "left",
           to: "/",
         },
@@ -107,6 +107,13 @@ const config = {
         !isBlog ? {
           to: "/guides",
           label: "Guides",
+          position: "left",
+        } : null,
+        !isBlog ? {
+          type: "docSidebar",
+          sidebarId: "docs",
+          docsPluginId: "qod",
+          label: "Quack on Demand",
           position: "left",
         } : null,
         !isBlog ? {
@@ -225,11 +232,21 @@ const config = {
   },
 
   plugins: [
+    !isBlog && [
+      "@docusaurus/plugin-content-docs",
+      {
+        id: "qod",
+        path: "qod",
+        routeBasePath: "qod",
+        sidebarPath: require.resolve("./sidebars-qod.js"),
+        editUrl: "https://github.com/starlake-ai/starlake-docs/tree/main/",
+      },
+    ],
     [
       require.resolve("@easyops-cn/docusaurus-search-local"),
       {
         hashed: true,
-        docsRouteBasePath: isBlog ? '/docs/' : '/',
+        docsRouteBasePath: isBlog ? '/docs/' : ['/', '/qod'],
         blogRouteBasePath: isBlog ? '/blog/' : '/',
       },
     ],

@@ -338,6 +338,10 @@ Quack requires DuckDB engine `1.5.3+` (Quack is a core extension). Starlake bund
 
 [Quack](https://duckdb.org/docs/extensions/quack) is a DuckDB extension that turns a DuckDB instance into a query server. The recommended way to expose a DuckLake lakehouse without sharing object-storage credentials with clients.
 
+:::tip Quack at fleet scale
+For multi-tenant Quack fleets with autoscaling, per-statement ACLs, and federated queries, see [Quack on Demand](/qod/), documented in its own section of this site. Everything below also applies to connecting to a QoD endpoint.
+:::
+
 **Client connection** (consumer, no DuckLake, no S3):
 
 ```yaml
