@@ -1,7 +1,6 @@
 
 const sidebars = {
   docs: [
-    { type: 'doc', id: 'index', label: 'Overview' },
     { type: 'doc', id: 'introduction', label: 'Introduction' },
     {
       type: 'category',
