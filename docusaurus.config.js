@@ -100,16 +100,6 @@ const config = {
           to: "/",
         },
         !isBlog ? {
-          to: "/overview",
-          label: "Overview",
-          position: "left",
-        } : null,
-        !isBlog ? {
-          to: "/guides",
-          label: "Guides",
-          position: "left",
-        } : null,
-        !isBlog ? {
           type: "docSidebar",
           sidebarId: "docs",
           docsPluginId: "qod",
