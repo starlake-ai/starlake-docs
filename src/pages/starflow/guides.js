@@ -6,7 +6,7 @@ import rehypeRaw from 'rehype-raw';
 import { useHistory, useLocation } from '@docusaurus/router';
 import styles from './guides.module.css';
 
-import guidesData from '../data/guides-data.json';
+import guidesData from '../../data/guides-data.json';
 
 export default function Guides() {
   const [selectedCategories, setSelectedCategories] = useState([]);

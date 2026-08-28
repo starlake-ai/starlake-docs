@@ -11,7 +11,7 @@ keywords: [starlake secure, data security, access control, row-level security, c
 **starlake secure [options]**
 
 ## Description
-Load data files from the pending directory into the data warehouse using schema definitions. See [Load Tutorial](/guides/load/tutorial).
+Load data files from the pending directory into the data warehouse using schema definitions. See [Load Tutorial](/starflow/guides/load/tutorial).
 
 ## Parameters
 

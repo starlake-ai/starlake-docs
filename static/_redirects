@@ -1,0 +1,21 @@
+# Starflow docs moved from the site root to /starflow (2026-08-28).
+# Cloudflare Pages serves these as 301s; keep them permanently so no
+# pre-move URL ever 404s. /qod, /search, /img, /assets are unaffected.
+/overview /starflow/overview 301
+/glossary /starflow/glossary 301
+/licensing /starflow/licensing 301
+/blog https://blog.starlake.ai 301
+/blog/* https://blog.starlake.ai/:splat 301
+/guides/* /starflow/guides/:splat 301
+/cli/* /starflow/cli/:splat 301
+/skills/* /starflow/skills/:splat 301
+/category/* /starflow/category/:splat 301
+/capabilities/* /starflow/capabilities/:splat 301
+/tags/* /starflow/tags/:splat 301
+/comparisons/* /starflow/comparisons/:splat 301
+/setup/* /starflow/setup/:splat 301
+/configuration/* /starflow/configuration/:splat 301
+/cockpit/* /starflow/cockpit/:splat 301
+/devguide/* /starflow/devguide/:splat 301
+/guides /starflow/guides 301
+/cli /starflow/cli 301

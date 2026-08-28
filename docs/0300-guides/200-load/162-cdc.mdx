@@ -113,7 +113,7 @@ import Head from '@docusaurus/Head';
 
 # Change Data Capture (CDC)
 
-Change Data Capture (CDC) tracks row-level changes (inserts, updates, deletes) in a source database and propagates them to a target. Starlake supports CDC through three patterns that all converge on its [write strategies](/guides/load/write-strategies) for merging changes into target tables.
+Change Data Capture (CDC) tracks row-level changes (inserts, updates, deletes) in a source database and propagates them to a target. Starlake supports CDC through three patterns that all converge on its [write strategies](/starflow/guides/load/write-strategies) for merging changes into target tables.
 
 ## CDC patterns overview
 
@@ -322,7 +322,7 @@ SCD2 automatically manages `valid_from` and `valid_to` columns. When a new versi
 
 ## Pattern B: Pull-based CDC with incremental extraction
 
-This pattern uses Starlake's built-in [incremental extraction](/guides/extract/incremental) to query the source for new or modified rows. No Kafka infrastructure is needed.
+This pattern uses Starlake's built-in [incremental extraction](/starflow/guides/extract/incremental) to query the source for new or modified rows. No Kafka infrastructure is needed.
 
 ```
 starlake extract-data --incremental --> CSV/Parquet files --> starlake load --> target table
@@ -564,7 +564,7 @@ starlake freshness
 
 ### Extraction audit (pull-based CDC)
 
-The `SL_LAST_EXPORT` table tracks every incremental extraction run with watermark values, row counts, and success status. See [Extraction Monitoring](/guides/extract/monitoring) for details.
+The `SL_LAST_EXPORT` table tracks every incremental extraction run with watermark values, row counts, and success status. See [Extraction Monitoring](/starflow/guides/extract/monitoring) for details.
 
 ### Data quality expectations
 
@@ -608,7 +608,7 @@ Starlake supports CDC through three patterns: push-based CDC via Kafka (consumin
 Use `UPSERT_BY_KEY_AND_TIMESTAMP` for current-state tables that only need the latest version of each record. Use `SCD2` for full change history with start and end timestamps. Use `DELETE_THEN_INSERT` when you need to handle hard deletes or replace entire key sets.
 
 ### Can Starlake consume Debezium CDC events from Kafka?
-Yes. Configure a Debezium connector with the `ExtractNewRecordState` SMT to flatten CDC events, then use Starlake's [Kafka ingestion](/capabilities/ingestion-kafka) to consume them into a raw staging table. A transform task then applies write strategies to merge changes into the target.
+Yes. Configure a Debezium connector with the `ExtractNewRecordState` SMT to flatten CDC events, then use Starlake's [Kafka ingestion](/starflow/capabilities/ingestion-kafka) to consume them into a raw staging table. A transform task then applies write strategies to merge changes into the target.
 
 ### How does Starlake handle CDC deletes?
 For push-based CDC (Debezium), use the `ExtractNewRecordState` SMT with `delete.handling.mode: rewrite`, which adds a `__deleted` column. Use `presql` to delete matching keys from the target before the UPSERT runs. For pull-based CDC, use soft-delete columns (`is_deleted`, `deleted_at`) in the source.
@@ -622,7 +622,7 @@ When `writeStrategy.on` is set to `SOURCE_AND_TARGET`, Starlake deduplicates the
 ## Related
 
 - [Write Strategies](./write-strategies) -- detailed reference for APPEND, UPSERT, SCD2, DELETE_THEN_INSERT and ADAPTATIVE
-- [Incremental Extraction](/guides/extract/incremental) -- configure pull-based CDC with partitionColumn and SL_LAST_EXPORT
-- [Kafka Ingestion](/capabilities/ingestion-kafka) -- consume CDC events from Kafka topics
+- [Incremental Extraction](/starflow/guides/extract/incremental) -- configure pull-based CDC with partitionColumn and SL_LAST_EXPORT
+- [Kafka Ingestion](/starflow/capabilities/ingestion-kafka) -- consume CDC events from Kafka topics
 - [Load Tutorial](./tutorial) -- end-to-end walkthrough for loading files into your warehouse
-- [Expectations](/guides/load/expectations) -- data quality checks for CDC event validation
+- [Expectations](/starflow/guides/load/expectations) -- data quality checks for CDC event validation

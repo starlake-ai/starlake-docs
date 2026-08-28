@@ -11,7 +11,7 @@ keywords: [starlake dag-generate, DAG generation, Airflow, workflow orchestratio
 **starlake dag-generate [options]**
 
 ## Description
-Generate Airflow or Dagster DAG files from Starlake task and domain definitions. The command analyzes SQL dependencies to produce correctly ordered workflow graphs, with optional tag filtering. See [Orchestration Guide](/guides/orchestrate/tutorial).
+Generate Airflow or Dagster DAG files from Starflow task and domain definitions. The command analyzes SQL dependencies to produce correctly ordered workflow graphs, with optional tag filtering. See [Orchestration Guide](/starflow/guides/orchestrate/tutorial).
 
 ## Parameters
 

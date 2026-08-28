@@ -11,7 +11,7 @@ keywords: [starlake metrics, data quality, schema metrics, data profiling]
 **starlake metrics [options]**
 
 ## Description
-Compute data quality metrics (continuous, discrete, and frequency metrics) on loaded tables. See [Metrics Guide](/guides/load/metrics).
+Compute data quality metrics (continuous, discrete, and frequency metrics) on loaded tables. See [Metrics Guide](/starflow/guides/load/metrics).
 
 ## Parameters
 

@@ -11,7 +11,7 @@ keywords: [starlake test, data testing, unit tests, data validation, test report
 **starlake test [options]**
 
 ## Description
-Run unit tests for load and transform tasks using sample data and expected results. See [Unit Tests Guide](/guides/unit-tests/concepts).
+Run unit tests for load and transform tasks using sample data and expected results. See [Unit Tests Guide](/starflow/guides/unit-tests/concepts).
 
 ## Parameters
 

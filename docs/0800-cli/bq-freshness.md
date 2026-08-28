@@ -10,7 +10,7 @@ keywords:
 ---
 
 :::warning Deprecated
-The `bq-freshness` command has been replaced by [`freshness`](/cli/freshness), which works across all supported warehouses (not just BigQuery). Please use `starlake freshness` instead.
+The `bq-freshness` command has been replaced by [`freshness`](/starflow/cli/freshness), which works across all supported warehouses (not just BigQuery). Please use `starlake freshness` instead.
 :::
 
 ## Synopsis

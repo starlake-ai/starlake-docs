@@ -39,7 +39,7 @@ const config = {
         } : {
           path: 'docs',  // Regular docs directory
           sidebarPath: require.resolve("./sidebars.js"),
-          routeBasePath: '/',
+          routeBasePath: 'starflow',
           exclude: ['superpowers/**'],
         },
         blog: isBlog ? {
@@ -93,7 +93,7 @@ const config = {
           label: "Documentation",
           position: "left",
         } : {
-          to: "/",
+          to: "/starflow",
           label: "Starflow",
           position: "left",
         },
@@ -232,7 +232,7 @@ const config = {
       require.resolve("@easyops-cn/docusaurus-search-local"),
       {
         hashed: true,
-        docsRouteBasePath: isBlog ? '/docs/' : ['/', '/qod'],
+        docsRouteBasePath: isBlog ? '/docs/' : ['/starflow', '/qod'],
         blogRouteBasePath: isBlog ? '/blog/' : '/',
       },
     ],

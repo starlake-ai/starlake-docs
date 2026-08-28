@@ -12,7 +12,7 @@ keywords: [starlake extract-data, data extraction, database export, parallel ext
 
 ## Description
 
-Extract data from a JDBC database into CSV or Parquet files. Supports incremental extraction, parallel partitioning, and selective table filtering for efficient large-scale data exports. See [Extract Tutorial](/guides/extract/tutorial).
+Extract data from a JDBC database into CSV or Parquet files. Supports incremental extraction, parallel partitioning, and selective table filtering for efficient large-scale data exports. See [Extract Tutorial](/starflow/guides/extract/tutorial).
 
 Extract data from any database defined in mapping file.
 

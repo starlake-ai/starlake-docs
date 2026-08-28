@@ -16,7 +16,7 @@ Starlake and dlt are both open-source data pipeline tools, but they take fundame
 | | Starlake | dlt |
 |---|---|---|
 | **Files** | CSV, JSON, XML, Parquet, fixed-width | CSV, JSON, Parquet |
-| **Databases** | JDBC extraction with incremental support and [CDC](/guides/load/cdc) (push via Debezium/Kafka, pull via watermark) | 100+ databases via SQLAlchemy |
+| **Databases** | JDBC extraction with incremental support and [CDC](/starflow/guides/load/cdc) (push via Debezium/Kafka, pull via watermark) | 100+ databases via SQLAlchemy |
 | **APIs** | REST API extraction (any JSON/XML API) with auth, pagination, rate limiting, incremental support | REST API declarative source, 60+ verified connectors |
 | **Streams** | Kafka / Kafka Streams | — |
 

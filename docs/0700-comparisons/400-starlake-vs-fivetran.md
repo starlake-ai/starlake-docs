@@ -18,7 +18,7 @@ Starlake and Fivetran both move data into cloud warehouses, but they differ in s
 |---|---|---|
 | **Connectors** | Files, JDBC databases, REST APIs, Kafka | 500+ pre-built connectors (SaaS, APIs, databases, files, events) |
 | **Files** | CSV, JSON, XML, Parquet, fixed-width | CSV, JSON, Parquet, Avro, XLSX (via S3/GCS/Azure/SFTP/Box/Dropbox) |
-| **Databases** | JDBC extraction with incremental support and [CDC](/guides/load/cdc) (push via Debezium/Kafka, pull via watermark) | Log-based CDC for Postgres, MySQL, Oracle, SQL Server, MongoDB, etc. |
+| **Databases** | JDBC extraction with incremental support and [CDC](/starflow/guides/load/cdc) (push via Debezium/Kafka, pull via watermark) | Log-based CDC for Postgres, MySQL, Oracle, SQL Server, MongoDB, etc. |
 | **APIs** | REST API extraction (any JSON/XML API) with auth, pagination, rate limiting, incremental support | SaaS connectors (Salesforce, HubSpot, NetSuite, Workday, Stripe, etc.) |
 | **Streams** | Kafka / Kafka Streams | Kafka, Kinesis, Confluent Cloud |
 | **Custom sources** | OpenAPI schema extraction for automatic table generation | Connector SDK (Python) and Cloud Functions connectors |
