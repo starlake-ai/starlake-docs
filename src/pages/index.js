@@ -1,67 +1,158 @@
 import React from 'react';
 import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
+import CodeBlock from '@theme/CodeBlock';
+import styles from './index.module.css';
+
+const HAND_WRITTEN = `-- merge_orders.sql, one warehouse of three
+CREATE TEMP TABLE orders_stage AS
+SELECT * FROM read_json('incoming/orders_*.json');
+
+-- reject rows with bad types, log them somewhere
+-- handle the column that marketing renamed last week
+
+MERGE INTO analytics.orders t
+USING orders_stage s ON t.order_id = s.order_id
+WHEN MATCHED AND s.order_date > t.order_date
+  THEN UPDATE SET quantity = s.quantity, ...
+WHEN NOT MATCHED THEN INSERT (order_id, ...)
+
+-- plus dag.py: sensors, retries, alerting
+-- plus the audit table nobody backfilled
+-- now repeat for Snowflake and BigQuery`;
+
+const STARFLOW_YAML = `# metadata/load/starbake/orders.sl.yml
+table:
+  name: orders
+  pattern: "orders.*.json"
+  metadata:
+    format: JSON_FLAT
+    schedule: "0 * * * *"
+    writeStrategy:
+      type: UPSERT_BY_KEY_AND_TIMESTAMP
+      key: [order_id]
+      timestamp: order_date
+  attributes:
+    - name: order_id
+      type: long
+    - name: customer_id
+      type: long
+      foreignKey: starbake.customers.id
+    - name: order_date
+      type: date`;
 
 function HeroSection() {
   return (
-    <section className="hero--starlake">
-      <div className="container">
-        <h1 className="hero__title">Prompt in plain English. Starflow AI ships.</h1>
-        <p className="hero__subtitle" style={{ fontSize: '1.4rem', marginBottom: '1rem' }}>
-          The <strong>what</strong>, not the <strong>how</strong>.
-        </p>
-        <p className="hero__subtitle" style={{ maxWidth: '780px', margin: '0 auto 2rem', textAlign: 'center' }}>
-          Pipelines as configuration, not code.
-        </p>
-
-        <div className="hero__buttons">
-          <Link
-            className="button--starlake button--starlake-primary"
-            to="/skills/getting-started/quickstart">
-            Quickstart
-          </Link>
-          <Link
-            className="button--starlake button--starlake-secondary"
-            to="/skills/starflow">
-            Try Starflow
-          </Link>
-          <Link
-            className="button--starlake button--starlake-secondary"
-            to="/skills/catalog">
-            Browse Skills
-          </Link>
-          <Link
-            className="button--starlake button--starlake-secondary"
-            href="https://github.com/starlake-ai/starlake-skills">
-            GitHub
-          </Link>
+    <section className={styles.hero}>
+      <div className={`container ${styles.heroGrid}`}>
+        <div className={styles.heroCopy}>
+          <span className={styles.eyebrow}>Starlake Starflow</span>
+          <h1 className={styles.heroTitle}>
+            Declare the pipeline.
+            <br />
+            Skip the plumbing.
+          </h1>
+          <p className={styles.heroLede}>
+            Starflow turns the extract, load, transform, and orchestration
+            boilerplate every data team rewrites into one YAML file per table:
+            you declare <em>what</em>, it generates the <em>how</em> for your
+            warehouse.
+          </p>
+          <div className={styles.ctaRow}>
+            <Link className="button--starlake button--starlake-primary" to="/setup/starlake-core-setup">
+              Quickstart
+            </Link>
+            <Link className="button--starlake button--starlake-secondary" to="/guides">
+              Browse the guides
+            </Link>
+          </div>
+          <p className={styles.proofLine}>
+            Apache-2.0 · In production at BPCE Payment Services, Estreem, and Axereal
+          </p>
+        </div>
+        <div className={styles.compare}>
+          <div className={`${styles.pane} ${styles.paneBefore}`}>
+            <div className={styles.paneTab}>by hand</div>
+            <div className={styles.paneCode}>
+              <CodeBlock language="sql">{HAND_WRITTEN}</CodeBlock>
+            </div>
+            <div className={styles.paneCaption}>per table, per warehouse, forever</div>
+          </div>
+          <div className={`${styles.pane} ${styles.paneAfter}`}>
+            <div className={styles.paneTab}>with Starflow</div>
+            <div className={styles.paneCode}>
+              <CodeBlock language="yaml">{STARFLOW_YAML}</CodeBlock>
+            </div>
+            <div className={styles.paneCaption}>
+              parse, validate, merge, schedule: the whole pipeline
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-function StatsSection() {
+function TrustStrip() {
+  const facts = [
+    { title: 'Apache-2.0, for good', detail: 'A standing public commitment: no BSL, no SSPL, ever.' },
+    { title: 'No telemetry', detail: 'Nothing phones home. Verify it in the source.' },
+    { title: 'Your infrastructure', detail: 'Runs entirely where your data lives. EU-sovereignty friendly.' },
+    { title: 'Open standards', detail: 'Arrow Flight SQL and DuckLake, not proprietary protocols.' },
+  ];
   return (
-    <section className="features-section" style={{ padding: '1.5rem 0' }}>
+    <section className={styles.trust}>
+      <div className={`container ${styles.trustGrid}`}>
+        {facts.map((f) => (
+          <div className={styles.trustItem} key={f.title}>
+            <span className={styles.trustTitle}>{f.title}</span>
+            <span className={styles.trustDetail}>{f.detail}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PipelineSection() {
+  const stages = [
+    {
+      title: 'Extract',
+      description: 'Pull schemas and data from JDBC databases, REST APIs, and OpenAPI specs into versioned YAML.',
+      link: '/guides/extract/tutorial',
+    },
+    {
+      title: 'Load',
+      description: 'Ingest CSV, JSON, XML, and Parquet with type validation, rejection reports, and merge strategies.',
+      link: '/guides/load/tutorial',
+    },
+    {
+      title: 'Transform',
+      description: 'Write plain SQL; Starflow resolves dependencies and generates the right MERGE for each engine.',
+      link: '/guides/transform/tutorial',
+    },
+    {
+      title: 'Orchestrate',
+      description: 'Dependency-ordered DAGs generated for Airflow, Dagster, or Snowflake Tasks. No hand-written graphs.',
+      link: '/guides/orchestrate/tutorial',
+    },
+  ];
+  return (
+    <section className="features-section">
       <div className="container">
-        <div className="stats-bar">
-          <div className="stat-item">
-            <span className="stat-item__number">49</span>
-            <span className="stat-item__label">CLI Skills</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-item__number">19</span>
-            <span className="stat-item__label">Starflow Skills</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-item__number">5</span>
-            <span className="stat-item__label">Agent Personas</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-item__number">11</span>
-            <span className="stat-item__label">Skill Categories</span>
-          </div>
+        <h2 className="features-section__title">One declaration, four stages</h2>
+        <p className="features-section__subtitle">
+          The same YAML drives every step, on DuckDB, BigQuery, Snowflake, Redshift,
+          PostgreSQL, or Spark.
+        </p>
+        <div className={styles.stageGrid}>
+          {stages.map((s) => (
+            <Link to={s.link} key={s.title} className={styles.stageCard}>
+              <h3 className={styles.stageTitle}>{s.title}</h3>
+              <p className={styles.stageDescription}>{s.description}</p>
+              <span className={styles.stageCta}>Tutorial →</span>
+            </Link>
+          ))}
         </div>
       </div>
     </section>
@@ -256,7 +347,7 @@ function StarflowSection() {
   return (
     <section className="features-section" style={{ background: 'var(--sl-color-surface)' }}>
       <div className="container">
-        <h2 className="features-section__title">Starflow: Guided Methodology</h2>
+        <h2 className="features-section__title">Guided methodology, five expert personas</h2>
         <p className="features-section__subtitle">
           Four phases, five expert personas, persistent step-file workflows that resume across sessions.
         </p>
@@ -436,10 +527,11 @@ export default function Home() {
   return (
     <Layout
       title="Home"
-      description="Open-source AI skills for the Starlake CLI: 49 skills plus Starflow, a guided methodology with five expert personas.">
+      description="Starlake Starflow: declarative, YAML-driven extract, load, transform, and orchestration for DuckDB, BigQuery, Snowflake, Redshift, and PostgreSQL.">
       <main>
         <HeroSection />
-        <StatsSection />
+        <TrustStrip />
+        <PipelineSection />
         <TwoPathsSection />
         <StarflowSection />
         <SkillsOverviewSection />
