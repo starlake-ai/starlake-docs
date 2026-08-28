@@ -1,0 +1,31 @@
+---
+id: index
+slug: /
+title: Quack on Demand
+description: Documentation for Starlake Quack on Demand, the multi-tenant Arrow Flight SQL gateway for DuckDB and DuckLake.
+---
+
+**Starlake Quack on Demand** (QoD) is a multi-tenant [Arrow Flight SQL](https://arrow.apache.org/docs/format/FlightSql.html) gateway for [DuckDB](https://duckdb.org) and [DuckLake](https://ducklake.select): a single, governed, horizontally-scaled SQL endpoint in front of many DuckDB engines, with per-tenant isolation, fine-grained ACLs, federated queries, and ODBC/JDBC/ADBC access.
+
+Like [Starflow](/), QoD is Apache-2.0, runs entirely on your own infrastructure, and phones home to no one.
+
+## Start here
+
+- [Introduction](/qod/introduction) — what QoD does and when to use it
+- [Quickstart](/qod/getting-started/quickstart) — first query in minutes
+- [Install](/qod/getting-started/install) — Docker, Kubernetes, or local
+- [Architecture](/qod/concepts/architecture) — how routing, pools, and catalogs fit together
+
+## Dive deeper
+
+- [Connecting clients](/qod/connecting/clients) — DBeaver, Tableau, Power BI, MCP, plain SQL drivers
+- [Operating](/qod/operating/deploy-kubernetes) — deployment, autoscaling, federation, observability, hardening
+- [Administration](/qod/administration/) — onboarding, access control, audit, usage accounting
+- [Reference](/qod/reference/configuration) — configuration, CLI, metrics
+- [HTTP API reference](pathname:///api/)
+
+## QoD and Starflow
+
+QoD is a standalone product; you do not need Starflow to run it. If you use Starflow, the [`starlake quack`](/cli/quack) command can host a Quack DuckDB server inside the Starflow JVM for local, single-node use, and Starflow can query any Flight SQL endpoint, including a QoD fleet, as a [regular connection](/guides/project-setup/connections). For multi-tenant fleets with autoscaling and ACLs, use QoD.
+
+Source and issues: [github.com/starlake-ai/quack-on-demand](https://github.com/starlake-ai/quack-on-demand)
