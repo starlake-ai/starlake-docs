@@ -93,16 +93,12 @@ const config = {
           label: "Documentation",
           position: "left",
         } : {
-          type: "docSidebar",
-          sidebarId: "starlakeSidebar",
+          to: "/",
           label: "Starflow",
           position: "left",
-          to: "/",
         },
         !isBlog ? {
-          type: "docSidebar",
-          sidebarId: "docs",
-          docsPluginId: "qod",
+          to: "/qod",
           label: "Quack on Demand",
           position: "left",
         } : null,
