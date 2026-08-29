@@ -313,3 +313,25 @@
   font-size: 0.78rem;
   color: var(--ifm-color-emphasis-600);
 }
+
+.demoChip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0 0 1.4rem;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.85rem;
+}
+
+.demoChip code {
+  background: rgba(35, 178, 109, 0.12);
+  border: 1px solid rgba(35, 178, 109, 0.35);
+  border-radius: 8px;
+  padding: 0.45rem 0.8rem;
+  color: var(--green);
+}
+
+.demoChip span {
+  font-size: 0.75rem;
+  color: var(--ifm-color-emphasis-600);
+}

@@ -29,6 +29,10 @@ function Hero() {
             federated queries. Query it from any ODBC/JDBC/ADBC client. Works with
             any ETL.
           </p>
+          <p className={styles.demoChip}>
+            <code>uvx qod start --demo</code>
+            <span> no install, no Postgres</span>
+          </p>
           <div className={styles.ctaRow}>
             <Link className={styles.ctaPrimary} to="/qod/getting-started/quickstart">
               Get started
