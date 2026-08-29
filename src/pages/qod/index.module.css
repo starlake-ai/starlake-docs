@@ -306,3 +306,10 @@
 @media (prefers-reduced-motion: reduce) {
   .heroCopy, .terminalWrap { animation: none; }
 }
+
+.proofLine {
+  margin: 1.1rem 0 0;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.78rem;
+  color: var(--ifm-color-emphasis-600);
+}

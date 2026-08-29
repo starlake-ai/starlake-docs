@@ -43,6 +43,10 @@ function Hero() {
               GitHub
             </Link>
           </div>
+          <p className={styles.proofLine}>
+            In production at BPCE Payment Services, Estreem, Axereal, Z Energy,
+            and Ascendia
+          </p>
         </div>
 
         <div className={styles.terminalWrap}>

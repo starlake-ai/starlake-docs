@@ -67,7 +67,7 @@ function HeroSection() {
             </Link>
           </div>
           <p className={styles.proofLine}>
-            Apache-2.0 · In production at BPCE Payment Services, Estreem, and Axereal
+            Apache-2.0 · In production at BPCE Payment Services, Estreem, Axereal, Z Energy, and Ascendia
           </p>
         </div>
         <div className={styles.compare}>

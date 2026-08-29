@@ -69,7 +69,7 @@ export default function Home() {
               ))}
             </div>
             <p className={styles.footNote}>
-              In production at BPCE Payment Services, Estreem, and Axereal ·{' '}
+              In production at BPCE Payment Services, Estreem, Axereal, Z Energy, and Ascendia ·{' '}
               <Link to="https://github.com/starlake-ai">GitHub</Link> ·{' '}
               <Link to="https://blog.starlake.ai">Blog</Link>
             </p>
