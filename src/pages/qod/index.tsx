@@ -44,8 +44,8 @@ function Hero() {
             </Link>
           </div>
           <p className={styles.proofLine}>
-            In production at BPCE Payment Services, Estreem, Axereal, Z Energy,
-            and Ascendia
+            In production at BPCE Payment Services, Estreem, Axereal, ZE Energy,
+            and Asendia
           </p>
         </div>
 
