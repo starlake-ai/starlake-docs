@@ -58,10 +58,10 @@ export default function Home() {
         <section className={styles.hero}>
           <div className="container">
             <span className={styles.eyebrow}>Starlake documentation</span>
-            <h1 className={styles.title}>Two open-source products, one platform</h1>
+            <h1 className={styles.title}>Declarative pipelines. DuckDB at scale.</h1>
             <p className={styles.lede}>
-              Both Apache-2.0 with a standing commitment never to relicense, both
-              free of telemetry, both running entirely on your own infrastructure.
+              Each is Apache-2.0 with a standing commitment never to relicense,
+              ships no telemetry, and runs entirely on your own infrastructure.
             </p>
             <div className={styles.cardGrid}>
               {PRODUCTS.map((p) => (
