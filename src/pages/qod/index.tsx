@@ -17,7 +17,7 @@ function Hero() {
     <header className={styles.hero}>
       <div className={styles.heroGrid}>
         <div className={styles.heroCopy}>
-          <span className={styles.kicker}>Arrow Flight SQL gateway</span>
+          <span className={styles.kicker}>DuckDB control plane</span>
           <h1 className={styles.title}>
             Autoscale DuckDB fleets
             <br />
