@@ -234,6 +234,10 @@ const config = {
         hashed: true,
         docsRouteBasePath: isBlog ? '/docs/' : ['/starflow', '/qod'],
         blogRouteBasePath: isBlog ? '/blog/' : '/',
+        ...(isBlog ? {} : {
+          searchContextByPaths: ['qod'],
+          hideSearchBarWithNoSearchContext: false,
+        }),
       },
     ],
     [
