@@ -3,7 +3,7 @@ id: oauth-server-setup
 title: OAuth / OIDC server setup (per provider)
 ---
 
-This page is the complete server-side reference for wiring an OAuth / OIDC provider into the **FlightSQL data plane** (how a SQL client - JDBC, ADBC, the Arrow Flight SQL ODBC driver behind Power BI / Excel - authenticates with a bearer token). It covers Keycloak, Google, Azure AD, and AWS Cognito: the manager config keys, the endpoints the manager derives, and the matching client setup on the identity provider.
+This page is the complete server-side reference for wiring an OAuth / OIDC provider into the **FlightSQL data plane** (how a SQL client - JDBC, ADBC (including the Power BI connector, which rides the FlightSQL ADBC driver), or a Flight SQL ODBC driver - authenticates with a bearer token). It covers Keycloak, Google, Azure AD, and AWS Cognito: the manager config keys, the endpoints the manager derives, and the matching client setup on the identity provider.
 
 For the admin-UI browser login (the `/ui/` single sign-on), see the "Admin UI single sign-on" section of [Authentication providers](./auth-providers.md) - that is a separate, discovery-based switch and is not what this page configures.
 
@@ -44,7 +44,7 @@ Every scalar below has a `QOD_*` env-var override (the canonical way to set it; 
 Provider-side setup depends on how the SQL client obtains the token:
 
 - **Basic credentials over Flight (JDBC, ADBC)** - the edge does a ROPC (resource-owner password) exchange. Create a **confidential** client with *Direct access grants* enabled, and put its id/secret in `CLIENT_ID` / `CLIENT_SECRET`.
-- **Interactive auth-code + PKCE (Power BI / Excel via the Flight SQL ODBC driver)** - create a **public** client with *Standard flow* enabled and PKCE (`S256`), and register the client's redirect URI (for Power BI: `https://oauth.powerbi.com/views/oauthredirect.html`). Because this is a *different* client than `CLIENT_ID`, you must add an **audience mapper** so its token's `aud` includes `CLIENT_ID` (see [Audience](#audience-the-token-must-be-for-your-client) below).
+- **Interactive auth-code + PKCE (the Power BI connector, or Excel via a Flight SQL ODBC driver)** - create a **public** client with *Standard flow* enabled and PKCE (`S256`), and register the client's redirect URI (for Power BI: `https://oauth.powerbi.com/views/oauthredirect.html`). Because this is a *different* client than `CLIENT_ID`, you must add an **audience mapper** so its token's `aud` includes `CLIENT_ID` (see [Audience](#audience-the-token-must-be-for-your-client) below).
 
 ### Split-horizon issuer (`QOD_AUTH_KEYCLOAK_ISSUER`)
 
