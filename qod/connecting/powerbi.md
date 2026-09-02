@@ -3,49 +3,35 @@ id: powerbi
 title: Power BI
 ---
 
-Power BI / Microsoft Fabric connects to Quack on Demand through the **QoD custom connector**, which wraps the Apache Arrow Flight SQL ODBC driver. The same `.mez` works in Power BI Desktop and the on-premises data gateway, so a report you author on the desktop refreshes the same way in the Power BI Service.
+Power BI / Microsoft Fabric connects to Quack on Demand through the **QoD custom connector** (v2.0.0+), built on `Adbc.Connection` and the **FlightSQL ADBC driver that ships in-box with Power BI Desktop** - no driver installation on the client. The connector supports **Import and DirectQuery**, with query folding: filters, projections, joins, aggregations, and top-N push down as SQL to the Quack edge.
 
 ```
-Power BI ──M──▶ QoD.mez ──ODBC──▶ Arrow Flight SQL ODBC driver ──Flight SQL──▶ Quack edge (:31338, TLS)
+Power BI ──M──▶ QoD.mez ──Adbc.Connection──▶ FlightSQL ADBC driver (in-box) ──Flight SQL──▶ Quack edge (:31338, TLS)
 ```
+
+The navigator and every query inherit Quack's server-side enforcement: the table list is RBAC-filtered per principal, and column masking and row policies apply inside the folded SQL. The connector holds no privileged access.
 
 This page covers installing the connector and connecting. For the server-side `tenant` / `pool` and auth contracts that the connector rides on, see [Connecting clients](/qod/connecting/clients) and [Authenticating](/qod/connecting/authenticating).
 
+:::info Coming from the v1 (ODBC) connector?
+v1 wrapped the Arrow Flight SQL ODBC driver and was blocked on that driver's maturity. v2 replaces the transport entirely; the parameters, data source kind, and credential kinds are unchanged, and the ODBC driver is no longer needed anywhere. Uninstalling it is safe.
+:::
+
 ## Prerequisites
 
-- **Power BI Desktop**, and optionally the **on-premises data gateway** for refresh in the Power BI Service.
-- The **Apache Arrow Flight SQL ODBC driver** registered on the machine running PBI Desktop or the gateway. The connector wraps it; without the driver installed the connector loads but cannot open a session.
+- **Power BI Desktop 2.145.1105.0 (July 2025) or later.** The FlightSQL ADBC driver ships in-box (`bin\ADBC Drivers\FlightSQL\libadbc_driver_flightsql.dll`); there is nothing to install or register. On an older Desktop the connector loads but fails with `The Adbc.Connection function is not available in this environment`.
+- For refresh in the **Power BI Service**: an **on-premises data gateway** hosting the connector - see [Power BI Service and the gateway](#power-bi-service-and-the-gateway).
 - Quack credentials in one of the three supported kinds:
   - Username + password (validated against the Quack Postgres / BCrypt backend)
-  - Static JWT (validated against the external JWT backend)
+  - Static JWT (validated against the external JWT backend; QoD PATs are REST-only and are **not** accepted on the FlightSQL edge)
   - OAuth 2.0 / OIDC token (Keycloak / Entra ID / Google / Cognito)
 
 ## Install the connector
-
-### Install the prerequisite: Arrow Flight SQL ODBC driver
-
-The connector wraps the Arrow Flight SQL ODBC driver - it must be installed on every machine that runs Power BI Desktop or the on-premises data gateway, otherwise the connector loads but every connection fails with `[Apache Arrow][Flight SQL] (500) ... failed to connect`.
-
-Download the latest Dremio build of the driver from the official Dremio download server:
-
-| Platform | Installer |
-|---|---|
-| **Windows** (Power BI Desktop, gateway) | [`arrow-flight-sql-odbc-LATEST-win64.msi`](https://download.dremio.com/arrow-flight-sql-odbc-driver/arrow-flight-sql-odbc-LATEST-win64.msi) |
-
-The full release index (per-version artifacts) is at [download.dremio.com/arrow-flight-sql-odbc-driver/](https://download.dremio.com/arrow-flight-sql-odbc-driver/).
-
-For Power BI Desktop on Windows, run the MSI as administrator; the installer registers the ODBC driver under the name **`Arrow Flight SQL ODBC Driver`** in both the 32-bit and 64-bit ODBC data-source administrator. The QoD connector references that exact name, so no extra configuration is needed.
-
-To confirm the install, open **ODBC Data Sources (64-bit) -> Drivers** tab and verify **`Arrow Flight SQL ODBC Driver`** is listed.
-
-### Install the connector
 
 The connector ships as two artifacts:
 
 - **`QoD.mez`** - the connector packaged **unsigned**; loads only with the data-extensions security setting **lowered** (Option 1).
 - **`QoD.pqx`** - a packed, **signed** connector; loads under the **Recommended** security setting once you trust its signing certificate's thumbprint (Option 3). This is how you allow **only** the QoD connector while still blocking other uncertified extensions.
-
-Three install paths follow.
 
 :::caution Using OAuth 2.0 / OIDC?
 The OAuth endpoints and client ID are **compiled into the `.mez`** (`OAuthConfig` in `QoD.pq`), so the generic released build cannot carry your identity provider. To use OAuth you must **build the connector from source** with `OAuthConfig` pointed at your IdP - see [Option 2 - Only if you need OAuth](#option-2---only-if-you-need-oauth). The **Username / Password** and **Key (static JWT)** credential kinds work with the pre-built release in Option 1.
@@ -53,15 +39,11 @@ The OAuth endpoints and client ID are **compiled into the `.mez`** (`OAuthConfig
 
 ### Option 1 - Unsigned `.mez` from GitHub Releases (Dev only)
 
-A `.mez` is the connector packaged unsigned. It loads in Power BI Desktop after lowering the data-extensions security setting. This pre-built release supports **Username / Password** and **Key (static JWT)** authentication; for **OAuth** build from source (Option 2) so your IdP endpoints are baked in.
-
-1. Download `QoD-<version>.mez` from the [release page](https://github.com/starlake-ai/qod-powerbi-connector/releases).
+1. Download `QoD-<version>.mez` (v2.0.0 or later) from the [release page](https://github.com/starlake-ai/qod-powerbi-connector/releases).
 2. Copy it into `%UserProfile%\Documents\Power BI Desktop\Custom Connectors\` (create the folder if missing).
 3. In Power BI Desktop, open **File -> Options and settings -> Options -> Security -> Data Extensions** and select **`(Not Recommended) Allow any extension to load without validation or warning.`** *(In a French UI: **Fichier -> Options et paramètres -> Options -> Sécurité -> Extensions du connecteur de données**, then the `(Non recommandé) Autoriser le chargement de toutes les extensions sans validation et avertissement` option.)*
 4. **Restart Power BI Desktop fully** - close every running `PBIDesktop.exe`. Connectors load at startup; the security change does not apply to an already-running session.
-5. **Get Data -> search "Quack" -> QoD (Quack on Demand)**. *(French UI: **Obtenir les données -> Plus...** then search.)*
-
-On the on-premises gateway, copy the same `.mez` into the gateway's custom-connectors folder, enable custom connectors in the gateway app, and restart the gateway service.
+5. **Get Data -> search "Quack" -> Quack on Demand**. *(French UI: **Obtenir les données -> Plus...** then search.)*
 
 ### Option 2 - Only if you need OAuth
 
@@ -87,41 +69,9 @@ OAuthConfig = [
 ];
 ```
 
-The IdP must have a **public client** (no secret) with **PKCE = S256** and the redirect URI `https://oauth.powerbi.com/views/oauthredirect.html` registered. Legacy Keycloak prefixes every path with `/auth` (e.g. `https://<host>/auth/realms/qod/...`). See [Authenticating](/qod/connecting/authenticating) for the provider-side setup and the Quack-side token-trust configuration.
+The IdP must have a **public client** (no secret) with **PKCE = S256** and the redirect URI `https://oauth.powerbi.com/views/oauthredirect.html` registered. Legacy Keycloak prefixes every path with `/auth` (e.g. `https://<host>/auth/realms/qod/...`). See [Authenticating](/qod/connecting/authenticating) and [OAuth server setup](/qod/operating/oauth-server-setup) for the provider-side setup and the Quack-side token-trust configuration. Ready-to-paste examples for Entra ID, Cognito, and Google are in the `src/QoD.pq` header comments.
 
-`RedirectUri` stays constant; swap the endpoints + `ClientId` for your provider. Ready-to-paste examples (also in the `src/QoD.pq` header comments):
-
-**Microsoft Entra ID (Azure AD), v2.0** - `{tenant}` = directory GUID or `organizations`; public client + PKCE; scope must include `offline_access` for refresh tokens:
-
-```m
-    AuthorizeUrl = "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize",
-    TokenUrl     = "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token",
-    LogoutUrl    = "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/logout",
-    ClientId     = "{application-client-id}",
-    Scope        = "openid profile email offline_access",
-```
-
-**AWS Cognito** (Hosted UI - needs an App client + a Cognito domain); `{domain}` = your prefix/custom domain, `{region}` = e.g. `eu-west-1`. Cognito issues a refresh token for the auth-code grant automatically (`offline_access` accepted but not required):
-
-```m
-    AuthorizeUrl = "https://{domain}.auth.{region}.amazoncognito.com/oauth2/authorize",
-    TokenUrl     = "https://{domain}.auth.{region}.amazoncognito.com/oauth2/token",
-    LogoutUrl    = "https://{domain}.auth.{region}.amazoncognito.com/logout",
-    ClientId     = "{app-client-id}",
-    Scope        = "openid profile email",
-```
-
-**Google Identity** (OAuth client of type "Web application"). Note: Google does **not** use the `offline_access` scope - it returns a refresh token only when the authorize request carries `access_type=offline` (+ `prompt=consent`), so refresh needs a connector tweak; the `LogoutUrl` is token revocation (best-effort):
-
-```m
-    AuthorizeUrl = "https://accounts.google.com/o/oauth2/v2/auth",
-    TokenUrl     = "https://oauth2.googleapis.com/token",
-    LogoutUrl    = "https://oauth2.googleapis.com/revoke",
-    ClientId     = "{client-id}.apps.googleusercontent.com",
-    Scope        = "openid profile email",
-```
-
-**3. Package the `.mez`** - zip `QoD.pq`, `resources.resx` and the icon PNGs at the **root** of the archive (not inside a subfolder).
+**3. Package the `.mez`** - zip `QoD.pq`, the four `.pqm` modules, `resources.resx` and the icon PNGs at the **root** of the archive (not inside a subfolder).
 
 Windows (PowerShell):
 
@@ -129,7 +79,7 @@ Windows (PowerShell):
 $stage = Join-Path $env:TEMP qodmez
 Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force $stage | Out-Null
-Copy-Item src\QoD.pq, src\resources.resx $stage
+Copy-Item src\QoD.pq, src\*.pqm, src\resources.resx $stage
 Copy-Item src\icons\QoD*.png $stage
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 [System.IO.Compression.ZipFile]::CreateFromDirectory($stage, "$PWD\QoD.mez")
@@ -139,9 +89,9 @@ macOS / Linux:
 
 ```sh
 mkdir -p stage
-cp src/QoD.pq src/resources.resx stage/
+cp src/QoD.pq src/*.pqm src/resources.resx stage/
 cp src/icons/QoD*.png stage/
-( cd stage && zip -X ../QoD.mez QoD.pq resources.resx QoD*.png )
+( cd stage && zip -X ../QoD.mez QoD.pq *.pqm resources.resx QoD*.png )
 ```
 
 This produces `QoD.mez`. Deploy it as in Option 1.
@@ -150,97 +100,68 @@ This produces `QoD.mez`. Deploy it as in Option 1.
 
 ### Option 3 - Signed `.pqx` (production, keep the Recommended security setting)
 
-A `.pqx` is a **packed, signed** connector. Unlike the unsigned `.mez`, it loads **without** lowering the data-extensions setting: keep **`(Recommended) Only allow ... trusted`** and trust the signing certificate's thumbprint instead. That is the way to allow **only** the QoD connector while other uncertified extensions stay blocked. You need a code-signing certificate - either CA-issued or **self-signed** (fine for internal / enterprise use).
-
-**1. (self-signed) create a code-signing certificate** - Windows / PowerShell (skip if you have a CA-issued `.pfx`):
-
-```powershell
-$cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=QoD Connector (self-signed)" `
-  -CertStoreLocation Cert:\CurrentUser\My -KeyExportPolicy Exportable -KeyUsage DigitalSignature -KeySpec Signature
-$cert.Thumbprint        # the SHA-1 thumbprint you trust below
-$pw = ConvertTo-SecureString "changeit" -Force -AsPlainText
-Export-PfxCertificate -Cert $cert -FilePath code-signing.pfx -Password $pw   # private key, to sign
-Export-Certificate    -Cert $cert -FilePath qod-codesign.cer                 # public, for the trust store
-```
-
-**2. Sign** the `.mez` into a `.pqx` with `MakePQX`.
-
-`MakePQX` ships with the **Power Query SDK** - install the [Power Query SDK extension](https://marketplace.visualstudio.com/items?itemName=PowerQuery.vscode-powerquery-sdk) in VS Code (or the [`Microsoft.PowerQuery.SdkTools` NuGet package](https://www.nuget.org/packages/Microsoft.PowerQuery.SdkTools)). It drops `MakePQX.exe` under the SDK tools folder (e.g. `%USERPROFILE%\.vscode\extensions\powerquery.vscode-powerquery-sdk-*\.nuget\Microsoft.PowerQuery.SdkTools.*\tools\`); add that to `PATH` or call it by full path.
-
-```sh
-MakePQX pack --mez QoD.mez --target QoD.pqx --certificate code-signing.pfx --password changeit
-MakePQX verify QoD.pqx
-```
-
-**3. Install + trust** on every machine that loads the connector:
-
-- Copy `QoD.pqx` into `%UserProfile%\Documents\Power BI Desktop\Custom Connectors\`.
-- Keep the security setting at **`(Recommended) Only allow ... trusted`**.
-- Allowlist the certificate thumbprint (deployable org-wide via the Group Policy *Trusted Certificate Thumbprints*):
-
-  ```powershell
-  $key = "HKLM:\SOFTWARE\Policies\Microsoft\Power BI Desktop"
-  New-Item -Path $key -Force | Out-Null
-  New-ItemProperty -Path $key -Name "TrustedCertificateThumbprints" -PropertyType MultiString -Value @($cert.Thumbprint) -Force
-  ```
-
-- **Self-signed certs only:** import the public cert into Trusted Root so the signature chain validates (CA-issued certs skip this):
-
-  ```powershell
-  Import-Certificate -FilePath qod-codesign.cer -CertStoreLocation Cert:\LocalMachine\Root
-  ```
-
-- **Restart** Power BI Desktop fully (or the gateway service).
-
-The same `.pqx` + thumbprint trust works on the on-premises gateway. Full publisher/admin detail is in the connector's [INSTALL.md](https://github.com/starlake-ai/qod-powerbi-connector/blob/main/INSTALL.md).
+Signing is unchanged from v1: pack the `.mez` into a signed `.pqx` with `MakePQX pack --certificate`, keep the **Recommended** data-extensions setting, and allowlist the certificate thumbprint (Group Policy *Trusted Certificate Thumbprints*, or the `TrustedCertificateThumbprints` registry value under `HKLM:\SOFTWARE\Policies\Microsoft\Power BI Desktop`). Self-signed certificates additionally need their public cert in Trusted Root. The full publisher/admin walkthrough, including creating a self-signed code-signing certificate, is in the connector's [INSTALL.md](https://github.com/starlake-ai/qod-powerbi-connector/blob/main/INSTALL.md).
 
 ## Connect
 
-Open **Get Data -> QoD (Quack on Demand)** and provide:
+Open **Get Data -> Quack on Demand** and provide:
 
 | Field | Example | Notes |
 |-------|---------|-------|
 | Server | `quack.example.com:31338` | `host:port`; defaults to port `31338` if omitted |
-| Tenant | `acme` | Sent as a gRPC call header; matches a Quack tenant |
-| Pool | `bi` | Sent as a gRPC call header; matches a Quack pool within the tenant |
-| Trust server certificate | `true` / `false` | Required (4th argument). `true` only for a self-signed dev endpoint; `false` against a CA-signed cert |
+| Tenant | `acme` | Sent as a gRPC call header on every RPC; matches a Quack tenant |
+| Pool | `bi` | Sent as a gRPC call header on every RPC; matches a Quack pool within the tenant |
+| Trust server certificate | `true` / `false` | Required. `true` only for a self-signed dev endpoint (e.g. `qod demo`); `false` against a CA-signed cert |
+| Superuser | `true` / `false` | Required. Requests system-user mode; the server authorizes it against the authenticated principal. Normal value `false` |
+| Data Connectivity mode | Import / DirectQuery | The storage-mode choice appears on this dialog - see [DirectQuery vs Import](#directquery-vs-import) |
 
 Pick a credential kind in the next dialog:
 
 | Power BI credential | Authenticates against | Wire format |
 |---|---|---|
-| Username / Password | Quack `qodstate_user` (BCrypt) | `Basic base64(user:password)` |
-| Key (static JWT) | External JWT backend (HS256 / RS256 / ECDSA) | `Bearer <jwt>` |
-| OAuth 2.0 | OIDC backend (Keycloak / Entra ID / Google / Cognito) | `Bearer <access_token>` |
+| Username / Password | Quack `qodstate_user` (BCrypt) | Flight Basic handshake (driver `username` / `password`) |
+| Key (static JWT) | External JWT backend (HS256 / RS256) | `Authorization: Bearer <jwt>` |
+| OAuth 2.0 | OIDC backend (Keycloak / Entra ID / Google / Cognito) | `Authorization: Bearer <access_token>` |
 
-All three collapse to a single per-call gRPC header that the server validates on every RPC. There is no separate Flight handshake step for the connector to drive.
+The server validates the credential and the `tenant` / `pool` headers on every RPC; there is no separate handshake step for the connector to drive. QoD personal access tokens (`qod_pat_...`) are REST-plane credentials and are **not** accepted by the FlightSQL edge.
 
 The equivalent M call:
 
 ```m
-QoD.Database("quack.example.com:31338", "acme", "bi", true)
+QoD.Database("quack.example.com:31338", "acme", "bi", true, false)
 ```
 
-`trustServerCertificate` is the required 4th argument; an optional 5th `options` record accepts `UseEncryption`, `ConnectionTimeout`, `CommandTimeout`. The Navigator then shows the data catalogs the user has been granted on (`acme_tpch` / `acme_default` / etc.), with their schemas and tables underneath; ducklake's metadata catalogs (`__ducklake_metadata_*`) also appear and can be ignored.
+`trustServerCertificate` (4th) and `superuser` (5th) are required logicals; an optional 6th `options` record accepts `UseEncryption = false` for an edge running plain gRPC without TLS. The Navigator then shows the session's catalog with its schemas, and a table list **filtered to what the signed-in principal is granted** - two users of the same tenant can see different table lists by design.
 
 ## DirectQuery vs Import
 
-The connector advertises `SupportsDirectQuery = true`, so the **Connect** vs **Import** choice in the load dialog is available on every dataset.
+The connector advertises `SupportsDirectQuery = true`; the choice is the **Data Connectivity mode** radio group on the connection dialog (not a later prompt).
 
 | Mode | When to use | Notes |
 |---|---|---|
-| **Import** | Datasets that fit in memory; reports that need full Power BI modeling and DAX | Loads on refresh; the .mez sets `Supports*Literals = true` so the M engine inlines literal values into folded SQL rather than emitting `?` parameter binds (Quack has no parameter binding) |
-| **DirectQuery** | Large datasets that must stay in Quack | The driver folds projection, filters, joins, GROUP BY, ORDER BY, LIMIT/OFFSET into the SQL Quack runs |
+| **Import** | Datasets that fit in memory; reports that need full Power BI modeling and DAX | Copies the dataset to the client on refresh - by design, so data residency arguments favor DirectQuery |
+| **DirectQuery** | Large datasets that must stay in Quack | Each visual interaction issues folded SQL (projection, filters, joins, GROUP BY, ORDER BY, LIMIT); only result rows cross to the client, with masking and row policies already applied server-side |
+
+Folded SQL inlines literal values rather than `?` parameter binds, matching the Quack edge (which has no parameter binding).
+
+## Power BI Service and the gateway
+
+Custom connectors never execute in the Power BI Service itself: scheduled refresh or DirectQuery from the Service routes through an **on-premises data gateway** that has the `.mez`/`.pqx` in its custom-connectors folder and the cluster's "allow custom connectors" option enabled. The in-box ADBC driver removes the driver install, **not** the gateway requirement.
+
+Whether a given gateway build can run the ADBC connector depends on its bundled mashup engine exposing `Adbc.Connection` and carrying the FlightSQL driver - Microsoft is still rolling ADBC out to the gateway. Verify on your gateway machine: recent gateway release, an `ADBC Drivers\FlightSQL` folder under its installation directory, and a successful test refresh. On an engine without ADBC the connector fails cleanly with `The Adbc.Connection function is not available in this environment`. Details: the connector's [service-and-gateway doc](https://github.com/starlake-ai/qod-powerbi-connector/blob/main/docs/service-and-gateway.md).
 
 ## Troubleshooting
 
 | Symptom | Cause and fix |
 |---|---|
 | Connector missing from **Get Data** | `.mez` is not in `Documents\Power BI Desktop\Custom Connectors\` or PBI was not restarted after lowering the security setting. |
-| `... couldn't load ... not trusted` | The `.mez` was loaded without the data-extension security downgrade. Enable *Allow any extension...* and restart Power BI Desktop (Option 1). |
-| `We couldn't convert a value of type Record to type Logical` | The 4th argument of `QoD.Database` is `trustServerCertificate` (logical). Put the `options` record in the 5th position. |
-| Navigator empty (no tree under the data source) | The deployed `.mez` is older than the catalog-support fix (see the connector repo's release notes). Update to the latest release. |
-| Auth fails with `no connection context for peer anonymous-...` | The deployed `.mez` is older than the per-call-credential fix. The credential must ride a custom call header (handled in the current `.mez`); update to the latest release. |
-| Slow refresh on Basic auth | Quack BCrypt-verifies on every RPC. For high-volume refresh prefer a JWT (Key) credential or set up OAuth - both are validated more cheaply (signature only, no hashing). |
+| `... couldn't load ... not trusted` | The `.mez` was loaded without the data-extension security downgrade. Enable *Allow any extension...* and restart Power BI Desktop (Option 1), or deploy the signed `.pqx` (Option 3). |
+| `The Adbc.Connection function is not available in this environment` | The host's engine predates ADBC support: Power BI Desktop older than 2.145.1105.0 (July 2025), or a gateway build without ADBC. Upgrade the host. |
+| `We couldn't convert a value of type Record to type Logical` | `trustServerCertificate` (4th) and `superuser` (5th) are logicals; the `options` record is the 6th argument. |
+| `The credentials provided for the QoD source are invalid` on a query that used to work | Besides an actual bad credential, this is also how a **denied statement** surfaces: an RBAC denial mid-evaluation (e.g. a native query on an ungranted table) is reported as a credential error by the mashup engine. Check the grants for the table(s) the query touches. |
+| Key credential rejected with `No bearer auth providers configured` | The edge has no JWT/OIDC bearer backend configured. Set `JWT_SECRET_KEY` / `JWT_PUBLIC_KEY_PATH` or an OIDC provider server-side; note QoD PATs are not accepted on the FlightSQL edge. |
+| Slow refresh on Basic auth | Quack BCrypt-verifies on every RPC. For high-volume refresh prefer a JWT (Key) credential or OAuth - both are validated more cheaply (signature only, no hashing). |
+
+To confirm the ADBC path or capture the folded SQL, use **Query Diagnostics** (Power Query Editor -> Tools -> Start Diagnostics): QoD events appear on the `Adbc` channel with the generated SQL as the command.
 
 See also: the connector project's [INSTALL.md](https://github.com/starlake-ai/qod-powerbi-connector/blob/main/INSTALL.md) for build and gateway-deployment details.
