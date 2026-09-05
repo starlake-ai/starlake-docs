@@ -1,5 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
+import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import {
   PageMetadata,
@@ -9,7 +10,6 @@ import {
 import BlogLayout from '@theme/BlogLayout';
 import BlogListPaginator from '@theme/BlogListPaginator';
 import SearchMetadata from '@theme/SearchMetadata';
-import BlogPostItems from '@theme/BlogPostItems';
 import BlogListPageStructuredData from '@theme/BlogListPage/StructuredData';
 import styles from './styles.module.css';
 
@@ -23,6 +23,35 @@ const formatDate = (date) =>
 
 const readingTimeLabel = (readingTime) =>
   `${Math.ceil(readingTime)} min read`;
+
+function PostCard({metadata}) {
+  const {permalink, title, description, date, readingTime, tags} = metadata;
+  return (
+    <article className={styles.card}>
+      {tags.length > 0 && (
+        <div className={styles.cardTags}>
+          {tags.slice(0, 2).map((tag) => (
+            <span key={tag.permalink} className={styles.pill}>
+              {tag.label}
+            </span>
+          ))}
+        </div>
+      )}
+      <h2 className={styles.cardTitle}>
+        <Link to={permalink} className={styles.cardLink}>
+          {title}
+        </Link>
+      </h2>
+      {description && <p className={styles.cardDescription}>{description}</p>}
+      <div className={styles.cardMeta}>
+        <time dateTime={date}>{formatDate(date)}</time>
+        {typeof readingTime !== 'undefined' && (
+          <> · {readingTimeLabel(readingTime)}</>
+        )}
+      </div>
+    </article>
+  );
+}
 
 function BlogListPageMetadata(props) {
   const {metadata} = props;
@@ -45,7 +74,14 @@ function BlogListPageContent(props) {
   return (
     <BlogLayout>
       <div className={styles.wrapper}>
-        <BlogPostItems items={items} />
+        <div className={styles.grid}>
+          {items.map(({content}) => (
+            <PostCard
+              key={content.metadata.permalink}
+              metadata={content.metadata}
+            />
+          ))}
+        </div>
         <BlogListPaginator metadata={metadata} />
       </div>
     </BlogLayout>
