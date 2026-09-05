@@ -93,6 +93,32 @@ function BlogHero({metadata}) {
   );
 }
 
+function TagChips({items}) {
+  const counts = new Map();
+  items.forEach(({content}) => {
+    content.metadata.tags.forEach((tag) => {
+      const entry = counts.get(tag.permalink) ?? {tag, count: 0};
+      entry.count += 1;
+      counts.set(tag.permalink, entry);
+    });
+  });
+  const topTags = [...counts.values()]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+  if (topTags.length === 0) {
+    return null;
+  }
+  return (
+    <nav className={styles.tagChips} aria-label="Browse by tag">
+      {topTags.map(({tag}) => (
+        <Link key={tag.permalink} to={tag.permalink} className={styles.chip}>
+          {tag.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
 function BlogListPageMetadata(props) {
   const {metadata} = props;
   const {
@@ -118,6 +144,7 @@ function BlogListPageContent(props) {
     <BlogLayout>
       <div className={styles.wrapper}>
         {heroItem && <BlogHero metadata={heroItem.content.metadata} />}
+        {isFirstPage && <TagChips items={items} />}
         <div className={styles.grid}>
           {gridItems.map(({content}) => (
             <PostCard

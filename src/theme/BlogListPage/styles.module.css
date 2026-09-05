@@ -194,3 +194,25 @@
     font-size: 1.4rem;
   }
 }
+
+.tagChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.chip {
+  background: var(--blog-chip-bg);
+  color: var(--blog-chip-text);
+  border-radius: 999px;
+  padding: 0.25rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.chip:hover {
+  text-decoration: none;
+  background: var(--ifm-color-primary);
+  color: #ffffff;
+}
