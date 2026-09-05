@@ -57,7 +57,7 @@ function BlogHero({metadata}) {
   const {permalink, title, description, date, readingTime, tags, authors} =
     metadata;
   return (
-    <Link to={permalink} className={styles.hero}>
+    <Link to={permalink} className={styles.hero} aria-label={title}>
       <div className={styles.heroPills}>
         <span className={styles.latestPill}>Latest</span>
         {tags.slice(0, 3).map((tag) => (
@@ -75,9 +75,9 @@ function BlogHero({metadata}) {
               .filter((author) => author.imageURL)
               .map((author) => (
                 <img
-                  key={author.imageURL}
+                  key={author.key ?? author.name}
                   src={author.imageURL}
-                  alt={author.name}
+                  alt=""
                   className={styles.heroAvatar}
                 />
               ))}

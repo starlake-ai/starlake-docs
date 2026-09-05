@@ -3,6 +3,7 @@
 
 const lightCodeTheme = require("prism-react-renderer").themes.github;
 const darkCodeTheme = require("prism-react-renderer").themes.dracula;
+const {GlobExcludeDefault} = require('@docusaurus/utils');
 const isBlog = process.env.IS_BLOG === 'true';
 
 /** @type {import('@docusaurus/types').Config} */
@@ -54,7 +55,7 @@ const config = {
         pages: isBlog ? {
           // The qod/starflow landing pages link to docs routes that only
           // exist on the docs site, so they must not build in blog mode.
-          exclude: ['qod/**', 'starflow/**'],
+          exclude: [...GlobExcludeDefault, 'qod/**', 'starflow/**'],
         } : {},
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
