@@ -53,6 +53,46 @@ function PostCard({metadata}) {
   );
 }
 
+function BlogHero({metadata}) {
+  const {permalink, title, description, date, readingTime, tags, authors} =
+    metadata;
+  return (
+    <Link to={permalink} className={styles.hero}>
+      <div className={styles.heroPills}>
+        <span className={styles.latestPill}>Latest</span>
+        {tags.slice(0, 3).map((tag) => (
+          <span key={tag.permalink} className={styles.heroTag}>
+            {tag.label}
+          </span>
+        ))}
+      </div>
+      <h1 className={styles.heroTitle}>{title}</h1>
+      {description && <p className={styles.heroDescription}>{description}</p>}
+      <div className={styles.heroMeta}>
+        {authors.length > 0 && (
+          <span className={styles.heroAuthors}>
+            {authors
+              .filter((author) => author.imageURL)
+              .map((author) => (
+                <img
+                  key={author.imageURL}
+                  src={author.imageURL}
+                  alt={author.name}
+                  className={styles.heroAvatar}
+                />
+              ))}
+            {authors.map((author) => author.name).join(', ')}
+          </span>
+        )}
+        <time dateTime={date}>{formatDate(date)}</time>
+        {typeof readingTime !== 'undefined' && (
+          <span>{readingTimeLabel(readingTime)}</span>
+        )}
+      </div>
+    </Link>
+  );
+}
+
 function BlogListPageMetadata(props) {
   const {metadata} = props;
   const {
@@ -71,11 +111,15 @@ function BlogListPageMetadata(props) {
 
 function BlogListPageContent(props) {
   const {metadata, items} = props;
+  const isFirstPage = metadata.page === 1;
+  const heroItem = isFirstPage ? items[0] : undefined;
+  const gridItems = isFirstPage ? items.slice(1) : items;
   return (
     <BlogLayout>
       <div className={styles.wrapper}>
+        {heroItem && <BlogHero metadata={heroItem.content.metadata} />}
         <div className={styles.grid}>
-          {items.map(({content}) => (
+          {gridItems.map(({content}) => (
             <PostCard
               key={content.metadata.permalink}
               metadata={content.metadata}

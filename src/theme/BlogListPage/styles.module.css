@@ -99,3 +99,98 @@
   font-size: 0.8rem;
   color: var(--blog-meta-text);
 }
+
+.hero {
+  display: block;
+  background: linear-gradient(135deg, #1a1a2e 0%, #1e2a1a 55%, #1a1a2e 100%);
+  border-radius: 12px;
+  padding: 2.5rem;
+  margin-bottom: 1.5rem;
+  color: #ffffff;
+}
+
+.hero:hover {
+  text-decoration: none;
+  color: #ffffff;
+}
+
+.heroPills {
+  margin-bottom: 0.75rem;
+}
+
+.latestPill {
+  display: inline-block;
+  background: #25c2a0;
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 0.5rem;
+}
+
+.heroTag {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.12);
+  color: #cdd6e0;
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-right: 0.35rem;
+}
+
+.heroTitle {
+  color: #ffffff;
+  font-size: 2rem;
+  line-height: 1.25;
+  margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.heroDescription {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 1rem;
+  max-width: 48rem;
+  margin-bottom: 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.heroMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+}
+
+.heroAuthors {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.heroAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 1.5rem;
+  }
+
+  .heroTitle {
+    font-size: 1.4rem;
+  }
+}
