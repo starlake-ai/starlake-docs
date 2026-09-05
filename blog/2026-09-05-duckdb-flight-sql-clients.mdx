@@ -168,7 +168,7 @@ tags: [qod, duckdb, ducklake, flight-sql, adbc, engineering]
 <text x="32" y="388" fontSize="10" fill="#4A5A66" fontWeight="400" textAnchor="start" fontStyle="italic" xmlSpace="preserve">Figure 3. Every client is its own DuckDB process; Quack is the wire between processes. A client without DuckDB embedded has no way in.</text>
 </svg></figure>
 <p>The fourth question arrives with the first client that is not a DuckDB process, and in most organisations it arrives quickly. Power BI wants a live connection. A Java service needs a pooled JDBC source. A Rust job wants Arrow batches without embedding an engine and the credentials that come with it. None of these can embed DuckDB into someone else's product, and none of them speak Quack, because Quack's client is by design another DuckDB.</p>
-<p>What they need is a wire protocol their vendors already ship drivers for. That protocol exists, it is open, and it is columnar: Arrow Flight SQL. Section 3 is about the protocol and the client families it unlocks; section 4 is about how Quack on Demand puts a DuckLake behind it. One scope statement first, the same one this series always makes: nothing about a wire changes the engine. One query still runs on one DuckDB node, and if a single join over tens of terabytes must be split across machines, that is Trino, Dremio, StarRocks or Spark, not anything in this paper. The companion paper on scaling DuckDB on DuckLake covers what a pool of nodes does and does not give you.</p>
+<p>What they need is a wire protocol their vendors already ship drivers for. That protocol exists, it is open, and it is columnar: Arrow Flight SQL. A second open wire has universal drivers too, the Postgres protocol, and section 3 weighs the gateways that emulate it before settling on Flight SQL. Section 3 is about the protocol and the client families it unlocks; section 4 is about how Quack on Demand puts a DuckLake behind it. One scope statement first, the same one this series always makes: nothing about a wire changes the engine. One query still runs on one DuckDB node, and if a single join over tens of terabytes must be split across machines, that is Trino, Dremio, StarRocks or Spark, not anything in this paper. The companion paper on scaling DuckDB on DuckLake covers what a pool of nodes does and does not give you.</p>
 <figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" style={{width: '100%', height: 'auto'}} fontFamily="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif">
 <defs><marker id="mF" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0E1B26"/></marker><filter id="shF" x="-5%" y="-5%" width="110%" height="120%"><feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0E1B26" floodOpacity="0.10"/></filter></defs>
 <rect width="900" height="400" rx="18" fill="#FAFAF7"/>
@@ -285,6 +285,76 @@ tags: [qod, duckdb, ducklake, flight-sql, adbc, engineering]
 </tbody>
 </table>
 <p>This split is exactly what the Power BI transition illustrates: Microsoft changed the API layer its connectors are built on, ODBC to ADBC, while the Flight SQL wire underneath the transitioning connector stayed the same. An architecture standardised on the wire absorbs API-layer churn like that without moving anything server-side.</p>
+<h3 id="pgwire">The other wire with universal drivers: emulating Postgres</h3>
+<p>One other open wire has drivers in every client: the Postgres protocol. A family of gateways puts DuckDB behind it, accepting Postgres connections, transpiling the SQL, stubbing <code>pg_catalog</code> for introspection, and executing on DuckDB underneath; Duckgres, an MIT-licensed server from PostHog, is the most complete current example. The appeal is real: psql, every Postgres driver, every ORM, nothing new installed.</p>
+<p>Two structural costs are why this series does not build on it.</p>
+<table>
+<thead>
+<tr><th style={{width: '18%'}}>Structural cost</th><th style={{width: '44%'}}>On the Postgres wire</th><th>On Flight SQL</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>Row transposition</td>
+<td>The wire is row-oriented: every result pays the double transposition this section opened with, columns become row messages on the server, then columns again in the client.</td>
+<td>Results stream as Arrow record batches; the engine's layout crosses unchanged.</td>
+</tr>
+<tr>
+<td>Emulation surface</td>
+<td>The client believes it is talking to Postgres, so dialect transpilation, catalog stubs and type flattening (DuckDB's MAP and STRUCT fall back to text) must be chased client by client.</td>
+<td>The surface is a published protocol with upstream drivers and native Arrow types; nothing is emulated.</td>
+</tr>
+</tbody>
+</table>
+<p>Tellingly, Duckgres itself reaches its DuckDB workers over Arrow Flight SQL, keeping Postgres as the client-facing facade. Emulation earns its keep at exactly one hop, in front of a client that can speak nothing else; the family table below carries that row.</p>
+<figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" style={{width: '100%', height: 'auto'}} fontFamily="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif">
+<defs><marker id="mP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0E1B26"/></marker><marker id="mP-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#F97316"/></marker><marker id="mP-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#23B26D"/></marker><filter id="shP" x="-5%" y="-5%" width="110%" height="120%"><feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0E1B26" floodOpacity="0.10"/></filter></defs>
+<rect width="900" height="500" rx="18" fill="#FAFAF7"/>
+<text x="32" y="42" fontSize="20" fill="#0E1B26" fontWeight="700" textAnchor="start" xmlSpace="preserve">Two open wires: emulate Postgres, or speak columnar natively</text>
+<text x="32" y="72" fontSize="11" fill="#F97316" fontWeight="700" textAnchor="start" xmlSpace="preserve">Path A: emulate the Postgres wire</text>
+<rect x="48" y="84" width="180" height="92" rx="10" fill="#FFFFFF" stroke="#4A5A66" strokeWidth="1.4" filter="url(#shP)"/>
+<text x="138" y="112" fontSize="12" fill="#0E1B26" fontWeight="700" textAnchor="middle" xmlSpace="preserve">BI tool, service</text>
+<rect x="62" y="126" width="152" height="26" rx="6" fill="#F3F4F2" stroke="#4A5A66" strokeWidth="1"/>
+<text x="138" y="143" fontSize="9.5" fill="#0E1B26" fontWeight="600" textAnchor="middle" xmlSpace="preserve">Postgres driver</text>
+<rect x="292" y="84" width="360" height="180" rx="10" fill="#FFFFFF" stroke="#F97316" strokeWidth="1.6" filter="url(#shP)"/>
+<text x="472" y="108" fontSize="12.5" fill="#0E1B26" fontWeight="700" textAnchor="middle" xmlSpace="preserve">Postgres-emulation gateway</text>
+<rect x="310" y="122" width="324" height="26" rx="6" fill="#F3F4F2" stroke="#F97316" strokeWidth="1"/>
+<text x="472" y="139" fontSize="9.5" fill="#0E1B26" fontWeight="600" textAnchor="middle" xmlSpace="preserve">SQL transpiled: Postgres dialect in, DuckDB out</text>
+<rect x="310" y="156" width="324" height="26" rx="6" fill="#F3F4F2" stroke="#F97316" strokeWidth="1"/>
+<text x="472" y="173" fontSize="9.5" fill="#0E1B26" fontWeight="600" textAnchor="middle" xmlSpace="preserve">pg_catalog stubs answer introspection</text>
+<rect x="310" y="190" width="324" height="26" rx="6" fill="#F3F4F2" stroke="#F97316" strokeWidth="1"/>
+<text x="472" y="207" fontSize="9.5" fill="#0E1B26" fontWeight="600" textAnchor="middle" xmlSpace="preserve">types flattened to Postgres; MAP, STRUCT fall back to text</text>
+<text x="472" y="242" fontSize="9.5" fill="#4A5A66" textAnchor="middle" xmlSpace="preserve">the surface to keep compatible grows with every new client</text>
+<rect x="712" y="128" width="156" height="84" rx="10" fill="#FFFFFF" stroke="#4A5A66" strokeWidth="1.4" filter="url(#shP)"/>
+<text x="790" y="162" fontSize="12" fill="#0E1B26" fontWeight="700" textAnchor="middle" xmlSpace="preserve">DuckDB engine</text>
+<text x="790" y="182" fontSize="9.5" fill="#4A5A66" textAnchor="middle" xmlSpace="preserve">computes columns</text>
+<path d="M228,120 L292,120" fill="none" stroke="#0E1B26" strokeWidth="1.3" markerEnd="url(#mP)"/>
+<text x="260" y="111" fontSize="9" fill="#0E1B26" fontWeight="600" textAnchor="middle" xmlSpace="preserve">SQL</text>
+<path d="M292,158 L228,158" fill="none" stroke="#F97316" strokeWidth="1.4" markerEnd="url(#mP-orange)"/>
+<text x="260" y="150" fontSize="9" fill="#F97316" fontWeight="600" textAnchor="middle" xmlSpace="preserve">rows</text>
+<path d="M652,170 L712,170" fill="none" stroke="#4A5A66" strokeWidth="1.3" markerEnd="url(#mP)"/>
+<rect x="48" y="280" width="620" height="22" rx="11" fill="#F97316"/>
+<text x="358" y="295" fontSize="10.5" fill="#FFFFFF" fontWeight="600" textAnchor="middle" xmlSpace="preserve">columns become rows on the wire, then columns again in the client: two transpositions per result</text>
+<line x1="32" y1="318" x2="868" y2="318" stroke="#C9D1D6" strokeWidth="1"/>
+<text x="32" y="344" fontSize="11" fill="#23B26D" fontWeight="700" textAnchor="start" xmlSpace="preserve">Path B: Arrow Flight SQL</text>
+<rect x="48" y="356" width="180" height="92" rx="10" fill="#FFFFFF" stroke="#4A5A66" strokeWidth="1.4" filter="url(#shP)"/>
+<text x="138" y="384" fontSize="12" fill="#0E1B26" fontWeight="700" textAnchor="middle" xmlSpace="preserve">Same BI tool, service</text>
+<rect x="62" y="398" width="152" height="26" rx="6" fill="#F3F4F2" stroke="#4A5A66" strokeWidth="1"/>
+<text x="138" y="415" fontSize="9.5" fill="#0E1B26" fontWeight="600" textAnchor="middle" xmlSpace="preserve">Flight SQL driver</text>
+<rect x="292" y="364" width="360" height="76" rx="10" fill="#23B26D" filter="url(#shP)"/>
+<text x="472" y="394" fontSize="13" fill="#FFFFFF" fontWeight="700" textAnchor="middle" xmlSpace="preserve">Arrow Flight SQL edge</text>
+<text x="472" y="416" fontSize="10" fill="#FFFFFF" textAnchor="middle" xmlSpace="preserve">no dialect translation, no catalog emulation, native Arrow types</text>
+<rect x="712" y="360" width="156" height="84" rx="10" fill="#FFFFFF" stroke="#4A5A66" strokeWidth="1.4" filter="url(#shP)"/>
+<text x="790" y="394" fontSize="12" fill="#0E1B26" fontWeight="700" textAnchor="middle" xmlSpace="preserve">DuckDB engine</text>
+<text x="790" y="414" fontSize="9.5" fill="#4A5A66" textAnchor="middle" xmlSpace="preserve">computes columns</text>
+<path d="M228,388 L292,388" fill="none" stroke="#0E1B26" strokeWidth="1.3" markerEnd="url(#mP)"/>
+<text x="260" y="379" fontSize="9" fill="#0E1B26" fontWeight="600" textAnchor="middle" xmlSpace="preserve">SQL</text>
+<path d="M292,422 L228,422" fill="none" stroke="#23B26D" strokeWidth="1.4" markerEnd="url(#mP-green)"/>
+<text x="260" y="440" fontSize="9" fill="#23B26D" fontWeight="600" textAnchor="middle" xmlSpace="preserve">Arrow</text>
+<path d="M652,402 L712,402" fill="none" stroke="#4A5A66" strokeWidth="1.3" markerEnd="url(#mP)"/>
+<rect x="48" y="460" width="720" height="22" rx="11" fill="#23B26D"/>
+<text x="408" y="475" fontSize="10.5" fill="#FFFFFF" fontWeight="600" textAnchor="middle" xmlSpace="preserve">the layout the engine computes in is the layout the client receives: Arrow record batches end to end</text>
+<text x="32" y="496" fontSize="10" fill="#4A5A66" fontWeight="400" textAnchor="start" fontStyle="italic" xmlSpace="preserve">Figure 6. The same client, two wires. Emulating Postgres buys ubiquitous drivers at the cost of transposition and a growing compatibility surface; Flight SQL carries columns natively.</text>
+</svg></figure>
 <h3 id="pick">Picking a family</h3>
 <table>
 <thead>
@@ -297,6 +367,7 @@ tags: [qod, duckdb, ducklake, flight-sql, adbc, engineering]
 <tr><td>Python, Go, Rust, C++ programs and notebooks</td><td>ADBC</td><td>The language's ADBC manager plus the Flight SQL driver (in Python, <code>adbc_driver_flightsql</code>).</td></tr>
 <tr><td>Arrow-native or gRPC-native code</td><td>Flight-native</td><td>Nothing beyond your Arrow or gRPC toolchain.</td></tr>
 <tr><td>DuckDB processes you control</td><td>Quack</td><td>Nothing: <code>ATTACH 'quack:host'</code>. The right wire between engines stays the right wire.</td></tr>
+<tr><td>A tool that can speak only the Postgres wire and can install nothing</td><td>Postgres emulation (not this paper's wire)</td><td>A Postgres-emulation gateway in front of DuckDB, with the transposition and compatibility caveats above. Move the client to a standard Flight SQL driver when it can take one.</td></tr>
 </tbody>
 </table>
 <h2 id="qod">4. Quack on Demand: a DuckLake behind one Flight SQL edge</h2>
@@ -345,7 +416,7 @@ tags: [qod, duckdb, ducklake, flight-sql, adbc, engineering]
 <text x="281" y="172" fontSize="10" fill="#23B26D" fontWeight="600" textAnchor="middle" xmlSpace="preserve">result rows, Arrow batches</text>
 <rect x="98" y="296" width="704" height="20" rx="10" fill="#23B26D"/>
 <text x="450" y="310" fontSize="10.5" fill="#FFFFFF" fontWeight="600" textAnchor="middle" xmlSpace="preserve">the query goes to the data; only the answer comes back</text>
-<text x="32" y="344" fontSize="10" fill="#4A5A66" fontWeight="400" textAnchor="start" fontStyle="italic" xmlSpace="preserve">Figure 6. Live connections keep base tables server-side; what crosses is the query and its result, in the client's native columnar format.</text>
+<text x="32" y="344" fontSize="10" fill="#4A5A66" fontWeight="400" textAnchor="start" fontStyle="italic" xmlSpace="preserve">Figure 7. Live connections keep base tables server-side; what crosses is the query and its result, in the client's native columnar format.</text>
 </svg></figure>
 <p>Runnable examples for every family live in the repository's <code>examples/</code> directory (TypeScript, Python, Java and Rust clients, each running a single query and the TPC-H suite), alongside the connection walkthroughs in the project documentation.</p>
 <figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 392" style={{width: '100%', height: 'auto'}} fontFamily="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif">
@@ -398,7 +469,7 @@ tags: [qod, duckdb, ducklake, flight-sql, adbc, engineering]
 <text x="770" y="266" fontSize="11.5" fill="#FFFFFF" fontWeight="700" textAnchor="middle" xmlSpace="preserve">One wire, any client,</text>
 <text x="770" y="286" fontSize="11.5" fill="#FFFFFF" fontWeight="700" textAnchor="middle" xmlSpace="preserve">with identity, scope and</text>
 <text x="770" y="306" fontSize="11.5" fill="#FFFFFF" fontWeight="700" textAnchor="middle" xmlSpace="preserve">grants enforced</text>
-<text x="32" y="380" fontSize="10" fill="#4A5A66" fontWeight="400" textAnchor="start" fontStyle="italic" xmlSpace="preserve">Figure 7. Section 4 on one card: each edge capability and what it buys the client estate.</text>
+<text x="32" y="380" fontSize="10" fill="#4A5A66" fontWeight="400" textAnchor="start" fontStyle="italic" xmlSpace="preserve">Figure 8. Section 4 on one card: each edge capability and what it buys the client estate.</text>
 </svg></figure>
 <table>
 <tbody>
@@ -416,6 +487,10 @@ tags: [qod, duckdb, ducklake, flight-sql, adbc, engineering]
 <tr>
 <td>Every client is a DuckDB process you control</td>
 <td><strong>Quack alone</strong>, fronted with a TLS-terminating proxy exactly as the DuckDB docs recommend. Come back when the first non-DuckDB client asks in; the section 3 family table says what it will need.</td>
+</tr>
+<tr>
+<td>A client can speak only the Postgres wire and can install nothing</td>
+<td><strong>A Postgres-emulation gateway</strong> bridges that one client, with the row-transposition and emulation-surface caveats from <a href="#pgwire">section 3</a>. Route everything that can take a standard Flight SQL driver through the columnar wire instead.</td>
 </tr>
 <tr>
 <td>Other clients need a live connection</td>
@@ -535,6 +610,7 @@ tags: [qod, duckdb, ducklake, flight-sql, adbc, engineering]
 <li>Apache Arrow, "Arrow Flight SQL JDBC driver": <a href="https://arrow.apache.org/docs/java/flight_sql_jdbc_driver.html">arrow.apache.org/docs/java/flight_sql_jdbc_driver.html</a></li>
 <li>Dremio, Arrow Flight SQL ODBC driver documentation (URL to be pinned at the revision pass)</li>
 <li>Microsoft Learn, "Transition from ODBC to ADBC drivers in Power BI and Microsoft Fabric" (fetched 5 September 2026; the Flight SQL ADBC driver listed as a replacement driver, embedded ODBC removal timeline): <a href="https://learn.microsoft.com/en-us/power-query/transition-to-adbc">learn.microsoft.com/en-us/power-query/transition-to-adbc</a></li>
+<li>PostHog, Duckgres, a PostgreSQL wire protocol server backed by DuckDB, MIT (fetched 5 September 2026; SQL transpilation, pg_catalog stubs, type fallback to text, Arrow Flight SQL between control plane and workers): <a href="https://github.com/PostHog/duckgres">github.com/PostHog/duckgres</a></li>
 <li>DuckDB, "Frequently Asked Questions for Quack": <a href="https://duckdb.org/quack/faq">duckdb.org/quack/faq</a> (the client is another DuckDB; no distributed query processing)</li>
 <li>DuckDB, "Securing Quack with a Reverse Proxy": <a href="https://duckdb.org/docs/current/quack/setup/reverse_proxy">duckdb.org/docs/current/quack/setup/reverse_proxy</a></li>
 <li>Quack on Demand, Apache-2.0, release 0.7.2: <a href="https://github.com/starlake-ai/quack-on-demand">github.com/starlake-ai/quack-on-demand</a>. Client walkthroughs: <a href="https://docs.starlake.ai/qod/connecting/clients">docs.starlake.ai/qod/connecting/clients</a>; runnable examples in the repository's <code>examples/</code> directory.</li>
