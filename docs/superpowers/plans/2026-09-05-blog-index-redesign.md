@@ -12,8 +12,10 @@
 
 ## Global Constraints
 
-- Node 20+, Yarn. Dev server: `IS_BLOG=1 yarn start`. Builds: `yarn build` (docs mode) and `IS_BLOG=1 yarn build` (blog mode).
-- Both build commands MUST pass after every task.
+- Node 20+, Yarn. Dev server: `IS_BLOG=true yarn start`. Builds: `yarn build` (docs mode) and `IS_BLOG=true yarn build` (blog mode). The value must be the literal string `true`; `IS_BLOG=1` silently builds docs mode.
+- KNOWN PRE-EXISTING ISSUE (present on main, unrelated to this work): `IS_BLOG=true yarn build` exits 1 at the broken-links check because the `/qod` and `/starflow` landing pages link to docs routes that only exist in docs mode. The static HTML in `build/` is fully written BEFORE that check runs, so verification greps against `build/` are still valid. Do not fix the broken links and do not change `onBrokenLinks`; treat that exact failure as expected. Any OTHER error in the blog-mode build output is a real failure.
+- Blog-mode output uses no trailing slashes: post pages are `build/<slug>.html` and paginated pages are `build/page/2.html`.
+- `yarn build` (docs mode) MUST pass (exit 0) after every task.
 - No new npm dependencies. No changes to `src/css/custom.css` or `docusaurus.config.js`.
 - Brand tokens: primary light `#2e8555`, primary dark-mode `#25c2a0`, navy `#1a1a2e`, hero gradient `linear-gradient(135deg, #1a1a2e 0%, #1e2a1a 55%, #1a1a2e 100%)`, light surface `#f8f9fa`.
 - Dark mode via `[data-theme='dark']` overrides of CSS variables defined in the module.
@@ -132,13 +134,13 @@ Note: `formatDate` and `readingTimeLabel` are unused in this task (added here so
 
 - [ ] **Step 3: Build in blog mode and verify the sidebar is gone**
 
-Run: `IS_BLOG=1 yarn build`
-Expected: exits 0.
+Run: `IS_BLOG=true yarn build`
+Expected: exits 1 with ONLY the pre-existing broken-links error (see Global Constraints). `build/` is still fully written; verify it with the greps below.
 
-Run: `grep -c "All posts" build/index.html`
+Run: `grep -ac "All posts" build/index.html`
 Expected: `0` (grep exits 1). The stock sidebar heading "All posts" must be absent from the index page.
 
-Run: `grep -c "All posts" build/duckdb-flight-sql-client-families/index.html`
+Run: `grep -ac "All posts" build/duckdb-flight-sql-client-families.html`
 Expected: a number >= 1 (post pages keep their sidebar).
 
 - [ ] **Step 4: Build in docs mode**
@@ -309,13 +311,13 @@ function BlogListPageContent(props) {
 
 - [ ] **Step 3: Build and verify the grid rendered**
 
-Run: `IS_BLOG=1 yarn build`
-Expected: exits 0.
+Run: `IS_BLOG=true yarn build`
+Expected: exits 1 with ONLY the pre-existing broken-links error (see Global Constraints). `build/` is still fully written; verify it with the greps below.
 
-Run: `grep -c "min read" build/index.html`
+Run: `grep -ac "min read" build/index.html`
 Expected: >= 10 (each card shows reading time; default pagination puts 10 posts on page 1).
 
-Run: `grep -c "<article" build/index.html`
+Run: `grep -ac "<article" build/index.html`
 Expected: >= 10.
 
 - [ ] **Step 4: Build docs mode**
@@ -514,13 +516,13 @@ function BlogListPageContent(props) {
 
 - [ ] **Step 4: Build and verify hero on page 1 only**
 
-Run: `IS_BLOG=1 yarn build`
-Expected: exits 0.
+Run: `IS_BLOG=true yarn build`
+Expected: exits 1 with ONLY the pre-existing broken-links error (see Global Constraints). `build/` is still fully written; verify it with the greps below.
 
-Run: `grep -c "Latest" build/index.html`
+Run: `grep -ac "Latest" build/index.html`
 Expected: >= 1.
 
-Run: `grep -c "Latest" build/page/2/index.html`
+Run: `grep -ac "Latest" build/page/2.html`
 Expected: `0` (grep exits 1). Pages after the first get no hero.
 
 - [ ] **Step 5: Build docs mode**
@@ -620,13 +622,13 @@ to:
 
 - [ ] **Step 4: Build and verify chips on page 1 only**
 
-Run: `IS_BLOG=1 yarn build`
-Expected: exits 0.
+Run: `IS_BLOG=true yarn build`
+Expected: exits 1 with ONLY the pre-existing broken-links error (see Global Constraints). `build/` is still fully written; verify it with the greps below.
 
-Run: `grep -c "Browse by tag" build/index.html`
+Run: `grep -ac "Browse by tag" build/index.html`
 Expected: `1`.
 
-Run: `grep -c "Browse by tag" build/page/2/index.html`
+Run: `grep -ac "Browse by tag" build/page/2.html`
 Expected: `0` (grep exits 1).
 
 - [ ] **Step 5: Build docs mode**
@@ -654,7 +656,7 @@ git commit -m "feat(blog): tag chip row on blog index"
 
 - [ ] **Step 1: Start the blog dev server**
 
-Run: `IS_BLOG=1 yarn start` (leave it running; it serves http://localhost:3000/).
+Run: `IS_BLOG=true yarn start` (leave it running; it serves http://localhost:3000/).
 
 - [ ] **Step 2: Walk this checklist in a browser (or ask the user to):**
 
@@ -669,8 +671,8 @@ Run: `IS_BLOG=1 yarn start` (leave it running; it serves http://localhost:3000/)
 
 - [ ] **Step 3: Fix anything that fails the checklist,** re-verify, then run both builds one last time:
 
-Run: `IS_BLOG=1 yarn build && yarn build`
-Expected: both exit 0.
+Run: `IS_BLOG=true yarn build; yarn build`
+Expected: blog-mode build exits 1 with only the pre-existing broken-links error; docs-mode build exits 0.
 
 - [ ] **Step 4: Commit (only if fixes were made)**
 
