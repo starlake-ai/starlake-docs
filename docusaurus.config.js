@@ -43,8 +43,7 @@ const config = {
           exclude: ['superpowers/**'],
         },
         blog: isBlog ? {
-          blogSidebarTitle: 'All posts',
-          blogSidebarCount: 'ALL',
+          blogSidebarCount: 0,
           showReadingTime: true,
           routeBasePath: '/',
         } : {
@@ -52,6 +51,11 @@ const config = {
           routeBasePath: '/blog',
           exclude: ['**/*'],
         },
+        pages: isBlog ? {
+          // The qod/starflow landing pages link to docs routes that only
+          // exist on the docs site, so they must not build in blog mode.
+          exclude: ['qod/**', 'starflow/**'],
+        } : {},
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
         },
