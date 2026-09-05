@@ -223,3 +223,4 @@ _bmad/
 bmad/
 
 # End of https://www.toptal.com/developers/gitignore/api/docusaurus,macos,windows,linux
+.superpowers/
