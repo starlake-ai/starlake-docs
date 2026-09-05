@@ -32,6 +32,8 @@ yarn generate-guides-data
 
 - `BASE_URL` — sets the site base URL (default: `/starlake/`)
 - `IS_BLOG` — when set, switches site to blog mode (separate nav/content for blog.starlake.ai)
+- `QOD_DOCS_GA_ID` — GA4 measurement ID receiving page views for every page under `/qod` (optional)
+- `STARFLOW_DOCS_GA_ID` — GA4 measurement ID receiving page views for every page under `/starflow` (optional)
 
 ## Architecture
 

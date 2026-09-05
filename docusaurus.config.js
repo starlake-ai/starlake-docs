@@ -261,6 +261,13 @@ const config = {
     mermaid: true,
   },
   themes: ["@docusaurus/theme-mermaid"],
+  // Per-section GA4 properties, in addition to the site-wide gtag above.
+  // Read at build time; an unset variable disables that section's tag.
+  customFields: {
+    qodGaId: process.env.QOD_DOCS_GA_ID,
+    starflowGaId: process.env.STARFLOW_DOCS_GA_ID,
+  },
+  clientModules: isBlog ? [] : [require.resolve("./src/clientModules/sectionAnalytics.js")],
 };
 
 module.exports = config;
