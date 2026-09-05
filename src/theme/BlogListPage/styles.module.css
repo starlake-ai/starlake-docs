@@ -1,0 +1,19 @@
+.wrapper {
+  --blog-card-bg: #ffffff;
+  --blog-card-border: #e8e8e8;
+  --blog-card-shadow: 0 1px 4px rgba(26, 26, 46, 0.08);
+  --blog-card-shadow-hover: 0 6px 16px rgba(26, 26, 46, 0.14);
+  --blog-chip-bg: #e6f7f2;
+  --blog-chip-text: #1a8870;
+  --blog-meta-text: var(--ifm-color-emphasis-600);
+}
+
+[data-theme='dark'] .wrapper {
+  --blog-card-bg: #1e1e2e;
+  --blog-card-border: #2e2e42;
+  --blog-card-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  --blog-card-shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.5);
+  --blog-chip-bg: rgba(37, 194, 160, 0.15);
+  --blog-chip-text: #4fddbf;
+  --blog-meta-text: var(--ifm-color-emphasis-500);
+}
