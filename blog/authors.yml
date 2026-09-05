@@ -67,3 +67,11 @@ sspaeti:
     linkedin: sspaeti
     newsletter: https://ssp.sh
 
+
+starlake:
+  name: Starlake Team
+  title: Starlake
+  url: https://starlake.ai
+  image_url: /img/favicon-512.png
+  socials:
+    github: starlake-ai
