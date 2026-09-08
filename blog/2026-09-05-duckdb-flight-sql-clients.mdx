@@ -31,7 +31,7 @@ tags: [qod, duckdb, ducklake, flight-sql, adbc, engineering]
 </tr>
 <tr>
 <td>Do results stay columnar on the wire?</td>
-<td><strong>Yes, in process.</strong> Embedded DuckDB and in-process ADBC hand you Arrow without any wire at all.</td>
+<td><strong>Yes, in process.</strong> Embedded DuckDB and in-process ADBC hand you Arrow without any wire at all; over Quack, results cross in Quack's own bulk format.</td>
 <td><strong>Yes, over the network.</strong> Results stream as Arrow record batches: the layout the engine computes in is the layout the client receives.</td>
 <td><a href="#families">Section 3</a></td>
 </tr>
@@ -49,9 +49,9 @@ tags: [qod, duckdb, ducklake, flight-sql, adbc, engineering]
 </tr>
 <tr>
 <td>Do base tables stay server-side when analysts query?</td>
-<td><strong>No.</strong> An embedded engine runs where the client runs, so the data comes to the analyst's machine to be scanned.</td>
-<td><strong>Yes, with a live connection.</strong> The query runs on a server-side node and only result rows cross, as Arrow batches. Import and extract modes still copy, by design.</td>
-<td><a href="#qod">Section 4</a></td>
+<td><strong>Only over Quack.</strong> Embedded DuckDB scans data on the analyst's machine; a client attached over Quack runs its SQL on the server and gets results back. But only a DuckDB process can attach, one shared identity for all.</td>
+<td><strong>Yes, with a live connection.</strong> The query runs on a server-side node and only result rows cross, as Arrow batches, for every client family. Import and extract modes still copy, by design.</td>
+<td><a href="#quack">Sections 2</a>, <a href="#residency">4</a></td>
 </tr>
 <tr>
 <td>Can a session run multi-statement transactions?</td>
