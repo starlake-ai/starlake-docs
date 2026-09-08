@@ -113,7 +113,7 @@ const config = {
           position: "left",
         } : {
           to: "/",
-          label: "Blog",
+          label: "Blog home",
           position: "left",
         },
         /*
