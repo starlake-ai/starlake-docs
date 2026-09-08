@@ -49,7 +49,7 @@ tags: [qod, duckdb, ducklake, flight-sql, adbc, mcp, engineering]
 </tr>
 <tr>
 <td>Do base tables stay server-side when analysts query?</td>
-<td><strong>Only with care.</strong> Quack pushes filters and projections to the server, but a plain query on an attached table streams the surviving rows to the client; fully server-side execution means wrapping the SQL in the <code>query()</code> function. And only a DuckDB process can attach.</td>
+<td><strong>Yes, using <code>query()</code>.</strong> Quack pushes filters and projections to the server, but a plain query on an attached table streams the surviving rows to the client; wrapping the SQL in the <code>query()</code> function runs the whole statement server-side. And only a DuckDB process can attach.</td>
 <td><strong>Yes, with a live connection.</strong> The query runs on a server-side node and only result rows cross, as Arrow batches, for every client family. Import and extract modes still copy, by design.</td>
 <td><a href="#quack">Sections 2</a>, <a href="#residency">4</a></td>
 </tr>
