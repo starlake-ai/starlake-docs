@@ -26,6 +26,7 @@ const sidebars = {
         'administration/index',
         'administration/onboarding',
         'administration/access-control',
+        'administration/sql-administration',
         'administration/day-2-operations',
         'administration/audit-log',
         'administration/usage-accounting',

@@ -5,6 +5,8 @@ title: Grant and revoke access
 
 Access control is **off by default** (`acl.enabled=false`). Set `QOD_ACL_ENABLED=true` to enforce it. When ACL is on, every FlightSQL statement is matched against the caller's effective permission set before execution. The model - roles, groups, verbs, and wildcards - is described in [Access control model](/qod/operating/rbac-model).
 
+Everything on this page can also be done with plain SQL from any connected client (`CREATE ROLE`, `GRANT SELECT ON ... TO ROLE ...`, row and column policies, pool grants): see [Administer with SQL](/qod/administration/sql-administration).
+
 ## Grant a team read access
 
 **Goal:** Let a group of users run SELECT statements against one or more tables in a pool.
