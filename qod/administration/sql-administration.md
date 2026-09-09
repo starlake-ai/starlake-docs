@@ -3,8 +3,8 @@ id: sql-administration
 title: Administer with SQL
 ---
 
-Since v0.7.3, everything on this page's siblings - table grants, row and column
-policies, masking, roles, groups, pool access, and user management - can also be
+Everything on this page's siblings - table grants, row and column policies,
+masking, roles, groups, pool access, and user management - can also be
 administered with plain SQL statements over the regular FlightSQL connection.
 Any SQL client works: DBeaver, ADBC, `qod shell`, a JDBC notebook. The manager
 recognizes these statements at the edge, executes them against the control
