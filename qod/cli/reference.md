@@ -18,9 +18,10 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | `qod auth change-password` | Change your own password (works pre-login; prompts for current and new). |
 | `qod auth forgot-password` | Request a password-reset link (always answers 200; account existence stays hidden). |
 | `qod auth reset-password` | Redeem a single-use reset link token and set a new password (prompts for both). |
-| `qod auth pat create` | Create a personal access token (`--name`, optional `--expires-at`); the token prints once. |
-| `qod auth pat list` | List your PATs (metadata only; token values are never shown again). |
-| `qod auth pat revoke` | Revoke a PAT immediately (`--id`). |
+| `qod auth pat create` | Create a personal access token (`--name`, optional `--expires-at`); the token prints once. Scope flags mint it narrower than the owner: repeatable `--role` / `--database` / `--pool` / `--tool`, plus `--verb-ceiling RO\|RW\|DDL\|ALL`, `--drop-admin`, `--stmt-timeout-ms`, `--max-rows`. A flag left out means unrestricted on that axis. |
+| `qod auth pat list` | List your PATs (metadata only; token values are never shown again). Chained tokens show `parentId` and `depth`. |
+| `qod auth pat revoke` | Revoke a PAT immediately (`--id`); cascades to every token minted from it. |
+| `qod auth pat delete` | Discard a revoked or expired PAT from the listing (`--id`); a live token must be revoked first. |
 | `qod health` | Liveness plus pool/node counts (open endpoint). |
 
 ## tenant

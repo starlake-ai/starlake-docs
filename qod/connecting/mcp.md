@@ -13,7 +13,7 @@ The transport is stateless Streamable HTTP: each POST carries one JSON-RPC messa
 
 | Credential | Principal |
 |---|---|
-| Personal access token (`qod_pat_...`) | The owning user, with that user's live tenant, role, and grants |
+| Personal access token (`qod_pat_...`) | The owning user, with that user's live tenant, role, and grants - narrowed by any scope minted onto the token |
 | The static API key (`QOD_API_KEY`) | Superuser-equivalent; only when the key is set non-empty |
 
 Session JWTs, passwords, and missing headers are all 401. `/mcp` never admits unauthenticated requests.
@@ -25,7 +25,34 @@ qod auth pat create --name claude-code
 # the token is printed ONCE; store it now
 ```
 
-A PAT acts with exactly its owner's permissions and can be revoked at any time (`qod auth pat revoke --id <id>`, or the profile page). A revoked or expired token stays visible in the listing until you discard it with `qod auth pat delete --id <id>` (or the profile page's Delete button); a live token must be revoked before it can be deleted. Tenant-scoped principals get their tenant inferred from the PAT owner; superuser and static-key callers pass an explicit `tenant` argument on tools that need one.
+By default a PAT carries its owner's full permissions; the scope flags described under [Scoped tokens and delegation](#scoped-tokens-and-delegation) can mint it narrower. A token can be revoked at any time (`qod auth pat revoke --id <id>`, or the profile page); revoking cascades to every token minted from it. A revoked or expired token stays visible in the listing until you discard it with `qod auth pat delete --id <id>` (or the profile page's Delete button); a live token must be revoked before it can be deleted. Tenant-scoped principals get their tenant inferred from the PAT owner; superuser and static-key callers pass an explicit `tenant` argument on tools that need one.
+
+## Scoped tokens and delegation
+
+A token can be minted narrower than its owner, so an agent holds a credential it cannot exceed even when fully compromised by an injected instruction. Every axis is optional on `qod auth pat create` (REST: the same field names on `POST /api/auth/pat/create`):
+
+| Axis | CLI flag | Meaning |
+|---|---|---|
+| `roles` | `--role` (repeatable) | Restrict the token to these roles |
+| `databases` | `--database` (repeatable) | Restrict the token to these databases |
+| `pools` | `--pool` (repeatable) | Restrict the token to these pools |
+| `tools` | `--tool` (repeatable) | Restrict the MCP tool surface the token may call |
+| `verbCeiling` | `--verb-ceiling` | Cap write power: `RO`, `RW`, `DDL` or `ALL` |
+| `dropAdmin` | `--drop-admin` | Strip the owner's superuser/admin standing from this token |
+| `stmtTimeoutMs` | `--stmt-timeout-ms` | Per-statement timeout, milliseconds |
+| `maxRows` | `--max-rows` | Row cap on this token's queries |
+
+An axis left out is unrestricted on that axis (the token inherits the owner's reach); an axis sent as an empty array restricts the token to nothing on that axis. Scope always intersects the owner's grants and can never widen them - a mint request that tries to widen any axis is refused, naming the axis. Row-level and column-level policies that apply to the owner apply to every token they mint, untouched.
+
+Tokens mint tokens. A PAT presented on the REST API may create a further-scoped child of itself, list its own descendants, and revoke or delete within its own subtree only - never itself, a sibling, its parent, or any other token of its owner. An axis narrowed at mint time can only narrow further down the chain, a child's expiry is clamped to its parent's, and chains are depth-capped (`QOD_PAT_MAX_DEPTH`, default 8). Revoking a token revokes its whole subtree in the same statement, so a stolen token cannot be rolled forward past its own revocation by minting a successor first.
+
+A typical agent credential - read-only, one database, bounded per statement:
+
+```bash
+qod auth pat create --name analyst-agent \
+  --database acme_tpch --verb-ceiling RO \
+  --stmt-timeout-ms 30000 --max-rows 10000
+```
 
 ## Client configuration
 
@@ -80,10 +107,10 @@ Some operations exist in no tier and have no code path from `/mcp`, regardless o
 
 - Protection-weakening operations: tag unprotect, tag delete, lockdown off, any guardrail loosening
 - Irreversible destruction: tenant delete, database delete or purge, user delete, manifest import
-- Credential and secret operations: password set/reset, PAT create/list/revoke, federated secrets
+- Credential and secret operations: password set/reset, PAT management tools, federated secrets
 - RBAC mutations: grants, revokes, memberships, role/group/user create or update
 
-In particular, an agent holding a PAT can never mint, enumerate, or revoke tokens: PAT management requires a logged-in session (UI or CLI).
+No MCP tool exposes PAT management. Delegation happens over the REST API instead: a PAT presented there may mint and revoke only within its own subtree (see [Scoped tokens and delegation](#scoped-tokens-and-delegation)), while full PAT management - across all of a user's tokens - requires a logged-in session (UI or CLI).
 
 ## Errors
 
