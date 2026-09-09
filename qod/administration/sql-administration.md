@@ -81,7 +81,8 @@ a plain `CREATE` on an existing key is refused with `ALREADY_EXISTS`. The
 `USING` body passes through the same predicate validator as the REST path:
 one boolean expression, identity tokens `${user}` / `${tenant}` /
 `${tenantId}` / `${groups}` / `${roles}`, no subqueries, 1024 characters max.
-A body that ends inside a `--` line comment is rejected.
+Comments are not allowed anywhere in an expression body. Dollar-quoted
+(`$$...$$`) and `E'...'` string literals are supported in expressions.
 
 ### Column policies (CLS deny and masking)
 
@@ -118,6 +119,9 @@ fails with `unknown_pool` rather than selecting a different pool.
 CREATE USER alice PASSWORD 'secret';
 CREATE USER ops PASSWORD 'secret' ADMIN;
 ALTER USER alice PASSWORD 'rotated';
+ALTER USER alice REQUIRE PASSWORD CHANGE;
+ALTER USER alice DISABLE;
+ALTER USER alice ENABLE;
 DROP USER IF EXISTS alice;
 SHOW USERS;
 ```
@@ -130,7 +134,11 @@ username in the tenant is refused, never overwritten. Email-format usernames
 set the `email` column automatically, exactly as everywhere else.
 
 `ALTER USER ... PASSWORD` uses the same rotation path as REST `user/update`,
-so lockout counters (`failed_attempts`, `locked_at`) are cleared by the write.
+so lockout counters (`failed_attempts`, `locked_at`) are cleared by the write;
+`REQUIRE PASSWORD CHANGE` (forces a change at next login) and `ENABLE` share
+that path and also clear the counters - flagging a locked-out user for a
+password change unlocks them. `DISABLE` cuts both the REST login and the
+FlightSQL handshake, and refuses the session's own username.
 Rotation and drop are strictly per `(tenant, username)` row: the same
 username in another tenant is a different principal and is never affected.
 `DROP USER` refuses the session's own username. For a single credential across
@@ -151,8 +159,12 @@ SHOW GRANTS FOR ROLE analyst;
 SHOW ROW POLICIES;                         -- also: ON <table> | FOR ROLE <r>
 SHOW COLUMN POLICIES FOR ROLE analyst;
 SHOW POOL GRANTS;                          -- also: FOR USER <u> | FOR GROUP <g>
+SHOW GRANTS FOR USER alice;                -- flattened effective table grants
 SHOW USERS;
 ```
+
+`SHOW GRANTS FOR USER` flattens the user's effective permissions (direct roles
+and roles reached through groups), naming the granting role on each row.
 
 `SHOW ... ON <table>` matches the stored tuple exactly, wildcards included.
 
