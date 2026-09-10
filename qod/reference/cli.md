@@ -84,6 +84,23 @@ run setup (e.g. preparing config for another machine). `qod start --demo` ignore
 the stored table by design: the demo is self-contained (embedded ephemeral
 Postgres), so an external-Postgres config would be surprising there.
 
+### `qod status`
+
+One glance at what is (or is not) running, against the active profile's
+manager URL. Reports the manager (`/health`: alive plus pool and node
+counts), readiness (`/ready`: 503 until Postgres is reachable), the
+FlightSQL edge coordinates and whether that port answers, local manager
+pids on this machine (same port discovery `qod stop` uses), per-pool
+healthy/total node detail when you are logged in (omitted silently when
+not), and the stored `qod setup` config summary. Exits 1 when the manager
+is unreachable, so scripts can gate on it:
+
+```bash
+qod status                     # human table
+qod --json status             # machine-readable
+qod status && qod sql "SELECT 1"   # proceed only when the manager is up
+```
+
 ### `run-docker-compose.sh`
 
 Brings up the full stack (manager + Postgres, plus optional profiles) via Docker Compose. Same `QOD_VERSION` / `LOAD_TPCH` / `LOAD_TPCDS` / `LOAD_SSB` / `LOAD_TPC` / `DEMO` / `NUKE` flags as above (here `QOD_VERSION` picks the image tag; `QOD_VERSION=BUILD` builds the repo Dockerfile and runs the `:local` tag, `QOD_VERSION=LOCAL` reuses it without rebuilding), plus `PROFILES` (comma-separated, e.g. `observability,rustfs`). See [Docker deployment](/qod/operating/deploy-docker).
