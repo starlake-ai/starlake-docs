@@ -72,7 +72,15 @@ qod setup --unset QOD_API_KEY --non-interactive
 Precedence at `qod start` time is file < real process env, so a shell
 `export QOD_PG_HOST=...` still wins over the stored value. Input checks run
 before any prompt or write (a malformed `--set` never touches the file), and
-the config file path is printed on completion. `qod start --demo` ignores
+the config file path is printed on completion.
+
+Before saving anything that touches the Postgres coordinates, `qod setup`
+verifies the connection: a TCP probe of host:port always, plus a `SELECT 1`
+login check when `psql` is on `PATH` (otherwise it reports "reachable,
+credentials unverified"). On failure, interactive runs ask "save anyway?";
+non-interactive runs save nothing and exit 1. Pass `--skip-checks` when
+configuring coordinates that are legitimately unreachable from where you
+run setup (e.g. preparing config for another machine). `qod start --demo` ignores
 the stored table by design: the demo is self-contained (embedded ephemeral
 Postgres), so an external-Postgres config would be surprising there.
 
