@@ -7,7 +7,7 @@ title: Local deployment
 
 `runtimeType=local` is the default backend. It is the right choice for:
 
-- Developer workstations and single-host setups where all DuckDB Quack nodes run as child processes of the manager JVM.
+- Developer workstations and single-host setups where all DuckDB Quack nodes run as child processes of the manager.
 - Smoke-testing and integration work where Kubernetes is not available or not needed.
 - Small deployments where the total node count fits comfortably on one machine.
 

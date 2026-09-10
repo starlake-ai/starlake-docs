@@ -156,7 +156,7 @@ qod node statements --limit 20
 | `access denied: missing RO grant on ...` | ACL is enabled and the user has no matching role-permission grant | Add the grant via `qod role permission grant` or the Users screen; or set `QOD_ACL_ENABLED=false` for dev |
 | `session expired; please reconnect` | Bearer token is not recognized (manager restarted, clearing the in-process denylist and session store) | Run `qod login` again or pass Basic credentials; the static `QOD_API_KEY` continues to work after a restart |
 | `Could not connect to server` for `http://127.0.0.1:21NNN/quack` | Quack child process died after the manager restarted (local mode does not adopt survivors) | Wait for the next reconcile tick (default 30 s) to respawn; or run `qod pool stop` then `qod pool scale` immediately |
-| Manager hangs at startup after `BaseAllocator` log line, JVM pegged at 100% CPU | `INSTALL quack` is blocked by a corporate proxy; DuckDB silently retries fetching the extension | Pass `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` to the manager process; see the README "Behind a corporate proxy" section |
+| Manager hangs at startup after `BaseAllocator` log line, the manager process pegged at 100% CPU | `INSTALL quack` is blocked by a corporate proxy; DuckDB silently retries fetching the extension | Pass `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` to the manager process; see the README "Behind a corporate proxy" section |
 
 For the full failure and recovery matrix (Postgres outage, TLS expiry, disk full, multi-manager race) see [Resilience and recovery](/qod/operating/resilience).
 

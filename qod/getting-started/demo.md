@@ -40,7 +40,7 @@ NUKE=1 DEMO=minimal LOAD_TPCH=1 qod start
 
 | Component | Where it comes from |
 |---|---|
-| Bundled manifest at `src/main/resources/bootstrap-demo.yaml` | Loaded into the JVM classpath; imported on boot via `DemoBootstrapHook` when `QOD_BOOTSTRAP_YAML=classpath:bootstrap-demo.yaml` is set (the launcher script sets this automatically whenever any seed flag is non-empty). |
+| Bundled manifest at `src/main/resources/bootstrap-demo.yaml` | Bundled inside the manager; imported on boot via `DemoBootstrapHook` when `QOD_BOOTSTRAP_YAML=classpath:bootstrap-demo.yaml` is set (the launcher script sets this automatically whenever any seed flag is non-empty). |
 | `acme_tpch` Postgres database, seeded with TPC-H | `scripts/load-tpch-dbgen.sh` forked by the launcher; runs DuckDB's `dbgen(sf=N)` and copies the 8 TPC-H tables into the DuckLake catalog. |
 | `globex_tpcds` Postgres database, seeded with TPC-DS | `scripts/load-tpcds-dbgen.sh` forked by the launcher; runs DuckDB's `dsdgen(sf=N)` and copies the 24 TPC-DS tables. |
 | Schema `ssb1` in `acme_tpch`, seeded with the SSB star schema (`LOAD_SSB=N`) | `scripts/load-ssb-dbgen.sh` forked by the launcher; runs DuckDB's `dbgen(sf=N)` and derives the 5 SSB tables (`lineorder`, `customer`, `supplier`, `part`, `dwdate`) per the SSB spec's TPC-H mapping. No extra tenant or pool: the acme pools serve it, and the demo `tenant_admin` grant (`*.*.* ALL`) covers it. |

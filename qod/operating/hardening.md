@@ -102,7 +102,7 @@ context by default (no flag needed):
   (env `QOD_K8S_RUN_AS_USER`), `seccompProfile: RuntimeDefault`.
 - **Container:** `allowPrivilegeEscalation: false`, all Linux capabilities
   dropped, `readOnlyRootFilesystem: true`.
-- **Writable temp:** `emptyDir` volumes at `/tmp` and `/duckdb-tmp` so the JVM
+- **Writable temp:** `emptyDir` volumes at `/tmp` and `/duckdb-tmp` so the manager
   and DuckDB still have scratch space despite the read-only root filesystem.
 
 The kubelet refuses to start a pod that would run as root, so this is enforced,

@@ -67,7 +67,7 @@ context: SendInitRequest (GrpcProtocolProxy.cpp)
 
 where `192.168.1.113` is your machine's LAN address, not `127.0.0.1`. The same URL connects fine from DBeaver.
 
-Cause: this failure is **not** the Flight SQL connection to QoD. Tableau's "Other Databases (JDBC)" connector runs the driver in a separate **Java Protocol Server** sidecar process and talks to it over gRPC on `localhost`. The sidecar binds the **loopback** interface (`127.0.0.1`). If `localhost` does not resolve to `127.0.0.1` on your machine, Tableau's main process dials the wrong address, the sidecar handshake is refused, and the connection never reaches QoD. DBeaver loads the driver in its own JVM with no sidecar, so it never makes this loopback hop, which is why it works there.
+Cause: this failure is **not** the Flight SQL connection to QoD. Tableau's "Other Databases (JDBC)" connector runs the driver in a separate **Java Protocol Server** sidecar process and talks to it over gRPC on `localhost`. The sidecar binds the **loopback** interface (`127.0.0.1`). If `localhost` does not resolve to `127.0.0.1` on your machine, Tableau's main process dials the wrong address, the sidecar handshake is refused, and the connection never reaches QoD. DBeaver loads the driver in its own process with no sidecar, so it never makes this loopback hop, which is why it works there.
 
 Check what `localhost` resolves to:
 

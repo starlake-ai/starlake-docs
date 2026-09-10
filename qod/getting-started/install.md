@@ -38,7 +38,7 @@ QOD_VERSION=latest-snapshot PG_HOST=... PG_PASSWORD=*** ./scripts/run-docker.sh
 
 ## Native jar (`qod start`)
 
-`qod start` runs a real manager on the host JVM against your own Postgres, with no repository checkout: it downloads the release jar from GitHub Releases (verified against the published sha256), self-installs the DuckDB CLI + `libduckdb` at the pinned ABI, and starts the JVM with the right flags.
+`qod start` runs a real manager on your machine against your own Postgres, with no repository checkout: it downloads the release jar from GitHub Releases (verified against the published sha256), self-installs the DuckDB CLI + `libduckdb` at the pinned ABI, and launches QoD with the right settings.
 
 ### Prerequisites
 
@@ -53,7 +53,7 @@ QOD_VERSION=latest-snapshot PG_HOST=... PG_PASSWORD=*** ./scripts/run-docker.sh
     postgres:16-alpine
   ```
 
-- **Java 21+ is found, not required.** `qod start` uses `JAVA_HOME` or `java` on `PATH` when a 21+ JVM is present; otherwise it downloads a cached Temurin 21 JRE (about 50 MB, one time, no prompt). `JAVA_BIN` forces a specific binary; `JAVA_OPTS` adds JVM flags (e.g. `-Xmx2g`).
+- **Java 21+ is found, not required.** `qod start` uses `JAVA_HOME` or `java` on `PATH` when a Java 21+ runtime is present; otherwise it downloads a cached Temurin 21 JRE (about 50 MB, one time, no prompt). `JAVA_BIN` forces a specific binary; `JAVA_OPTS` adds Java options (e.g. `-Xmx2g`).
 - **DuckDB is self-installed** (CLI + `libduckdb` at the ABI libquackwire links against) into the user cache dir - a system duckdb at the wrong ABI would crash the first node spawn, so it is never used. `DUCKDB_VERSION` / `DUCKDB_CACHE_DIR` override the pin and location; air-gapped operators can pre-populate `$DUCKDB_CACHE_DIR/$VERSION/{bin,lib}` and no network fetch happens.
 
 ### Where downloads are cached
@@ -104,7 +104,7 @@ On first run against a freshly-provisioned Postgres, Liquibase applies the contr
 
 The FlightSQL edge listens on `localhost:31338` with TLS on by default. Durable state (the self-signed certs, and the default DuckLake data path unless `QOD_DUCKLAKE_DATA_PATH` is set) lives under the platform user data dir (`~/.local/share/qod` on Linux, `~/Library/Application Support/qod` on macOS).
 
-To stop the manager and its quack nodes, either press Ctrl-C in the terminal running `qod start` (the CLI supervises the JVM and runs the same graceful teardown) or, from anywhere:
+To stop the manager and its quack nodes, either press Ctrl-C in the terminal running `qod start` (the CLI supervises QoD and runs the same graceful teardown) or, from anywhere:
 
 ```bash
 qod stop
@@ -161,7 +161,7 @@ qod start
 - **Native wire (default, fastest)** needs `native\windows-x86_64\quackwire.dll` bundled in the assembly. `quackwire.dll` is bundled automatically whenever `libquackwire\binaries\windows-x86_64\quackwire.dll` exists in the checkout (it does in a normal clone - all 5 platforms are vendored). No env flag needed; see below to build it yourself.
 - **Embedded DuckDB (JDBC), no native build** - set `$env:QOD_NATIVE_CLIENT = 'false'`. The DuckDB JDBC driver ships its own Windows native, so this works with any assembly jar out of the box (slower; serialized). Good for a first run.
 
-On **Windows on ARM** (e.g. Parallels on Apple Silicon), DuckDB is provisioned as native `windows-arm64`, but the bundled `quackwire.dll` is x86_64-only and cannot load in the arm64 JVM. The manager detects this at boot and falls back to the embedded client automatically (a `WARN` is logged); no configuration needed.
+On **Windows on ARM** (e.g. Parallels on Apple Silicon), DuckDB is provisioned as native `windows-arm64`, but the bundled `quackwire.dll` is x86_64-only and cannot load in an arm64 Java runtime. The manager detects this at boot and falls back to the embedded client automatically (a `WARN` is logged); no configuration needed.
 
 **Building the Windows native (`quackwire.dll`), optional.** Requires MSVC (Visual Studio Build Tools) + CMake + `sbt`. Assemble a `DUCKDB_HOME` with `duckdb.lib` plus the full `duckdb/` include tree (see `.github/workflows/quackwire.yml`, step "Install libduckdb v1.5.5 (Windows)"), then:
 

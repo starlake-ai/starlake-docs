@@ -13,7 +13,7 @@ Worker pools scale horizontally. A pool can contain any number of Quack nodes; t
 
 ## Cold start and reconciliation
 
-When the manager JVM exits and a supervisor restarts it (systemd, Kubernetes, or a manual rerun of `qod start`), the following sequence runs:
+When the manager process exits and a supervisor restarts it (systemd, Kubernetes, or a manual rerun of `qod start`), the following sequence runs:
 
 1. **State restored from Postgres.** `PoolSupervisor.restore()` reads the normalized `qodstate_tenant`, `qodstate_tenant_db`, `qodstate_pool`, and `qodstate_node` tables (managed by Liquibase) and re-hydrates the registry into in-memory `TrieMap`s. The RBAC graph (`qodstate_role`, `qodstate_role_permission`, `qodstate_group`, `qodstate_user_role`, `qodstate_user_group`, `qodstate_group_role`, `qodstate_pool_permission`) is rebuilt into the per-session `EffectiveSet` on each connection.
 
@@ -23,7 +23,7 @@ When the manager JVM exits and a supervisor restarts it (systemd, Kubernetes, or
 
 4. **Bootstrap re-seed.** `Main.scala` re-runs the bootstrap sequence on every start. Each step is idempotent: the named tenant/tenant-db/pool are skipped when they already exist, the admin user upsert re-hashes the password, and the built-in `admin` role with its wildcard permission is a no-op on re-entry.
 
-Typical cold-boot time on a development machine: roughly 5 s JVM start plus 1 s Liquibase schema diff plus 1 s reconcile plus about 3 s per respawned node. A 3-node pool is back in service in approximately 15 s. A first-ever boot adds another 1-2 s per tenant-db for `CREATE DATABASE` and DuckLake metadata table initialization.
+Typical cold-boot time on a development machine: roughly 5 s process start plus 1 s Liquibase schema diff plus 1 s reconcile plus about 3 s per respawned node. A 3-node pool is back in service in approximately 15 s. A first-ever boot adds another 1-2 s per tenant-db for `CREATE DATABASE` and DuckLake metadata table initialization.
 
 ## Health checks
 
@@ -71,15 +71,15 @@ All of these recover through re-population from live traffic. None cause incorre
 
 | Failure | Detection | Manager behavior | Impact | Tracked gap |
 |---|---|---|---|---|
-| Quack node JVM crash | `HealthProbe` `/ping` tick (5 s default) plus PID check (local only) | Local: respawn via `spawn-quack-node.sh`. Kubernetes: kubelet restart, manager waits for pod `Ready`. | New traffic routes to other healthy nodes. Sessions pinned to the dead node are invalidated on next statement. | - |
-| Manager JVM crash (OOM, panic) | Process supervisor (systemd, kubelet, manual rerun) | Cold restart: restore from Postgres, reconcile. | All FlightSQL sessions drop. Approximately 15 s to fully reconcile a 3-node pool. | Graceful shutdown ([#2](https://github.com/starlake-ai/quack-on-demand/issues/2)) |
+| Quack node crash | `HealthProbe` `/ping` tick (5 s default) plus PID check (local only) | Local: respawn via `spawn-quack-node.sh`. Kubernetes: kubelet restart, manager waits for pod `Ready`. | New traffic routes to other healthy nodes. Sessions pinned to the dead node are invalidated on next statement. | - |
+| Manager crash (OOM, panic) | Process supervisor (systemd, kubelet, manual rerun) | Cold restart: restore from Postgres, reconcile. | All FlightSQL sessions drop. Approximately 15 s to fully reconcile a 3-node pool. | Graceful shutdown ([#2](https://github.com/starlake-ai/quack-on-demand/issues/2)) |
 | Postgres brief outage | Hikari throws on connection acquire | First state-changing request gets a 500. No automatic retry wrapper. | Read-only requests served from in-memory state (including cached `EffectiveSet`s on live FlightSQL sessions) continue to work. Writes, new tenant-db creation, and new-session handshakes all fail. | Need retry wrapper (no issue yet) |
 | Postgres down for minutes | Same as above | Manager enters degraded state: established FlightSQL sessions keep flowing but `createPool`, `createTenantDb`, and RBAC CRUD all fail. New connections cannot rebuild the `EffectiveSet` and bounce at handshake. | Existing FlightSQL traffic continues. | Same |
-| Manager host loss (Kubernetes node evict) | kubelet | New pod scheduled; cold restart sequence runs on a different host. | Same as JVM crash. Set `terminationGracePeriodSeconds` to at least 30 s. | - |
+| Manager host loss (Kubernetes node evict) | kubelet | New pod scheduled; cold restart sequence runs on a different host. | Same as manager crash. Set `terminationGracePeriodSeconds` to at least 30 s. | - |
 | Network partition between manager and a node | `HealthProbe` flips `healthy = false` after one tick | Node excluded from `Router.pick()`. | Sessions pinned to that node are invalidated on next statement. Outside-transaction statements retry once on a different node. | - |
 | Network partition between manager and all nodes | All nodes flip `healthy = false` | Every routing decision returns `Unavailable("no node compatible")`. FlightSQL responses become errors. | Total query outage until partition heals. The manager process itself does not crash. | - |
-| FlightSQL edge crash (`FlightProducerImpl` exception) | The wrapping `IO` returns `Left(throwable)` | `Main.scala` logs the error and parks on `IO.never`. The JVM stays up but FlightSQL is dead. | Admin UI and `/metrics` continue working. FlightSQL is silently down. | Should exit non-zero so the supervisor restarts (no issue yet) |
-| Disk full on manager host | Logback `RollingFileAppender` drops writes; JVM may OOM | Manager eventually crashes. | Same as manager JVM crash. | - |
+| FlightSQL edge crash (`FlightProducerImpl` exception) | The wrapping `IO` returns `Left(throwable)` | `Main.scala` logs the error and parks on `IO.never`. The process stays up but FlightSQL is dead. | Admin UI and `/metrics` continue working. FlightSQL is silently down. | Should exit non-zero so the supervisor restarts (no issue yet) |
+| Disk full on manager host | Logback `RollingFileAppender` drops writes; the manager may OOM | Manager eventually crashes. | Same as manager crash. | - |
 | Disk full on a Quack node (Parquet write fails) | Node returns 5xx from `/quack`; adapter classifies as `transient` | Router tries a different node (retry-once outside tx; pin invalidation inside tx). | Reads continue. Writes fail until disk is cleared. | - |
 | TLS cert expiry | First TLS handshake fails | Manager refuses new FlightSQL connections. | The auto-generated cert in `certs/` has a 10-year validity. Only a concern for production deployments using externally issued certificates. | Rotate via cert-manager in Kubernetes. |
 | Two uncoordinated managers against the same Postgres (HA flag off) | Both restore the same state and both try to reconcile | Both attempt to spawn pods with the same node IDs (Kubernetes API returns 409 for the second create; local mode races on port allocation). `DbAdmin.createDatabase` for new tenant-dbs races: one wins, the other sees "database already exists". **Unsafe with `QOD_HA_ENABLED` off.** | Do not run two managers without HA; enable opt-in HA instead. | Resolved by opt-in HA (`QOD_HA_ENABLED=true`, Kubernetes only): a Postgres session advisory lock elects one leader for reconcile / bootstrap / DuckLake init, and per-pool advisory locks serialize pool mutations. |
@@ -88,7 +88,7 @@ All of these recover through re-population from live traffic. None cause incorre
 
 If you are running the default single-manager mode in production (one manager plus Postgres), the guidance below applies. For zero-downtime rolling deploys and replica-crash tolerance, enable opt-in HA on Kubernetes (`QOD_HA_ENABLED=true`, `replicaCount > 1`); the same process-supervisor and probe guidance then applies to each replica.
 
-- **Run under a process supervisor** that restarts the JVM on exit: systemd with `Restart=always`, a Kubernetes `Deployment` with `restartPolicy: Always` (the default), or Docker with `restart: unless-stopped`.
+- **Run under a process supervisor** that restarts the manager on exit: systemd with `Restart=always`, a Kubernetes `Deployment` with `restartPolicy: Always` (the default), or Docker with `restart: unless-stopped`.
 
 - **Add Kubernetes readiness and liveness probes** before exposing the manager to traffic:
 
@@ -109,10 +109,10 @@ If you are running the default single-manager mode in production (one manager pl
 
 - **Back up Postgres with point-in-time recovery.** Everything that survives a manager restart lives there.
 
-- **Set `terminationGracePeriodSeconds: 60`** so in-flight FlightSQL queries have time to complete before the JVM is killed (useful even without a graceful shutdown handler).
+- **Set `terminationGracePeriodSeconds: 60`** so in-flight FlightSQL queries have time to complete before the process is killed (useful even without a graceful shutdown handler).
 
 - **Monitor `statements_total{status!="ok"}` rate.** A spike in `transient`, `no_node`, or `pin_lost` is the leading indicator for node trouble. A spike in `permanent` typically means client-side SQL errors.
 
-- **Set up an external `/health` watcher** independent of the JVM (for example, a Prometheus `probe_success` check). Routine reachability is the first thing to know when investigating an outage.
+- **Set up an external `/health` watcher** independent of the manager process (for example, a Prometheus `probe_success` check). Routine reachability is the first thing to know when investigating an outage.
 
 - **Design FlightSQL clients with retry logic.** ADBC includes it; JDBC pools usually do; raw gRPC code needs explicit handling. A manager restart is the most common interruption clients will encounter.

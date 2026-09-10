@@ -8,7 +8,7 @@ title: Docker deployment
 The Docker Compose stack runs the whole control plane as containers: the manager (REST + admin UI + FlightSQL edge) plus its Postgres metastore, with every DuckDB Quack node spawned as a child process inside the manager container. It is the right choice for:
 
 - A single-host deployment where you want the manager and its Postgres bundled and supervised together, with persistent state on the host.
-- A reproducible demo or evaluation host that boots with one command and no JVM, sbt, or Node toolchain on the box.
+- A reproducible demo or evaluation host that boots with one command and no Java, sbt, or Node toolchain on the box.
 - Running off a dedicated data disk or NFS mount: the persistent folders are bind-mounted and each one accepts an external host path (see [Data folders](#data-folders-external-bind-mounts) below).
 
 For first-boot-to-first-query, see the [Quickstart](/qod/getting-started/quickstart). For a single manager container pointed at an external Postgres you already run, see the Docker section of [Installation](/qod/getting-started/install). For multi-host or orchestrated deployments, use the [Kubernetes backend](/qod/operating/deploy-kubernetes).
@@ -98,7 +98,7 @@ NUKE=1 LOAD_TPC=1 ./scripts/run-docker-compose.sh
 NUKE=1 DEMO=minimal LOAD_TPCH=1 ./scripts/run-docker-compose.sh
 ```
 
-`LOAD_TPC=1` seeds two demo tenants inside the container: `acme` loaded with TPC-H (8 tables in schema `tpch1`, database `acme_tpch`) plus the SSB star schema derived from it (5 tables in schema `ssb1`, same database), and `globex` loaded with TPC-DS (24 tables in schema `tpcds1`, database `globex_tpcds`). Use `LOAD_TPCH` / `LOAD_TPCDS` / `LOAD_SSB` to seed each independently. The bundled manifest `bootstrap-demo.yaml` declares the tenants, pools, roles, groups, and users; `QOD_BOOTSTRAP_YAML=classpath:bootstrap-demo.yaml` is injected into `.env` automatically so the JVM imports it on startup.
+`LOAD_TPC=1` seeds two demo tenants inside the container: `acme` loaded with TPC-H (8 tables in schema `tpch1`, database `acme_tpch`) plus the SSB star schema derived from it (5 tables in schema `ssb1`, same database), and `globex` loaded with TPC-DS (24 tables in schema `tpcds1`, database `globex_tpcds`). Use `LOAD_TPCH` / `LOAD_TPCDS` / `LOAD_SSB` to seed each independently. The bundled manifest `bootstrap-demo.yaml` declares the tenants, pools, roles, groups, and users; `QOD_BOOTSTRAP_YAML=classpath:bootstrap-demo.yaml` is injected into `.env` automatically so the manager imports it on startup.
 
 `DEMO=minimal` injects `bootstrap-demo-minimal.yaml` instead - the shape for fronting a single DuckDB/DuckLake database: one tenant (`acme`), one pool (`bi`), one dual node serving both reads and writes, and the analyst RLS/CLS demo. `DEMO=full` is the default and covers the multi-tenant, multi-pool, and federation demos. The profile is only consulted when a `LOAD_*` flag is set and `QOD_BOOTSTRAP_YAML` is unset; bootstrap only imports into a fresh control plane, so switch profiles with `NUKE=1`. `DEMO=minimal` with `LOAD_TPCDS` warns and skips the TPC-DS loader (no `globex` tenant in this profile).
 

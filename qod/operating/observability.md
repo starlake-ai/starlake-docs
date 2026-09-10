@@ -122,7 +122,7 @@ Rows common to both, top to bottom:
 | DuckDB Engine | Memory used, spill bytes, spill files, temp storage per node |
 | DuckLake Maintenance | Runs by result, duration percentiles, files compacted, bytes reclaimed, snapshots expired |
 | Security Rewrites | Column- / row-policy rewrites by outcome, rewrite duration means, catalog lookups by result |
-| JVM | Heap used, GC pause rate, live threads, process uptime |
+| Runtime | Heap used, GC pause rate, live threads, process uptime |
 
 Kubernetes-only rows (in `grafana-dashboard-k8s.json`):
 

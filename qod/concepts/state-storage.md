@@ -15,7 +15,7 @@ The control plane is a set of normalized tables with the `qodstate_` prefix, man
 
 Liquibase applies the changelog at boot (idempotent: already-applied changesets are skipped), so the schema is created and migrated automatically.
 
-Connections are pooled via HikariCP (size 20 by default on the control-plane store, 10 on `UserStore`). The manager's shutdown hook drains both pools before JVM exit. The legacy file-backed store (single-JSON blob at `statePath`, gated by `stateStorage = file`) was dropped along with the `stateStorage` and `statePath` config keys; only the Postgres path is wired today.
+Connections are pooled via HikariCP (size 20 by default on the control-plane store, 10 on `UserStore`). The manager's shutdown hook drains both pools before the manager exits. The legacy file-backed store (single-JSON blob at `statePath`, gated by `stateStorage = file`) was dropped along with the `stateStorage` and `statePath` config keys; only the Postgres path is wired today.
 
 ## Table prefixes
 
