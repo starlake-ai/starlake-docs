@@ -42,7 +42,7 @@ QOD_VERSION=latest-snapshot PG_HOST=... PG_PASSWORD=*** ./scripts/run-docker.sh
 
 ### Prerequisites
 
-- **Postgres 16 or later, reachable.** Installers for all platforms are at [postgresql.org/download](https://www.postgresql.org/download/) (Windows users can also grab the [EDB installer](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads) directly). The control plane stores all state in a dedicated database (default name `qod`) on `localhost:5432`; point `QOD_PG_HOST` / `QOD_PG_PORT` / `QOD_PG_USER` / `QOD_PG_PASSWORD` at yours. When `psql` is on `PATH`, `qod start` creates the control-plane database up front (idempotent); without it the manager creates what it needs on first connection.
+- **Postgres 16 or later, reachable.** Installers for all platforms are at [postgresql.org/download](https://www.postgresql.org/download/) (Windows users can also grab the [EDB installer](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads) directly). The control plane stores all state in a dedicated database (default name `qod`) on `localhost:5432`; point `QOD_PG_HOST` / `QOD_PG_PORT` / `QOD_PG_USER` / `QOD_PG_PASSWORD` at yours - or run `uvx qod setup` once to store them (guided prompts; a real shell export still wins; see [`qod setup`](/qod/reference/cli#qod-setup)). When `psql` is on `PATH`, `qod start` creates the control-plane database up front (idempotent); without it the manager creates what it needs on first connection.
 
   If you do not have a local Postgres instance, the quickest path is:
 

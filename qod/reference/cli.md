@@ -52,6 +52,30 @@ qod stop                     # SIGTERM, wait, then SIGKILL (FORCE_AFTER seconds)
 
 ```
 
+### `qod setup`
+
+Persists the env vars `qod start` reads (Postgres coordinates, admin
+credentials, the static API key, the auth/TLS toggles, and any other
+`QOD_*`/`PROXY_*` var via `--set`) into the CLI config file, under a
+`[start]` table next to the connection profiles (same file, mode 0600,
+`QOD_CONFIG_FILE` overrides the path). Run it once and `qod start` works
+bare afterwards.
+
+```bash
+qod setup                                    # guided prompts on a terminal
+qod setup --pg-host db.internal --pg-password s3cr3t --no-tls --non-interactive
+qod setup --set QOD_MIN_PORT=21900           # any other QOD_*/PROXY_* var
+qod setup --show                             # inspect stored values (secrets redacted)
+qod setup --unset QOD_API_KEY --non-interactive
+```
+
+Precedence at `qod start` time is file < real process env, so a shell
+`export QOD_PG_HOST=...` still wins over the stored value. Input checks run
+before any prompt or write (a malformed `--set` never touches the file), and
+the config file path is printed on completion. `qod start --demo` ignores
+the stored table by design: the demo is self-contained (embedded ephemeral
+Postgres), so an external-Postgres config would be surprising there.
+
 ### `run-docker-compose.sh`
 
 Brings up the full stack (manager + Postgres, plus optional profiles) via Docker Compose. Same `QOD_VERSION` / `LOAD_TPCH` / `LOAD_TPCDS` / `LOAD_SSB` / `LOAD_TPC` / `DEMO` / `NUKE` flags as above (here `QOD_VERSION` picks the image tag; `QOD_VERSION=BUILD` builds the repo Dockerfile and runs the `:local` tag, `QOD_VERSION=LOCAL` reuses it without rebuilding), plus `PROFILES` (comma-separated, e.g. `observability,rustfs`). See [Docker deployment](/qod/operating/deploy-docker).
