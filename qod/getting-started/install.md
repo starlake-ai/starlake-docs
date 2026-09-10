@@ -82,6 +82,24 @@ QOD_VERSION=0.3.8 qod start    # pinned release
 qod start --jar path/to/quack-on-demand-assembly-X.Y.Z.jar   # a jar you built
 ```
 
+When your Postgres is not on `localhost:5432` with the default credentials,
+the commands above need `QOD_PG_*` in the environment - and because `uvx`
+runs the CLI without any installation, there is no obvious place to keep
+those exports: every new terminal means re-exporting them or prefixing each
+command (`QOD_PG_HOST=db QOD_PG_PASSWORD=... uvx qod start`). That is what
+[`qod setup`](/qod/reference/cli#qod-setup) is for - run it once and answer
+the prompts:
+
+```bash
+uvx qod setup                  # Postgres coordinates, admin creds, API key, auth/TLS
+uvx qod start                  # now works bare, in any terminal, from anywhere
+```
+
+It stores the answers in the CLI config file (mode 0600, path printed on
+completion, `--show` to inspect with secrets redacted). A real shell export
+still overrides any stored value on a given run, and the self-contained
+`qod start --demo` deliberately ignores the stored config.
+
 On first run against a freshly-provisioned Postgres, Liquibase applies the control-plane schema. The admin UI is at `http://localhost:20900/ui/`; log in as `admin` with password `admin` (change this before any exposure beyond localhost -- see [Configuration model](#configuration-model) below).
 
 The FlightSQL edge listens on `localhost:31338` with TLS on by default. Durable state (the self-signed certs, and the default DuckLake data path unless `QOD_DUCKLAKE_DATA_PATH` is set) lives under the platform user data dir (`~/.local/share/qod` on Linux, `~/Library/Application Support/qod` on macOS).
