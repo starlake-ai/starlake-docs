@@ -54,7 +54,7 @@ qod stop                     # SIGTERM, wait, then SIGKILL (FORCE_AFTER seconds)
 
 ### `run-docker-compose.sh`
 
-Brings up the full stack (manager + Postgres, plus optional profiles) via Docker Compose. Same `QOD_VERSION` / `LOAD_TPCH` / `LOAD_TPCDS` / `LOAD_SSB` / `LOAD_TPC` / `DEMO` / `NUKE` flags as above (here `QOD_VERSION` picks the image tag; `QOD_VERSION=BUILD` builds the repo Dockerfile and runs the `:local` tag, `QOD_VERSION=LOCAL` reuses it without rebuilding), plus `PROFILES` (comma-separated, e.g. `observability,seaweedfs`). See [Docker deployment](/qod/operating/deploy-docker).
+Brings up the full stack (manager + Postgres, plus optional profiles) via Docker Compose. Same `QOD_VERSION` / `LOAD_TPCH` / `LOAD_TPCDS` / `LOAD_SSB` / `LOAD_TPC` / `DEMO` / `NUKE` flags as above (here `QOD_VERSION` picks the image tag; `QOD_VERSION=BUILD` builds the repo Dockerfile and runs the `:local` tag, `QOD_VERSION=LOCAL` reuses it without rebuilding), plus `PROFILES` (comma-separated, e.g. `observability,rustfs`). See [Docker deployment](/qod/operating/deploy-docker).
 
 ```bash
 ./scripts/run-docker-compose.sh
