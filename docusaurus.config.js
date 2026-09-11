@@ -4,7 +4,22 @@
 const lightCodeTheme = require("prism-react-renderer").themes.github;
 const darkCodeTheme = require("prism-react-renderer").themes.dracula;
 const {GlobExcludeDefault} = require('@docusaurus/utils');
+const fs = require("fs");
+const path = require("path");
 const isBlog = process.env.IS_BLOG === 'true';
+
+// QoD version shown in the navbar badge; sourced from the generated OpenAPI
+// spec so the badge and the /api/ reference can never disagree.
+function readQodVersion() {
+  try {
+    const spec = fs.readFileSync(path.join(__dirname, "static", "openapi.yaml"), "utf8");
+    const m = spec.match(/^\s+version:\s*(\S+)\s*$/m);
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
+const qodVersion = readQodVersion();
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -271,6 +286,7 @@ const config = {
   customFields: {
     qodGaId: process.env.QOD_DOCS_GA_ID,
     starflowGaId: process.env.STARFLOW_DOCS_GA_ID,
+    qodVersion,
   },
   clientModules: isBlog ? [] : [require.resolve("./src/clientModules/sectionAnalytics.js")],
 };
