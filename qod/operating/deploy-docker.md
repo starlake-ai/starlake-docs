@@ -22,7 +22,7 @@ For first-boot-to-first-query, see the [Quickstart](/qod/getting-started/quickst
 | `postgres` | Control-plane database `qod` (the `qodstate_*` tables) plus every tenant database (`${tenant}_${tenantDb}`, e.g. `tpch_tpch1`) the manager provisions. DuckLake's `__ducklake_*` catalog lives inside each tenant database. |
 | `quack` | The manager: REST + admin UI on `:20900`, the FlightSQL edge on `:31338`, and the child Quack node port range. |
 
-Three optional profiles add services only when you ask for them: `rustfs` (an in-network S3 object store), and `observability` (Prometheus + Grafana). See [Profiles](#optional-profiles) below.
+Three optional profiles add services only when you ask for them: `seaweedfs` (an in-network S3 object store), and `observability` (Prometheus + Grafana). See [Profiles](#optional-profiles) below.
 
 ## Boot it
 
@@ -52,7 +52,8 @@ All persistent state is bind-mounted onto the host. Each mount defaults to a rep
 | `./pgdata` | `/var/lib/postgresql/data` | `PGDATA_DIR` | Postgres data: the `qod` control plane plus every tenant database. |
 | `./ducklake` | `/app/ducklake` | `DUCKLAKE_DIR` | DuckLake Parquet data files, one subdirectory per tenant database. |
 | `./certs` | `/app/certs` | `CERTS_DIR` | Self-signed FlightSQL TLS cert and key, auto-generated on first boot. |
-| `./rustfs` | `/data` | `RUSTFS_DIR` | RustFS object data (only with the `rustfs` profile). |
+| `./seaweedfs` | `/data` | `SEAWEEDFS_DIR` | SeaweedFS object data (only with the `seaweedfs` profile). |
+| `./seaweedfs-config` | `/etc/seaweedfs` | `SEAWEEDFS_CONFIG_DIR` | SeaweedFS S3 credentials (only with the `seaweedfs` profile). |
 
 For example, to keep the metastore and DuckLake data under `/data`:
 
@@ -64,7 +65,7 @@ PGDATA_DIR=/data/qod/pgdata DUCKLAKE_DIR=/data/qod/ducklake \
 When DuckLake writes to an S3-compatible bucket instead of the filesystem (`QOD_DUCKLAKE_DATA_PATH=s3://...`), the `./ducklake` mount is unused; the catalog persists the `s3://` URL and every Quack node resolves it identically regardless of host. See [Object storage](#object-storage-s3-compatible).
 
 :::caution
-`NUKE=1 ./scripts/run-docker-compose.sh` only wipes the repo-relative defaults (`./pgdata`, `./ducklake`, `./certs`, `./rustfs`, plus the legacy `./seaweedfs` and `./seaweedfs-config` from older checkouts). External folders you point these overrides at are **not** auto-wiped; remove them by hand.
+`NUKE=1 ./scripts/run-docker-compose.sh` only wipes the repo-relative defaults (`./pgdata`, `./ducklake`, `./certs`, `./seaweedfs`, `./seaweedfs-config`, plus a legacy `./rustfs` left by checkouts that ran the briefly-bundled RustFS). External folders you point these overrides at are **not** auto-wiped; remove them by hand.
 :::
 
 Do not mix a Docker run and a native-jar run against the same catalog database. DuckLake records the absolute data path in Postgres metadata: inside the container it is `/app/ducklake/<db>`, natively it is `<host-cwd>/ducklake/<db>`. Use a different control-plane database name per mode, or wipe the data between switches.
@@ -119,7 +120,7 @@ Activate with `--profile` on `docker compose`, or via `PROFILES=...` on the wrap
 
 Set `QOD_DUCKLAKE_DATA_PATH` to an `s3://` URL and fill in the `QOD_S3_*` credentials to write DuckLake Parquet to a bucket instead of the `./ducklake` bind mount. Two options:
 
-- **Bundled RustFS** (no external dependency). Bring it up with `docker compose --profile rustfs up -d` (prefer the wrapper script, which also prepares the data directory's ownership); the wrapper auto-activates this profile when `QOD_S3_ENDPOINT` in `.env` points at `rustfs:9000`. Pair with `QOD_DUCKLAKE_DATA_PATH=s3://${S3_BUCKET}/<db>`. Unlike the SeaweedFS this stack bundled before, RustFS does not auto-create buckets: a one-shot `rustfs-mb` service creates `${S3_BUCKET}` at startup. The RustFS console on `:9001` doubles as a file browser (same credentials as the S3 API; do not expose it publicly).
+- **Bundled SeaweedFS** (no external dependency). Bring it up with `docker compose --profile seaweedfs up -d`; the wrapper auto-activates this profile when `QOD_S3_ENDPOINT` (exported, or in `.env`) points at `seaweedfs:8333`. Pair with `QOD_DUCKLAKE_DATA_PATH=s3://${S3_BUCKET}/<db>`. SeaweedFS auto-creates buckets on first write, so no separate bucket step is needed. The Filer UI on `:8888` doubles as a file browser.
 - **External S3** (AWS, R2, MinIO, GCS HMAC). Leave the profile off and set the bucket plus credentials; omit `QOD_S3_ENDPOINT` to use the AWS default.
 
 The `.env.example` file has ready-to-uncomment blocks for both. The `spawn-quack-node.sh` and TPC-H loader detect the `s3://` scheme, install DuckDB's `httpfs`, and `CREATE SECRET` so every node reads and writes Parquet against the bucket.
@@ -135,7 +136,7 @@ Prometheus scrapes the in-network `quack` service; Grafana serves a pre-provisio
 
 ## Corporate proxy
 
-When the host needs an HTTP proxy to reach the public internet (for DuckDB extension downloads from `extensions.duckdb.org`), set `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` in `.env`. Compose forwards them into both the build and the runtime, and the manager translates them into DuckDB's `SET http_proxy` before `INSTALL`. The in-network hostnames (`postgres`, `rustfs`) are always added to `NO_PROXY` so intra-stack traffic and S3 PUTs bypass the proxy. Note that `docker pull` itself reads the Docker daemon's proxy config, not these variables.
+When the host needs an HTTP proxy to reach the public internet (for DuckDB extension downloads from `extensions.duckdb.org`), set `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` in `.env`. Compose forwards them into both the build and the runtime, and the manager translates them into DuckDB's `SET http_proxy` before `INSTALL`. The in-network hostnames (`postgres`, `seaweedfs`) are always added to `NO_PROXY` so intra-stack traffic and S3 PUTs bypass the proxy. Note that `docker pull` itself reads the Docker daemon's proxy config, not these variables.
 
 ## Before exposing beyond localhost
 
