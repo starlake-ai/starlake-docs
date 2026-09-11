@@ -3,7 +3,7 @@ id: reference
 title: Command reference
 ---
 
-Settings resolve flag > `QOD_*` env var > active profile > built-in default; see [The qod CLI](/qod/cli/) for the full table. `--profile NAME` and `--json` are top-level flags that go before the noun, e.g. `qod --json tenant list`.
+Settings resolve flag > `QOD_*` env var > active profile > built-in default; see [The qod CLI](/qod/cli/) for the full table. `--profile NAME` and `--json` are top-level flags that go before the noun, e.g. `qod --json tenant list`; `qod --version` prints the CLI version.
 
 Purposes below are one line each; run `qod <noun> <verb> --help` for the full flag list of any command.
 
@@ -23,6 +23,7 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | `qod auth pat revoke` | Revoke a PAT immediately (`--id`); cascades to every token minted from it. |
 | `qod auth pat delete` | Discard a revoked or expired PAT from the listing (`--id`); a live token must be revoked first. |
 | `qod health` | Liveness plus pool/node counts (open endpoint). |
+| `qod ready` | Readiness probe: 503 until Postgres is reachable, 200 once it is (open endpoint). |
 
 ## tenant
 
@@ -56,6 +57,10 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | `qod pool set-autoscale` | Set or clear a pool's autoscale band (omit both bounds to clear). |
 | `qod pool set-resources` | Set CPU/memory requests for a pool's nodes. |
 | `qod pool set-pod-template` | Set the Kubernetes pod template YAML for a pool. |
+| `qod pool suspend` | Scale the pool to zero, keeping its distribution; wakes on the next query. |
+| `qod pool resume` | Wake a suspended pool (respawn to its stored distribution). |
+| `qod pool status` | One pool's live status: nodes, suspended/disabled flags, resources. |
+| `qod pool set-lockdown` | Per-pool node-lockdown override (`--lockdown inherit\|on\|off`; `inherit` follows the global `QOD_NODE_LOCKDOWN`). Superuser only. |
 
 ## pool permission
 
@@ -154,6 +159,7 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | `qod catalog tables` | List tables in a schema. |
 | `qod catalog describe` | Describe a table's columns, optionally as of a snapshot/tag/timestamp. |
 | `qod catalog snapshots` | List snapshots for a tenant database, optionally filtered to a table. |
+| `qod catalog tags` | List snapshot tags of a tenant database (manage them with the `tag` verbs below). |
 | `qod catalog history` | Snapshot history for a table (operation, author, time range filters). |
 | `qod catalog preview` | Preview table rows, optionally as of a snapshot/tag/timestamp. |
 | `qod catalog data-diff` | Row-level diff of a table between two snapshot selectors. |
@@ -241,6 +247,8 @@ ALL grant, or DDL plus RO/RW, on the table. For dropped tables, use `qod catalog
 |---|---|
 | `qod config client` | Edge host/port/TLS for client bootstrapping (open endpoint). |
 | `qod config server` | Effective manager configuration. |
+| `qod config profiles` | List local CLI profiles; marks the one this invocation resolved to. |
+| `qod config use` | Set the sticky default profile (overridden per call by `--profile` / `QOD_PROFILE`). |
 
 ## sql
 
@@ -254,5 +262,16 @@ ALL grant, or DDL plus RO/RW, on the table. For dropped tables, use `qod catalog
 |---|---|
 | `qod skill install` | Copy the bundled [operator skill](/qod/connecting/agent-skill) where the chosen LLM discovers it; prompts for the platform (`--platform claude\|copilot\|gemini\|all` skips the prompt, `--project` targets `./.{platform}/skills`, `--dir` an exact directory). |
 | `qod skill path` | Print the bundled skill's location inside the installed package. |
+
+## launcher
+
+Local boot and teardown; the full walkthrough is on the [manager jar page](/qod/reference/cli).
+
+| Command | Purpose |
+|---|---|
+| `qod start` | Run a manager against your Postgres (release jar auto-downloaded; `--version` picks the release, `--jar` runs a local build, `--demo` the self-contained demo). |
+| `qod stop` | Stop a running manager and its quack nodes. |
+| `qod status` | Show whether a manager is running and what it is serving. |
+| `qod setup` | Persist the env vars `qod start` reads (Postgres coordinates, admin credentials, API key) so it runs bare afterwards. |
 
 `qod <noun> <verb> --help` prints every flag for any command above.

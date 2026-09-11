@@ -28,7 +28,7 @@ Boots the manager from the release uber-jar (downloaded from GitHub Releases and
 
 | Env var | Default | Effect |
 |---|---|---|
-| `QOD_VERSION` | the CLI's own release | Which release jar to run: a version (`0.3.8`, must be 0.3.8+) or `latest`. `--jar <path>` runs a local jar instead. |
+| `QOD_VERSION` | the CLI's own release | Which release jar to run: a version (`0.3.8`, must be 0.3.8+) or `latest`. The `--version` flag is the same knob; `--jar <path>` runs a local jar instead. |
 | `JAVA_BIN` / `JAVA_OPTS` | unset | Force a specific java binary / add Java options (e.g. `-Xmx2g`). |
 | `JAR_CACHE_DIR` | user cache dir | Where downloaded jars are cached. |
 | `LOAD_TPCH` | unset | Positive integer scale factor: seeds TPC-H sf=N into `acme/acme_tpch`. |
