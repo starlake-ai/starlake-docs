@@ -69,7 +69,13 @@ Rich tables are the default, sized to the terminal. Pass `--json` - a top-level 
 qod --json tenant list | jq -r '.[].id'
 ```
 
-`qod sql` additionally supports `--csv` for spreadsheet-friendly output. Exit codes follow the Unix convention: `0` success, `1` a server or API error (the server's error body is printed verbatim, e.g. `tenant_forbidden`), `2` a usage error (missing or invalid arguments).
+`qod sql` additionally supports `--csv` for spreadsheet-friendly output, and
+`--file <path>` (or `-f`; `-` reads stdin) to run a SQL script: statements
+are split on top-level semicolons with full lexical awareness (strings,
+quoted identifiers, comments, dollar-quoting), executed in order, and the
+first error aborts with exit 1 naming the failing statement and its line -
+unlike piping into the interactive REPL, which prints prompts and keeps
+going after errors. Exit codes follow the Unix convention: `0` success, `1` a server or API error (the server's error body is printed verbatim, e.g. `tenant_forbidden`), `2` a usage error (missing or invalid arguments).
 
 ## Where to go next
 
