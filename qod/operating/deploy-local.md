@@ -11,7 +11,7 @@ title: Local deployment
 - Smoke-testing and integration work where Kubernetes is not available or not needed.
 - Small deployments where the total node count fits comfortably on one machine.
 
-For multi-host or container-orchestrated deployments, see the Kubernetes backend instead.
+For multi-host or container-orchestrated deployments, see the Kubernetes backend instead. For an end-to-end production walkthrough on one machine (environment, sizing, provisioning, RBAC, monitoring, with runnable scripts), see [Single-server production deployment](deploy-single-server.md).
 
 ## How nodes are spawned
 

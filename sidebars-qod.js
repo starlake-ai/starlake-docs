@@ -43,6 +43,7 @@ const sidebars = {
           label: 'Deployment',
           items: [
             'operating/deploy-local',
+            'operating/deploy-single-server',
             'operating/deploy-docker',
             'operating/deploy-kubernetes',
             'operating/tls',
