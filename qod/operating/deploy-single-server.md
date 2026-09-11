@@ -193,7 +193,7 @@ Rules:
 | Manager JVM (`JAVA_OPTS=-Xmx2g`) | 2 | 2 GiB |
 | Pool `bi`: 5 read nodes + 1 write node, each `threads=6`, `memory_limit='24GB'` | 36 | 144 GiB budget |
 | Pool `etl`: 2 dual nodes, each `threads=10`, `memory_limit='40GB'` | 20 | 80 GiB budget |
-| Headroom (page cache, spill, bursts) | 6 | 30 GiB |
+| Headroom (page cache, spill, bursts) | | 30 GiB |
 
 ```text
 RAM 256 GiB                                       CPU 64 cores
@@ -204,7 +204,7 @@ RAM 256 GiB                                       CPU 64 cores
 ├────────────────────────────────────────────┤
 │ pool etl  2 nodes x 40 GiB          80 GiB │   20 cores (2 x 10 threads)
 ├────────────────────────────────────────────┤
-│ headroom  page cache, spill, bursts 30 GiB │    6 cores
+│ headroom  page cache, spill, bursts 30 GiB │
 └────────────────────────────────────────────┘
 ```
 
