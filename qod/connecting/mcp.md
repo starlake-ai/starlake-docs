@@ -7,6 +7,8 @@ The manager embeds an MCP (Model Context Protocol) server at `POST /mcp` on the 
 
 The transport is stateless Streamable HTTP: each POST carries one JSON-RPC message and the response is plain JSON. There is no SSE, no server push, and no session id, so any HA replica answers any request. `GET /mcp` returns 405.
 
+MCP gives an agent tools on the manager; the [operator skill](/qod/connecting/agent-skill) gives it the operational playbook for the `qod` CLI. They combine well.
+
 ## Authentication
 
 `/mcp` accepts exactly two credentials in the `Authorization: Bearer <token>` header:

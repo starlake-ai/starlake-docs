@@ -89,6 +89,7 @@ const sidebars = {
         'connecting/authenticating',
         'connecting/sql',
         'connecting/mcp',
+        'connecting/agent-skill',
         'connecting/dbeaver',
         'connecting/powerbi',
         'connecting/tableau',

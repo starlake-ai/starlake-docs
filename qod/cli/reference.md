@@ -248,4 +248,11 @@ ALL grant, or DDL plus RO/RW, on the table. For dropped tables, use `qod catalog
 |---|---|
 | `qod sql` | Run SQL against the FlightSQL edge; one-shot or interactive REPL. |
 
+## skill
+
+| Command | Purpose |
+|---|---|
+| `qod skill install` | Copy the bundled [operator skill](/qod/connecting/agent-skill) where the chosen LLM discovers it; prompts for the platform (`--platform claude\|copilot\|gemini\|all` skips the prompt, `--project` targets `./.{platform}/skills`, `--dir` an exact directory). |
+| `qod skill path` | Print the bundled skill's location inside the installed package. |
+
 `qod <noun> <verb> --help` prints every flag for any command above.
