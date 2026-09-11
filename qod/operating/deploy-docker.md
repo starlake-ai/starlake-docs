@@ -65,7 +65,7 @@ PGDATA_DIR=/data/qod/pgdata DUCKLAKE_DIR=/data/qod/ducklake \
 When DuckLake writes to an S3-compatible bucket instead of the filesystem (`QOD_DUCKLAKE_DATA_PATH=s3://...`), the `./ducklake` mount is unused; the catalog persists the `s3://` URL and every Quack node resolves it identically regardless of host. See [Object storage](#object-storage-s3-compatible).
 
 :::caution
-`NUKE=1 ./scripts/run-docker-compose.sh` only wipes the repo-relative defaults (`./pgdata`, `./ducklake`, `./certs`, `./seaweedfs`, `./seaweedfs-config`, plus a legacy `./rustfs` left by checkouts that ran the briefly-bundled RustFS). External folders you point these overrides at are **not** auto-wiped; remove them by hand.
+`NUKE=1 ./scripts/run-docker-compose.sh` asks you to type the project name on a terminal before wiping (`NUKE_YES=1` bypasses; non-tty runs skip the prompt) and only wipes the repo-relative defaults (`./pgdata`, `./ducklake`, `./certs`, `./seaweedfs`, `./seaweedfs-config`, plus a legacy `./rustfs` left by checkouts that ran the briefly-bundled RustFS). External folders you point these overrides at are **not** auto-wiped; remove them by hand.
 :::
 
 Do not mix a Docker run and a native-jar run against the same catalog database. DuckLake records the absolute data path in Postgres metadata: inside the container it is `/app/ducklake/<db>`, natively it is `<host-cwd>/ducklake/<db>`. Use a different control-plane database name per mode, or wipe the data between switches.
