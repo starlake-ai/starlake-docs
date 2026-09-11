@@ -1,8 +1,480 @@
 openapi: 3.1.0
 info:
   title: Quack on Demand REST API
-  version: 0.5.3-SNAPSHOT
+  version: 0.8.3
 paths:
+  /api/scim/v2/{tenant}/Groups/{id}:
+    get:
+      operationId: getApiScimV2TenantGroupsId
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: header
+            Authorization, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+    put:
+      operationId: putApiScimV2TenantGroupsId
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: header
+            Authorization, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+    delete:
+      operationId: deleteApiScimV2TenantGroupsId
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: header
+            Authorization, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+    patch:
+      operationId: patchApiScimV2TenantGroupsId
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: header
+            Authorization, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+  /api/scim/v2/{tenant}/Users/{id}:
+    get:
+      operationId: getApiScimV2TenantUsersId
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: header
+            Authorization, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+    put:
+      operationId: putApiScimV2TenantUsersId
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: header
+            Authorization, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+    delete:
+      operationId: deleteApiScimV2TenantUsersId
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: header
+            Authorization, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+    patch:
+      operationId: patchApiScimV2TenantUsersId
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: header
+            Authorization, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
   /api/tenants/{tenant}/tenant-dbs/{tenantDb}/federated-sources/{alias}:
     get:
       operationId: getApiTenantsTenantTenant-dbsTenantdbFederated-sourcesAlias
@@ -1274,6 +1746,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/database/metastore-defaults:
+    get:
+      operationId: getApiDatabaseMetastore-defaults
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetastoreDefaultsResponse'
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
+            qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/group/list:
     get:
       operationId: getApiGroupList
@@ -1836,6 +2342,86 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/profile/statements:
+    get:
+      operationId: getApiProfileStatements
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatementHistoryResponse'
+        '400':
+          description: 'Invalid value for: query parameter limit, Invalid value for:
+            header X-API-Key, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/profile/usage:
+    get:
+      operationId: getApiProfileUsage
+      parameters:
+      - name: days
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageResponse'
+        '400':
+          description: 'Invalid value for: query parameter days, Invalid value for:
+            header X-API-Key, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/role/column-policy/list:
     get:
       operationId: getApiRoleColumn-policyList
@@ -1992,6 +2578,432 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/scim/v2/{tenant}/Groups:
+    get:
+      operationId: getApiScimV2TenantGroups
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: filter
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: startIndex
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: count
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: query parameter filter, Invalid value for:
+            query parameter startIndex, Invalid value for: query parameter count,
+            Invalid value for: header X-API-Key, Invalid value for: header Authorization,
+            Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+    post:
+      operationId: postApiScimV2TenantGroups
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '201':
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: header
+            Authorization, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+  /api/scim/v2/{tenant}/ResourceTypes:
+    get:
+      operationId: getApiScimV2TenantResourcetypes
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: header
+            Authorization, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+  /api/scim/v2/{tenant}/Schemas:
+    get:
+      operationId: getApiScimV2TenantSchemas
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: header
+            Authorization, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+  /api/scim/v2/{tenant}/ServiceProviderConfig:
+    get:
+      operationId: getApiScimV2TenantServiceproviderconfig
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: header
+            Authorization, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+  /api/scim/v2/{tenant}/Users:
+    get:
+      operationId: getApiScimV2TenantUsers
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: filter
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: startIndex
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: count
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: query parameter filter, Invalid value for:
+            query parameter startIndex, Invalid value for: query parameter count,
+            Invalid value for: header X-API-Key, Invalid value for: header Authorization,
+            Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+    post:
+      operationId: postApiScimV2TenantUsers
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '201':
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: header
+            Authorization, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                type: string
   /api/tenant/list:
     get:
       operationId: getApiTenantList
@@ -2351,6 +3363,54 @@ paths:
                 $ref: '#/components/schemas/HealthResponse'
         default:
           description: ''
+  /api/auth/change-password:
+    post:
+      operationId: postApiAuthChange-password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/forgot-password:
+    post:
+      operationId: postApiAuthForgot-password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/auth/login:
     post:
       operationId: postApiAuthLogin
@@ -2424,6 +3484,242 @@ paths:
         '400':
           description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
             qod_session, Invalid value for: header X-Forwarded-Proto'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/pat/create:
+    post:
+      operationId: postApiAuthPatCreate
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatCreateRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatCreateResponse'
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
+            qod_session, Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/pat/delete:
+    post:
+      operationId: postApiAuthPatDelete
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatDeleteRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
+            qod_session, Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/pat/list:
+    post:
+      operationId: postApiAuthPatList
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatListResponse'
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
+            qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/pat/revoke:
+    post:
+      operationId: postApiAuthPatRevoke
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatRevokeRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatRevokeResponse'
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
+            qod_session, Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/reset-password:
+    post:
+      operationId: postApiAuthReset-password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/sso/redeem:
+    post:
+      operationId: postApiAuthSsoRedeem
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SsoRedeemRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SsoRedeemResponse'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/sso/ticket:
+    post:
+      operationId: postApiAuthSsoTicket
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SsoTicketResponse'
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
+            qod_session'
           content:
             text/plain:
               schema:
@@ -3567,6 +4863,46 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ScalePoolRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolResponse'
+        '400':
+          description: 'Invalid value for: body, Invalid value for: header X-API-Key,
+            Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/pool/setAutoscale:
+    post:
+      operationId: postApiPoolSetautoscale
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPoolAutoscaleRequest'
         required: true
       responses:
         '200':
@@ -4854,6 +6190,22 @@ components:
           format: date-time
         exists:
           type: boolean
+    ChangePasswordRequest:
+      title: ChangePasswordRequest
+      type: object
+      required:
+      - username
+      - currentPassword
+      - newPassword
+      properties:
+        tenant:
+          type: string
+        username:
+          type: string
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
     ClientConfigResponse:
       title: ClientConfigResponse
       type: object
@@ -4884,6 +6236,8 @@ components:
           type: string
         telemetryEnabled:
           type: boolean
+        starlakeUrl:
+          type: string
     ColumnPolicyDto:
       title: ColumnPolicyDto
       type: object
@@ -5029,6 +6383,12 @@ components:
           type: string
         lockdown:
           type: string
+        minNodes:
+          type: integer
+          format: int32
+        maxNodes:
+          type: integer
+          format: int32
     CreateRowPolicyRequest:
       title: CreateRowPolicyRequest
       type: object
@@ -5285,6 +6645,16 @@ components:
           type: string
         disabled:
           type: boolean
+    ForgotPasswordRequest:
+      title: ForgotPasswordRequest
+      type: object
+      required:
+      - username
+      properties:
+        tenant:
+          type: string
+        username:
+          type: string
     GroupCreateRequest:
       title: GroupCreateRequest
       type: object
@@ -5393,6 +6763,7 @@ components:
       - token
       - username
       - superuser
+      - admin
       properties:
         token:
           type: string
@@ -5406,6 +6777,8 @@ components:
           type: array
           items:
             type: string
+        admin:
+          type: boolean
     MaintenanceEffectiveEntry:
       title: MaintenanceEffectiveEntry
       type: object
@@ -5680,6 +7053,23 @@ components:
       type: object
       additionalProperties:
         type: string
+    MetastoreDefaultsResponse:
+      title: MetastoreDefaultsResponse
+      type: object
+      required:
+      - pgHost
+      - pgPort
+      - pgUser
+      - schemaName
+      properties:
+        pgHost:
+          type: string
+        pgPort:
+          type: string
+        pgUser:
+          type: string
+        schemaName:
+          type: string
     NodeInfo:
       title: NodeInfo
       type: object
@@ -5791,6 +7181,169 @@ components:
           type: string
         effect:
           type: string
+    PatCreateRequest:
+      title: PatCreateRequest
+      type: object
+      required:
+      - name
+      - dropAdmin
+      properties:
+        name:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        roles:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        databases:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        pools:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        tools:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        verbCeiling:
+          type: string
+        dropAdmin:
+          type: boolean
+        stmtTimeoutMs:
+          type: integer
+          format: int32
+        maxRows:
+          type: integer
+          format: int32
+    PatCreateResponse:
+      title: PatCreateResponse
+      type: object
+      required:
+      - id
+      - name
+      - token
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    PatDeleteRequest:
+      title: PatDeleteRequest
+      type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+    PatEntry:
+      title: PatEntry
+      type: object
+      required:
+      - id
+      - name
+      - createdAt
+      - revoked
+      - depth
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          format: date-time
+        revoked:
+          type: boolean
+        parentId:
+          type: string
+        depth:
+          type: integer
+          format: int32
+        scope:
+          $ref: '#/components/schemas/PatScope'
+    PatListResponse:
+      title: PatListResponse
+      type: object
+      properties:
+        tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatEntry'
+    PatRevokeRequest:
+      title: PatRevokeRequest
+      type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+    PatRevokeResponse:
+      title: PatRevokeResponse
+      type: object
+      required:
+      - status
+      - killedStatements
+      properties:
+        status:
+          type: string
+        killedStatements:
+          type: integer
+          format: int32
+    PatScope:
+      title: PatScope
+      type: object
+      required:
+      - dropAdmin
+      properties:
+        roles:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        databases:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        pools:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        tools:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        verbCeiling:
+          type: string
+        dropAdmin:
+          type: boolean
+        stmtTimeoutMs:
+          type: integer
+          format: int32
+        maxRows:
+          type: integer
+          format: int32
     PoolCohortDto:
       title: PoolCohortDto
       type: object
@@ -5912,6 +7465,12 @@ components:
           type: string
         lockdownEffective:
           type: boolean
+        minNodes:
+          type: integer
+          format: int32
+        maxNodes:
+          type: integer
+          format: int32
     PreviewColumn:
       title: PreviewColumn
       type: object
@@ -5975,6 +7534,17 @@ components:
           type: string
         recoverable:
           type: boolean
+    ResetPasswordRequest:
+      title: ResetPasswordRequest
+      type: object
+      required:
+      - token
+      - newPassword
+      properties:
+        token:
+          type: string
+        newPassword:
+          type: string
     RestoreRequest:
       title: RestoreRequest
       type: object
@@ -6301,6 +7871,26 @@ components:
         max:
           type: integer
           format: int32
+    SetPoolAutoscaleRequest:
+      title: SetPoolAutoscaleRequest
+      type: object
+      required:
+      - tenant
+      - tenantDb
+      - pool
+      properties:
+        tenant:
+          type: string
+        tenantDb:
+          type: string
+        pool:
+          type: string
+        minNodes:
+          type: integer
+          format: int32
+        maxNodes:
+          type: integer
+          format: int32
     SetPoolDisabledRequest:
       title: SetPoolDisabledRequest
       type: object
@@ -6397,6 +7987,41 @@ components:
           type: string
         disabled:
           type: boolean
+    SsoRedeemRequest:
+      title: SsoRedeemRequest
+      type: object
+      required:
+      - ticket
+      properties:
+        ticket:
+          type: string
+    SsoRedeemResponse:
+      title: SsoRedeemResponse
+      type: object
+      required:
+      - token
+      - username
+      - admin
+      - superuser
+      properties:
+        token:
+          type: string
+        username:
+          type: string
+        tenant:
+          type: string
+        admin:
+          type: boolean
+        superuser:
+          type: boolean
+    SsoTicketResponse:
+      title: SsoTicketResponse
+      type: object
+      required:
+      - ticket
+      properties:
+        ticket:
+          type: string
     StatementHistoryEntry:
       title: StatementHistoryEntry
       type: object
@@ -6585,11 +8210,14 @@ components:
       required:
       - tenant
       - name
+      - purgeManagedData
       properties:
         tenant:
           type: string
         name:
           type: string
+        purgeManagedData:
+          type: boolean
     TenantDbRequest:
       title: TenantDbRequest
       type: object
@@ -6601,6 +8229,7 @@ components:
       - dataPath
       - objectStore
       - initSql
+      - managedStorage
       properties:
         tenant:
           type: string
@@ -6620,6 +8249,8 @@ components:
           type: string
         initSql:
           type: string
+        managedStorage:
+          type: boolean
     TenantDbResponse:
       title: TenantDbResponse
       type: object
@@ -6956,6 +8587,7 @@ components:
       - username
       - password
       - role
+      - mustChangePassword
       properties:
         tenant:
           type: string
@@ -6964,6 +8596,10 @@ components:
         password:
           type: string
         role:
+          type: string
+        mustChangePassword:
+          type: boolean
+        email:
           type: string
     UserDeleteRequest:
       title: UserDeleteRequest
@@ -7023,6 +8659,8 @@ components:
           type: array
           items:
             type: string
+        email:
+          type: string
     UserRoleMembershipRequest:
       title: UserRoleMembershipRequest
       type: object
@@ -7048,6 +8686,12 @@ components:
           type: string
         role:
           type: string
+        mustChangePassword:
+          type: boolean
+        email:
+          type: string
+        enabled:
+          type: boolean
     WhoamiResponse:
       title: WhoamiResponse
       type: object
