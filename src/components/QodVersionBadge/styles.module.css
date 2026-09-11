@@ -1,0 +1,22 @@
+.badge {
+  align-self: center;
+  margin-left: -0.5rem;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--ifm-color-primary-darkest);
+  background: var(--ifm-color-emphasis-200);
+}
+
+.badge:hover {
+  text-decoration: none;
+  background: var(--ifm-color-emphasis-300);
+  color: var(--ifm-color-primary-darkest);
+}
+
+[data-theme="dark"] .badge,
+[data-theme="dark"] .badge:hover {
+  color: var(--ifm-color-primary-lightest);
+}

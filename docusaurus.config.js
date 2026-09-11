@@ -123,6 +123,10 @@ const config = {
           position: "left",
         } : null,
         !isBlog ? {
+          type: "custom-qodVersion",
+          position: "left",
+        } : null,
+        !isBlog ? {
           href: "https://blog.starlake.ai",
           label: "Blog",
           position: "left",
