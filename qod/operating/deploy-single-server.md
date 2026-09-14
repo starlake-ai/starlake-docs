@@ -23,29 +23,30 @@ The two external dependencies QoD needs (Postgres and an S3-compatible store) ar
 | Data files | Existing rustfs, via its S3 API (`s3://...`) | Parquet data written by DuckLake |
 | Grafana | Anywhere with network access to the server | Dashboards (see sections 7 and 8) |
 
-```text
-     SQL clients (JDBC/ADBC, BI tools)          Browser (admin UI)
-                  │                                    │
-                  ▼ :31338 FlightSQL (TLS)             ▼ :20900 REST + UI
-┌─ the server ──────────────────────────────────────────────────────────┐
-│                       QoD manager (one JVM)                           │
-│         edge: auth, ACL, routing    │    control plane, admin UI      │
-│                                     │                                 │
-│              routes each statement  │                                 │
-│         ┌───────────────────────────┼──────────┐                      │
-│         ▼                           ▼          ▼                      │
-│    ┌──────────┐               ┌──────────┐ ┌──────────┐               │
-│    │  node 1  │               │  node 2  │ │  node 3  │  pool         │
-│    │  DuckDB  │               │  DuckDB  │ │  DuckDB  │  (local       │
-│    └────┬─────┘               └────┬─────┘ └────┬─────┘  subprocesses)│
-└─────────┼──────────────────────────┼────────────┼─────────────────────┘
-          │ DuckLake catalog (SQL)   │            │ parquet read/write
-          ▼                          ▼            ▼
-┌──────────────────────────┐   ┌─────────────────────────────┐
-│ PostgreSQL (existing)    │   │ rustfs (existing, S3 API)   │
-│   qod         = control  │   │   s3://ducklake/...         │
-│   acme_sales  = metastore│   │   parquet data files        │
-└──────────────────────────┘   └─────────────────────────────┘
+```mermaid
+graph TD
+  clients["SQL clients<br/>JDBC/ADBC, BI tools"]
+  browser["Browser<br/>admin UI"]
+  subgraph server["the server"]
+    direction TB
+    manager["<b>QoD manager, one JVM</b><br/>edge: auth, ACL, routing<br/>control plane, admin UI"]
+    subgraph pool["pool, local subprocesses"]
+      direction LR
+      n1["node 1<br/>DuckDB"]
+      n2["node 2<br/>DuckDB"]
+      n3["node 3<br/>DuckDB"]
+    end
+    manager -->|"routes each statement"| n1
+    manager --> n2
+    manager --> n3
+  end
+  pg[("PostgreSQL, existing<br/>qod = control<br/>acme_sales = metastore")]
+  s3[("rustfs, existing, S3 API<br/>s3://ducklake/...<br/>parquet data files")]
+  clients -->|":31338 FlightSQL, TLS"| manager
+  browser -->|":20900 REST + UI"| manager
+  pool -->|"DuckLake catalog, SQL"| pg
+  pool -->|"parquet read/write"| s3
+  style manager fill:#2e7d32,stroke:#1b5e20,color:#fff
 ```
 
 Key decisions:
@@ -131,11 +132,24 @@ QoD is a multi-tenant FlightSQL gateway built exactly for this:
 - The manager routes each statement to a node (DuckDB process) in the target pool using least-loaded routing (cache-aware placement on object-store pools), so concurrent statements spread across nodes.
 - A single node also executes multiple statements simultaneously: sessions share the node's `threads` and `memory_limit` budgets, and the per-pool `maxConcurrentPerNode` cap (default unbounded) bounds how many stack up on one node.
 
-```text
-alice ──┐                                       ┌─► node 1   inFlight 2
-bob   ──┼─► edge :31338 ──► router ─────────────┼─► node 2   inFlight 1 ◄ next
-carol ──┘   auth · ACL      least-loaded,       └─► node 3   inFlight 2
-                            cache-aware
+```mermaid
+graph LR
+  alice["alice"]
+  bob["bob"]
+  carol["carol"]
+  edge["edge :31338<br/>auth, ACL"]
+  router["router<br/>least-loaded,<br/>cache-aware"]
+  n1["node 1<br/>inFlight 2"]
+  n2["node 2<br/>inFlight 1 &#8592; next"]
+  n3["node 3<br/>inFlight 2"]
+  alice --> edge
+  bob --> edge
+  carol --> edge
+  edge --> router
+  router --> n1
+  router --> n2
+  router --> n3
+  style n2 fill:#2e7d32,stroke:#1b5e20,color:#fff
 ```
 
 ---
@@ -195,17 +209,17 @@ Rules:
 | Pool `etl`: 2 dual nodes, each `threads=10`, `memory_limit='40GB'` | 20 | 80 GiB budget |
 | Headroom (page cache, spill, bursts) | | 30 GiB |
 
-```text
-RAM 256 GiB                                       CPU 64 cores
-┌────────────────────────────────────────────┐
-│ manager JVM                          2 GiB │    2 cores
-├────────────────────────────────────────────┤
-│ pool bi   6 nodes x 24 GiB         144 GiB │   36 cores (6 x 6 threads)
-├────────────────────────────────────────────┤
-│ pool etl  2 nodes x 40 GiB          80 GiB │   20 cores (2 x 10 threads)
-├────────────────────────────────────────────┤
-│ headroom  page cache, spill, bursts 30 GiB │
-└────────────────────────────────────────────┘
+```mermaid
+graph TD
+  subgraph budget["RAM 256 GiB &#183; CPU 64 cores"]
+    direction TB
+    jvm["manager JVM<br/><b>2 GiB</b> &#183; 2 cores"]
+    bi["pool bi &#183; 6 nodes x 24 GiB<br/><b>144 GiB</b> &#183; 36 cores, 6 x 6 threads"]
+    etl["pool etl &#183; 2 nodes x 40 GiB<br/><b>80 GiB</b> &#183; 20 cores, 2 x 10 threads"]
+    head["headroom &#183; page cache, spill, bursts<br/><b>30 GiB</b>"]
+    jvm ~~~ bi ~~~ etl ~~~ head
+  end
+  style head fill:#f5f5f5,stroke:#9e9e9e,color:#333,stroke-dasharray: 5 4
 ```
 
 Interactive pools can be modestly oversubscribed on CPU (not every node is busy at once); keep the sum of `memory_limit` under total RAM minus headroom.
@@ -234,15 +248,29 @@ Interactive pools can be modestly oversubscribed on CPU (not every node is busy 
 
 The objects nest as follows; sections 4.1 to 4.4 create one level each:
 
-```text
-tenant acme
-└── database acme_sales        kind ducklake, dataPath s3://ducklake/acme_sales
-    └── pool bi                1 writeonly + 2 readonly, autoscale band 3..6
-        ├── node bi-1          WRITEONLY   ┐
-        ├── node bi-2          READONLY    ├─ DuckDB processes
-        └── node bi-3          READONLY    ┘
-
-access: user ─► group ─► role ─► table grants     +  GRANT CONNECT ON POOL
+```mermaid
+graph TD
+  subgraph objects["object nesting"]
+    direction TB
+    t["tenant <b>acme</b>"]
+    d["database <b>acme_sales</b><br/>kind ducklake<br/>dataPath s3://ducklake/acme_sales"]
+    p["pool <b>bi</b><br/>1 writeonly + 2 readonly<br/>autoscale band 3..6"]
+    n1["node bi-1 &#183; WRITEONLY"]
+    n2["node bi-2 &#183; READONLY"]
+    n3["node bi-3 &#183; READONLY"]
+    t --> d
+    d --> p
+    p --> n1
+    p --> n2
+    p --> n3
+  end
+  subgraph access["access"]
+    direction LR
+    u["user"] --> g["group"] --> r["role"] --> tg["table grants"]
+    cp["GRANT CONNECT ON POOL"]
+  end
+  classDef proc fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20;
+  class n1,n2,n3 proc;
 ```
 
 All control-plane commands need an authenticated session; `qod auth login` mints one, prompts for the password, and stores it in the CLI profile:
@@ -381,17 +409,20 @@ QoD has **two independent auth planes**, configured separately:
 
 A common production posture: admin UI on corporate SSO, SQL clients on database passwords or bearer JWTs, with database auth kept as break-glass.
 
-```text
-Browser ──────────► :20900  management plane          ┌──────────────────┐
- SSO (OIDC) or       QOD_MGMT_* / tenant authProvider │ qodstate_user    │
- password                        │                    │ roles · groups   │
-                                 ├──────────────────► │ grants           │
-SQL client ───────► :31338  FlightSQL data plane      │                  │
- password or         QOD_AUTH_DB_* /                  │ authorization is │
- bearer token        QOD_AUTH_<PROVIDER>_*            │ ALWAYS local     │
-                                                      └────────▲─────────┘
-IdP (Keycloak / Entra / Google / Cognito)                      │
-  └── SCIM connector ── provisions users + groups ─────────────┘
+```mermaid
+graph LR
+  browser["Browser<br/>SSO, OIDC, or password"]
+  sqlclient["SQL client<br/>password or bearer token"]
+  mgmt[":20900 management plane<br/>QOD_MGMT_* / tenant authProvider"]
+  data[":31338 FlightSQL data plane<br/>QOD_AUTH_DB_* /<br/>QOD_AUTH_&lt;PROVIDER&gt;_*"]
+  state["<b>qodstate_user</b><br/>roles &#183; groups &#183; grants<br/><b>authorization is ALWAYS local</b>"]
+  idp["IdP<br/>Keycloak / Entra / Google / Cognito"]
+  browser --> mgmt
+  sqlclient --> data
+  mgmt --> state
+  data --> state
+  idp -->|"SCIM connector provisions<br/>users + groups"| state
+  style state fill:#2e7d32,stroke:#1b5e20,color:#fff
 ```
 
 ### 6.1 Database auth (built-in, default on)
@@ -505,10 +536,13 @@ with `Authorization: Bearer <QOD_API_KEY or a tenant-admin PAT>`. Users and grou
 
 Grafana never talks to QoD directly. The chain is: **QoD manager exposes Prometheus metrics, Prometheus scrapes them, Grafana reads Prometheus.**
 
-```text
-QoD manager :20900/metrics ◄── scrape ── Prometheus ◄── query ── Grafana
- Prometheus text format,                  retention,              QoD - Single
- NO auth: firewall it                     rules                   Node dashboard
+```mermaid
+graph RL
+  qod["QoD manager<br/>:20900/metrics<br/>Prometheus text format<br/><b>NO auth: firewall it</b>"]
+  prom["Prometheus<br/>retention, rules"]
+  graf["Grafana<br/>QoD - Single Node dashboard"]
+  prom -->|"scrape"| qod
+  graf -->|"query"| prom
 ```
 
 ### 7.1 The metrics endpoint
