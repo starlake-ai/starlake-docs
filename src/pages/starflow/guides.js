@@ -17,6 +17,9 @@ export default function Guides() {
   const [currentStep, setCurrentStep] = useState(1);
   const history = useHistory();
   const location = useLocation();
+  // The page is mounted at /starflow/guides; derive it from the router so
+  // navigation keeps working if the page ever moves again.
+  const guidesPath = location.pathname.replace(/\/$/, '');
 
 
 
@@ -82,20 +85,20 @@ export default function Guides() {
     setSelectedGuide(guide);
     setCurrentView('guide');
     setCurrentStep(1);
-    history.push(`/guides?guide=${guide.id}&step=1`);
+    history.push(`${guidesPath}?guide=${guide.id}&step=1`);
   };
 
   const goBackToList = () => {
     setCurrentView('list');
     setSelectedGuide(null);
     setCurrentStep(1);
-    history.push('/guides');
+    history.push(guidesPath);
   };
 
   const goToStep = (step) => {
     if (selectedGuide && step >= 1 && step <= selectedGuide.tabs.length) {
       setCurrentStep(step);
-      history.push(`/guides?guide=${selectedGuide.id}&step=${step}`);
+      history.push(`${guidesPath}?guide=${selectedGuide.id}&step=${step}`);
     }
   };
 
