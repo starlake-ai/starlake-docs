@@ -15,12 +15,12 @@ Execute the project's tasks in dependency order, in parallel, inside this JVM. T
 
 Selector syntax, shared by --select and --exclude:
 
-    domain.table    exactly that task
-    domain.*        every task in the domain
-    tag:VALUE       every task carrying the tag
-    +expr           the matched tasks and all their transitive upstreams
-    expr+           the matched tasks and all their transitive downstreams
-    +expr+          both directions
+- `domain.table` - exactly that task
+- `domain.*` - every task in the domain
+- `tag:VALUE` - every task carrying the tag
+- `+expr` - the matched tasks and all their transitive upstreams
+- `expr+` - the matched tasks and all their transitive downstreams
+- `+expr+` - both directions
 
 Matching is case-insensitive. A run executes the selected set and nothing else: unselected upstreams are not run implicitly, so a task whose input is missing fails normally. A selection that matches no task exits with code 3.
 
