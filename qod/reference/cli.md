@@ -80,7 +80,7 @@ login check when `psql` is on `PATH` (otherwise it reports "reachable,
 credentials unverified"). On failure, interactive runs ask "save anyway?";
 non-interactive runs save nothing and exit 1. Pass `--skip-checks` when
 configuring coordinates that are legitimately unreachable from where you
-run setup (e.g. preparing config for another machine). `qod start --demo` ignores
+run setup (e.g. preparing config for another machine). `qod serve --demo` (deprecated alias: `qod start --demo`) ignores
 the stored table by design: the demo is self-contained (embedded ephemeral
 Postgres), so an external-Postgres config would be surprising there.
 

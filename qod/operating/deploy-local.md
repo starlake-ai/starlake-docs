@@ -13,6 +13,12 @@ title: Local deployment
 
 For multi-host or container-orchestrated deployments, see the Kubernetes backend instead. For an end-to-end production walkthrough on one machine (environment, sizing, provisioning, RBAC, monitoring, with runnable scripts), see [Single-server production deployment](deploy-single-server.md).
 
+## Embedded control plane (zero-prerequisite single-node mode)
+
+Since 0.8.6 the local backend can run its control plane on a **bundled, persistent embedded Postgres** instead of an external server: set `QOD_PG_EMBEDDED=true` (or just use `qod serve`, which does it for you). The manager starts the embedded server on a fixed port (`QOD_PG_EMBEDDED_PORT`, default `25432`), rooted at `QOD_PG_EMBEDDED_DATA_DIR` (default `<user-data-dir>/pg`, e.g. `~/Library/Application Support/qod/pg` on macOS), creates the control-plane database if missing, and re-anchors both the metastore coordinates and the database-auth block to it. The data directory is reused across restarts and never deleted; a live `postmaster.pid` from another manager refuses the boot, while a stale one falls through to ordinary Postgres crash recovery. `qod status` reports it by probing the data directory directly, so it answers even when the manager is down.
+
+This is the single-node / evaluation / small-team shape. For production, point the manager at your own Postgres (the rest of this page); HA refuses to boot with the embedded control plane, since one embedded server cannot back multiple replicas.
+
 ## How nodes are spawned
 
 `LocalQuackBackend` spawns each DuckDB Quack node by forking a child process via `scripts/spawn-quack-node.sh`. The manager controls the full lifecycle: it allocates a port from the configured range, generates a random authentication token, sets the metastore environment variables, and hands those to the script. When the manager stops (SIGTERM or `qod stop`), it sends SIGTERM to every tracked child and waits up to 5 seconds per process before issuing SIGKILL.
