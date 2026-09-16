@@ -79,7 +79,7 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | --- | --- | --- | --- | --- |
 | `quack-on-demand.host` | `QOD_ON_DEMAND_HOST` | `0.0.0.0` |  | Manager REST bind address (0.0.0.0 to listen on all interfaces). |
 | `quack-on-demand.port` | `QOD_ON_DEMAND_PORT` | `20900` |  | Manager REST + admin UI port. |
-| `quack-on-demand.apiKey` | `QOD_API_KEY` | `***` | yes | Static admin API key sent as X-API-Key. Unset or empty disables the static-key arm; /api then accepts only session and PAT credentials (never open). |
+| `quack-on-demand.apiKey` | `QOD_API_KEY` | `***` | yes | Static admin API key sent as X-API-Key. Unset or empty: outside HA a random key is generated at boot and printed to the console; under HA the static-key arm stays disabled and /api accepts only session and PAT credentials (never open). |
 | `quack-on-demand.runtimeType` | `QOD_RUNTIME_TYPE` | `local` |  | Quack node runtime backend: 'local' (child processes) or 'kubernetes'. |
 | `quack-on-demand.minPort` | `QOD_MIN_PORT` | `21900` |  | Lower bound of the port range LocalQuackBackend allocates child nodes from. |
 | `quack-on-demand.maxPort` | `QOD_MAX_PORT` | `22500` |  | Upper bound of the port range LocalQuackBackend allocates child nodes from. |
@@ -108,7 +108,7 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | Key | Env var | Default | Sensitive | Description |
 | --- | --- | --- | --- | --- |
 | `quack-on-demand.auth.management.identitySource` | `QOD_MGMT_IDENTITY_SOURCE` | `db` |  | System-scope (bare /ui/) admin-UI login mode: 'db' (password form) or 'oidc' (SSO). Per-tenant login mode is read from the tenant's authProvider, not this key. |
-| `quack-on-demand.auth.management.sessionJwtSecret` | `QOD_SESSION_JWT_SECRET` | `***` | yes | HS256 secret used to sign UI session JWTs. Pin a stable value (>= 32 chars) to make sessions survive manager restart and to share session state across replicas. Empty = autogenerate a fresh 32-byte secret at boot (sessions die on restart, no horizontal scale). |
+| `quack-on-demand.auth.management.sessionJwtSecret` | `QOD_SESSION_JWT_SECRET` | `***` | yes | HS256 secret used to sign UI session JWTs. Pin a stable value (>= 32 chars) to make sessions survive manager restart and to share session state across replicas. Empty = autogenerate a fresh 32-byte secret at boot, printed to the console (sessions die on restart; HA refuses to boot). |
 | `quack-on-demand.auth.management.sessionCookieSecure` | `QOD_SESSION_COOKIE_SECURE` | `auto` |  | Whether the qod_session cookie carries the `Secure` flag. Accepts 'auto' (default, derives from the request's X-Forwarded-Proto -- https=Secure, http or absent=not Secure), 'true' (force Secure regardless of request scheme; use behind a TLS ingress that strips X-Forwarded-Proto), or 'false' (force not Secure). |
 | `quack-on-demand.auth.management.sessionCookiePath` | `QOD_SESSION_COOKIE_PATH` | `/api` |  | Path attribute on the qod_session cookie. Default '/api'. Override when the manager sits behind a path-rewriting reverse proxy: the value must match the BROWSER-visible URL prefix, not the backend's. E.g. proxy at https://platform/quack/api/* -> QOD_SESSION_COOKIE_PATH=/quack/api. |
 | `quack-on-demand.auth.management.publicBaseUrl` | `QOD_MGMT_PUBLIC_BASE_URL` | _(unset)_ |  | Externally visible manager base URL (e.g. https://qod.example.com). Used to build OIDC redirect_uri and post_logout_redirect_uri for admin-UI SSO. When empty, derived from X-Forwarded-Proto / X-Forwarded-Host / Host. |
@@ -160,6 +160,14 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.defaultMetastore.schemaName` | `QOD_PG_SCHEMA` | `main` |  | Postgres schema for control-plane tables. |
 | `quack-on-demand.defaultMetastore.dataPath` | `QOD_DUCKLAKE_DATA_PATH` | `./ducklake/tpch` |  | Root path for DuckLake parquet data files. |
 
+## `quack-on-demand.embeddedPostgres`
+
+| Key | Env var | Default | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `quack-on-demand.embeddedPostgres.enabled` | `QOD_PG_EMBEDDED` | `false` |  | Run the control plane on a bundled embedded Postgres rooted at dataDir instead of an external server. Single-node evaluation / small-team mode; refused under HA. |
+| `quack-on-demand.embeddedPostgres.port` | `QOD_PG_EMBEDDED_PORT` | `25432` |  | Fixed TCP port for the embedded Postgres. Fixed rather than OS-assigned so the coordinates stay stable across restarts and psql works for support. |
+| `quack-on-demand.embeddedPostgres.dataDir` | `QOD_PG_EMBEDDED_DATA_DIR` | _(unset)_ |  | Directory holding the embedded Postgres data directory. Empty means the platform user-data dir (&lt;user-data-dir>/pg). |
+
 ## `quack-on-demand.federation`
 
 | Key | Env var | Default | Sensitive | Description |
@@ -173,6 +181,14 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.ha.enabled` | `QOD_HA_ENABLED` | `false` |  | Enable active-active multi-replica manager mode (Kubernetes runtime only). |
 | `quack-on-demand.ha.leaderRetrySec` | `QOD_LEADER_RETRY_SEC` | `3` |  | Seconds between leader-lock acquisition attempts and LISTEN polls. |
 | `quack-on-demand.ha.topologyRefreshSec` | `QOD_TOPOLOGY_REFRESH_SEC` | `30` |  | Seconds between snapshot-refresh fallback passes in HA mode. |
+
+## `quack-on-demand.hibernation`
+
+| Key | Env var | Default | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `quack-on-demand.hibernation.enabled` | `QOD_HIBERNATE_ENABLED` | `true` |  | Global kill switch for the idle-pool hibernation sweep. |
+| `quack-on-demand.hibernation.sweepSeconds` | `QOD_HIBERNATE_SWEEP_SEC` | `300` |  | Sweep interval in seconds; clamped to a 60s floor. |
+| `quack-on-demand.hibernation.defaultIdleMinutes` | `QOD_HIBERNATE_IDLE_MIN` | `0` |  | Manager-wide default idle minutes before a running pool is suspended. 0 (the default) means hibernation is per-pool opt-in via idleTimeoutSec. Clamped to a 5-minute floor: activity timestamps lag by up to one sweep interval. |
 
 ## `quack-on-demand.k8s`
 
@@ -232,6 +248,12 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.metrics.azure.stepSeconds` | `QOD_METRICS_AZURE_STEP_SEC` | `60` |  | Azure Monitor publish step in seconds. |
 | `quack-on-demand.metrics.gcp.projectId` | `QOD_METRICS_GCP_PROJECT_ID` | _(unset)_ |  | GCP project ID when metrics.sink=gcp. |
 | `quack-on-demand.metrics.gcp.stepSeconds` | `QOD_METRICS_GCP_STEP_SEC` | `60` |  | GCP Cloud Monitoring publish step in seconds. |
+
+## `quack-on-demand.pat`
+
+| Key | Env var | Default | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `quack-on-demand.pat.maxDepth` | `QOD_PAT_MAX_DEPTH` | `8` |  | Max depth of a PAT delegation chain (root = 0). Operational backstop on the revocation cascade and row growth, not a security boundary -- narrow() already bounds privilege. |
 
 ## `quack-on-demand.routing`
 
