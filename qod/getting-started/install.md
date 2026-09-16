@@ -3,7 +3,7 @@ id: install
 title: Installation
 ---
 
-Quack on Demand ships as a Docker image and as a single uber-jar driven by the `qod` CLI (`pip install qod`, or no install at all with `uvx`). The fastest way to evaluate it is [Demo mode](/qod/getting-started/quickstart#demo-mode-self-contained-no-postgres) via `uvx qod serve --demo`. For a durable deployment, two paths are supported: Docker, and the native jar via [`qod start`](#native-jar-qod-start). Both run on **Linux, macOS, and Windows** (Windows support is experimental; see [Run on Windows](#run-on-windows) below). GitHub Releases hosts the raw jar artifacts, but you should rarely need to download one by hand - every path below fetches what it needs.
+Quack on Demand ships as a Docker image and as a single uber-jar driven by the `qod` CLI (`pip install qod`, or no install at all with `uvx`). The fastest way to evaluate it is [Demo mode](/qod/getting-started/quickstart#demo-mode-self-contained-no-postgres) via `uvx qod@latest serve --demo`. For a durable deployment, two paths are supported: Docker, and the native jar via [`qod start`](#native-jar-qod-start). Both run on **Linux, macOS, and Windows** (Windows support is experimental; see [Run on Windows](#run-on-windows) below). GitHub Releases hosts the raw jar artifacts, but you should rarely need to download one by hand - every path below fetches what it needs.
 
 ## Docker
 
@@ -42,7 +42,7 @@ QOD_VERSION=latest-snapshot PG_HOST=... PG_PASSWORD=*** ./scripts/run-docker.sh
 
 ### Prerequisites
 
-- **Postgres 16 or later, reachable.** Installers for all platforms are at [postgresql.org/download](https://www.postgresql.org/download/) (Windows users can also grab the [EDB installer](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads) directly). The control plane stores all state in a dedicated database (default name `qod`) on `localhost:5432`; point `QOD_PG_HOST` / `QOD_PG_PORT` / `QOD_PG_USER` / `QOD_PG_PASSWORD` at yours - or run `uvx qod setup` once to store them (guided prompts; a real shell export still wins; see [`qod setup`](/qod/reference/cli#qod-setup)). When `psql` is on `PATH`, `qod start` creates the control-plane database up front (idempotent); without it the manager creates what it needs on first connection.
+- **Postgres 16 or later, reachable.** Installers for all platforms are at [postgresql.org/download](https://www.postgresql.org/download/) (Windows users can also grab the [EDB installer](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads) directly). The control plane stores all state in a dedicated database (default name `qod`) on `localhost:5432`; point `QOD_PG_HOST` / `QOD_PG_PORT` / `QOD_PG_USER` / `QOD_PG_PASSWORD` at yours - or run `uvx qod@latest setup` once to store them (guided prompts; a real shell export still wins; see [`qod setup`](/qod/reference/cli#qod-setup)). When `psql` is on `PATH`, `qod start` creates the control-plane database up front (idempotent); without it the manager creates what it needs on first connection.
 
   If you do not have a local Postgres instance, the quickest path is:
 
@@ -68,7 +68,7 @@ Everything `qod start` fetches lands in the per-user cache directory, keyed by v
 
 On Windows the root is `%LOCALAPPDATA%\qod\Cache`. Jars are named `quack-on-demand-assembly-<version>.jar`, so several releases coexist; deleting the directory only costs a re-download. Durable state (DuckLake data, TLS certs) is deliberately kept elsewhere, under `~/Library/Application Support/qod` (macOS) or `~/.local/share/qod` (Linux) - wiping the cache is safe, wiping that is not.
 
-Running through `uvx qod ...` adds one more layer: uv caches the `qod` Python package itself under `~/.cache/uv` (`uv cache dir`). That holds only the small CLI, never the manager jar.
+Running through `uvx qod@latest ...` adds one more layer: uv caches the `qod` Python package itself under `~/.cache/uv` (`uv cache dir`). That holds only the small CLI, never the manager jar.
 
 **Offline runs.** When GitHub cannot be reached, `qod start` does not fail: it starts the newest manager jar already in the cache (preferring the release this CLI build pins, when that one is cached) and says which version it picked. Only an explicit `--version X.Y.Z` that is neither cached nor downloadable is a hard error, since substituting a different manager behind your back would be worse; the message then lists what is cached so you can pick one. With an empty cache and no network there is nothing to run, so that too is an error.
 
@@ -86,13 +86,13 @@ When your Postgres is not on `localhost:5432` with the default credentials,
 the commands above need `QOD_PG_*` in the environment - and because `uvx`
 runs the CLI without any installation, there is no obvious place to keep
 those exports: every new terminal means re-exporting them or prefixing each
-command (`QOD_PG_HOST=db QOD_PG_PASSWORD=... uvx qod start`). That is what
+command (`QOD_PG_HOST=db QOD_PG_PASSWORD=... uvx qod@latest start`). That is what
 [`qod setup`](/qod/reference/cli#qod-setup) is for - run it once and answer
 the prompts:
 
 ```bash
-uvx qod setup                  # Postgres coordinates, admin creds, API key, auth/TLS
-uvx qod start                  # now works bare, in any terminal, from anywhere
+uvx qod@latest setup                  # Postgres coordinates, admin creds, API key, auth/TLS
+uvx qod@latest start                  # now works bare, in any terminal, from anywhere
 ```
 
 It stores the answers in the CLI config file (mode 0600, path printed on

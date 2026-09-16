@@ -12,7 +12,7 @@ The fastest way to try Quack on Demand end to end. `demo` boots a fully seeded i
 With [uv](https://docs.astral.sh/uv/) installed there are no other prerequisites - the `qod` launcher downloads the release jar (verified against the published sha256), a Java runtime if none is on your machine (cached), and the ABI-pinned `duckdb` CLI, all under your user cache directory. The same command works on macOS, Linux, and Windows:
 
 ```bash
-uvx qod serve --demo
+uvx qod@latest serve --demo
 ```
 
 `pip install qod && qod serve --demo` is equivalent (`qod start --demo` still works as a deprecated alias). Two more routes to the same demo:
@@ -35,10 +35,10 @@ It starts an embedded throwaway Postgres, seeds the minimal demo (tenant `acme`,
 The demo is throwaway. To point the same gateway at data you already have, with nothing else to install:
 
 ```bash
-uvx qod serve ./sales.duckdb          # an existing DuckDB file
-uvx qod serve ./warehouse/            # a directory of parquet / csv
-uvx qod serve s3://bucket/sales/      # a remote prefix
-uvx qod serve                         # a fresh, empty DuckLake to load into
+uvx qod@latest serve ./sales.duckdb          # an existing DuckDB file
+uvx qod@latest serve ./warehouse/            # a directory of parquet / csv
+uvx qod@latest serve s3://bucket/sales/      # a remote prefix
+uvx qod@latest serve                         # a fresh, empty DuckLake to load into
 ```
 
 One command provisions a tenant, a database, and a pool around the target, then prints the JDBC / ADBC / ODBC strings. The control plane runs on a bundled **persistent** embedded Postgres under your user data dir: restart and everything is still there, and re-running adds a second database beside the first instead of replacing it.
