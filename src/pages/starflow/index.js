@@ -41,6 +41,15 @@ table:
     - name: order_date
       type: date`;
 
+const TEST_TREE = `metadata/tests/transform/sales_kpi/byseller_kpi/test1/
+├── sales.orders.csv        # input fixture
+├── sales.customers.json    # input fixture
+└── _expected.csv           # what the transform must produce`;
+
+const TEST_COMMANDS = `starlake test                                  # every load and transform, on local DuckDB
+starlake test --transform --domain sales_kpi   # just this one
+starlake test --site                           # HTML report with coverage`;
+
 function HeroSection() {
   return (
     <section className={styles.hero}>
@@ -48,15 +57,18 @@ function HeroSection() {
         <div className={styles.heroCopy}>
           <span className={styles.eyebrow}>Starlake Starflow</span>
           <h1 className={styles.heroTitle}>
-            Declare the pipeline.
+            Test on your laptop.
             <br />
-            Skip the plumbing.
+            Ship to your warehouse.
           </h1>
           <p className={styles.heroLede}>
             Starflow turns the extract, load, transform, and orchestration
             boilerplate every data team rewrites into one YAML file per table:
             you declare <em>what</em>, it generates the <em>how</em> for your
-            warehouse.
+            warehouse. And because it transpiles your warehouse SQL to DuckDB,
+            the whole pipeline, loads included, runs and tests locally in
+            seconds. Engine choice becomes an environment variable, not a
+            replatforming program.
           </p>
           <div className={styles.ctaRow}>
             <Link className="button--starlake button--starlake-primary" to="/starflow/setup/starlake-core-setup">
@@ -152,6 +164,71 @@ function PipelineSection() {
               <p className={styles.stageDescription}>{s.description}</p>
               <span className={styles.stageCta}>Tutorial →</span>
             </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LocalFirstSection() {
+  const points = [
+    {
+      icon: '🔁',
+      title: 'No SQL rewriting',
+      description:
+        'Your warehouse dialect is transpiled to DuckDB, not reimplemented by hand. The SQL you test is the SQL you ship.',
+    },
+    {
+      icon: '📥',
+      title: 'Loads are tested too',
+      description:
+        'Parsing, type validation, merge strategy, and rejected rows, not just transforms. The half no SQL-only tool can reach.',
+    },
+    {
+      icon: '🎚️',
+      title: 'One project, any engine',
+      description:
+        'SL_ENV=DUCKDB on the laptop, SL_ENV=BQ in production. Same YAML, same SQL, same tests.',
+    },
+  ];
+
+  return (
+    <section className="features-section" style={{ background: 'var(--sl-color-surface)' }}>
+      <div className="container">
+        <h2 className="features-section__title">Test locally. Run anywhere.</h2>
+        <p className="features-section__subtitle">
+          Your transforms are written for BigQuery or Snowflake. Starflow transpiles
+          them to DuckDB, so the whole pipeline runs on your laptop. No dev warehouse.
+          No waiting. No bill.
+        </p>
+        <div className={styles.compare} style={{ marginBottom: '2rem' }}>
+          <div className={styles.pane}>
+            <div className={styles.paneTab}>a test is a folder</div>
+            <div className={styles.paneCode}>
+              <CodeBlock language="text">{TEST_TREE}</CodeBlock>
+            </div>
+            <div className={styles.paneCaption}>
+              the input you feed in, the output you expect back
+            </div>
+          </div>
+          <div className={`${styles.pane} ${styles.paneAfter}`}>
+            <div className={styles.paneTab}>run it</div>
+            <div className={styles.paneCode}>
+              <CodeBlock language="bash">{TEST_COMMANDS}</CodeBlock>
+            </div>
+            <div className={styles.paneCaption}>
+              seconds, in CI or on your machine
+            </div>
+          </div>
+        </div>
+        <div className="feature-grid">
+          {points.map((pt) => (
+            <div className="feature-card" key={pt.title}>
+              <span className="feature-card__icon">{pt.icon}</span>
+              <h3 className="feature-card__title">{pt.title}</h3>
+              <p className="feature-card__description">{pt.description}</p>
+            </div>
           ))}
         </div>
       </div>
@@ -527,11 +604,12 @@ export default function Home() {
   return (
     <Layout
       title="Home"
-      description="Starlake Starflow: declarative, YAML-driven extract, load, transform, and orchestration for DuckDB, BigQuery, Snowflake, Redshift, and PostgreSQL.">
+      description="Starlake Starflow: declarative, YAML-driven extract, load, transform, and orchestration. Test the whole pipeline locally on DuckDB, ship the same SQL to BigQuery, Snowflake, Redshift, or PostgreSQL.">
       <main>
         <HeroSection />
         <TrustStrip />
         <PipelineSection />
+        <LocalFirstSection />
         <TwoPathsSection />
         <StarflowSection />
         <SkillsOverviewSection />
