@@ -1,5 +1,5 @@
 ---
-sidebar_position: 370
+sidebar_position: 360
 title: settings
 description: "Display and validate Starflow project settings, including testing database and warehouse connection configurations."
 keywords: [starlake settings, project configuration, connection test, data warehouse setup]

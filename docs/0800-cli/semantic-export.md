@@ -1,5 +1,5 @@
 ---
-sidebar_position: 350
+sidebar_position: 340
 title: semantic-export
 description: "Export semantic models from metadata/semantic to Apache Ossie, a LookML project or a Power BI TMDL folder."
 keywords: [starlake semantic-export, semantic model, semantic layer, apache ossie, lookml, looker, tmdl, power bi, open semantic interchange, BI, AI agents]
