@@ -20,6 +20,8 @@ Same file, same bytes, same engine. Nothing is copied, converted or imported. Wh
 
 This paper is a side-by-side reference for that choice. It compares the embedded open and the served open dimension by dimension: access path, concurrency, identity, authorization, network reach and operations. It closes with when to move the tables into a DuckLake catalog instead.
 
+<!-- truncate -->
+
 ## 1. What the embedded open gives you
 
 Credit first: the embedded open is the reason the file exists. DuckDB runs inside your process, reads the file through its own buffer manager, uses every core, and returns results with zero network hops and zero serialization. For one person and one process, nothing beats it.
