@@ -36,6 +36,7 @@ Reach for Quack on Demand when you want to:
 - **Isolate tenants**: keep each tenant's databases, users, and compute separate, with its own auth provider.
 - **Federate external sources** (Postgres, S3 / Iceberg, anything DuckDB can attach) behind the same SQL surface and the same access model.
 - **Standardize on Arrow Flight SQL** clients: JDBC, ADBC, ODBC, PyArrow, DBeaver, and Spark all connect the same way.
+- **Attach the gateway from DuckDB itself** over DuckDB's native Quack protocol (`ATTACH 'quack:host:9494' AS qod`), so a laptop DuckDB, a notebook, or an embedded engine joins its local tables with governed shared tables in one query. See [DuckDB (native Quack)](/qod/connecting/duckdb).
 - **Give AI agents governed data access**: an embedded [MCP server](/qod/connecting/mcp) lets agents such as Claude Code discover schemas and run SQL with the same per-statement access control as any other client.
 
 ## When not to use it

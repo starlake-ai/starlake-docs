@@ -3,7 +3,7 @@ id: tls
 title: TLS
 ---
 
-The Arrow FlightSQL edge (`quack-flightsql`, default port `31338`) runs with TLS enabled by default. This page explains the default self-signed certificate behavior, how to replace it with a CA-signed certificate, how to configure clients, and how to disable TLS for development.
+The Arrow FlightSQL edge (`quack-flightsql`, default port `31338`) runs with TLS enabled by default. This page explains the default self-signed certificate behavior, how to replace it with a CA-signed certificate, how to configure clients, and how to disable TLS for development. The native Quack front door (`quack-native`, default port `9494`) has its own switch, covered [at the end](#the-native-quack-front-door).
 
 ## Default behavior
 
@@ -83,3 +83,15 @@ jdbc:arrow-flight-sql://localhost:31338?useEncryption=false&user=admin&password=
 ```
 
 Do not run without TLS in any environment where the network is not fully trusted, because credentials are transmitted in cleartext.
+
+## The native Quack front door
+
+The listener DuckDB clients `ATTACH` to (`quack-native`, default port `9494`) ships with TLS **off**, unlike the FlightSQL edge. The DuckDB `quack` client speaks plain HTTP to `localhost` / `127.0.0.1` / `::1` and TLS to every other host, and cannot be told to use TLS on a loopback host, so a TLS-on default would break every local `ATTACH 'quack:localhost:9494'`.
+
+| Setting | Default | Override |
+|---|---|---|
+| TLS on/off | `false` | `QOD_QUACK_TLS_ENABLED` |
+| Certificate chain | `certs/server-cert.pem` (the FlightSQL edge's) | `QOD_QUACK_TLS_CERT_CHAIN` |
+| Private key (PKCS8) | `certs/server-key.pem` (the FlightSQL edge's) | `QOD_QUACK_TLS_PRIVATE_KEY` |
+
+Before exposing the port beyond the host, either turn TLS on (remote DuckDB clients then default to TLS, and the client does not verify a self-signed certificate unless configured to) or terminate TLS in front of the port as for the REST API. A remote client reaching a plain-HTTP listener must add `DISABLE_SSL true` to its `ATTACH` options (`disable_ssl := true` on `quack_query`). A PKCS1 key (`-----BEGIN RSA PRIVATE KEY-----`) is refused at boot with a conversion hint; convert it with `openssl pkcs8 -topk8 -nocrypt`. See [DuckDB (native Quack)](/qod/connecting/duckdb).

@@ -73,6 +73,19 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-flightsql.validation.allowByDefault` | `QOD_VALIDATION_ALLOW_BY_DEFAULT` | `true` |  | When true, statements pass when no explicit rule matches. |
 | `quack-flightsql.validation.bypassUsers` | `QOD_VALIDATION_BYPASS_USERS` | `admin@localhost.local,admin` |  | Comma-separated usernames that skip SQL validation entirely. |
 
+## `quack-native`
+
+| Key | Env var | Default | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `quack-native.enabled` | `QOD_QUACK_ENABLED` | `true` |  | Serve the native Quack protocol front door. |
+| `quack-native.host` | `QOD_QUACK_HOST` | `0.0.0.0` |  | Quack front door bind address. |
+| `quack-native.port` | `QOD_QUACK_PORT` | `9494` |  | Quack front door port (9494 is the protocol's default, so `quack:host` needs no port). |
+| `quack-native.tlsEnabled` | `QOD_QUACK_TLS_ENABLED` | `false` |  | Enable TLS on the Quack front door. Off by default: the DuckDB client only speaks plain HTTP to loopback hosts. |
+| `quack-native.tlsCertChain` | `QOD_QUACK_TLS_CERT_CHAIN` | `certs/server-cert.pem` |  | Path to the TLS certificate chain PEM (shared with the FlightSQL edge by default). |
+| `quack-native.tlsPrivateKey` | `QOD_QUACK_TLS_PRIVATE_KEY` | `certs/server-key.pem` |  | Path to the TLS private key PEM (PKCS8). |
+| `quack-native.maxHeartbeatTimeoutSec` | `QOD_QUACK_MAX_HEARTBEAT_SEC` | `3600` |  | Cap on the heartbeat lease a client may request, in seconds. |
+| `quack-native.maxBodyBytes` | `QOD_QUACK_MAX_BODY_BYTES` | `268435456` |  | Largest request body accepted on /quack, in bytes (appends and streamed inserts). |
+
 ## `quack-on-demand`
 
 | Key | Env var | Default | Sensitive | Description |
@@ -137,6 +150,17 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.autoscale.assumedConcurrencyPerNode` | `QOD_AUTOSCALE_ASSUMED_CONCURRENCY` | `4` |  | Capacity contribution of a node with maxConcurrent = 0 (unlimited). |
 | `quack-on-demand.autoscale.hardCap` | `QOD_AUTOSCALE_HARD_CAP` | `16` |  | Upper bound on maxNodes at validation time; a typo guard, not a quota. |
 | `quack-on-demand.autoscale.failureBackoffSweeps` | `QOD_AUTOSCALE_FAILURE_BACKOFF_SWEEPS` | `5` |  | Sweeps to skip a pool after 3 consecutive scale failures. |
+
+## `quack-on-demand.branching`
+
+| Key | Env var | Default | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `quack-on-demand.branching.enabled` | `QOD_BRANCH_ENABLED` | `true` |  | Global kill switch for branching (endpoints, MCP tools, expiry sweep). |
+| `quack-on-demand.branching.defaultTtlHours` | `QOD_BRANCH_DEFAULT_TTL_HOURS` | `168` |  | Default time-to-live of a branch in hours when the creator sets none; an expired branch is discarded by the leader's sweep. 0 = branches never expire by default. |
+| `quack-on-demand.branching.sweepSec` | `QOD_BRANCH_SWEEP_SEC` | `300` |  | Expiry sweep interval in seconds; clamped to a 60s floor. |
+| `quack-on-demand.branching.maxPerDatabase` | `QOD_BRANCH_MAX_PER_DATABASE` | `20` |  | Maximum live (open or proposed) branches per tenant-db. |
+| `quack-on-demand.branching.mergeTimeoutSec` | `QOD_BRANCH_MERGE_TIMEOUT_SEC` | `600` |  | Bounded wait for the merge transaction on the ephemeral merge node before the request fails; the commit is probed afterwards so a late commit is still recorded. |
+| `quack-on-demand.branching.nodeReadyTimeoutSec` | `QOD_BRANCH_NODE_READY_TIMEOUT_SEC` | `120` |  | How long to wait for the ephemeral merge node to accept connections. |
 
 ## `quack-on-demand.catalog`
 

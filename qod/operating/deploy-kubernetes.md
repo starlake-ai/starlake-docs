@@ -81,7 +81,7 @@ Variables that are already set explicitly in `defaultMetastore` (via pool or glo
 
 ## Helm chart
 
-A Helm chart is provided at `charts/quack-on-demand/`. It deploys the manager pod, the two Services (REST/UI on port 20900 and FlightSQL on port 31338), and the RBAC Role + RoleBinding that lets the manager call the Kubernetes API to create, watch, and delete node pods and services within its own namespace.
+A Helm chart is provided at `charts/quack-on-demand/`. It deploys the manager pod, three Services (REST/UI on port 20900, FlightSQL on port 31338, and the native Quack front door on port 9494 when `quack.enabled` is true), and the RBAC Role + RoleBinding that lets the manager call the Kubernetes API to create, watch, and delete node pods and services within its own namespace.
 
 Top-level keys in `values.yaml`:
 
@@ -98,7 +98,8 @@ Top-level keys in `values.yaml`:
 | `nodeSelector` / `tolerations` / `affinity` | Manager pod scheduling constraints. |
 | `priorityClassName` | Priority class for the manager pod. |
 | `terminationGracePeriodSeconds` | Grace period (default 60 s) to allow in-flight FlightSQL statements to finish. |
-| `service` | Services for the REST/UI listener (`rest`) and the FlightSQL edge (`flightsql`), each with `type`, `port`, and `annotations`. |
+| `service` | Services for the REST/UI listener (`rest`), the FlightSQL edge (`flightsql`) and the native Quack front door (`quack`, port 9494), each with `type`, `port`, and `annotations`. |
+| `quack` | The native Quack front door DuckDB clients `ATTACH` to: `enabled` (default `true`) and `tls.enabled` (default `false`; the DuckDB client only speaks plain HTTP to loopback hosts, so enable TLS or front the port with an Ingress before exposing it). With `replicaCount > 1` the balancer in front must be session-sticky. See [DuckDB (native Quack)](/qod/connecting/duckdb). |
 | `ingress` | Ingress for the REST/UI; FlightSQL (gRPC) is not covered here. |
 | `probes` | Liveness and readiness probe tuning. |
 | `serviceMonitor` | Prometheus Operator ServiceMonitor toggle. |

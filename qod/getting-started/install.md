@@ -22,6 +22,7 @@ The script requires `PG_HOST` and `PG_PASSWORD`. Key options:
 | `PG_USER` | `postgres` | Postgres user |
 | `MANAGER_PORT` | `20900` | Host port for REST + admin UI |
 | `EDGE_PORT` | `31338` | Host port for FlightSQL edge |
+| `QUACK_PORT` | `9494` | Host port for the native Quack front door (DuckDB `ATTACH`) |
 | `TLS` | `false` | Enable FlightSQL TLS inside the container |
 | `ADMIN_PASSWORD` | `admin` | Admin login password (rotate before production) |
 | `API_KEY` | unset | REST `X-API-Key` static key |
@@ -102,7 +103,7 @@ still overrides any stored value on a given run, and the self-contained
 
 On first run against a freshly-provisioned Postgres, Liquibase applies the control-plane schema. The admin UI is at `http://localhost:20900/ui/`; log in as `admin` with password `admin` (change this before any exposure beyond localhost -- see [Configuration model](#configuration-model) below).
 
-The FlightSQL edge listens on `localhost:31338` with TLS on by default. Durable state (the self-signed certs, and the default DuckLake data path unless `QOD_DUCKLAKE_DATA_PATH` is set) lives under the platform user data dir (`~/.local/share/qod` on Linux, `~/Library/Application Support/qod` on macOS).
+The FlightSQL edge listens on `localhost:31338` with TLS on by default, and the native Quack front door (for DuckDB clients) on `localhost:9494` with TLS off by default. Durable state (the self-signed certs, and the default DuckLake data path unless `QOD_DUCKLAKE_DATA_PATH` is set) lives under the platform user data dir (`~/.local/share/qod` on Linux, `~/Library/Application Support/qod` on macOS).
 
 To stop the manager and its quack nodes, either press Ctrl-C in the terminal running `qod start` (the CLI supervises QoD and runs the same graceful teardown) or, from anywhere:
 
@@ -226,6 +227,8 @@ Other commonly used variables:
 | Manager REST port | `QOD_ON_DEMAND_PORT` | `20900` |
 | FlightSQL edge port | `PROXY_PORT` | `31338` |
 | FlightSQL TLS on/off | `PROXY_TLS_ENABLED` | `true` |
+| Native Quack front door port | `QOD_QUACK_PORT` | `9494` |
+| Native Quack front door TLS on/off | `QOD_QUACK_TLS_ENABLED` | `false` |
 | State backend | `QOD_STATE_STORAGE` | `postgres` |
 | Postgres host | `QOD_PG_HOST` | `localhost` |
 | Postgres user | `QOD_PG_USER` | `postgres` |

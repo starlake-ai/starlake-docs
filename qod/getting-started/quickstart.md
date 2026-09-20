@@ -101,6 +101,13 @@ conn = dbapi.connect("grpc+tls://localhost:31338",
 Driver={Arrow Flight SQL ODBC Driver};HOST=localhost;PORT=31338;useEncryption=true;disableCertificateVerification=true;UID=alice;PWD=demo-alice;RPCCallHeaders=tenant=acme;pool=bi
 ```
 
+**DuckDB** (the CLI or the Python package, over DuckDB's native Quack protocol on port `9494`, no driver; see [DuckDB (native Quack)](/qod/connecting/duckdb)):
+
+```sql
+ATTACH 'quack:localhost:9494' AS qod (TYPE quack, TOKEN 'tenant=acme&pool=bi&user=alice&password=demo-alice');
+SELECT c_name, c_phone, c_mktsegment FROM qod.tpch1.customer LIMIT 5;
+```
+
 Once connected, try:
 
 ```sql
@@ -117,7 +124,7 @@ Demo mode is insecure by design (self-signed TLS, open REST, demo credentials, e
 
 - **Native path (Option A):** a **Postgres 16 or later** reachable at `localhost:5432` (the default) for the control-plane schema and tenant catalogs. Everything else (Java, DuckDB) is auto-provisioned by `qod start`.
 - **Docker Compose path (Option B):** just Docker. The stack ships its own Postgres, so you need nothing else installed.
-- **Ports 20900 and 31338 free** on the host (admin REST/UI on 20900, FlightSQL edge on 31338), for either path.
+- **Ports 20900, 31338 and 9494 free** on the host (admin REST/UI on 20900, FlightSQL edge on 31338, native Quack front door on 9494), for either path.
 
 For alternative deployment paths (Kubernetes) and the full environment-variable model, see the [Installation guide](/qod/getting-started/install).
 
@@ -156,6 +163,7 @@ Either path brings up the same surface:
 
 - Admin REST + UI on `http://localhost:20900`
 - Arrow FlightSQL edge on `localhost:31338` (TLS on, self-signed cert auto-generated under `certs/`)
+- Native Quack front door on `quack:localhost:9494` (plain HTTP by default; what a DuckDB client `ATTACH`es to)
 - Two admin accounts seeded - `admin` and `admin@localhost.local` - both with password `admin`
 - Two bootstrap tenants seeded from `src/main/resources/bootstrap-demo.yaml`: `acme` (tenant-db `acme_tpch`, pools `bi` + `etl`) and `globex` (tenant-db `globex_tpcds`, pool `bi`). Idempotent on restart.
 

@@ -5,7 +5,10 @@ title: Connecting clients
 
 Clients talk to the FlightSQL edge (default `:31338`), not the REST API. Any Arrow Flight SQL driver works: the JDBC driver (DBeaver, Spark, any JDBC tool), ADBC (Python, Go, and others), or a third-party Flight SQL ODBC driver. This page covers the connection target and per-client recipes; see [Authenticating](/qod/connecting/authenticating) for credentials and TLS, and [Supported SQL](/qod/connecting/sql) for what you can run.
 
-AI agents (Claude Code, Claude Desktop, Cursor) are the one exception: they connect to the manager's embedded [MCP server](/qod/connecting/mcp) on the REST port instead of the FlightSQL edge.
+Two kinds of client connect elsewhere:
+
+- **DuckDB itself** (the CLI, the Python package, an embedded DuckDB) attaches the gateway over DuckDB's native Quack protocol on port `9494`, with no driver in between: `ATTACH 'quack:host:9494' AS qod (TYPE quack, TOKEN 'tenant=acme&pool=bi&user=alice&password=...')`. Same identity, routing and policies as FlightSQL. See [DuckDB (native Quack)](/qod/connecting/duckdb).
+- **AI agents** (Claude Code, Claude Desktop, Cursor) connect to the manager's embedded [MCP server](/qod/connecting/mcp) on the REST port.
 
 ## The connection target
 

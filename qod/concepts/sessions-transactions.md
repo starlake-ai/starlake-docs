@@ -26,6 +26,8 @@ Routing normally picks the least-loaded node per statement. That is wrong for a 
 
 The router only honors a pin while a transaction is open, so a stale `pinnedNodeId` can never misroute a non-transactional statement.
 
+On the FlightSQL edge each pinned statement still opens a fresh session on the pinned node, so a transaction spans one node but not one node session. The [native Quack front door](/qod/connecting/duckdb) goes one step further: while a DuckDB client's transaction is open, the manager keeps the node connection that ran the `BEGIN` and sends the following statements down it, so `BEGIN; ...; COMMIT` from a DuckDB client is a real transaction on one node session. `COMMIT` and `ROLLBACK` release that connection and unpin, exactly as above.
+
 ## Pin invalidation
 
 A pin is dropped (pin and `txOpen` both cleared) when the bound node can no longer serve the transaction:

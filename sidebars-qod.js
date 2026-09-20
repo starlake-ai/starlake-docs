@@ -86,6 +86,7 @@ const sidebars = {
       label: 'Connecting',
       items: [
         'connecting/clients',
+        'connecting/duckdb',
         'connecting/authenticating',
         'connecting/sql',
         'connecting/mcp',

@@ -20,7 +20,7 @@ For first-boot-to-first-query, see the [Quickstart](/qod/getting-started/quickst
 | Service | Role |
 |---|---|
 | `postgres` | Control-plane database `qod` (the `qodstate_*` tables) plus every tenant database (`${tenant}_${tenantDb}`, e.g. `tpch_tpch1`) the manager provisions. DuckLake's `__ducklake_*` catalog lives inside each tenant database. |
-| `quack` | The manager: REST + admin UI on `:20900`, the FlightSQL edge on `:31338`, and the child Quack node port range. |
+| `quack` | The manager: REST + admin UI on `:20900`, the FlightSQL edge on `:31338`, the native Quack front door on `:9494` (DuckDB `ATTACH`), and the child Quack node port range. |
 
 Three optional profiles add services only when you ask for them: `seaweedfs` (an in-network S3 object store), and `observability` (Prometheus + Grafana). See [Profiles](#optional-profiles) below.
 
@@ -78,6 +78,7 @@ The wrapper exposes these host ports (override in `.env`):
 |---|---|---|
 | `MANAGER_PORT` | `20900` | REST + admin UI |
 | `EDGE_PORT` | `31338` | FlightSQL edge |
+| `QUACK_PORT` | `9494` | Native Quack front door (DuckDB `ATTACH 'quack:host:9494'`) |
 | `PG_PORT` | `5432` | Postgres (auto-bumped to `15432` when the host port is busy) |
 | `QUACK_MIN_PORT` / `QUACK_MAX_PORT` | `21900` / `22500` | Child Quack node range |
 

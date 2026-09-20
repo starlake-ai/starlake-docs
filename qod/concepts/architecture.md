@@ -10,9 +10,9 @@ Quack on Demand is a gateway that puts a multi-tenant, access-controlled, horizo
 The system separates a control plane from a data plane:
 
 - **Control plane** - the manager process: a REST API and React admin UI for managing tenants, databases, pools, users, and access control, plus the supervisor that spawns and tracks nodes. Its state lives in the control-plane store (see [State storage](/qod/concepts/state-storage)).
-- **Data plane** - the FlightSQL edge and the Quack nodes behind it. This is where queries flow. The edge is stateless per request beyond the session it tracks; the nodes hold the DuckDB engines.
+- **Data plane** - the FlightSQL edge, the native Quack front door, and the Quack nodes behind them. This is where queries flow. The edge is stateless per request beyond the session it tracks; the nodes hold the DuckDB engines.
 
-Both run in a single uber-jar exposing three sockets: the manager REST + UI, the FlightSQL edge, and the range of child Quack nodes.
+Both run in a single uber-jar exposing four sockets: the manager REST + UI (`:20900`), the FlightSQL edge (`:31338`), the native Quack front door (`:9494`, what a DuckDB client `ATTACH`es to), and the range of child Quack nodes.
 
 ## The object model
 
@@ -43,12 +43,16 @@ When a client runs a statement, it passes through a fixed sequence:
 flowchart TD
     C1["JDBC / ADBC client"]
     C2["Browser · admin UI"]
+    C3["DuckDB · quack extension"]
 
     EDGE["FlightEdgeServer · :31338 TLS<br/>Arrow FlightSQL"]
+    QUACK["QuackFrontDoorServer · :9494<br/>native Quack protocol · byte relay"]
     REST["ManagerServer REST · :20900<br/>Tapir + http4s Ember · Prometheus /metrics"]
 
     C1 --> EDGE
+    C3 --> QUACK
     C2 --> REST
+    QUACK --> AUTH
 
     %% --- edge data-plane pipeline (native only) ---
     AUTH["AuthenticationService<br/>Database · JWT · OIDC · ROPC<br/>GoogleGroupsLookup · RoleExtractor"]

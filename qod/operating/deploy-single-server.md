@@ -16,7 +16,7 @@ The two external dependencies QoD needs (Postgres and an S3-compatible store) ar
 
 | Component | Where it runs | Role |
 |---|---|---|
-| QoD manager | The server (one JVM process) | REST control plane + admin UI on `:20900`, FlightSQL edge on `:31338` |
+| QoD manager | The server (one JVM process) | REST control plane + admin UI on `:20900`, FlightSQL edge on `:31338`, native Quack front door on `:9494` (DuckDB `ATTACH`) |
 | Quack nodes | The server, spawned as local subprocesses (`runtimeType = "local"`) | DuckDB engines executing user SQL |
 | Control-plane state | Existing PostgreSQL (database `qod`) | Tenants, pools, users, RBAC, audit, statement history |
 | DuckLake metastore | Existing PostgreSQL (one database per tenant-db, `<tenant>_<name>`) | Table/snapshot metadata |
@@ -43,6 +43,7 @@ graph TD
   pg[("PostgreSQL, existing<br/>qod = control<br/>acme_sales = metastore")]
   s3[("rustfs, existing, S3 API<br/>s3://ducklake/...<br/>parquet data files")]
   clients -->|":31338 FlightSQL, TLS"| manager
+  clients -->|":9494 native Quack (DuckDB)"| manager
   browser -->|":20900 REST + UI"| manager
   pool -->|"DuckLake catalog, SQL"| pg
   pool -->|"parquet read/write"| s3
@@ -404,7 +405,7 @@ QoD has **two independent auth planes**, configured separately:
 
 | Plane | What it protects | Config block |
 |---|---|---|
-| FlightSQL data plane | SQL clients on `:31338` (JDBC/ADBC, BI tools) | `quack-flightsql.auth.*` (`QOD_AUTH_*`) |
+| FlightSQL data plane | SQL clients on `:31338` (JDBC/ADBC, BI tools) and DuckDB clients on the native Quack front door `:9494` (same handshake and providers) | `quack-flightsql.auth.*` (`QOD_AUTH_*`) |
 | Management plane | Admin UI + REST on `:20900` | `quack-on-demand.auth.management.*` (`QOD_MGMT_*`) |
 
 A common production posture: admin UI on corporate SSO, SQL clients on database passwords or bearer JWTs, with database auth kept as break-glass.
