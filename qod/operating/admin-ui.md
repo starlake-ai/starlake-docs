@@ -122,6 +122,15 @@ The tenant page's **Maintenance** tab manages [managed DuckLake maintenance](/qo
 
 Maintenance is double-opt-in: the service runs by default but every database starts disabled, and the first enable expires all unpinned snapshots older than the retention window on the next tick. Protect snapshots with tags first (see [Snapshots and time travel](#snapshots-and-time-travel)).
 
+### Branches
+
+The tenant page's **Branches** tab is the review and approval surface for [branching](/qod/operating/branching). Pick one of the tenant's DuckLake databases (branch catalogs themselves are not listed; they are addressed through their parent):
+
+- **Create branch**: a name and an optional TTL in hours (blank for the server default, `0` for never). Invalid names, duplicates and the per-database cap surface as the server's error text.
+- **Branch list**: live branches with status, owner, fork snapshot, creation and expiry; a checkbox includes merged, discarded and expired history rows.
+- **Expand a branch** for its change set: each touched table with its kind (created, dropped, recreated, modified, altered), insert/delete/update counts and a per-table merge verdict, the conflicts against main, anything v1 cannot merge, and the branch's merge requests with proposer, approver, main snapshot before and after, and the tag. The **rows** link on a table opens the row-level diff between the fork and the branch head, filterable by change type and paginated.
+- **Actions** per row: **propose** on an open branch, **merge** on a proposed branch (after a confirmation), **discard** on any live branch. Merge is refused for the proposer's own identity, so review as a different admin than the agent or user who proposed.
+
 ## Users and access control
 
 `Users` is the RBAC console, titled **Users & access control**. A tenant selector at the top scopes the view; besides the concrete tenants it offers two synthetic scopes, **(all)** (every user, superusers included) and **(superusers)** (only rows with `tenant IS NULL`). When a concrete tenant is selected, its configured auth provider and settings are shown next to the selector. Three tabs cover the graph:

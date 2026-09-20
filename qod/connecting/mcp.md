@@ -78,13 +78,21 @@ Claude Desktop or any client that takes a JSON server entry:
 
 | Tool | Arguments | Returns |
 |---|---|---|
-| `run_sql` | `sql`, `database`, `pool?`, `max_rows?` | Columns and rows as JSON, a `truncated` flag, rows affected for writes |
+| `run_sql` | `sql`, `database`, `pool?`, `branch?`, `max_rows?` | Columns and rows as JSON, a `truncated` flag, rows affected for writes |
 | `list_databases` | superuser: `tenant?` | Tenant databases with kind and pools |
-| `list_tables` | `database`, `schema?` | Schemas and tables |
-| `describe_table` | `database`, `schema`, `table` | Columns and types plus a few sample rows |
+| `list_tables` | `database`, `schema?`, `branch?` | Schemas and tables |
+| `describe_table` | `database`, `schema`, `table`, `branch?` | Columns and types plus a few sample rows |
 | `table_history` | `database`, `schema`, `table`, `limit?` | Snapshot history with change verbs |
 | `list_snapshots` | `database`, `limit?` | Snapshots and tags, for time-travel queries (`AT (VERSION => n)`) |
 | `my_usage` | none | Own usage counters and recent statements (PAT principals only) |
+| `create_branch` | `database`, `name`, `ttl_hours?` | A writable zero-copy branch of the database (see [Branching](/qod/operating/branching)) |
+| `list_branches` | `database`, `include_terminal?` | Live branches, or every branch with `include_terminal` |
+| `branch_changes` | `database`, `branch`, `counts?` | Touched tables with kind and row counts, conflicts against main, merge verdict |
+| `diff` | `database`, `branch`, `schema`, `table`, `limit?`, `cursor?`, `change_type?` | Row-level diff of one table between the branch's fork and head |
+| `propose_merge` | `database`, `branch` | Records a merge request with the change set as of now |
+| `discard` | `database`, `branch` | Discards a branch the caller owns (or any branch, as an admin) |
+
+The `branch` argument on `run_sql`, `list_tables` and `describe_table` routes the call to that branch's own pool and catalog; `database` stays the parent name so token scopes keep applying. There is deliberately no merge tool: merging is a human action through the admin console, the CLI or REST, by a principal other than the proposer. A token minted with `branch_only` is refused any write on the live database (`write_requires_branch`) while reads and branch writes work as granted.
 
 `run_sql` executes through the same in-process path as the FlightSQL edge: statement validation (ACL), classification, routing, then the node. RBAC verbs decide whether writes are allowed, RLS/CLS apply, and suspended pools wake on the first statement exactly as they do for FlightSQL clients. Results are capped server-side by `QOD_MCP_MAX_ROWS` (default 500); the tool's `max_rows` argument can only lower the cap, and truncated results carry `truncated: true` so the agent aggregates or filters instead of paginating blindly.
 

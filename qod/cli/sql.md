@@ -74,6 +74,21 @@ qod catalog data-diff acme acme_tpch main lineitem --from <A> --to <B>
 
 `--as-of` also accepts `--as-of-tag` or `--as-of-ts` (mutually exclusive with each other); `--from` / `--to` on `data-diff` and `schema-diff` accept the same kinds of snapshot selectors. See [Time travel](/qod/concepts/catalogs) for what a snapshot selector can be, and the [Command reference](/qod/cli/reference) for the full `catalog` and `tag` verb lists (including `recoverable` / `undrop` for dropped tables).
 
+## Branches from the CLI
+
+`--branch` routes a session to a writable branch of the pool's database; authorization still runs against `--pool`. The `branch` command group manages the lifecycle (see [Branching](/qod/operating/branching)):
+
+```bash
+qod branch create --tenant acme --db acme_tpch --name feature-x --ttl-hours 24
+qod sql --tenant acme --pool bi --branch feature-x "UPDATE nation SET n_comment = 'reviewed' WHERE n_nationkey = 3"
+qod branch changes --tenant acme --db acme_tpch --branch feature-x
+qod branch diff --tenant acme --db acme_tpch --branch feature-x --schema main --table nation
+qod branch propose --tenant acme --db acme_tpch --branch feature-x
+qod --profile reviewer branch merge --tenant acme --db acme_tpch --branch feature-x
+```
+
+`QOD_BRANCH` sets the default branch for `qod sql` the way `QOD_POOL` sets the pool. The merge must come from a different principal than the proposer, which is why the example switches profile.
+
 ## TLS
 
 The FlightSQL edge has TLS on by default with a self-signed certificate auto-generated on first boot, so certificate verification is off by default too (`edge_tls_verify` / `QOD_TLS_VERIFY` default to `false`). Once you deploy a real certificate, set `QOD_TLS_VERIFY=true` (or `edge_tls_verify = true` in the profile) to verify it instead of trusting any certificate the edge presents.
