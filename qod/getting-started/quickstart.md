@@ -5,6 +5,8 @@ title: Quickstart
 
 Boot the gateway, connect a client, and run your first SQL query against a live TPC-H dataset.
 
+Not sure which setup fits you? [Answer five questions](/qod/choose) and get the setup and the command to run. It will tell you when plain DuckDB is enough.
+
 ## Demo mode (self-contained, no Postgres)
 
 The fastest way to try Quack on Demand end to end. `demo` boots a fully seeded instance against an **embedded, ephemeral Postgres** - so unlike every other path below, it needs **no external Postgres and no Docker**.

@@ -1,0 +1,140 @@
+{
+  "version": 2,
+  "setups": [
+    {
+      "id": "duckdb",
+      "label": "Plain DuckDB",
+      "title": "Plain DuckDB is enough",
+      "body": "You are one person on one machine and you do not need remote access or history. DuckDB alone does this well. Come back to QoD when others need to connect.",
+      "commands": ["duckdb my.db"],
+      "link": { "label": "Read the quickstart", "to": "/qod/getting-started/quickstart" }
+    },
+    {
+      "id": "files",
+      "label": "qod serve on files",
+      "title": "qod serve on your files",
+      "body": "One secure gateway over data you already have. TLS, auth and access control are on by default. No Postgres or Docker to set up.",
+      "commands": ["uvx qod serve ./data", "uvx qod serve s3://bucket/prefix"],
+      "link": { "label": "Read the quickstart", "to": "/qod/getting-started/quickstart" }
+    },
+    {
+      "id": "iceberg",
+      "label": "qod serve + Iceberg",
+      "title": "qod serve with your Iceberg catalog",
+      "body": "Keep Iceberg as your table format. QoD attaches your REST catalog as a federated source, and the same RBAC, tenants and routing apply to its tables. Undrop, rollback and author stamping are DuckLake only.",
+      "commands": [
+        "uvx qod serve",
+        "qod federation create <tenant> <db> --alias ice --setup-sql \"ATTACH ... (TYPE ICEBERG)\""
+      ],
+      "link": { "label": "Read about federation", "to": "/qod/operating/federation" }
+    },
+    {
+      "id": "lake",
+      "label": "qod serve on DuckLake",
+      "title": "qod serve on DuckLake",
+      "body": "The full platform: a DuckLake warehouse on Postgres and object storage, with time travel, tags, undrop, rollback, author stamping and managed maintenance. Iceberg and other sources can still be attached next to it.",
+      "commands": ["uvx qod serve", "uvx qod serve s3://bucket/lake --kind ducklake"],
+      "link": { "label": "Read the quickstart", "to": "/qod/getting-started/quickstart" }
+    }
+  ],
+  "questions": [
+    {
+      "id": "who",
+      "label": "Who needs to query the data?",
+      "options": [
+        { "id": "me", "label": "Only me, on my machine" },
+        { "id": "others", "label": "Other people, BI tools, apps or AI agents" }
+      ]
+    },
+    {
+      "id": "data",
+      "label": "Where is your data today?",
+      "options": [
+        { "id": "files", "label": "A DuckDB file, a parquet or csv folder, an S3 prefix" },
+        { "id": "iceberg", "label": "An Iceberg catalog" },
+        { "id": "ducklake", "label": "Already in DuckLake" },
+        { "id": "none", "label": "Nowhere yet, starting fresh" }
+      ]
+    },
+    {
+      "id": "history",
+      "label": "Do you need undo, time travel or a record of who changed what?",
+      "options": [
+        { "id": "no", "label": "No" },
+        { "id": "yes", "label": "Yes" }
+      ]
+    },
+    {
+      "id": "nodes",
+      "label": "How much compute?",
+      "options": [
+        { "id": "one", "label": "One machine is enough" },
+        { "id": "several", "label": "Several nodes or Kubernetes" }
+      ]
+    },
+    {
+      "id": "stage",
+      "label": "Where are you now?",
+      "options": [
+        { "id": "eval", "label": "Evaluating" },
+        { "id": "pilot", "label": "Pilot" },
+        { "id": "prod", "label": "Production" }
+      ]
+    }
+  ],
+  "reasons": {
+    "duckdb": "Only you query the data, on one machine, with no history needs.",
+    "history": "Undo, time travel and audit come with DuckLake.",
+    "fresh": "Starting fresh: a DuckLake warehouse is the default.",
+    "ducklake": "Your data is already in DuckLake.",
+    "iceberg": "Your tables stay in Iceberg; QoD attaches the catalog.",
+    "files": "QoD serves the files you already have.",
+    "severalNodes": "Several nodes need a gateway.",
+    "historyNeedsQod": "History features need QoD."
+  },
+  "capabilities": [
+    { "id": "flight-sql", "group": "Access", "label": "Arrow Flight SQL endpoint (BI tools, ADBC, JDBC)", "coveredBy": ["files", "iceberg", "lake"] },
+    { "id": "mcp", "group": "Access", "label": "MCP server for AI agents", "coveredBy": ["files", "iceberg", "lake"] },
+    { "id": "tls-auth", "group": "Security", "label": "TLS and authentication", "coveredBy": ["files", "iceberg", "lake"] },
+    { "id": "rbac", "group": "Security", "label": "RBAC on tables, columns and rows", "coveredBy": ["files", "iceberg", "lake"] },
+    { "id": "serve-files", "group": "Data", "label": "Serve DuckDB files, parquet, csv, S3 prefixes", "coveredBy": ["files", "iceberg", "lake"] },
+    { "id": "iceberg-federation", "group": "Data", "label": "Iceberg REST catalog federation", "coveredBy": ["iceberg", "lake"] },
+    { "id": "ducklake", "group": "Data", "label": "DuckLake warehouse on Postgres and object storage", "coveredBy": ["lake"] },
+    { "id": "time-travel", "group": "History", "label": "Time travel and snapshot tags", "coveredBy": ["lake"] },
+    { "id": "undrop", "group": "History", "label": "Undrop and rollback", "coveredBy": ["lake"] },
+    { "id": "author-stamping", "group": "History", "label": "Author stamping and audit timeline", "coveredBy": ["lake"] },
+    { "id": "multi-tenant", "group": "Operations", "label": "Multi-tenant isolation", "coveredBy": ["files", "iceberg", "lake"] },
+    { "id": "multi-node", "group": "Operations", "label": "Multi-node routing", "coveredBy": ["files", "iceberg", "lake"] },
+    { "id": "kubernetes", "group": "Operations", "label": "Kubernetes deployment", "coveredBy": ["files", "iceberg", "lake"] },
+    { "id": "maintenance", "group": "Operations", "label": "Compaction and cleanup policies", "coveredBy": ["lake"] },
+    { "id": "sovereignty", "group": "Sovereignty", "label": "Runs fully in your infrastructure", "coveredBy": ["duckdb", "files", "iceberg", "lake"] }
+  ],
+  "notes": [
+    {
+      "id": "start-here",
+      "when": { "stage": "eval", "setup": ["files", "iceberg", "lake"] },
+      "text": "Evaluating? Start with uvx qod serve --demo, then move to this setup."
+    },
+    {
+      "id": "duckdb-file-single-node",
+      "when": { "setup": "files", "nodes": "several" },
+      "text": "A single .duckdb file is served by one node only. Parquet, csv or S3 prefixes scale out."
+    },
+    {
+      "id": "iceberg-prod",
+      "when": { "setup": "iceberg", "stage": "prod" },
+      "text": "If you later need undrop, rollback or author stamping, those require DuckLake tables."
+    },
+    {
+      "id": "iceberg-on-lake",
+      "when": { "setup": "lake", "data": "iceberg" },
+      "text": "Your Iceberg catalog is attached as a federated source: RBAC applies, but DuckLake history features do not."
+    },
+    {
+      "id": "laptop-cluster",
+      "when": { "setup": ["files", "iceberg", "lake"], "who": "me", "nodes": "several" },
+      "text": "Several nodes belong on your servers or cloud account. Try it single node on your laptop first."
+    }
+  ],
+  "matrixCaption": "Plain DuckDB can read these formats locally. This table shows what is served to others."
+}

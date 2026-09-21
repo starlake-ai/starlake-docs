@@ -279,6 +279,9 @@ function Closing() {
           <Link className={styles.ctaPrimary} to="/qod/getting-started/quickstart">
             Get started
           </Link>
+          <Link className={styles.ctaGhost} to="/qod/choose">
+            Which setup do you need?
+          </Link>
           <Link className={styles.ctaGhost} to="https://discord.gg/xHj9D6Rebp">
             Join Discord
           </Link>

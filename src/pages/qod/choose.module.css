@@ -1,0 +1,43 @@
+/* Page chrome for the decision table. The widget carries its own styles. */
+.page {
+  width: 100%;
+  min-width: 0;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+.head {
+  margin-bottom: 2.5rem;
+  max-width: 46rem;
+}
+.kicker {
+  display: inline-block;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #0f7a4a;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid rgba(35, 178, 109, 0.35);
+  border-radius: 999px;
+  background: rgba(35, 178, 109, 0.08);
+}
+[data-theme='dark'] .kicker {
+  color: #2fc47c;
+}
+.title {
+  margin: 1.1rem 0 0.7rem;
+  font-size: clamp(2rem, 4.2vw, 2.9rem);
+  letter-spacing: -0.03em;
+}
+.lead {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--ifm-color-emphasis-700);
+}
+@media (max-width: 900px) {
+  .page {
+    padding: 2rem 1rem 3.5rem;
+  }
+}

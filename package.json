@@ -12,7 +12,8 @@
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "generate-guides-data": "node scripts/generate-guides-data.js"
+    "generate-guides-data": "node scripts/generate-guides-data.js",
+    "test": "node --test src/"
   },
   "dependencies": {
     "@codemirror/lang-sql": "^6.6.4",
