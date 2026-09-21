@@ -221,6 +221,7 @@ $RECYCLE.BIN/
 # BMAD framework artifacts
 _bmad/
 bmad/
+specs/
 
 # End of https://www.toptal.com/developers/gitignore/api/docusaurus,macos,windows,linux
 .superpowers/
