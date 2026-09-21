@@ -1,0 +1,17 @@
+/* Icon links sitting next to the search box. The label is hidden on narrow
+   viewports so the icons alone keep their place in the navbar. */
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: none;
+}
+@media (max-width: 1150px) {
+  .label {
+    display: none;
+  }
+}

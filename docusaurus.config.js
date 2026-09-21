@@ -148,16 +148,17 @@ const config = {
                 },
                 */
         {
-          href: "https://github.com/starlake-ai/starlake",
+          // No href: the link follows the section being browsed, so /qod
+          // points at quack-on-demand and everything else at starlake.
+          type: "custom-iconLink",
+          icon: "github",
           position: "right",
-          className: "header-github-link header-icon-link",
-          "aria-label": "GitHub repository",
         },
         {
+          type: "custom-iconLink",
+          icon: "discord",
           href: "https://discord.gg/6tNa7yCNqw",
           position: "right",
-          className: "header-discord-link header-icon-link",
-          "aria-label": "Community",
         },
       ].filter(Boolean),
     },
@@ -242,6 +243,14 @@ const config = {
   },
 
   plugins: [
+    // /qod/choose was a standalone comparison page; the table it held now
+    // lives at the end of the /qod landing page.
+    !isBlog && [
+      "@docusaurus/plugin-client-redirects",
+      {
+        redirects: [{ from: "/qod/choose", to: "/qod" }],
+      },
+    ],
     !isBlog && [
       "@docusaurus/plugin-content-docs",
       {

@@ -10,6 +10,7 @@ import Screenshot from '../../components/qod-landing/Screenshot';
 import SecuritySplit from '../../components/qod-landing/SecuritySplit';
 import GrowthDiagram from '../../components/qod-landing/GrowthDiagram';
 import landing from '../../components/qod-landing/landing.module.css';
+import QodCapabilityMatrix from '../../components/QodCapabilityMatrix';
 
 function Hero() {
   const mark = useBaseUrl('/img/mark-dark.svg');
@@ -37,17 +38,8 @@ function Hero() {
             <Link className={styles.ctaPrimary} to="/qod/getting-started/quickstart">
               Get started
             </Link>
-            <Link className={styles.ctaGhost} to="/qod/choose">
-              Compare setups
-            </Link>
             <Link className={styles.ctaGhost} to="/qod/introduction">
               Read the docs
-            </Link>
-            <Link
-              className={styles.ctaGhost}
-              to="https://github.com/starlake-ai/quack-on-demand"
-            >
-              GitHub
             </Link>
           </div>
           <p className={styles.proofLine}>
@@ -282,13 +274,21 @@ function Closing() {
           <Link className={styles.ctaPrimary} to="/qod/getting-started/quickstart">
             Get started
           </Link>
-          <Link className={styles.ctaGhost} to="/qod/choose">
-            Compare setups
-          </Link>
           <Link className={styles.ctaGhost} to="https://discord.gg/xHj9D6Rebp">
             Join Discord
           </Link>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function Comparison() {
+  return (
+    <section className={styles.comparison}>
+      <div className={styles.comparisonInner}>
+        <h2 className={styles.sectionTitle}>Which setup do you need?</h2>
+        <QodCapabilityMatrix heading={null} />
       </div>
     </section>
   );
@@ -303,6 +303,7 @@ export default function Home(): React.ReactElement {
     >
       <Hero />
       <FeatureRows />
+      <Comparison />
       <Closing />
     </Layout>
   );

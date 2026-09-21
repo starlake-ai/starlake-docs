@@ -248,6 +248,16 @@
   color: var(--ifm-color-emphasis-700);
 }
 
+/* ---- capability comparison ---- */
+.comparison {
+  background: var(--ifm-background-color);
+  padding: 0 1.5rem 5rem;
+}
+.comparisonInner {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
 /* ---- closing band ---- */
 .closing {
   /* Re-declare the brand vars here so .ctaPrimary's
