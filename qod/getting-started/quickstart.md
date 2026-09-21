@@ -5,7 +5,7 @@ title: Quickstart
 
 Boot the gateway, connect a client, and run your first SQL query against a live TPC-H dataset.
 
-Not sure which setup fits you? [Answer five questions](/qod/choose) and get the setup and the command to run. It will tell you when plain DuckDB is enough.
+Not sure which setup fits you? [Compare the setups](/qod/choose) side by side, from plain DuckDB to a full DuckLake warehouse.
 
 ## Demo mode (self-contained, no Postgres)
 

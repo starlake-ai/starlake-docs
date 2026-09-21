@@ -1,0 +1,92 @@
+/* QoD capability matrix. Brand: navy #0E1B26, green #23B26D, cream #FAFAF7.
+   Green is a fill and border colour only; small green text would not clear
+   4.5:1 on white, so text uses --green-ink. Dark mode rides the site theme
+   ([data-theme='dark']) rather than prefers-color-scheme, because the site
+   pins the light theme. */
+.wrap {
+  /* The matrix sits in a column flex container on Docusaurus pages. Without a
+     definite width the box is sized to its min-content, and the table pushes
+     the whole page sideways instead of scrolling inside its own container. */
+  width: 100%;
+  min-width: 0;
+  --green: #23b26d;
+  --green-ink: #0f7a4a;
+  --line: var(--ifm-color-emphasis-300);
+  --surface: var(--ifm-background-surface-color, #fff);
+}
+[data-theme='dark'] .wrap {
+  --green: #2fc47c;
+  --green-ink: #2fc47c;
+  --surface: var(--ifm-background-surface-color);
+}
+
+.matrixTitle {
+  font-size: 1.4rem;
+  letter-spacing: -0.01em;
+  margin: 0 0 1rem;
+}
+.scroller {
+  overflow-x: auto;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.scroller:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+.table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 640px;
+  font-size: 0.9rem;
+  margin: 0;
+  display: table;
+}
+.table th,
+.table td {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 0.55rem 0.8rem;
+  text-align: center;
+  vertical-align: middle;
+  background: var(--surface);
+}
+.table tr:last-child th,
+.table tr:last-child td {
+  border-bottom: 0;
+}
+/* `.table th` outranks a bare class, so the overrides below stay scoped. */
+.table .capHead,
+.table .capCell {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  text-align: left;
+  font-weight: 500;
+  min-width: 17rem;
+  border-right: 1px solid var(--line);
+}
+.table .setupHead {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.table .groupCell {
+  text-align: left;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ifm-color-emphasis-700);
+  background: var(--ifm-color-emphasis-100);
+  position: sticky;
+  left: 0;
+}
+.yes {
+  color: var(--green-ink);
+  font-weight: 700;
+}
+.caption {
+  margin: 0.8rem 0 0;
+  font-size: 0.83rem;
+  color: var(--ifm-color-emphasis-700);
+}

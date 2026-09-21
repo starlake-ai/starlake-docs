@@ -36,6 +36,12 @@
   line-height: 1.6;
   color: var(--ifm-color-emphasis-700);
 }
+.next {
+  margin: 2rem 0 0;
+  font-size: 0.95rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
 @media (max-width: 900px) {
   .page {
     padding: 2rem 1rem 3.5rem;

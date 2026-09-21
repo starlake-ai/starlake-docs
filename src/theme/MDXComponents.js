@@ -6,8 +6,7 @@ import CardBody from '@site/src/components/Card/CardBody';
 import CardFooter from '@site/src/components/Card/CardFooter';
 import CardHeader from '@site/src/components/Card/CardHeader';
 import CardImage from '@site/src/components/Card/CardImage';
-import QodCapabilityMatrix from '@site/src/components/QodDecisionTable/CapabilityMatrix';
-import QodDecisionTable from '@site/src/components/QodDecisionTable';
+import QodCapabilityMatrix from '@site/src/components/QodCapabilityMatrix';
 export default {
   // Reusing the default mapping
   ...MDXComponents,
@@ -17,5 +16,4 @@ export default {
   CardFooter, 
   CardImage,
   QodCapabilityMatrix,
-  QodDecisionTable,
 };

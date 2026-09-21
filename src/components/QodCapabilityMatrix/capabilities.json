@@ -1,0 +1,164 @@
+{
+  "version": 3,
+  "setups": [
+    {
+      "id": "duckdb",
+      "label": "Plain DuckDB"
+    },
+    {
+      "id": "files",
+      "label": "qod serve on files"
+    },
+    {
+      "id": "iceberg",
+      "label": "qod serve + Iceberg"
+    },
+    {
+      "id": "lake",
+      "label": "qod serve on DuckLake"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "flight-sql",
+      "group": "Access",
+      "label": "Arrow Flight SQL endpoint (BI tools, ADBC, JDBC)",
+      "coveredBy": [
+        "files",
+        "iceberg",
+        "lake"
+      ]
+    },
+    {
+      "id": "mcp",
+      "group": "Access",
+      "label": "MCP server for AI agents",
+      "coveredBy": [
+        "files",
+        "iceberg",
+        "lake"
+      ]
+    },
+    {
+      "id": "tls-auth",
+      "group": "Security",
+      "label": "TLS and authentication",
+      "coveredBy": [
+        "files",
+        "iceberg",
+        "lake"
+      ]
+    },
+    {
+      "id": "rbac",
+      "group": "Security",
+      "label": "RBAC on tables, columns and rows",
+      "coveredBy": [
+        "files",
+        "iceberg",
+        "lake"
+      ]
+    },
+    {
+      "id": "serve-files",
+      "group": "Data",
+      "label": "Serve DuckDB files, parquet, csv, S3 prefixes",
+      "coveredBy": [
+        "files",
+        "iceberg",
+        "lake"
+      ]
+    },
+    {
+      "id": "iceberg-federation",
+      "group": "Data",
+      "label": "Iceberg REST catalog federation",
+      "coveredBy": [
+        "iceberg",
+        "lake"
+      ]
+    },
+    {
+      "id": "ducklake",
+      "group": "Data",
+      "label": "DuckLake warehouse on Postgres and object storage",
+      "coveredBy": [
+        "lake"
+      ]
+    },
+    {
+      "id": "time-travel",
+      "group": "History",
+      "label": "Time travel and snapshot tags",
+      "coveredBy": [
+        "lake"
+      ]
+    },
+    {
+      "id": "undrop",
+      "group": "History",
+      "label": "Undrop and rollback",
+      "coveredBy": [
+        "lake"
+      ]
+    },
+    {
+      "id": "author-stamping",
+      "group": "History",
+      "label": "Author stamping and audit timeline",
+      "coveredBy": [
+        "lake"
+      ]
+    },
+    {
+      "id": "multi-tenant",
+      "group": "Operations",
+      "label": "Multi-tenant isolation",
+      "coveredBy": [
+        "files",
+        "iceberg",
+        "lake"
+      ]
+    },
+    {
+      "id": "multi-node",
+      "group": "Operations",
+      "label": "Multi-node routing",
+      "coveredBy": [
+        "files",
+        "iceberg",
+        "lake"
+      ]
+    },
+    {
+      "id": "kubernetes",
+      "group": "Operations",
+      "label": "Kubernetes deployment",
+      "coveredBy": [
+        "files",
+        "iceberg",
+        "lake"
+      ]
+    },
+    {
+      "id": "maintenance",
+      "group": "Operations",
+      "label": "Compaction and cleanup policies",
+      "coveredBy": [
+        "lake"
+      ]
+    },
+    {
+      "id": "sovereignty",
+      "group": "Sovereignty",
+      "label": "Runs fully in your infrastructure",
+      "coveredBy": [
+        "duckdb",
+        "files",
+        "iceberg",
+        "lake"
+      ]
+    }
+  ],
+  "caption": "Plain DuckDB can read these formats locally. This table shows what is served to others."
+}

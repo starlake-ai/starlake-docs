@@ -2,6 +2,7 @@
 const sidebars = {
   docs: [
     { type: 'doc', id: 'introduction', label: 'Introduction' },
+    { type: 'link', label: 'Compare setups', href: '/qod/choose' },
     {
       type: 'category',
       label: 'Getting Started',
