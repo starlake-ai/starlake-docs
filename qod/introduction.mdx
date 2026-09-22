@@ -14,11 +14,15 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
   />
 </div>
 
-**Quack on Demand** is a multi-tenant [Arrow Flight SQL](https://arrow.apache.org/docs/format/FlightSql.html) gateway for [DuckDB](https://duckdb.org) and [DuckLake](https://ducklake.select). It puts a single, governed, horizontally-scaled SQL endpoint in front of many DuckDB engines that share DuckLake catalogs, so a fast embedded database becomes a service that teams and applications can query together.
+**Quack on Demand** is a multi-tenant SQL gateway for [DuckDB](https://duckdb.org) and [DuckLake](https://ducklake.select). It puts a single, governed, horizontally-scaled SQL endpoint in front of many DuckDB engines that share DuckLake catalogs, so a fast embedded database becomes a service that teams and applications can query together.
+
+It serves two wires from that one endpoint: [Arrow Flight SQL](https://arrow.apache.org/docs/format/FlightSql.html) for the JDBC / ODBC / ADBC estate, and DuckDB's own **Quack** protocol, so any DuckDB carrying the `quack` extension can `ATTACH` the gateway as a database with no driver in between.
 
 ## What it does
 
-Clients speak Arrow Flight SQL to one endpoint. The gateway authenticates the connection, authorizes every statement against a role-based access model, classifies it read or write, and routes it to the least-loaded DuckDB node that can serve it (on object-store pools, biased toward a node that already has the query's tables cached). The nodes read and write Parquet through shared DuckLake catalogs, so they present one consistent view and a pool can scale out across many of them.
+Clients speak Arrow Flight SQL or the native Quack protocol to the gateway. Either way, it authenticates the connection, authorizes every statement against a role-based access model, classifies it read or write, and routes it to the least-loaded DuckDB node that can serve it (on object-store pools, biased toward a node that already has the query's tables cached). The nodes read and write Parquet through shared DuckLake catalogs, so they present one consistent view and a pool can scale out across many of them.
+
+The two wires are two front doors to the same gateway, not two products: same tenants, same users, same per-statement ACL, column masking and row filters, same router, same audit log. Only the wire differs.
 
 In other words, it adds the things a single embedded DuckDB does not have on its own: **multi-tenancy, authentication and per-statement access control, horizontal scale, and a stable client endpoint**, without replacing DuckDB as the engine.
 
@@ -30,13 +34,13 @@ DuckDB is excellent for fast analytics, and DuckLake gives it a durable, object-
 
 Reach for Quack on Demand when you want to:
 
-- **Serve many users or applications** from shared DuckDB/DuckLake data through one Arrow Flight SQL endpoint, instead of handing out database files.
+- **Serve many users or applications** from shared DuckDB/DuckLake data through one governed endpoint, instead of handing out database files.
 - **Enforce access control** on every query: role-based, per-table permissions with tenant isolation, applied before a statement touches a node.
 - **Scale horizontally**: spread read and write traffic across a pool of DuckDB nodes over a single shared catalog, with least-loaded routing (cache-aware on object-store pools) and retry on failure.
 - **Isolate tenants**: keep each tenant's databases, users, and compute separate, with its own auth provider.
 - **Federate external sources** (Postgres, S3 / Iceberg, anything DuckDB can attach) behind the same SQL surface and the same access model.
-- **Standardize on Arrow Flight SQL** clients: JDBC, ADBC, ODBC, PyArrow, DBeaver, and Spark all connect the same way.
-- **Attach the gateway from DuckDB itself** over DuckDB's native Quack protocol (`ATTACH 'quack:host:9494' AS qod`), so a laptop DuckDB, a notebook, or an embedded engine joins its local tables with governed shared tables in one query. See [DuckDB (native Quack)](/qod/connecting/duckdb).
+- **Keep the clients you already have**: Arrow Flight SQL covers JDBC, ADBC, ODBC, PyArrow, DBeaver, and Spark, which all connect the same way.
+- **Attach the gateway from DuckDB itself** over DuckDB's native Quack protocol (`ATTACH 'quack:host:9494' AS qod`), so a laptop DuckDB, a notebook, or an embedded engine joins its local tables with governed shared tables in one query, with no driver to install. See [DuckDB (native Quack)](/qod/connecting/duckdb).
 - **Give AI agents governed data access**: an embedded [MCP server](/qod/connecting/mcp) lets agents such as Claude Code discover schemas and run SQL with the same per-statement access control as any other client.
 
 ## When not to use it
@@ -52,6 +56,7 @@ It is the wrong tool when:
 
 | Capability | In short |
 | --- | --- |
+| Client protocols | Arrow Flight SQL (`:31338`) and DuckDB's native Quack protocol (`:9494`), one identity and policy model behind both |
 | Multi-tenancy | Tenants own databases (DuckLake catalogs) and pools of DuckDB nodes |
 | Access control | Authentication (database, JWT, OIDC) plus role-based, per-statement table ACL |
 | Routing | Statement classification, least-loaded node selection (cache-aware on object-store pools), transaction pinning, retry-once |
@@ -65,11 +70,11 @@ It is the wrong tool when:
 
 - **[Quickstart](/qod/getting-started/quickstart)** - from zero to your first query.
 - **[Architecture](/qod/concepts/architecture)** - how the pieces fit and how a request flows.
-- **[Connecting clients](/qod/connecting/clients)** - JDBC, ADBC, ODBC, and more.
+- **[Connecting clients](/qod/connecting/clients)** - JDBC, ADBC, ODBC, and DuckDB's own `ATTACH`.
 - **[Operating](/qod/operating/deploy-local)** - deploy, provision tenants and pools, govern access.
 
 Questions or feedback? Join the [community on Discord](https://discord.gg/xHj9D6Rebp) or open an issue on [GitHub](https://github.com/starlake-ai/quack-on-demand).
 
 ## QoD and Starflow
 
-QoD is a standalone product; you do not need Starflow to run it. If you use Starflow, the [`starlake quack`](/starflow/cli/quack) command can host a Quack DuckDB server inside the Starflow process for local, single-node use, and Starflow can query any Flight SQL endpoint, including a QoD fleet, as a [regular connection](/starflow/guides/project-setup/connections). For multi-tenant fleets with autoscaling and ACLs, use QoD.
+QoD is a standalone product; you do not need Starflow to run it. If you use Starflow, the [`starlake quack`](/starflow/cli/quack) command can host a Quack DuckDB server inside the Starflow process for local, single-node use, and Starflow can query a QoD fleet as a [regular connection](/starflow/guides/project-setup/connections), over either wire: `ATTACH 'quack:host:9494'` from its DuckDB engine, or a Flight SQL driver. For multi-tenant fleets with autoscaling and ACLs, use QoD.

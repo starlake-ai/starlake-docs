@@ -127,9 +127,9 @@ Notes:
 
 ## 1. How QoD serves multiple users simultaneously on one server
 
-QoD is a multi-tenant FlightSQL gateway built exactly for this:
+QoD is a multi-tenant SQL gateway built exactly for this:
 
-- Users connect concurrently to the single FlightSQL edge (`:31338`) with their own credentials.
+- Users connect concurrently with their own credentials, over Arrow Flight SQL (`:31338`) or DuckDB's native Quack protocol (`:9494`); both land in the same authentication, ACL and routing path.
 - The manager routes each statement to a node (DuckDB process) in the target pool using least-loaded routing (cache-aware placement on object-store pools), so concurrent statements spread across nodes.
 - A single node also executes multiple statements simultaneously: sessions share the node's `threads` and `memory_limit` budgets, and the per-pool `maxConcurrentPerNode` cap (default unbounded) bounds how many stack up on one node.
 

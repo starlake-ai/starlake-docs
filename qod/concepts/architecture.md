@@ -3,7 +3,7 @@ id: architecture
 title: Architecture
 ---
 
-Quack on Demand is a gateway that puts a multi-tenant, access-controlled, horizontally-scaled SQL surface in front of DuckDB. Clients speak Arrow Flight SQL to one endpoint; the gateway authenticates them, authorizes each statement, and routes it to one of many DuckDB Quack nodes backed by shared DuckLake catalogs. This page is the conceptual overview; the pages it links to go deeper, and the [Architecture map](/qod/contributing/architecture-map) covers the codebase for contributors.
+Quack on Demand is a gateway that puts a multi-tenant, access-controlled, horizontally-scaled SQL surface in front of DuckDB. Clients reach it over Arrow Flight SQL or DuckDB's native Quack protocol; either way the gateway authenticates them, authorizes each statement, and routes it to one of many DuckDB Quack nodes backed by shared DuckLake catalogs. This page is the conceptual overview; the pages it links to go deeper, and the [Architecture map](/qod/contributing/architecture-map) covers the codebase for contributors.
 
 ## The planes
 
@@ -34,7 +34,8 @@ When a client runs a statement, it passes through a fixed sequence:
 ## Why this shape
 
 - **DuckDB for compute, DuckLake for state.** Each node is a fast embedded engine; the durable catalog and Parquet data live in shared Postgres + object storage, so nodes are interchangeable and a pool can scale horizontally over one consistent view.
-- **One endpoint, many nodes.** Clients see a single Flight SQL endpoint; the gateway hides node placement, load balancing, transaction pinning, and failover-with-retry.
+- **One endpoint, many nodes.** Clients see a single gateway, whichever wire they speak; it hides node placement, load balancing, transaction pinning, and failover-with-retry.
+- **Two wires, one policy.** The FlightSQL edge and the native Quack front door share the same authentication, the same per-statement ACL, the same router and the same audit log. The wire a client picks changes the driver, not the governance.
 - **Access control at the gateway.** Authentication and per-statement authorization happen once, at the edge, independent of which node executes, so the same RBAC model covers native and federated tables alike.
 
 ## The pipeline in detail

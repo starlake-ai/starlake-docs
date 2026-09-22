@@ -21,9 +21,10 @@ const PRODUCTS = [
     name: 'Quack on Demand',
     tagline: 'Autoscaling DuckDB fleets',
     description:
-      'A multi-tenant Arrow Flight SQL gateway for DuckDB and DuckLake: one ' +
-      'governed, horizontally-scaled endpoint with per-tenant isolation, ' +
-      'fine-grained ACLs, federated queries, and ODBC/JDBC/ADBC access.',
+      'A multi-tenant SQL gateway for DuckDB and DuckLake: one governed, ' +
+      'horizontally-scaled endpoint with per-tenant isolation, fine-grained ' +
+      'ACLs, and federated queries, reachable over Arrow Flight SQL ' +
+      '(ODBC/JDBC/ADBC) or straight from DuckDB over the native Quack protocol.',
     home: '/qod',
     homeLabel: 'QoD documentation',
     quickstart: '/qod/getting-started/quickstart',

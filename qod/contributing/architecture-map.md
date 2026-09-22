@@ -5,14 +5,15 @@ title: Architecture map
 
 This page orients a contributor in the codebase: the process model, the request flow, and where each concern lives. For the runtime concepts behind it, see [Architecture](/qod/concepts/architecture) and the rest of the Concepts section.
 
-## One process, three sockets
+## One process, four sockets
 
-The manager is a single uber-jar that exposes three sockets:
+The manager is a single uber-jar that exposes four sockets:
 
 | Socket | Default | What it is |
 |---|---|---|
 | Manager REST + React UI | `:20900` | Tapir + HTTP4s Ember. Endpoints under `ondemand/api/*Handlers.scala`; the SPA at `/ui/*` is served from `src/main/resources/ui`. |
-| Arrow FlightSQL edge | `:31338` | The query surface. TLS on by default, cert auto-generated under `certs/`. |
+| Arrow FlightSQL edge | `:31338` | The query surface for driver-based clients. TLS on by default, cert auto-generated under `certs/`. |
+| Native Quack front door | `:9494` | The query surface for DuckDB clients (`ATTACH 'quack:host:9494'`). `edge/quack/QuackFrontDoorServer.scala`; relays each statement to a node byte for byte. Plain HTTP by default, see [TLS](/qod/operating/tls). |
 | Quack nodes | `:21900-22500` | Child DuckDB Quack processes (local mode) or pods (Kubernetes), each serving a `/quack` HTTP endpoint. |
 
 ## The FlightSQL request flow

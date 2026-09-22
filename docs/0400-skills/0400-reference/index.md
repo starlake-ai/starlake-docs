@@ -58,7 +58,7 @@ Technical reference documentation for Starlake Skills and the Starlake platform.
 | `migrate` | Operations | Schema migration |
 | `parquet2csv` | Utilities | Parquet to CSV conversion |
 | `preload` | Ingestion | Landing area checks |
-| `quack` | Operations | Quack FlightSQL server management |
+| `quack` | Operations | Quack DuckDB query server management |
 | `secure` | Security | RLS, CLS, privacy transforms |
 | `semantic` | Semantic Layer | Business semantic models in metadata/semantic |
 | `semantic-export` | Semantic Layer | Export semantic models to Apache Ossie format |

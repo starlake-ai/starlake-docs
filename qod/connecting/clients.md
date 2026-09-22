@@ -3,14 +3,26 @@ id: clients
 title: Connecting clients
 ---
 
-Clients talk to the FlightSQL edge (default `:31338`), not the REST API. Any Arrow Flight SQL driver works: the JDBC driver (DBeaver, Spark, any JDBC tool), ADBC (Python, Go, and others), or a third-party Flight SQL ODBC driver. This page covers the connection target and per-client recipes; see [Authenticating](/qod/connecting/authenticating) for credentials and TLS, and [Supported SQL](/qod/connecting/sql) for what you can run.
+Queries never go through the REST API. The gateway serves them on two dedicated wires, and a client picks whichever one it already speaks:
 
-Two kinds of client connect elsewhere:
+| Wire | Port | Who speaks it |
+|---|---|---|
+| **Arrow Flight SQL** | `:31338` | The JDBC driver (DBeaver, Spark, any JDBC tool), ADBC (Python, Go, and others), a third-party Flight SQL ODBC driver, the `qod` CLI |
+| **Native Quack** | `:9494` | DuckDB itself: the CLI, the Python package, an embedded DuckDB, with no driver in between |
 
-- **DuckDB itself** (the CLI, the Python package, an embedded DuckDB) attaches the gateway over DuckDB's native Quack protocol on port `9494`, with no driver in between: `ATTACH 'quack:host:9494' AS qod (TYPE quack, TOKEN 'tenant=acme&pool=bi&user=alice&password=...')`. Same identity, routing and policies as FlightSQL. See [DuckDB (native Quack)](/qod/connecting/duckdb).
-- **AI agents** (Claude Code, Claude Desktop, Cursor) connect to the manager's embedded [MCP server](/qod/connecting/mcp) on the REST port.
+Both wires resolve the same tenants and users, run the same per-statement ACL, column masking and row filters, and route through the same router, so the choice is about which client you hold, not which features you get.
 
-## The connection target
+From DuckDB, the whole connection is one statement, and the attached catalog joins your local tables:
+
+```sql
+ATTACH 'quack:host:9494' AS qod (TYPE quack, TOKEN 'tenant=acme&pool=bi&user=alice&password=...');
+```
+
+See [DuckDB (native Quack)](/qod/connecting/duckdb) for the token format, TLS, and what the client sees. The rest of this page covers the FlightSQL connection target and per-client recipes; see [Authenticating](/qod/connecting/authenticating) for credentials and TLS, and [Supported SQL](/qod/connecting/sql) for what you can run.
+
+**AI agents** (Claude Code, Claude Desktop, Cursor) are the exception: they connect to the manager's embedded [MCP server](/qod/connecting/mcp) on the REST port.
+
+## The FlightSQL connection target
 
 A connection needs four things, because the edge applies **no defaults**: every client must fully address its target.
 

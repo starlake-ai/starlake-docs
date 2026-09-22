@@ -27,8 +27,8 @@ function Hero() {
           <p className={styles.subtitle}>
             From a single Docker container on one node to fleets of DuckDB Quack
             nodes on your own Kubernetes. Per-tenant isolation, fine-grained ACLs,
-            federated queries. Query it from any ODBC/JDBC/ADBC client. Works with
-            any ETL.
+            federated queries. Query it from any ODBC/JDBC/ADBC client, or
+            <code>ATTACH</code> it straight from DuckDB. Works with any ETL.
           </p>
           <p className={styles.demoChip}>
             <code>uvx qod start --demo</code>
@@ -100,8 +100,16 @@ function BootBanner() {
       {')\n'}
       {'   FlightSQL     : '}
       <span className={landing.tBlue}>grpc+tls://localhost:31338</span>
-      {'\n\n'}
+      {'\n'}
+      {'   Quack (DuckDB): '}
+      <span className={landing.tBlue}>quack:localhost:9494</span>
+      {'  (plain HTTP)\n\n'}
       {' Client connection strings (replace <tenant>, <pool>, <user>):\n'}
+      {'   DuckDB: '}
+      <span className={landing.tBlue}>
+        {"ATTACH 'quack:localhost:9494' AS qod (TYPE quack, TOKEN 'tenant=<tenant>&pool=<pool>&user=<user>&password=<password>');"}
+      </span>
+      {'\n'}
       {'   JDBC : '}
       <span className={landing.tBlue}>
         {
@@ -149,12 +157,14 @@ function FeatureRows() {
           }
         >
           <p>
-            One command boots the whole platform: manager, FlightSQL endpoint, admin UI, and
-            demo data. No cluster, no YAML, no prerequisites beyond Python and a JVM.
+            One command boots the whole platform: manager, FlightSQL endpoint, native Quack
+            front door, admin UI, and demo data. No cluster, no YAML, no prerequisites beyond
+            Python and a JVM.
           </p>
           <p>
-            The boot banner hands you working JDBC, ADBC, and ODBC connection strings. Paste
-            one into your tool and you are querying.
+            The boot banner hands you working JDBC, ADBC, and ODBC connection strings and a
+            ready-to-paste DuckDB <code>ATTACH</code>. Paste one into your tool and you are
+            querying.
           </p>
         </FeatureRow>
 
@@ -164,12 +174,16 @@ function FeatureRows() {
           visual={<Terminal title="qod sql">{ORDER_PRIORITY_QUERY}</Terminal>}
         >
           <p>
-            One Arrow FlightSQL endpoint serves every client: JDBC and ODBC for BI tools, ADBC
-            and Python for notebooks, the qod CLI for your terminal.
+            Two wires, one gateway. Arrow FlightSQL serves the driver estate: JDBC and ODBC for
+            BI tools, ADBC and Python for notebooks, the qod CLI for your terminal. DuckDB's own
+            Quack protocol serves DuckDB itself, so a laptop, a notebook, or an embedded engine
+            runs <code>ATTACH 'quack:host:9494'</code> and joins local tables with governed
+            shared ones, no driver to install.
           </p>
           <p>
+            Both land in the same path: same identity, same per-statement ACL, same audit log.
             Statements are classified read or write and routed to the least-loaded node that
-            can serve them, with transaction pinning, behind that single endpoint.
+            can serve them, with transaction pinning.
           </p>
         </FeatureRow>
 
@@ -298,7 +312,7 @@ export default function Home(): React.ReactElement {
   const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
-      title="Multi-tenant Arrow Flight SQL gateway for DuckDB and DuckLake"
+      title="Multi-tenant SQL gateway for DuckDB and DuckLake: Arrow Flight SQL and native Quack"
       description={siteConfig.tagline}
     >
       <Hero />

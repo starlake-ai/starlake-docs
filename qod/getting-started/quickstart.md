@@ -28,7 +28,7 @@ java -Darrow.allocation.manager.type=Unsafe \
   -jar distrib/quack-on-demand-assembly-*.jar demo
 ```
 
-It starts an embedded throwaway Postgres, seeds the minimal demo (tenant `acme`, tenant-db `acme_tpch`, schema `tpch1`) with a small TPC-H dataset, boots the manager REST API on `:20900` and the FlightSQL edge on `:31338` (TLS on with an auto-generated self-signed cert; clients skip verification), and prints a connect snippet. All state lives under `/tmp/qod-demo` and is removed on exit (Ctrl-C).
+It starts an embedded throwaway Postgres, seeds the minimal demo (tenant `acme`, tenant-db `acme_tpch`, schema `tpch1`) with a small TPC-H dataset, boots the manager REST API on `:20900`, the FlightSQL edge on `:31338` (TLS on with an auto-generated self-signed cert; clients skip verification) and the native Quack front door on `:9494` (what a DuckDB client `ATTACH`es to), and prints a connect snippet. All state lives under `/tmp/qod-demo` and is removed on exit (Ctrl-C).
 
 ## Serve your own data (one command, no Postgres)
 
@@ -66,7 +66,7 @@ Browse to **`http://localhost:20900/ui/`** and log in with:
 
 ### Demo SQL clients
 
-All four users work with any Arrow Flight SQL client (JDBC, ADBC, ODBC) against `localhost:31338`, with `tenant=acme` and `pool=bi` as routing headers. What each sees demonstrates row + column security:
+All four users work with any Arrow Flight SQL client (JDBC, ADBC, ODBC) against `localhost:31338`, and with DuckDB itself against `quack:localhost:9494`, routed by `tenant=acme` and `pool=bi`. What each sees demonstrates row + column security, on either wire:
 
 | Username | Password | Access |
 |---|---|---|
