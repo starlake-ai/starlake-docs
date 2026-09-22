@@ -104,6 +104,13 @@ Editing `objectStore` (create or update) restarts the database's nodes so the ne
 
 The alternative to bringing your own bucket: with `quack-on-demand.managedObjectStore` enabled, `qod database create --managed-storage` (or `managedStorage: true`, or the storage mode "Managed (QoD-provisioned)" in the admin UI) lets the manager carve this database's `dataPath` out of one operator root bucket and fill its `objectStore` for you. `managedStorage` is exclusive with `dataPath` and `objectStore`, requires `kind=ducklake`, and is refused while the config block is off. Deleting such a database tombstones its prefix and a background worker purges the objects after a retention window. See [Managed object storage](/qod/operating/managed-storage).
 
+### Encryption at rest
+
+`qod database create --encrypted` stores this database's data encrypted on disk: Parquet files for
+a `ducklake` database, the file itself for a `duckdb-file` database. It is chosen at create time
+and cannot be changed later in either direction, so decide before you create. `kind=memory` cannot
+be encrypted. See [Encryption at rest](/qod/operating/encryption).
+
 ### List and delete
 
 ```bash

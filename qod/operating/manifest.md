@@ -43,6 +43,11 @@ Plaintext credentials are never written on export, but the file is NOT free of c
 - User `password` (plaintext) is **omitted** entirely from exported users; there is no plaintext to export, only bcrypt hashes are stored.
 - User `passwordHash` carries the user's **real bcrypt hash verbatim**. This is what lets a backup restore the same credential without anyone re-typing passwords.
 - Federated secret `value`s are written as `***REDACTED***`; an `externalRef` is written verbatim.
+- A database's `encryptionKey` (see [Encryption at rest](encryption.md)) is redacted. The `encrypted` flag itself round-trips, so the manifest still records that the database is encrypted, but it cannot recreate an encrypted DuckDB file database on another deployment. Re-applying to the SAME deployment is unaffected: the stored key is carried forward.
+
+A database's `metastore` is exported verbatim, including its control-plane password. For an
+encrypted DuckLake database that password opens the catalog holding every per-file key, so an
+export is a decryption credential for that database however its own key is handled.
 
 Because bcrypt hashes of weak passwords are subject to offline cracking, **treat an exported manifest as sensitive**: do not commit it to a public repository, and store it with the same care as any other credential material (private repository, secret store, or encrypted backup).
 

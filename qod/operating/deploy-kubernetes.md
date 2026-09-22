@@ -47,6 +47,24 @@ On manager restart, the `discoverExisting` pass lists all pods matching the `pod
 
 When a pool's `extraSetupSql` is non-empty (i.e. federated sources are registered against the pool's tenant-db), the manager writes a per-pool Secret `qod-fedsql-${tenant}-${tenantDb}-${pool}` (tenant-db underscores hyphenized for RFC-1123) and injects it into every pod via `env.valueFrom.secretKeyRef` so `spawn-quack-node.sh` reads `$extraSetupSql` from the env. The bearer never appears in `kubectl describe pod` output. The Secret is garbage-collected when the last pod of the pool stops; rotation is "update the Secret, restart the pods" (kubelet does not re-inject env values into a running container).
 
+## Node credentials Secret
+
+Sensitive values from a database's `metastore` reach pods through a per-pool Secret
+`qod-nodeenv-${tenant}-${tenantDb}-${pool}` (all three segments hyphenized for RFC-1123) injected
+via `env.valueFrom.secretKeyRef`, rather than as plain environment variables. Two values travel
+this way: the control-plane password, and the `encryptionKey` of an encrypted DuckDB file database
+(see [Encryption at rest](encryption.md)). Neither appears in `kubectl get pod -o yaml`. The Secret
+is created before the pod, garbage-collected when the last pod of the pool stops, and is separate
+from the federation Secret above.
+
+The control-plane password travels this way deliberately, not only the encryption key: it opens the
+catalog holding an encrypted DuckLake database's per-file keys, so protecting one without the other
+would achieve nothing.
+
+**Upgrading from a release before this change:** pods created by an earlier manager carry the old
+plain-environment shape and are not migrated in place. Restart every node after upgrading, for
+example by scaling each pool down and back up.
+
 ## Object-store credentials
 
 The manager forwards object-store credentials from its own environment into every spawned node pod. This mirrors what the local backend receives for free through process environment inheritance.

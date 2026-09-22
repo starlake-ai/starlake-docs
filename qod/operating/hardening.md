@@ -11,6 +11,7 @@ are opt-in or defaulted-safe, and none change behavior for a single-tenant local
 deployment.
 
 Read this alongside [TLS](tls.md) (encrypt the FlightSQL edge),
+[Encryption at rest](encryption.md) (encrypt the stored data),
 [Authentication](authentication.md) (require credentials), and
 [RBAC](rbac-model.md) (scope table access). Hardening assumes those are already
 in place: it protects the node process and the network, not the front door.
