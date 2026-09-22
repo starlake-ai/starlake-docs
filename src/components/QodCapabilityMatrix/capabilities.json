@@ -60,6 +60,16 @@
       ]
     },
     {
+      "id": "encryption-at-rest",
+      "group": "Security",
+      "label": "Encryption at rest for Parquet and database files",
+      "coveredBy": [
+        "files",
+        "iceberg",
+        "lake"
+      ]
+    },
+    {
       "id": "serve-files",
       "group": "Data",
       "label": "Serve DuckDB files, parquet, csv, S3 prefixes",
