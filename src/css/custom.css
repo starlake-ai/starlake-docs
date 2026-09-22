@@ -450,3 +450,57 @@
     font-size: 2rem;
   }
 }
+/* ---------------------------------------------------------------------------
+ * Tabs (<Tabs>/<TabItem> in MDX)
+ * Light grey panel so the tabbed block stands out from the page background.
+ * ------------------------------------------------------------------------ */
+:root {
+  --sl-tabs-bg: #f5f6f8;
+  --sl-tabs-border: var(--ifm-color-emphasis-200);
+  --sl-tabs-active-bg: #ffffff;
+}
+
+[data-theme="dark"] {
+  --sl-tabs-bg: #242526;
+  --sl-tabs-border: var(--ifm-color-emphasis-300);
+  --sl-tabs-active-bg: #2e2e30;
+}
+
+.markdown .tabs-container {
+  background-color: var(--sl-tabs-bg);
+  border: 1px solid var(--sl-tabs-border);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.markdown .tabs-container > .tabs {
+  border-bottom: 1px solid var(--sl-tabs-border);
+  padding: 0.35rem 0.5rem 0;
+  margin-bottom: 0;
+}
+
+.markdown .tabs-container > .tabs .tabs__item {
+  border-radius: 6px 6px 0 0;
+  border-bottom: 2px solid transparent;
+}
+
+.markdown .tabs-container > .tabs .tabs__item--active {
+  background-color: var(--sl-tabs-active-bg);
+  border-bottom-color: var(--ifm-tabs-color-active-border);
+}
+
+/* Tab panel wrapper (Docusaurus renders .margin-top--md around the panels) */
+.markdown .tabs-container > .margin-top--md {
+  margin-top: 0 !important;
+  padding: 1rem 1.25rem;
+}
+
+.markdown .tabs-container [role="tabpanel"] > :last-child {
+  margin-bottom: 0;
+}
+
+/* Nested tabs: no background stacking */
+.markdown .tabs-container .tabs-container {
+  background-color: transparent;
+}
