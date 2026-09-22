@@ -35,7 +35,6 @@ const config = {
   projectName: "starlake", // Usually your repo name.
 
   onBrokenLinks: "throw",
-  onBrokenMarkdownLinks: "warn",
   trailingSlash: false,
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
@@ -292,6 +291,9 @@ const config = {
   ].filter(Boolean),
   markdown: {
     mermaid: true,
+    hooks: {
+      onBrokenMarkdownLinks: "warn",
+    },
   },
   themes: ["@docusaurus/theme-mermaid"],
   // Per-section GA4 properties, in addition to the site-wide gtag above.
