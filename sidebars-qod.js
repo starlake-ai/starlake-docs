@@ -75,6 +75,7 @@ const sidebars = {
             'operating/pools-cohorts',
             'operating/autoscaling',
             'operating/federation',
+            'operating/iceberg',
           ],
         },
         {

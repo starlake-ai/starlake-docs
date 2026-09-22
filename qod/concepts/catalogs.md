@@ -32,6 +32,8 @@ A DuckLake database is addressed by a catalog name (`dbName`) and a default sche
 
 A related guard applies under ACL: a two-part name whose first part matches an attached catalog (the tenant-db itself, a federation alias, or `memory` / `system` / `temp`) is denied as ambiguous and must be written as the full `catalog.schema.table`. See [Table name resolution](/qod/administration/access-control#table-name-resolution).
 
+A session can hold catalogs that are not DuckLake at all. Federated sources attach external catalogs under their own aliases alongside the database's own, and an [external Iceberg REST catalog](/qod/operating/iceberg) is one of them: its tables are addressed as `alias.schema.table` and governed by the same grants. Iceberg's multi-level namespaces do not map onto DuckDB's single schema level, so a table in namespace `a.b` is not addressable.
+
 ## Data path derivation
 
 The global default `dataPath` is a root; each tenant-db gets its own subdirectory under it. The supervisor derives the per-database path by replacing the last component of the global default with the composed `${tenant}_${tenantDb}` name. For example a global default of `/var/ducklake/tpch` yields `/var/ducklake/tpch_tpch1` for the `tpch/tpch1` database. Object-store URIs are handled string-wise (so the `//` after the scheme is preserved), because the path DuckLake records in the catalog must match the operator-supplied URI exactly or the next `ATTACH` is refused.

@@ -45,6 +45,7 @@ Plaintext credentials are never written on export, but the file is NOT free of c
 - User `password` (plaintext) is **omitted** entirely from exported users; there is no plaintext to export, only bcrypt hashes are stored.
 - User `passwordHash` carries the user's **real bcrypt hash verbatim**. This is what lets a backup restore the same credential without anyone re-typing passwords.
 - Federated secret `value`s are written as `***REDACTED***`; an `externalRef` is written verbatim.
+- A typed federated source's `config` (see [External Iceberg catalogs](iceberg.md)) is written **verbatim**. Its credential fields hold `{{secret.NAME}}` placeholders rather than values, so the credentials themselves are covered by the rule above, but every other field may hold a literal: a `uri` carrying userinfo or a signed query parameter is exported in the clear. This is the same policy the manifest already applies to `setupSql`, which can hold a full connection string. Redacting `uri` was considered and rejected, because a round trip has to reproduce an attachable catalog and a redaction sentinel there imports as a source that can never attach.
 - A database's `encryptionKey` (see [Encryption at rest](encryption.md)) is redacted. The `encrypted` flag itself round-trips, so the manifest still records that the database is encrypted, but it cannot recreate an encrypted DuckDB file database on another deployment. Re-applying to the SAME deployment is unaffected: the stored key is carried forward.
 
 A database's `metastore` is exported verbatim, including its control-plane password. For an
@@ -84,6 +85,29 @@ This is the part to understand before importing a hand-edited file. The rules di
 :::caution Nested omissions delete
 Because nested collections are replaced, omitting a child under a parent you do include removes it. If you export, then hand-edit a tenant to drop one pool from its `pools` list and re-import, that pool is deleted. A role's `permissions` are fully replaced; a user's `poolGrants` are fully replaced. To change one tenant safely, keep all of its databases, pools, roles, and grants in the file, or edit a full export rather than a partial document.
 :::
+
+### Replaying an old manifest over an Iceberg source
+
+A manifest is a statement of desired state, so import applies a federated source's `sourceType` as
+written. That includes changing it. The REST and CLI paths **refuse** an in-place flip between
+`sql` and `iceberg_rest`, because it would silently replace operator-written `setupSql` with a
+rendered config or the reverse; import does not, and applies the manifest's `readOnly` along with
+it.
+
+The case that costs you something is replaying a manifest exported **before** an alias was
+converted to [an Iceberg source](iceberg.md). The alias goes back to being a `sql` source, and
+because a `sql` source's `readOnly` defaults to `false`, a catalog that was read-only becomes
+writable at the next node spawn.
+
+This is intended for a declarative apply, but it is never silent. The importer emits a WARN naming
+the database, the alias and the transition, and it is the only audit line the downgrade leaves:
+
+```
+manifest import: tenant-db 'acme_lake' federated source 'sales_lake' changes sourceType 'iceberg_rest' -> 'sql' (readOnly becomes false); REST refuses this transition in place
+```
+
+Before re-applying an old manifest, check it against a current export for any `federatedSources`
+entry whose `sourceType` has moved backwards, and grep the import for that line afterwards.
 
 ### Passwords and secrets on import
 

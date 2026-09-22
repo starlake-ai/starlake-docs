@@ -7,6 +7,8 @@ keywords: ["duckdb federation", "federated query", "iceberg", "postgres", "attac
 
 Federation attaches external catalogs (Postgres, MySQL, S3/Iceberg, or anything a DuckDB extension can `ATTACH`) to a database under an alias, so clients query remote data through the same FlightSQL session and the same access-control model as native DuckLake tables. Sources are scoped to a tenant-db: each `qodstate_tenant_db` carries its own set of federated sources.
 
+A source is one of two types. A **`sql`** source is the free-form kind this page describes: you write the `ATTACH` yourself. An **`iceberg_rest`** source is typed, declared as fields rather than SQL, and has its own page: see [External Iceberg catalogs](iceberg.md). Everything below about secrets, grants, lifecycle and manifests applies to both.
+
 Provision the tenant and database first (see "Tenants and databases"). The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_API_KEY` is set for CI scripts.
 
 :::note DB argument uses the full database name
@@ -93,7 +95,7 @@ Two specifics for federation:
 ## Lifecycle
 
 - **Edits take effect on the next node spawn.** Creating, editing, or disabling a source changes the catalog blob that every node spawned *after* the change receives: idle-timeout replacements, manual restarts, scale-up additions, and pool recreation. Nodes already running keep their attached catalogs until they exit, so recycle the pool to apply a change immediately.
-- **Boot-time failures are fatal.** If a source's `setupSql` errors at node startup (extension missing, bad credentials, DNS failure), the spawn aborts and the supervisor surfaces the last lines of stderr.
+- **A source that fails at node startup does not stop the node.** The node's init SQL is piped into DuckDB without bail, so a `setupSql` error (extension missing, bad credentials, DNS failure) goes to the node's stderr and startup continues. The node then passes its health probe and serves every other catalog normally, with this one simply absent, and a client sees `catalog '<alias>' does not exist` rather than the real cause. For `iceberg_rest` sources the manager detects, reports and retries this; see [Attach failures](iceberg.md#attach-failures-and-how-they-surface). For `sql` sources the node's stderr is the record.
 - **Disabled sources** are filtered out when the catalog blob is assembled; there is no live `DETACH` of running nodes. A disabled source's alias stays in the ACL ambiguity guard (see [Table name resolution](/qod/administration/access-control#table-name-resolution)) because already-running nodes keep it attached until the pool recycles.
 - **Recycle the pool right after deleting a source.** Deleting a source removes its alias from the ACL ambiguity guard (the guard's attached-catalog set is rebuilt from the control plane, cached for about 60 seconds), but running nodes keep the catalog attached until they exit. In that window the ambiguity guard no longer covers the alias while the engine still binds it catalog-first, so recycle the pool to close the gap.
 
