@@ -1,7 +1,7 @@
 ---
 title: "DuckDB single sign-on with Keycloak, Google, Azure AD and Okta"
 sidebar_label: Single sign-on
-description: "Single sign-on for DuckDB: Quack on Demand accepts OIDC tokens from Keycloak, Google, Azure AD, Cognito or Okta for SQL clients and the admin UI, and syncs users with SCIM."
+description: "Single sign-on for DuckDB: Quack on Demand accepts OIDC tokens from Keycloak, Google, Azure AD, Cognito or Okta, and syncs users and groups with SCIM."
 keywords: [duckdb sso, duckdb single sign-on, duckdb oidc, duckdb keycloak, duckdb azure ad, duckdb okta, duckdb google login, duckdb scim]
 ---
 
@@ -13,7 +13,7 @@ Enterprise IT will not hand out shared passwords for a data endpoint. They want 
 
 ## How Quack on Demand does it
 
-For the SQL wire, enable one or more OIDC providers. The gateway derives the JWKS endpoint, verifies each bearer token's signature, issuer and audience, and maps the user to a tenant. Each tenant selects its own provider, so one deployment can serve a Keycloak tenant and a Google tenant side by side. Clients that can only send a username and password, such as JDBC drivers, get a token through Keycloak's or Cognito's password grant; others use the browser token page.
+For the SQL wire, enable one or more OIDC providers. The gateway derives the JWKS endpoint, verifies each bearer token's signature, issuer and audience, and maps the user to a tenant. Each tenant selects its own provider, so one deployment can serve a Keycloak tenant and a Google tenant side by side. Clients that can only send a username and password, such as JDBC drivers, get a token through Keycloak's password grant; Google and Cognito users obtain a token first, for example from the browser token page.
 
 ```bash
 QOD_AUTH_KEYCLOAK_ENABLED=true

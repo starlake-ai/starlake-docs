@@ -1,7 +1,7 @@
 ---
 title: "DuckDB authentication: passwords, tokens and OAuth for SQL clients"
 sidebar_label: Authentication
-description: "Give DuckDB a login. Quack on Demand authenticates every JDBC, ADBC, ODBC or native DuckDB connection with passwords, JWT bearer tokens or OAuth before any query runs."
+description: "Give DuckDB a login. Quack on Demand authenticates every JDBC, ADBC, ODBC or native DuckDB connection with passwords, JWT bearer tokens or OAuth."
 keywords: [duckdb authentication, duckdb auth, duckdb login, duckdb password, duckdb bearer token, duckdb oauth, duckdb jwt, flight sql authentication]
 ---
 
@@ -17,7 +17,7 @@ Every connection carries a tenant and a pool, and the edge validates the credent
 
 - **Database**: username and password checked with bcrypt against the built-in user table. On by default.
 - **External JWT**: a bearer token signed by keys you configure.
-- **Keycloak, Google, Azure AD, AWS Cognito**: OIDC bearer tokens verified against the provider's JWKS. Keycloak and Cognito also accept a username and password from JDBC tools through the resource owner password grant.
+- **Keycloak, Google, Azure AD, AWS Cognito**: OIDC bearer tokens verified against the provider's JWKS. Keycloak also accepts a username and password from JDBC tools through the resource owner password grant; Google and Cognito users obtain a token first.
 
 Roles and groups can be read from token claims, and the resulting session is cached for a configurable TTL. A JDBC client passes the credential in the URL; ADBC and raw Flight clients pass it as headers:
 

@@ -1,7 +1,7 @@
 ---
 title: "DuckDB access control: roles, grants, row and column security"
 sidebar_label: Access control
-description: "Add users, roles, grants, row-level security and column masking to DuckDB. Quack on Demand checks every statement against an ACL before it reaches a DuckDB node."
+description: "Add users, roles, grants, row-level security and column masking to DuckDB. Quack on Demand checks every statement against an ACL before it runs."
 keywords: [duckdb access control, duckdb acl, duckdb rbac, duckdb row-level security, duckdb column masking, duckdb permissions, duckdb grant, ducklake access control]
 ---
 
@@ -9,11 +9,11 @@ DuckDB has no users and no `GRANT`: whoever can open the file reads every table.
 
 ## The problem
 
-An embedded engine trusts its process. That is fine for one analyst on a laptop and breaks the moment two teams share a DuckDB or DuckLake dataset: there is no way to say that finance may read `orders` but not `salaries`, that a regional manager sees only their region, or that an email column must be hashed for everyone except support. Copying files per audience or hiding tables behind views does not hold up, because the engine still trusts whoever holds the file.
+An embedded engine trusts its process. That is fine for one analyst and breaks the moment two teams share a DuckDB or DuckLake dataset: there is no way to say that finance may read `orders` but not `salaries`, that a regional manager sees only their region, or that an email column must be hashed for everyone except support. Copying files per audience or hiding tables behind views does not hold up, because the engine still trusts whoever holds the file.
 
 ## How Quack on Demand does it
 
-Set `QOD_ACL_ENABLED=true` and every statement, whether it arrives over Arrow Flight SQL, DuckDB's native Quack protocol or the MCP server, is matched against the caller's effective permission set. Roles bundle table verbs (`RO`, `RW`, `DDL`, `ALL`) on `catalog.schema.table` triples with wildcards. Groups collect roles and pool grants. A user reaches permissions directly or through their groups, and admission to a pool is what admits them to that pool's database. Row policies rewrite a matching `SELECT` with a filter, and column policies mask or deny a column, all before the SQL reaches DuckDB.
+Set `QOD_ACL_ENABLED=true` and every statement, whether it arrives over Arrow Flight SQL, DuckDB's native Quack protocol or the MCP server, is matched against the caller's effective permission set. Roles bundle table verbs (`RO`, `RW`, `DDL`, `ALL`) on `catalog.schema.table` triples with wildcards. Groups collect roles and pool grants. A user reaches permissions directly or through their groups, and admission to a pool is what admits them to that pool's database. Row policies rewrite a matching `SELECT` with a filter, and column policies mask or deny a column before the SQL reaches DuckDB.
 
 You can manage all of it from the admin UI, the `qod` CLI, or plain SQL from any connected client:
 

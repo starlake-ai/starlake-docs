@@ -1,7 +1,7 @@
 ---
 title: "A Flight SQL server for DuckDB: JDBC, ODBC and ADBC"
 sidebar_label: Flight SQL server
-description: "DuckDB has no server. Quack on Demand is an Arrow Flight SQL server for DuckDB and DuckLake, so JDBC, ODBC and ADBC clients such as DBeaver, Tableau and Power BI connect to it."
+description: "DuckDB has no server. Quack on Demand is an Arrow Flight SQL server for DuckDB and DuckLake, so DBeaver, Tableau and Power BI connect over JDBC, ODBC or ADBC."
 keywords: [duckdb flight sql, duckdb server, arrow flight sql server, duckdb jdbc, duckdb odbc, duckdb remote access, duckdb network, duckdb client server]
 ---
 

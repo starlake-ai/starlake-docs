@@ -1,7 +1,7 @@
 ---
 title: "Connect to DuckDB with ADBC from Python, Go and Power BI"
 sidebar_label: ADBC
-description: "Use ADBC to query a shared DuckDB over Arrow Flight SQL. Quack on Demand serves the standard Flight SQL ADBC driver, so Python, Go and Power BI connect with no custom client."
+description: "Query a shared DuckDB with ADBC over Arrow Flight SQL. Quack on Demand serves the standard Flight SQL ADBC driver for Python, Go and Power BI."
 keywords: [duckdb adbc, adbc flight sql, adbc_driver_flightsql, duckdb python client, duckdb go client, power bi adbc, arrow database connectivity duckdb]
 ---
 

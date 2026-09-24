@@ -2,7 +2,7 @@
 title: "DuckDB as a service: what Quack on Demand adds"
 sidebar_label: Overview
 slug: /duckdb
-description: "DuckDB is an embedded engine with no users, no server and no grants. Quack on Demand adds authentication, SSO, access control, ADBC and Flight SQL in front of it."
+description: "DuckDB is an embedded engine with no users, no server and no grants. Quack on Demand adds authentication, SSO, access control, ADBC and Flight SQL."
 keywords: [duckdb as a service, duckdb server, duckdb gateway, duckdb access control, duckdb adbc, duckdb sso, multi-tenant duckdb, ducklake]
 ---
 
