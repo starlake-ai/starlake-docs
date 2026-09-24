@@ -9,6 +9,19 @@ const sidebars = {
     },
     {
       type: 'category',
+      label: 'DuckDB how-tos',
+      link: { type: 'doc', id: 'duckdb/index' },
+      items: [
+        'duckdb/access-control',
+        'duckdb/authentication',
+        'duckdb/sso',
+        'duckdb/adbc',
+        'duckdb/flight-sql-server',
+        'duckdb/multi-tenant',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Concepts',
       items: [
         'concepts/architecture',
