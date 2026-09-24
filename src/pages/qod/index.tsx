@@ -282,6 +282,13 @@ function Closing() {
             horizontal scale, tenant isolation, or federation. Querying one local file?
             Use DuckDB directly.
           </p>
+          <p className={styles.closingBody}>
+            Looking for one answer? The <Link to="/qod/duckdb">DuckDB how-tos</Link> cover{' '}
+            <Link to="/qod/duckdb/access-control">access control</Link>,{' '}
+            <Link to="/qod/duckdb/sso">single sign-on</Link>,{' '}
+            <Link to="/qod/duckdb/adbc">ADBC</Link> and{' '}
+            <Link to="/qod/duckdb/multi-tenant">multi-tenancy</Link>.
+          </p>
         </div>
         <div className={styles.closingCtas}>
           <Link className={styles.ctaPrimary} to="/qod/getting-started/quickstart">

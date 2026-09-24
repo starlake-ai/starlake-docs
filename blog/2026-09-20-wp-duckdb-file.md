@@ -199,3 +199,5 @@ The move stays inside the same gateway: `qod serve` with no target creates a fre
 - QoD documentation, "RBAC model": docs.starlake.ai/qod/operating/rbac-model
 - QoD documentation, "Access control": docs.starlake.ai/qod/administration/access-control
 - QoD quickstart and client connection guides: docs.starlake.ai/qod/getting-started/quickstart
+
+**See also:** [DuckDB access control](https://docs.starlake.ai/qod/duckdb/access-control), [Multi-tenant DuckDB](https://docs.starlake.ai/qod/duckdb/multi-tenant) and [A Flight SQL server for DuckDB](https://docs.starlake.ai/qod/duckdb/flight-sql-server) in the Quack on Demand documentation.
