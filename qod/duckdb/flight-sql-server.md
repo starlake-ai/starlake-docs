@@ -20,7 +20,6 @@ uvx qod@latest serve ./sales.duckdb
 #   JDBC : jdbc:arrow-flight-sql://localhost:31338/?tenant=<tenant>&pool=<pool>&user=<user>&useEncryption=true&disableCertificateVerification=true
 #   ADBC : uri=grpc+tls://localhost:31338  (adbc_driver_flightsql)
 #   ODBC : Driver={Arrow Flight SQL ODBC Driver};Host=localhost;Port=31338;...
-#   DuckDB: ATTACH 'quack:localhost:9494' AS qod (TYPE quack, TOKEN 'tenant=<tenant>&pool=<pool>&user=<user>&password=<password>');
 ```
 
 The JDBC driver is the Apache Arrow Flight SQL JDBC driver from Maven Central, which DBeaver, Tableau and Spark load directly. ADBC uses the Flight SQL ADBC driver (adbc_driver_flightsql), which Power BI also ships in-box. ODBC uses any third-party Flight SQL ODBC driver. Behind the edge, statements are classified read or write and routed to the least-loaded DuckDB node in the pool, with transactions pinned to one node. TLS is on by default. Quack on Demand runs as a single Docker container on one node, or on Kubernetes for multi-host fleets.

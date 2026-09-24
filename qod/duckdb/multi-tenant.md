@@ -1,7 +1,7 @@
 ---
 title: "Multi-tenant DuckDB and DuckLake: tenants, databases and pools"
 sidebar_label: Multi-tenant
-description: "Run many teams or customers on one DuckDB deployment. Quack on Demand isolates tenants, each with its own DuckLake catalog, databases and pools of DuckDB nodes."
+description: "Run many teams or customers on one DuckDB deployment. Quack on Demand isolates tenants, databases (each its own DuckLake catalog) and pools of DuckDB nodes."
 keywords: [multi-tenant duckdb, duckdb multi tenant, duckdb saas, tenant isolation duckdb, ducklake multi-tenant, shared duckdb, duckdb pools]
 ---
 
