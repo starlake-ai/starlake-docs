@@ -510,7 +510,7 @@ In `sidebars-qod.js`, directly after the `Getting Started` category object (the 
 Run:
 ```bash
 cd /Users/hayssams/git/public/starlake-docs && yarn build 2>&1 | tail -3
-for p in duckdb duckdb/access-control duckdb/authentication duckdb/sso duckdb/adbc duckdb/flight-sql-server duckdb/multi-tenant; do test -f build/qod/$p/index.html && echo "ok $p" || echo "MISSING $p"; done
+for p in duckdb duckdb/access-control duckdb/authentication duckdb/sso duckdb/adbc duckdb/flight-sql-server duckdb/multi-tenant; do test -f build/qod/$p.html && echo "ok $p" || echo "MISSING $p"; done
 grep -c 'docs.starlake.ai/qod/duckdb' build/sitemap.xml
 for f in qod/duckdb/*.md; do printf '%s %s words\n' "$f" "$(awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2' $f | wc -w)"; done
 ```
@@ -870,9 +870,9 @@ Expected: pages 63, with description 63, with keywords 63, sidebar_label at leas
 Run:
 ```bash
 cd /Users/hayssams/git/public/starlake-docs && yarn build 2>&1 | tail -3
-echo "qod pages without a description tag:"; for f in $(find build/qod -name index.html); do grep -q '<meta name="description"' $f || echo $f; done
-grep -o '<meta name="keywords" content="[^"]*"' build/qod/operating/rbac-model/index.html
-grep -o '<title>[^<]*</title>' build/qod/operating/rbac-model/index.html
+echo "qod pages without a description tag:"; for f in $(find build/qod -name '*.html'); do grep -q '<meta name="description"' $f || echo $f; done
+grep -o '<meta name="keywords" content="[^"]*"' build/qod/operating/rbac-model.html
+grep -o '<title>[^<]*</title>' build/qod/operating/rbac-model.html
 ```
 Expected: SUCCESS; no files listed (every QoD page has a description); the keywords meta on rbac-model contains `duckdb rbac`; the title contains `RBAC, row and column security for DuckDB`.
 
@@ -1052,11 +1052,11 @@ Append to the end of `blog/2026-09-20-wp-duckdb-file.md`:
 Run:
 ```bash
 cd /Users/hayssams/git/public/starlake-docs && yarn build 2>&1 | tail -3
-grep -c 'href="/qod/duckdb' build/qod/introduction/index.html
+grep -c 'href="/qod/duckdb' build/qod/introduction.html
 grep -c 'href="/qod/duckdb' build/qod/index.html
 IS_BLOG=true yarn build 2>&1 | tail -3
-grep -c 'docs.starlake.ai/qod/duckdb' build/duckdb-flight-sql-client-families/index.html
-grep -c 'docs.starlake.ai/qod/duckdb' build/duckdb-file-sharing-embedded-vs-served/index.html
+grep -c 'docs.starlake.ai/qod/duckdb' build/duckdb-flight-sql-client-families.html
+grep -c 'docs.starlake.ai/qod/duckdb' build/duckdb-file-sharing-embedded-vs-served.html
 yarn build 2>&1 | tail -1
 ```
 Expected: docs build SUCCESS; introduction count at least `7`; landing count at least `5`; blog build SUCCESS; each blog page count at least `3`; final docs rebuild SUCCESS so `build/` holds the docs site again.
@@ -1081,7 +1081,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 Run:
 ```bash
 cd /Users/hayssams/git/public/starlake-docs && yarn build 2>&1 | grep -E 'SUCCESS|ERROR|broken' | head
-echo "qod pages without description:"; for f in $(find build/qod -name index.html); do grep -q '<meta name="description"' $f || echo $f; done
+echo "qod pages without description:"; for f in $(find build/qod -name '*.html'); do grep -q '<meta name="description"' $f || echo $f; done
 grep -c 'og:image' build/qod/index.html
 grep -c 'docs.starlake.ai/qod/duckdb' build/sitemap.xml
 grep -cE 'docs\.starlake\.ai/(guides|cli|setup|category|configuration|comparisons|glossary)' build/llms.txt
@@ -1092,4 +1092,4 @@ Expected: one SUCCESS line, no ERROR; no pages listed; og:image `1` or more; sit
 
 - [ ] **Step 2: Read each hub page once in the built output for accuracy**
 
-Open `build/qod/duckdb/*/index.html` titles and skim the markdown sources against the pages they link to. Any claim not backed by the linked page is removed. Commit any fix with `docs(qod): tighten DuckDB how-to wording`.
+Open the `build/qod/duckdb/*.html` titles and skim the markdown sources against the pages they link to. Any claim not backed by the linked page is removed. Commit any fix with `docs(qod): tighten DuckDB how-to wording`.
