@@ -37,10 +37,6 @@ export default function StructuredData() {
     });
   }, [allDocsData, currentPath]);
 
-  // For debugging
-  console.log("Current path:", currentPath);
-  console.log("Current doc:", currentDoc);
-
   const mainSchema = structuredData || {
     "@context": "https://schema.org",
     "@type": "WebSite",

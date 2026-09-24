@@ -198,9 +198,10 @@ const config = {
         },
       },
     },
+    image: "img/social-card.png",
     metadata: [
-      {name: 'keywords', content: 'starlake, etl, data pipeline, data transformation'},
-      {name: 'description', content: 'Official documentation for Starlake data pipeline platform'},
+      {name: 'keywords', content: 'starlake, etl, data pipeline, data transformation, quack on demand, duckdb, ducklake, duckdb access control, duckdb acl, duckdb adbc, duckdb sso, duckdb authentication, duckdb multi-tenant, flight sql server'},
+      {name: 'description', content: 'Documentation for Starlake, the declarative ETL platform, and Quack on Demand, the multi-tenant DuckDB gateway with access control, SSO, ADBC and Flight SQL.'},
     ],
     structuredData: {
       "@context": "https://schema.org",
@@ -216,17 +217,34 @@ const config = {
           "url": "https://docs.starlake.ai/img/starlake-logo.png"
         }
       },
-      "about": {
-        "@type": "SoftwareApplication",
-        "name": "Starlake",
-        "applicationCategory": "Data Loading & Transformation Platform",
-        "operatingSystem": "Cross-platform",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
+      "about": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Starlake",
+          "applicationCategory": "Data Loading & Transformation Platform",
+          "operatingSystem": "Cross-platform",
+          "description": "Open source declarative data pipeline platform: extract, load and transform with YAML and SQL.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "Quack on Demand",
+          "applicationCategory": "Database Gateway",
+          "operatingSystem": "Linux, macOS, Windows, Docker, Kubernetes",
+          "url": "https://docs.starlake.ai/qod",
+          "description": "Multi-tenant SQL gateway for DuckDB and DuckLake: authentication, SSO, role-based access control with row and column security, ADBC, JDBC and ODBC over Arrow Flight SQL, and native DuckDB ATTACH.",
+          "keywords": "DuckDB, DuckLake, access control, ACL, RBAC, ADBC, Flight SQL, SSO, OAuth, OIDC, multi-tenant",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
         }
-      },
+      ],
       "audience": {
         "@type": "Audience",
         "audienceType": "Data Engineers, Data Scientists, Enterprise IT Teams"
@@ -236,7 +254,7 @@ const config = {
         "headline": "Starlake Documentation",
         "description": "Complete documentation for installing, configuring and using Starlake data pipeline platform",
         "articleSection": ["Installation", "Configuration", "Tutorials", "API Reference"],
-        "keywords": "ETL, data pipeline, data transformation, data quality, data governance"
+        "keywords": "ETL, data pipeline, data transformation, data quality, data governance, DuckDB, DuckLake, access control, ADBC, Flight SQL, SSO"
       }
     }
   },

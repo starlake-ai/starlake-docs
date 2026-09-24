@@ -2,7 +2,6 @@ import React from 'react';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import styles from './index.module.css';
 import FeatureRow from '../../components/qod-landing/FeatureRow';
 import Terminal from '../../components/qod-landing/Terminal';
@@ -309,11 +308,10 @@ function Comparison() {
 }
 
 export default function Home(): React.ReactElement {
-  const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
       title="Multi-tenant SQL gateway for DuckDB and DuckLake: Arrow Flight SQL and native Quack"
-      description={siteConfig.tagline}
+      description="Quack on Demand turns DuckDB into a governed service: authentication, SSO, per-statement access control, ADBC, JDBC and ODBC over Flight SQL, native DuckDB ATTACH, autoscaling on Docker or Kubernetes."
     >
       <Hero />
       <FeatureRows />
