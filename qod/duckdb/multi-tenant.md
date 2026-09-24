@@ -1,7 +1,7 @@
 ---
-title: "Multi-tenant DuckDB on a shared DuckLake"
+title: "Multi-tenant DuckDB and DuckLake: tenants, databases and pools"
 sidebar_label: Multi-tenant
-description: "Run many teams or customers on one DuckDB deployment. Quack on Demand isolates tenants, databases and pools of DuckDB nodes over a shared DuckLake."
+description: "Run many teams or customers on one DuckDB deployment. Quack on Demand isolates tenants, each with its own DuckLake catalog, databases and pools of DuckDB nodes."
 keywords: [multi-tenant duckdb, duckdb multi tenant, duckdb saas, tenant isolation duckdb, ducklake multi-tenant, shared duckdb, duckdb pools]
 ---
 
@@ -22,7 +22,7 @@ ATTACH 'quack:qod.example.com:9494' AS qod
 SELECT count(*) FROM qod.tpch1.orders;
 ```
 
-Pools scale from an autoscale band, suspend to zero nodes when idle and wake on the first query, so tenants pay for compute only while queries run. Usage is metered per tenant, pool and user, and the audit log and statement history are tenant-scoped. Federation lets a tenant attach Postgres, MySQL, S3 or Iceberg sources under the same access-control model. Quack on Demand runs as a single Docker container on one node, ideal for a single tenant, or on Kubernetes for multi-host fleets.
+Pools scale within an autoscale band and can be suspended to zero nodes; a suspended pool wakes on the first query. Automatic idle suspend runs in the hosted service. Usage is metered per tenant, pool and user, and the audit log and statement history are tenant-scoped. Federation lets a tenant attach Postgres, MySQL, S3 or Iceberg sources under the same access-control model. Quack on Demand runs as a single Docker container on one node, ideal for a single tenant, or on Kubernetes for multi-host fleets.
 
 ## Go deeper
 

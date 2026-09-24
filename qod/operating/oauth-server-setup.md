@@ -1,6 +1,6 @@
 ---
 id: oauth-server-setup
-title: "OAuth / OIDC for DuckDB clients: Keycloak, Google, Azure AD and Cognito server setup"
+title: "OAuth / OIDC for DuckDB clients: Keycloak, Google, Azure AD, Cognito"
 sidebar_label: "OAuth / OIDC server setup (per provider)"
 description: "Server-side reference for bearer-token authentication of JDBC, ADBC and ODBC clients to DuckDB with Keycloak, Google, Azure AD or AWS Cognito."
 keywords: ["duckdb oauth", "duckdb oidc", "keycloak", "azure ad", "cognito", "bearer token", "jdbc oauth"]

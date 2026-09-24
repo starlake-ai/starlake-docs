@@ -1,6 +1,6 @@
 ---
 id: auth-providers
-title: "Authentication providers for DuckDB clients: database, JWT, Keycloak, Google, Azure AD, Cognito"
+title: "DuckDB authentication providers: Keycloak, Google, Azure AD, Cognito"
 sidebar_label: "Authentication providers"
 description: "Enable and configure each authentication provider for DuckDB clients: built-in passwords, external JWT, Keycloak, Google, Azure AD, Cognito, UI SSO."
 keywords: ["duckdb sso", "duckdb oauth", "keycloak", "azure ad", "google", "cognito", "oidc", "jwt"]

@@ -318,7 +318,7 @@ export default function Home(): React.ReactElement {
   return (
     <Layout
       title="Multi-tenant SQL gateway for DuckDB and DuckLake: Arrow Flight SQL and native Quack"
-      description="Quack on Demand turns DuckDB into a governed service: authentication, SSO, per-statement access control, ADBC, JDBC and ODBC over Flight SQL, native DuckDB ATTACH, autoscaling on Docker or Kubernetes."
+      description="Quack on Demand turns DuckDB into a governed service: authentication, SSO, per-statement access control, ADBC, JDBC and ODBC over Flight SQL, on Docker or Kubernetes."
     >
       <Hero />
       <FeatureRows />

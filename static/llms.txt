@@ -9,7 +9,7 @@ Starlake lets data engineers build production data pipelines without writing Pyt
 - [DuckDB as a service](https://docs.starlake.ai/qod/duckdb): What a single DuckDB lacks (server, users, grants, tenants) and what Quack on Demand adds
 - [DuckDB access control](https://docs.starlake.ai/qod/duckdb/access-control): Roles, table grants, row-level security and column masking enforced on every DuckDB statement
 - [DuckDB authentication](https://docs.starlake.ai/qod/duckdb/authentication): Passwords, JWT bearer tokens and OAuth for JDBC, ADBC, ODBC and native DuckDB clients
-- [DuckDB single sign-on](https://docs.starlake.ai/qod/duckdb/sso): OIDC SSO with Keycloak, Google, Azure AD, Cognito or Okta, plus SCIM provisioning
+- [DuckDB single sign-on](https://docs.starlake.ai/qod/duckdb/sso): Keycloak, Google, Azure AD or Cognito tokens for SQL clients, any OIDC IdP including Okta for the admin UI, plus SCIM provisioning
 - [DuckDB with ADBC](https://docs.starlake.ai/qod/duckdb/adbc): Connect from Python, Go and Power BI with the Flight SQL ADBC driver
 - [Flight SQL server for DuckDB](https://docs.starlake.ai/qod/duckdb/flight-sql-server): JDBC, ODBC and ADBC drivers against shared DuckDB data
 - [Multi-tenant DuckDB](https://docs.starlake.ai/qod/duckdb/multi-tenant): Tenants, databases and pools of DuckDB nodes over a shared DuckLake
@@ -20,7 +20,7 @@ Starlake lets data engineers build production data pipelines without writing Pyt
 - [Tenancy model](https://docs.starlake.ai/qod/concepts/tenancy): Tenants, tenant databases, pools and how isolation is enforced
 - [Routing](https://docs.starlake.ai/qod/concepts/routing): Statement classification and least-loaded node selection
 - [DuckLake catalogs](https://docs.starlake.ai/qod/concepts/catalogs): The three database kinds and how DuckLake separates metadata from Parquet data
-- [Connecting clients](https://docs.starlake.ai/qod/connecting/clients): Connection target and recipes for JDBC, ADBC, ODBC, Python and Go
+- [Connecting clients](https://docs.starlake.ai/qod/connecting/clients): Connection target and recipes for JDBC, ADBC, ODBC and Python
 - [DuckDB native ATTACH](https://docs.starlake.ai/qod/connecting/duckdb): Attach the gateway from any DuckDB with the quack extension, no driver
 - [Power BI](https://docs.starlake.ai/qod/connecting/powerbi): ADBC-based connector with Import, DirectQuery and query folding
 - [Tableau](https://docs.starlake.ai/qod/connecting/tableau): Generic JDBC connector with the Flight SQL JDBC driver
@@ -87,7 +87,7 @@ Starlake lets data engineers build production data pipelines without writing Pyt
 - [Native Load](https://docs.starlake.ai/starflow/guides/load/native): Skip Spark validation for faster loading
 - [Validate](https://docs.starlake.ai/starflow/guides/load/validate): Type validation with built-in and custom regex types
 - [Transform on Load](https://docs.starlake.ai/starflow/guides/load/transform): Computed columns, ignore fields, and foreign keys
-- [Security](https://docs.starlake.ai/starflow/guides/load/security): Table, row, and column-level access control for BigQuery and Databricks
+- [Security](https://docs.starlake.ai/starflow/guides/security): Table, row, and column-level access control for BigQuery and Databricks
 - [Expectations](https://docs.starlake.ai/starflow/guides/load/expectations): Post-load data quality assertions
 - [Load Orchestration](https://docs.starlake.ai/starflow/guides/load/orchestration): Orchestrate load jobs with Airflow, Dagster, Snowflake Tasks
 - [Metrics](https://docs.starlake.ai/starflow/guides/load/metrics): Continuous and discrete data profiling during ingestion
@@ -121,7 +121,7 @@ Starlake lets data engineers build production data pipelines without writing Pyt
 
 ## Documentation
 
-- [Site Builder](https://docs.starlake.ai/starflow/guides/documentation/site-builder): Generate documentation sites from Starlake projects
+- [Site Builder](https://docs.starlake.ai/starflow/guides/documentation/starlake-site-builder): Generate documentation sites from Starlake projects
 
 ## Configuration
 

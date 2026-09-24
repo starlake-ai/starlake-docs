@@ -14,11 +14,11 @@ DuckDB is an embedded analytical engine: it runs inside your process, trusts who
 | --- | --- | --- |
 | A server other machines can reach | No listener | Arrow Flight SQL on `:31338` and native Quack on `:9494` |
 | Users and passwords | None | Built-in accounts, JWT, OAuth and OIDC providers |
-| Single sign-on | None | Keycloak, Google, Azure AD, Cognito, Okta via OIDC, plus SCIM |
+| Single sign-on | None | Keycloak, Google, Azure AD and Cognito for SQL clients; any OIDC IdP including Okta for the admin UI; SCIM |
 | Grants, row filters, column masks | None | Roles, table verbs, row-level policies, column masking |
 | Several teams on one deployment | One file, one process | Tenants, databases and pools, isolated at the edge |
 | JDBC, ODBC, ADBC drivers | Local bindings only | Standard Flight SQL drivers for BI tools and notebooks |
-| More than one machine | One process | Pools of DuckDB nodes that scale out and suspend when idle |
+| More than one machine | One process | Pools of DuckDB nodes that scale out and suspend to zero |
 
 ## How to read this section
 
