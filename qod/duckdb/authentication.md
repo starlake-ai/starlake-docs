@@ -25,6 +25,8 @@ Roles and groups can be read from token claims, and the resulting session is cac
 jdbc:arrow-flight-sql://gateway:31338?useEncryption=true&user=alice&password=demo-alice&tenant=acme&pool=bi
 ```
 
+The example assumes the edge presents a certificate the client trusts. Against the default self-signed certificate, see [TLS](/qod/operating/tls) for the client-side setting.
+
 Superusers authenticate against the manager's global providers with `superuser=true` and bypass the per-statement gate. Quack on Demand runs as a single Docker container on one node, or on Kubernetes for multi-host fleets.
 
 ## Go deeper
