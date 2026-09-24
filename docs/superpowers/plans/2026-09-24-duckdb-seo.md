@@ -1082,7 +1082,7 @@ Run:
 ```bash
 cd /Users/hayssams/git/public/starlake-docs && yarn build 2>&1 | grep -E 'SUCCESS|ERROR|broken' | head
 echo "qod pages without description:"; for f in $(find build/qod -name '*.html'); do grep -q '<meta name="description"' $f || echo $f; done
-grep -c 'og:image' build/qod/index.html
+grep -o 'og:image' build/qod.html | wc -l
 grep -c 'docs.starlake.ai/qod/duckdb' build/sitemap.xml
 grep -cE 'docs\.starlake\.ai/(guides|cli|setup|category|configuration|comparisons|glossary)' build/llms.txt
 grep -rl $'\xe2\x80\x94' qod/duckdb static/llms.txt docusaurus.config.js src/pages/qod/index.tsx || echo "no em dash"
