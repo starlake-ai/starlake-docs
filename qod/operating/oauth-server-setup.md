@@ -1,6 +1,9 @@
 ---
 id: oauth-server-setup
-title: OAuth / OIDC server setup (per provider)
+title: "OAuth / OIDC for DuckDB clients: Keycloak, Google, Azure AD and Cognito server setup"
+sidebar_label: "OAuth / OIDC server setup (per provider)"
+description: "Server-side reference for bearer-token authentication of JDBC, ADBC and ODBC clients to DuckDB with Keycloak, Google, Azure AD or AWS Cognito."
+keywords: ["duckdb oauth", "duckdb oidc", "keycloak", "azure ad", "cognito", "bearer token", "jdbc oauth"]
 ---
 
 This page is the complete server-side reference for wiring an OAuth / OIDC provider into the **FlightSQL data plane** (how a SQL client - JDBC, ADBC (including the Power BI connector, which rides the FlightSQL ADBC driver), or a Flight SQL ODBC driver - authenticates with a bearer token). It covers Keycloak, Google, Azure AD, and AWS Cognito: the manager config keys, the endpoints the manager derives, and the matching client setup on the identity provider.

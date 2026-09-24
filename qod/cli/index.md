@@ -1,6 +1,8 @@
 ---
 id: index
 title: The qod CLI
+description: "The qod command-line client for Quack on Demand: boot a DuckDB gateway, administer tenants and access control, and run Flight SQL queries."
+keywords: ["qod cli", "duckdb cli", "flight sql client", "command line"]
 ---
 
 `qod` is a single command-line client for both planes of quack-on-demand: the manager's admin REST surface on `:20900` (tenants, databases, pools, nodes, RBAC, catalog, federation, audit, usage) and the FlightSQL query plane on `:31338` (`qod sql`, one-shot or interactive). Every REST path has a matching noun-verb command - `POST /api/tenant/create` is `qod tenant create`, `GET /api/pool/list` is `qod pool list`, and so on - so if you know the API you already know most of the CLI.

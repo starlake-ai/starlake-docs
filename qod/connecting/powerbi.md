@@ -1,6 +1,9 @@
 ---
 id: powerbi
-title: Power BI
+title: "Power BI to DuckDB with the ADBC connector"
+sidebar_label: "Power BI"
+description: "Connect Power BI and Microsoft Fabric to DuckDB with the QoD connector on the in-box Flight SQL ADBC driver: Import, DirectQuery and query folding."
+keywords: ["power bi duckdb", "adbc power bi", "directquery duckdb", "microsoft fabric", "flight sql adbc"]
 ---
 
 Power BI / Microsoft Fabric connects to Quack on Demand through the **QoD custom connector** (v2.0.0+), built on `Adbc.Connection` and the **FlightSQL ADBC driver that ships in-box with Power BI Desktop** - no driver installation on the client. The connector supports **Import and DirectQuery**, with query folding: filters, projections, joins, aggregations, and top-N push down as SQL to the Quack edge.

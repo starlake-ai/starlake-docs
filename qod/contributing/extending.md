@@ -1,6 +1,8 @@
 ---
 id: extending
 title: Extending the manager
+description: "Extend Quack on Demand with a new runtime backend or a new authentication provider through the two seams designed for it."
+keywords: ["extending", "runtime backend", "authentication provider", "plugin"]
 ---
 
 Two seams are designed to be extended: the runtime backend (where Quack nodes run) and the authentication providers (how clients prove who they are). Both follow the same shape, a small interface with one implementation per strategy, selected from configuration in `Main.scala`. See the [Architecture map](/qod/contributing/architecture-map) for where these sit.

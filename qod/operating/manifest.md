@@ -1,6 +1,8 @@
 ---
 id: manifest
 title: Manifest backup and restore
+description: "Export the entire control-plane configuration as one YAML manifest and import it to restore, clone an environment or apply a reviewed change."
+keywords: ["manifest", "backup", "restore", "yaml", "configuration"]
 ---
 
 The config manifest is the entire control-plane configuration serialized as one YAML document: every tenant, database, pool, federated source, role, group, user, and grant. Export it to back up or version-control your configuration, then import it to restore, clone an environment, or apply a reviewed change. The manifest holds configuration only; it does not contain table data or the DuckLake catalogs.

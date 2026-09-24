@@ -1,6 +1,9 @@
 ---
 id: scim-provisioning
-title: SCIM provisioning
+title: "SCIM provisioning: sync DuckDB users and groups from Okta, Entra or Google"
+sidebar_label: "SCIM provisioning"
+description: "SCIM 2.0 endpoints so Okta, Microsoft Entra or Google Workspace provision and deprovision DuckDB gateway users and groups automatically."
+keywords: ["scim", "duckdb scim", "okta", "entra", "user provisioning", "sso"]
 ---
 
 Quack-on-Demand exposes a SCIM 2.0 (RFC 7643/7644) endpoint set so an enterprise IdP (Okta, Microsoft Entra, Google) can provision, update, and deprovision users and groups automatically. It complements per-tenant OIDC SSO: SSO authenticates people, SCIM keeps the tenant's user and group inventory in sync with the IdP directory. Available since 0.7.2.

@@ -1,6 +1,8 @@
 ---
 id: federation
 title: Federation
+description: "Attach Postgres, MySQL, S3 or Iceberg catalogs to a DuckDB gateway database and query them under the same access-control model as native tables."
+keywords: ["duckdb federation", "federated query", "iceberg", "postgres", "attach catalog"]
 ---
 
 Federation attaches external catalogs (Postgres, MySQL, S3/Iceberg, or anything a DuckDB extension can `ATTACH`) to a database under an alias, so clients query remote data through the same FlightSQL session and the same access-control model as native DuckLake tables. Sources are scoped to a tenant-db: each `qodstate_tenant_db` carries its own set of federated sources.

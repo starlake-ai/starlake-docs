@@ -1,6 +1,8 @@
 ---
 id: manage-by-manifest
 title: Manage by manifest
+description: "Manage every tenant, pool, role, user and grant of your DuckDB gateway as one version-controlled YAML manifest: export, edit, re-import."
+keywords: ["manifest", "yaml", "gitops", "configuration as code", "duckdb gateway"]
 ---
 
 The whole control plane is one declarative YAML document: every tenant, database, pool, role, group, user, grant, and federated source. The `Manifest (YAML)` blocks throughout this section are fragments of that document. Edit it, keep it under version control, and apply it by exporting the current state, changing the YAML, and re-importing. The field reference is on the [Manifest backup and restore](/qod/operating/manifest) page.

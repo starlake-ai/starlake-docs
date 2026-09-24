@@ -1,6 +1,8 @@
 ---
 id: hardening
 title: Security hardening
+description: "Security hardening checklist for exposing a DuckDB gateway to untrusted users: defaults to change, secrets, network and the SQL surface."
+keywords: ["duckdb security", "hardening", "production security"]
 ---
 
 Quack on Demand runs tenant-supplied SQL on shared infrastructure. The defaults

@@ -1,6 +1,9 @@
 ---
 id: auth-providers
-title: Authentication providers
+title: "Authentication providers for DuckDB clients: database, JWT, Keycloak, Google, Azure AD, Cognito"
+sidebar_label: "Authentication providers"
+description: "Enable and configure each authentication provider for DuckDB clients: built-in passwords, external JWT, Keycloak, Google, Azure AD, Cognito, UI SSO."
+keywords: ["duckdb sso", "duckdb oauth", "keycloak", "azure ad", "google", "cognito", "oidc", "jwt"]
 ---
 
 Quack-on-Demand supports multiple authentication providers that can be enabled independently. Any combination may be active at the same time: the edge tries each enabled provider in order and accepts the first success. The full chain logic, session TTL, and how tenant identity is derived from claims are covered in the Authentication page. This page focuses on enabling and configuring each provider.

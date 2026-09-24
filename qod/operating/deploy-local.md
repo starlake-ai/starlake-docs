@@ -1,6 +1,8 @@
 ---
 id: deploy-local
 title: Local deployment
+description: "The default local runtime: DuckDB nodes as child processes of the manager on one machine, for development, evaluation and small deployments."
+keywords: ["local deployment", "development", "runtime"]
 ---
 
 ## When to use

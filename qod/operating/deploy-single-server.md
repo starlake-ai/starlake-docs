@@ -1,6 +1,8 @@
 ---
 id: deploy-single-server
 title: Single-server production deployment
+description: "Production deployment of a DuckDB gateway on one large server with an existing PostgreSQL and an S3-compatible object store such as MinIO."
+keywords: ["single server", "production", "postgresql", "s3", "minio", "duckdb deployment"]
 ---
 
 Audience: DBA / platform engineer deploying for production use.

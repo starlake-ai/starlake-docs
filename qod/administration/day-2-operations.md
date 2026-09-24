@@ -1,6 +1,8 @@
 ---
 id: day-2-operations
 title: Run the platform
+description: "Operational playbooks for a running DuckDB fleet: watch the Nodes board, scale pools, drain before maintenance, inspect recent statements."
+keywords: ["duckdb operations", "scaling", "nodes board", "drain pool", "qod cli"]
 ---
 
 The Nodes board is the at-a-glance operational view for a running deployment. From it you can spot trouble, scale compute up or down, drain a pool before maintenance, and drill into recent statements. This page walks through each of those tasks as step-by-step playbooks with the equivalent [qod CLI](/qod/cli/) command for scripting and automation.

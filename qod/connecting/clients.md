@@ -1,6 +1,9 @@
 ---
 id: clients
-title: Connecting clients
+title: "Connecting clients to DuckDB: JDBC, ADBC, ODBC and native ATTACH"
+sidebar_label: "Connecting clients"
+description: "Connect JDBC, ADBC, ODBC, Python and DuckDB itself to a governed DuckDB gateway: connection targets, credentials and per-client recipes."
+keywords: ["duckdb jdbc", "duckdb adbc", "duckdb odbc", "flight sql", "connect to duckdb", "python duckdb client"]
 ---
 
 Queries never go through the REST API. The gateway serves them on two dedicated wires, and a client picks whichever one it already speaks:

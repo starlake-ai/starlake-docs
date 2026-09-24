@@ -1,6 +1,8 @@
 ---
 id: admin
 title: Administering with the CLI
+description: "Provision a tenant end to end with the qod CLI: login, database, pool, users, roles, grants, and a query under row-level security on DuckDB."
+keywords: ["qod cli", "duckdb administration", "provisioning", "row-level security"]
 ---
 
 This page is one continuous walkthrough: provision a tenant end to end with `qod` alone, from the first `qod login` to a user who can run a query under row-level security. It mirrors the REST walkthrough in [Onboarding](/qod/administration/onboarding) but drives everything through the CLI instead of `curl`. Every command below is runnable as shown against a manager booted with the demo bootstrap (`admin` / `admin` at `http://localhost:20900`); swap `initech` for whatever tenant you are actually creating.

@@ -1,6 +1,8 @@
 ---
 id: install
 title: Installation
+description: "Install Quack on Demand as a Docker image or a single jar driven by the qod CLI, from uvx demo mode to a durable DuckDB gateway."
+keywords: ["install", "docker", "uvx", "pip install qod", "duckdb gateway"]
 ---
 
 Quack on Demand ships as a Docker image and as a single uber-jar driven by the `qod` CLI (`pip install qod`, or no install at all with `uvx`). The fastest way to evaluate it is [Demo mode](/qod/getting-started/quickstart#demo-mode-self-contained-no-postgres) via `uvx qod@latest serve --demo`. For a durable deployment, two paths are supported: Docker, and the native jar via [`qod start`](#native-jar-qod-start). Both run on **Linux, macOS, and Windows** (Windows support is experimental; see [Run on Windows](#run-on-windows) below). GitHub Releases hosts the raw jar artifacts, but you should rarely need to download one by hand - every path below fetches what it needs.

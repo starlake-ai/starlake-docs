@@ -1,6 +1,9 @@
 ---
 id: sql
-title: Supported SQL
+title: "Supported SQL: the DuckDB dialect through the gateway"
+sidebar_label: "Supported SQL"
+description: "What SQL you can run through the DuckDB gateway: the DuckDB dialect, default schema rules, transactions, prepared statements and ACL rewrites."
+keywords: ["duckdb sql", "supported sql", "transactions", "prepared statements"]
 ---
 
 Each Quack node is a DuckDB engine over a DuckLake catalog, so the dialect a client sees is DuckDB SQL. What you can run is whatever DuckDB supports, subject to the routing and authorization the gateway applies. This page covers the behaviors that differ from talking to a single DuckDB directly.

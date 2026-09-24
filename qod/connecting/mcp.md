@@ -1,6 +1,9 @@
 ---
 id: mcp
-title: MCP server (AI agents)
+title: "MCP server: AI agents querying DuckDB under RBAC"
+sidebar_label: "MCP server (AI agents)"
+description: "Let Claude Code, Claude Desktop or Cursor query DuckDB through the embedded MCP server, with the same RBAC, row and column policies as any SQL client."
+keywords: ["duckdb mcp", "mcp server", "ai agents", "claude", "cursor", "rbac"]
 ---
 
 The manager embeds an MCP (Model Context Protocol) server at `POST /mcp` on the REST port (default `:20900`), so AI agents such as Claude Code, Claude Desktop, or Cursor can discover schemas, run SQL with full RBAC/RLS/CLS enforcement, use DuckLake time travel, and (for admin credentials) operate pools and nodes.

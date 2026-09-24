@@ -1,6 +1,8 @@
 ---
 id: maintenance
 title: Managed DuckLake maintenance
+description: "Managed DuckLake maintenance: compaction, snapshot expiry and file cleanup per database, on compute isolated from query serving."
+keywords: ["ducklake maintenance", "compaction", "snapshot expiry", "storage"]
 ---
 
 The manager runs a background maintenance service that keeps every DuckLake database healthy and its storage bounded. Without maintenance, DuckLake only ever adds: deletes and compactions write new files while old snapshots keep the previous files referenced, so disk usage grows monotonically. The service runs the full DuckLake maintenance chain per database, on compute isolated from query serving, with retention holds enforced and every run recorded.

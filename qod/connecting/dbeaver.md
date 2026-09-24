@@ -1,6 +1,9 @@
 ---
 id: dbeaver
-title: DBeaver
+title: "DBeaver to DuckDB over Flight SQL JDBC"
+sidebar_label: "DBeaver"
+description: "Connect DBeaver to a shared DuckDB through the Arrow Flight SQL JDBC driver: register the driver, build the URL, pass an OAuth token."
+keywords: ["dbeaver duckdb", "flight sql jdbc", "dbeaver arrow flight"]
 ---
 
 DBeaver connects to Quack on Demand through the Apache Arrow Flight SQL JDBC driver. There is no custom plugin to install: you register the driver jar once, then point a normal JDBC connection at the edge. The whole connection (target, routing, credentials) is expressed in the JDBC URL plus, for OAuth, one driver property.

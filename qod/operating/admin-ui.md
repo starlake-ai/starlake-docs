@@ -1,6 +1,8 @@
 ---
 id: admin-ui
 title: Admin UI guide
+description: "Tour of the Quack on Demand admin console: tenants, databases, pools, users, access control, and live node and statement telemetry."
+keywords: ["admin ui", "console", "duckdb administration"]
 ---
 
 The manager serves a React console at `http://<host>:20900/ui/`. Superusers and tenant admins get the full operator console: it manages tenants, databases, pools, users, and access control, and surfaces live node and statement telemetry. Regular (`role=user`) tenant users can log in too, but land on a self-service [Profile page](#profile-page-regular-users) instead of the operator console. Neither view is an end-user query tool; clients run SQL over the FlightSQL edge, not through this UI.

@@ -1,6 +1,8 @@
 ---
 id: deploy-docker
 title: Docker deployment
+description: "Run the whole DuckDB gateway as a Docker Compose stack: manager, Postgres metastore and DuckDB nodes in one container on one host."
+keywords: ["duckdb docker", "docker compose", "single node", "deployment"]
 ---
 
 ## When to use

@@ -1,6 +1,9 @@
 ---
 id: access-control
-title: Grant and revoke access
+title: "Grant and revoke access to DuckDB tables"
+sidebar_label: "Grant and revoke access"
+description: "Grant a team read access to DuckDB tables, add row filters and column masks, and revoke access, from the admin UI, the qod CLI, or plain SQL."
+keywords: ["duckdb access control", "duckdb acl", "grant", "revoke", "row-level security", "column masking", "rbac"]
 ---
 
 Access control is **off by default** (`acl.enabled=false`). Set `QOD_ACL_ENABLED=true` to enforce it. When ACL is on, every FlightSQL statement is matched against the caller's effective permission set before execution. The model - roles, groups, verbs, and wildcards - is described in [Access control model](/qod/operating/rbac-model).

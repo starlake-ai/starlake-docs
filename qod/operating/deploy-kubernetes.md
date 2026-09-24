@@ -1,6 +1,8 @@
 ---
 id: deploy-kubernetes
 title: Kubernetes deployment
+description: "Deploy Quack on Demand on Kubernetes: the manager as a pod that spawns DuckDB node pods on demand, per pool, with highly available managers."
+keywords: ["duckdb kubernetes", "k8s", "helm", "deployment", "pods"]
 ---
 
 ## When to use

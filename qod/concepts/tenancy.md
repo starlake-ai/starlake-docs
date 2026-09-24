@@ -1,6 +1,9 @@
 ---
 id: tenancy
-title: Tenancy model
+title: "Multi-tenant DuckDB: the tenancy model"
+sidebar_label: "Tenancy model"
+description: "How Quack on Demand isolates tenants on shared DuckDB infrastructure: tenants, databases and pools, and what enforces the boundary between them."
+keywords: ["multi-tenant duckdb", "tenant isolation", "tenancy", "ducklake"]
 ---
 
 Quack on Demand is multi-tenant at three nested levels. This page describes those levels and how isolation between tenants is enforced. The provisioning steps are on [Tenants and databases](/qod/operating/tenants-databases) and [Pools and cohorts](/qod/operating/pools-cohorts); the access-control mechanics are in the [Access control model](/qod/operating/rbac-model).

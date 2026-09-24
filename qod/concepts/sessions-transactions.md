@@ -1,6 +1,8 @@
 ---
 id: sessions-transactions
 title: Sessions and transactions
+description: "The session model of the DuckDB gateway: how transactions pin to a node, when a pin is invalidated, and how prepared statements behave."
+keywords: ["duckdb transactions", "sessions", "prepared statements", "transaction pinning"]
 ---
 
 A FlightSQL connection maps to a session on the edge that tracks which Quack node, if any, the connection's open transaction is bound to. This page explains the session model, how transactions pin to a node, when a pin is invalidated, and how prepared statements behave. It builds on [Routing and statement classification](/qod/concepts/routing).

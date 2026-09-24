@@ -1,6 +1,8 @@
 ---
 id: tenants-databases
 title: Tenants and databases
+description: "Provision tenants and their databases on a DuckDB gateway, the object hierarchy behind them, and per-database object store credentials."
+keywords: ["tenants", "databases", "provisioning", "multi-tenant duckdb"]
 ---
 
 This page covers provisioning the two structural objects every deployment starts with: tenants and their databases (tenant-dbs). Pools are layered on top of a database; see the "Pools and cohorts" page. For how these objects relate to access control, see the [Access control model](/qod/operating/rbac-model).

@@ -1,6 +1,9 @@
 ---
 id: tableau
-title: Tableau
+title: "Tableau to DuckDB over Flight SQL JDBC"
+sidebar_label: "Tableau"
+description: "Connect Tableau Desktop to a shared DuckDB through the generic JDBC connector and the Arrow Flight SQL JDBC driver, with no custom connector."
+keywords: ["tableau duckdb", "flight sql jdbc", "tableau jdbc"]
 ---
 
 Tableau Desktop connects to Quack on Demand through the built-in **Other Databases (JDBC)** connector, driving the Apache Arrow Flight SQL JDBC driver. There is no custom Tableau connector to install: you drop the driver jar in Tableau's driver folder and point the generic JDBC connector at the same URL any JDBC client uses.

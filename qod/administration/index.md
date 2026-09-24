@@ -1,6 +1,8 @@
 ---
 id: index
 title: Administration
+description: "Superuser and tenant admin roles in Quack on Demand, and where each administrative task on your DuckDB gateway lives in the UI and CLI."
+keywords: ["duckdb administration", "superuser", "tenant admin", "control plane"]
 ---
 
 Administration is split between two roles. A **superuser** (`qodstate_user.tenant IS NULL`) owns the entire control plane: creating tenants, assigning tenant admins, and operating the infrastructure. A **tenant admin** governs a single tenant: its databases, pools, and who can query them. Both roles work through the same [RBAC model](/qod/operating/rbac-model); the difference is scope. See [Authentication](/qod/operating/authentication) for how sessions and API keys are issued to each role.

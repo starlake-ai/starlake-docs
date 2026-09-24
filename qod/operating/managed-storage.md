@@ -1,6 +1,8 @@
 ---
 id: managed-storage
 title: Managed object storage
+description: "Managed object storage: configure one root bucket and let every DuckLake database get its own prefix and credentials automatically."
+keywords: ["managed storage", "object store", "s3", "ducklake storage"]
 ---
 
 A DuckLake database normally points at a `dataPath` you choose, authenticated either by the manager-wide object-store credentials or by that database's own `objectStore` keys (see [Tenants and databases](/qod/operating/tenants-databases#per-database-object-store-credentials)). Managed object storage is the other option: the operator configures **one** root bucket once, and each database created with `managedStorage` gets its own prefix carved out of it, provisioned and reclaimed by the manager.

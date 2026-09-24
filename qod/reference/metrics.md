@@ -1,6 +1,8 @@
 ---
 id: metrics
 title: Metrics
+description: "Every metric series emitted by the DuckDB gateway, with its labels, for the Prometheus endpoint and the AWS, Azure and GCP sinks."
+keywords: ["metrics reference", "prometheus", "series"]
 ---
 
 The manager registers these series through Micrometer. They are emitted to whichever sink is active (`QOD_METRICS_SINK`); under the default Prometheus sink they appear at `GET :20900/metrics`. For how to scrape, push to a cloud monitor, or import the Grafana dashboard, see [Observability](/qod/operating/observability).

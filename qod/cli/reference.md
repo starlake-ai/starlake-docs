@@ -1,6 +1,8 @@
 ---
 id: reference
 title: Command reference
+description: "Every qod CLI command by noun and verb, with flags, profiles and JSON output for scripting a DuckDB gateway from CI or a shell."
+keywords: ["qod cli reference", "commands", "flags"]
 ---
 
 Settings resolve flag > `QOD_*` env var > active profile > built-in default; see [The qod CLI](/qod/cli/) for the full table. `--profile NAME` and `--json` are top-level flags that go before the noun, e.g. `qod --json tenant list`; `qod --version` prints the CLI version.

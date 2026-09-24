@@ -1,6 +1,8 @@
 ---
 id: resilience
 title: Resilience and recovery
+description: "What happens when a DuckDB node, the manager or Postgres fails: the topology, recovery behaviour, and the known gaps with their issue numbers."
+keywords: ["resilience", "high availability", "failover", "recovery"]
 ---
 
 This page describes what the code does today. Aspirational items are noted as gaps. Where a known gap maps to a tracked issue, the issue number is included.

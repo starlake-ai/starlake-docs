@@ -1,6 +1,8 @@
 ---
 id: tls
 title: TLS
+description: "TLS on the Flight SQL edge and the native Quack listener: the default self-signed certificate, a CA-signed replacement, and client settings."
+keywords: ["duckdb tls", "flight sql tls", "certificate", "encryption in transit"]
 ---
 
 The Arrow FlightSQL edge (`quack-flightsql`, default port `31338`) runs with TLS enabled by default. This page explains the default self-signed certificate behavior, how to replace it with a CA-signed certificate, how to configure clients, and how to disable TLS for development. The native Quack front door (`quack-native`, default port `9494`) has its own switch, covered [at the end](#the-native-quack-front-door).

@@ -1,6 +1,8 @@
 ---
 id: sql
 title: Running SQL
+description: "Run one-shot or interactive SQL against a DuckDB gateway with qod sql, the Arrow Flight SQL client built into the command-line tool."
+keywords: ["qod sql", "duckdb repl", "flight sql cli", "interactive sql"]
 ---
 
 `qod sql` talks to the FlightSQL edge on `:31338`, the same plane every other client (DBeaver, Power BI, `tpch-load-test`) connects to. It runs one statement and exits, or - with no statement argument - drops into an interactive REPL.

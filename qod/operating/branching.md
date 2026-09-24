@@ -1,6 +1,8 @@
 ---
 id: branching
 title: Branching (agents propose, humans merge)
+description: "Zero-copy branches of a DuckLake database: agents and pipelines write on a branch, humans review the row-level diff and merge into main."
+keywords: ["ducklake branching", "zero-copy branch", "data branching", "agents"]
 ---
 
 A branch is a writable, zero-copy clone of a DuckLake database at its current head. Agents and pipelines write on the branch, a human reviews the change set and the row-level diff, then merges it into main in one stamped, tagged snapshot. Reads and writes on a branch never touch the live database, and a branch-only token makes writing main impossible for the agent that holds it.

@@ -1,6 +1,9 @@
 ---
 id: authentication
-title: Authentication
+title: "Authentication: how DuckDB clients prove who they are"
+sidebar_label: "Authentication"
+description: "How the Flight SQL edge authenticates every DuckDB client: the provider chain, credentials, roles and groups from tokens, and session caching."
+keywords: ["duckdb authentication", "auth chain", "bearer token", "session", "roles from claims"]
 ---
 
 The FlightSQL edge authenticates every client connection before routing any query. This page explains how the authentication chain works, how clients pass credentials, how roles and groups are extracted from tokens, and how sessions are cached.

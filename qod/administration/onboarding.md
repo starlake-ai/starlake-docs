@@ -1,6 +1,8 @@
 ---
 id: onboarding
 title: Onboard a tenant
+description: "Golden path for onboarding a tenant: sign in, create the database and pool, add users, hand a BI user a DuckDB connection string."
+keywords: ["onboarding", "tenant", "duckdb connection string", "admin console", "qod cli"]
 ---
 
 This page walks an administrator through the complete golden path: from signing in to the admin console through handing a BI user a ready-to-paste connection string. Each playbook covers the console steps, the equivalent [qod CLI](/qod/cli/) command, and how to confirm success.

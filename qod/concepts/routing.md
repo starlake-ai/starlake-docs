@@ -1,6 +1,8 @@
 ---
 id: routing
 title: Routing and statement classification
+description: "How each statement on the Flight SQL edge is classified read or write and routed to the least-loaded DuckDB node, with cache-aware placement."
+keywords: ["duckdb routing", "load balancing", "statement classification", "read write split"]
 ---
 
 Every statement that arrives on the FlightSQL edge is classified, authorized, and then routed to one Quack node in the target pool. This page covers the classification and routing half (the authorization half is the [Access control model](/qod/operating/rbac-model)). It sits in the request flow described on the [Architecture](/qod/concepts/architecture) page, between the ACL gate and the node's `/quack` endpoint.

@@ -1,6 +1,8 @@
 ---
 id: autoscaling
 title: Autoscaling pools
+description: "Declare an autoscale band and let the manager add and remove DuckDB read nodes with load, without anyone scaling the pool by hand."
+keywords: ["duckdb autoscaling", "autoscale", "pools", "elastic"]
 ---
 
 A pool has a fixed number of nodes until its owner declares an **autoscale band**: a minimum and a maximum node count. Inside that band the manager adds read nodes when the pool is busy and removes them when it goes quiet, without anyone calling `pool/scale`. Outside the band nothing happens: the band is the whole permission, and a pool that has none never moves on its own.

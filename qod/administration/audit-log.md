@@ -1,6 +1,8 @@
 ---
 id: audit-log
 title: Audit log
+description: "How Quack on Demand records a tenant-scoped audit trail of admin actions, auth events, denials and data-plane writes on DuckDB."
+keywords: ["audit log", "duckdb audit trail", "compliance", "telemetry"]
 ---
 
 The manager records a durable, tenant-scoped audit trail of administrative and data-plane activity. When `QOD_TELEMETRY_STORE=postgres` (the default), every event is written to the `qodstate_audit` table in the control-plane Postgres database. When `QOD_TELEMETRY_STORE=none`, nothing is recorded and the Audit page is hidden from the navigation.

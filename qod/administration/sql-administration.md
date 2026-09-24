@@ -1,6 +1,9 @@
 ---
 id: sql-administration
-title: Administer with SQL
+title: "Administer DuckDB access with SQL: roles, grants, row and column policies"
+sidebar_label: "Administer with SQL"
+description: "Manage users, roles, grants, row policies and column masks on DuckDB with plain SQL from any client: CREATE ROLE, GRANT, CREATE ROW POLICY."
+keywords: ["duckdb grant", "duckdb create role", "row policy", "column policy", "sql administration", "duckdb acl"]
 ---
 
 Everything on this page's siblings - table grants, row and column policies,

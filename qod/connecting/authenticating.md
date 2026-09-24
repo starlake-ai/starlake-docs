@@ -1,6 +1,9 @@
 ---
 id: authenticating
-title: Authenticating
+title: "Authenticating a client to DuckDB over Flight SQL"
+sidebar_label: "Authenticating"
+description: "How a Flight SQL client authenticates to the DuckDB gateway: password or bearer token, how the tenant is resolved, and the TLS settings to use."
+keywords: ["duckdb authentication", "flight sql auth", "bearer token", "password", "tls"]
 ---
 
 The FlightSQL edge authenticates every connection independently of the admin UI / REST session. This page covers the two credential paths a client can use, how the tenant is resolved, and TLS. For the operator side (configuring providers), see [Authentication](/qod/operating/authentication) and [Authentication providers](/qod/operating/auth-providers).

@@ -1,6 +1,8 @@
 ---
 id: rbac-admin
 title: Administering access
+description: "Recipes for managing users, roles, groups, memberships and pool grants on a DuckDB gateway with the qod command-line tool."
+keywords: ["rbac", "duckdb users", "roles", "groups", "pool grants", "qod cli"]
 ---
 
 This page contains task-oriented recipes for managing users, roles, groups, memberships, and pool grants with the [qod CLI](/qod/cli/). They require a valid admin credential on every request.

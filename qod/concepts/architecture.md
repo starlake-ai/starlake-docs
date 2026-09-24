@@ -1,6 +1,9 @@
 ---
 id: architecture
-title: Architecture
+title: "Architecture of a multi-tenant DuckDB gateway"
+sidebar_label: "Architecture"
+description: "How Quack on Demand puts an authenticated, access-controlled, horizontally scaled SQL surface in front of DuckDB: planes, object model, request flow."
+keywords: ["duckdb architecture", "duckdb gateway", "control plane", "data plane", "flight sql", "ducklake"]
 ---
 
 Quack on Demand is a gateway that puts a multi-tenant, access-controlled, horizontally-scaled SQL surface in front of DuckDB. Clients reach it over Arrow Flight SQL or DuckDB's native Quack protocol; either way the gateway authenticates them, authorizes each statement, and routes it to one of many DuckDB Quack nodes backed by shared DuckLake catalogs. This page is the conceptual overview; the pages it links to go deeper, and the [Architecture map](/qod/contributing/architecture-map) covers the codebase for contributors.

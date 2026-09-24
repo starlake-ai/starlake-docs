@@ -1,6 +1,8 @@
 ---
 id: architecture-map
 title: Architecture map
+description: "Codebase orientation for contributors to Quack on Demand: process model, request flow, and where each concern lives in the source tree."
+keywords: ["contributing", "architecture map", "codebase"]
 ---
 
 This page orients a contributor in the codebase: the process model, the request flow, and where each concern lives. For the runtime concepts behind it, see [Architecture](/qod/concepts/architecture) and the rest of the Concepts section.

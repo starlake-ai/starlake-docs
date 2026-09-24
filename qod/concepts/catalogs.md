@@ -1,6 +1,8 @@
 ---
 id: catalogs
 title: DuckLake catalogs
+description: "The three database kinds behind a Quack on Demand database, how a DuckLake catalog separates metadata from Parquet data, and the data path."
+keywords: ["ducklake catalog", "duckdb catalog", "parquet", "metadata", "data path"]
 ---
 
 Each database (tenant-db) is backed by a catalog that the Quack nodes open. The catalog mode is the database's `kind`. This page explains the three kinds, how a DuckLake catalog separates metadata from data, and how the data path is derived. For creating databases, see [Tenants and databases](/qod/operating/tenants-databases); this page is about how they work.

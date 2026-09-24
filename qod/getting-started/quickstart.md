@@ -1,6 +1,9 @@
 ---
 id: quickstart
-title: Quickstart
+title: "Quickstart: a governed DuckDB gateway in one command"
+sidebar_label: "Quickstart"
+description: "Boot a multi-tenant DuckDB gateway, connect a client over Flight SQL or native ATTACH, and run your first query on TPC-H data."
+keywords: ["duckdb quickstart", "duckdb server", "flight sql", "ducklake", "getting started"]
 ---
 
 Boot the gateway, connect a client, and run your first SQL query against a live TPC-H dataset.

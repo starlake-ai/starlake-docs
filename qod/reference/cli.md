@@ -1,6 +1,8 @@
 ---
 id: cli
 title: Manager jar
+description: "The manager uber-jar of Quack on Demand: boot the manager, run the self-contained demo, and the manifest subcommands for scripting."
+keywords: ["manager jar", "demo", "manifest"]
 ---
 
 The manager is one uber-jar. Run with no arguments it boots the manager; it also has the self-contained `demo` subcommand and two `manifest` subcommands for scripting. The `qod` CLI (`pip install qod`) covers the common boot and teardown flows without a checkout.

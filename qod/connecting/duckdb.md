@@ -2,6 +2,8 @@
 id: duckdb
 title: DuckDB (native Quack protocol)
 sidebar_label: DuckDB (native Quack)
+description: "ATTACH a governed DuckDB gateway from any DuckDB client with the quack extension, no driver required, and join remote tables with local ones."
+keywords: ["duckdb attach", "quack protocol", "duckdb client server", "duckdb remote"]
 ---
 
 Besides Arrow Flight SQL, the manager serves DuckDB's own **Quack** protocol on a dedicated

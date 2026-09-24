@@ -1,6 +1,8 @@
 ---
 id: observability
 title: Observability
+description: "Metrics for a DuckDB gateway through Micrometer: Prometheus, AWS, Azure or GCP sinks, plus a ready-made Grafana operator dashboard."
+keywords: ["duckdb metrics", "prometheus", "grafana", "observability"]
 ---
 
 The manager collects metrics through Micrometer and routes them to exactly one sink per process. The sink is selected by `quack-on-demand.metrics.sink` (`QOD_METRICS_SINK`), one of `prometheus`, `aws`, `azure`, `gcp`, or `none`. For the full list of emitted series and their labels, see the [Metrics reference](/qod/reference/metrics).

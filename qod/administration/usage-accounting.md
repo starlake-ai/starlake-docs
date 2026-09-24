@@ -1,6 +1,8 @@
 ---
 id: usage-accounting
 title: Usage and accounting
+description: "Per-tenant, per-pool and per-user metering of DuckDB statements, a durable ledger for chargeback, billing exports and capacity planning."
+keywords: ["usage", "metering", "chargeback", "billing", "duckdb usage accounting"]
 ---
 
 The manager maintains a durable per-tenant / per-pool / per-user metering ledger built on the daily rollup store. When `QOD_TELEMETRY_STORE=postgres` (the default), each rollup tick writes one row per `(tenant, pool, username, UTC day)` into `qodstate_stmt_rollup`; the usage API reads and aggregates those rows. When `QOD_TELEMETRY_STORE=none`, nothing is metered, `GET /api/usage` returns empty, and the Usage page is hidden from the navigation.

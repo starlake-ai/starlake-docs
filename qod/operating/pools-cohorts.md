@@ -1,6 +1,8 @@
 ---
 id: pools-cohorts
 title: Pools and cohorts
+description: "Create, size, scale and stop pools of DuckDB nodes, the node roles that drive routing, and cohort-based node placement on Kubernetes."
+keywords: ["duckdb pools", "scaling", "cohorts", "node placement"]
 ---
 
 A pool is a set of DuckDB Quack nodes bound to one database (tenant-db). It is the object clients connect to, and the unit the gateway routes statements across. This page covers creating, sizing, scaling, and stopping pools, the node role distribution that drives routing, and cohort-based node placement on Kubernetes.

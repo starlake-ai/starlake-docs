@@ -1,6 +1,8 @@
 ---
 id: history-trends
 title: Statement history and trends
+description: "Every Flight SQL statement recorded for recent search and rolled up into trend charts: latency, routing and volume per tenant and pool."
+keywords: ["statement history", "query history", "trends", "duckdb monitoring"]
 ---
 
 The manager records every FlightSQL statement in a two-tier store. When `QOD_TELEMETRY_STORE=postgres` (the default), raw statement rows land in `qodstate_stmt_history` for recent search, and a background rollup job aggregates them into `qodstate_stmt_rollup` for trend charts. When `QOD_TELEMETRY_STORE=none`, nothing is recorded and the History page is hidden from the navigation.

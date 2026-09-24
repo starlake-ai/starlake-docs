@@ -1,6 +1,8 @@
 ---
 id: lifecycle-config
 title: Lifecycle and config
+description: "Attach external catalogs, rotate secrets, back up and restore configuration, and decommission a DuckDB gateway cleanly, step by step."
+keywords: ["lifecycle", "rotate secrets", "backup", "restore", "external catalog", "decommission"]
 ---
 
 Attach external catalogs, rotate secrets, back up and restore configuration, and decommission cleanly. Each playbook below follows the same structure: goal, prerequisites, step-by-step UI flow with screenshots, the equivalent [qod CLI](/qod/cli/) command, and how to verify success.

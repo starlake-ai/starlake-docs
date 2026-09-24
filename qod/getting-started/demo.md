@@ -1,6 +1,8 @@
 ---
 id: demo
 title: Demo bootstrap (LOAD_TPCH / LOAD_TPCDS)
+description: "Turn a fresh install into a multi-tenant DuckDB demo with TPC-H, TPC-DS or SSB data, a full RBAC graph and a federated catalog in one command."
+keywords: ["duckdb demo", "tpch", "tpcds", "multi-tenant demo", "rbac"]
 ---
 
 `LOAD_TPCH=N`, `LOAD_TPCDS=N`, and `LOAD_SSB=N` turn a fresh install into a self-contained, fully populated multi-tenant demo. One command, the tenants you ask for, real datasets, a complete RBAC graph, and a cross-tenant federated catalog, all reproducible and all live against a real Postgres + DuckDB stack.

@@ -1,6 +1,8 @@
 ---
 id: state-storage
 title: State storage
+description: "Where Quack on Demand keeps control-plane state (tenants, pools, RBAC graph) in Postgres, separate from tenant data in DuckLake catalogs."
+keywords: ["state storage", "postgres", "control plane", "metastore"]
 ---
 
 The manager keeps its control-plane state (tenants, databases, pools, nodes, the RBAC graph, and federation registry) in a dedicated Postgres database. This is distinct from where tenant *data* lives, which is each tenant-db's DuckLake catalog; see [DuckLake catalogs](/qod/concepts/catalogs).

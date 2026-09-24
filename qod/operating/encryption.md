@@ -1,6 +1,9 @@
 ---
 id: encryption
-title: Encryption at rest
+title: "Encryption at rest for DuckDB and DuckLake databases"
+sidebar_label: "Encryption at rest"
+description: "Create a database with its DuckDB or DuckLake data encrypted on disk with one switch at create time, and how the mechanism differs by kind."
+keywords: ["duckdb encryption", "encryption at rest", "ducklake encryption"]
 ---
 
 A database can be created with its data encrypted on disk. The mechanism differs by database
