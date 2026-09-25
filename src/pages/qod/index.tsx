@@ -41,10 +41,6 @@ function Hero() {
               Read the docs
             </Link>
           </div>
-          <p className={styles.proofLine}>
-            In production at BPCE Payment Services, Estreem, Axereal, ZE Energy,
-            and Asendia
-          </p>
         </div>
 
         <div className={styles.terminalWrap}>
