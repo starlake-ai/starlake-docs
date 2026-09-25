@@ -95,7 +95,7 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.host` | `QOD_ON_DEMAND_HOST` | `0.0.0.0` |  | Manager REST bind address (0.0.0.0 to listen on all interfaces). |
 | `quack-on-demand.port` | `QOD_ON_DEMAND_PORT` | `20900` |  | Manager REST + admin UI port. |
 | `quack-on-demand.apiKey` | `QOD_API_KEY` | `***` | yes | Static admin API key sent as X-API-Key. Unset or empty: outside HA a random key is generated at boot and printed to the console; under HA the static-key arm stays disabled and /api accepts only session and PAT credentials (never open). |
-| `quack-on-demand.runtimeType` | `QOD_RUNTIME_TYPE` | `local` |  | Quack node runtime backend: 'local' (child processes) or 'kubernetes'. |
+| `quack-on-demand.runtimeType` | `QOD_RUNTIME_TYPE` | `local` |  | Quack node runtime backend: 'local' (child processes), 'kubernetes', or 'fleet' (servers that join with qod agent). |
 | `quack-on-demand.minPort` | `QOD_MIN_PORT` | `21900` |  | Lower bound of the port range LocalQuackBackend allocates child nodes from. |
 | `quack-on-demand.maxPort` | `QOD_MAX_PORT` | `22500` |  | Upper bound of the port range LocalQuackBackend allocates child nodes from. |
 | `quack-on-demand.maxNodesTotal` | `QOD_MAX_NODES_TOTAL` | `50` |  | Hard cap on concurrent child nodes across all pools. |
@@ -200,11 +200,23 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | --- | --- | --- | --- | --- |
 | `quack-on-demand.federation.secretStore` | `QOD_FEDERATION_SECRET_STORE` | `dispatch` |  | Federation secret resolver: postgres \| env \| aws-sm \| gcp-sm \| azure-kv \| vault. |
 
+## `quack-on-demand.fleet`
+
+| Key | Env var | Default | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `quack-on-demand.fleet.joinToken` | `QOD_FLEET_JOIN_TOKEN` | _(unset)_ | yes | Shared secret every agent heartbeat carries. Required when runtimeType=fleet. |
+| `quack-on-demand.fleet.heartbeatSec` | `QOD_FLEET_HEARTBEAT_SEC` | `5` |  | Agent heartbeat interval in seconds; returned to agents in every reply. |
+| `quack-on-demand.fleet.heartbeatTimeoutSec` | `QOD_FLEET_HEARTBEAT_TIMEOUT_SEC` | `30` |  | Silence beyond this many seconds marks a server unreachable. |
+| `quack-on-demand.fleet.reassignAfterSec` | `QOD_FLEET_REASSIGN_AFTER_SEC` | `600` |  | Unreachable beyond this many seconds moves the server's node slot to a free server. 0 = at once, -1 = never. |
+| `quack-on-demand.fleet.startupTimeoutSec` | `QOD_FLEET_STARTUP_TIMEOUT_SEC` | `120` |  | How long a claim waits for the agent to report the node running. |
+| `quack-on-demand.fleet.stopTimeoutSec` | `QOD_FLEET_STOP_TIMEOUT_SEC` | `60` |  | How long a release waits for the agent to report the node stopped. |
+| `quack-on-demand.fleet.ephemeral` | `QOD_FLEET_EPHEMERAL` | `fleet` |  | Where maintenance and branch-merge nodes run: 'fleet' claims a server like any node, 'local' runs them on the manager host through the local backend. |
+
 ## `quack-on-demand.ha`
 
 | Key | Env var | Default | Sensitive | Description |
 | --- | --- | --- | --- | --- |
-| `quack-on-demand.ha.enabled` | `QOD_HA_ENABLED` | `false` |  | Enable active-active multi-replica manager mode (Kubernetes runtime only). |
+| `quack-on-demand.ha.enabled` | `QOD_HA_ENABLED` | `false` |  | Enable active-active multi-replica manager mode (Kubernetes or fleet runtime). |
 | `quack-on-demand.ha.leaderRetrySec` | `QOD_LEADER_RETRY_SEC` | `3` |  | Seconds between leader-lock acquisition attempts and LISTEN polls. |
 | `quack-on-demand.ha.topologyRefreshSec` | `QOD_TOPOLOGY_REFRESH_SEC` | `30` |  | Seconds between snapshot-refresh fallback passes in HA mode. |
 

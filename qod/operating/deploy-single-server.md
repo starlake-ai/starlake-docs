@@ -10,6 +10,8 @@ Scenario: one large server, multiple concurrent users, an existing PostgreSQL in
 
 > **In a hurry?** Jump straight to [Appendix A](#appendix-a-full-provisioning-script-one-pool-of-three-dual-nodes): one commented script that takes a fresh server to a served database (three dual nodes on rustfs), then [Appendix B](#appendix-b-roles-and-groups-scripts) for the roles and groups scripts. Come back to the sections when you need the why behind a line.
 
+> **Outgrowing one server but no Kubernetes?** The [fleet runtime](deploy-fleet.md) spreads the nodes over several Linux or macOS servers that join with `qod agent`, one node per server. The Postgres, object store, provisioning, authentication and monitoring sections of this page carry over; node sizing moves from shared-host budgets to one node per server.
+
 ---
 
 ## 0. Recommended architecture

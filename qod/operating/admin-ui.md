@@ -34,7 +34,7 @@ The server enforces this independently of the UI: such a session's REST calls ar
 
 ## Navigation
 
-The top navigation bar has **Nodes**, **Tenants**, **Users**, an **Audit** dropdown menu, and (for a superuser admin only) **Config** last, plus the user pill and Sign out. The Audit menu groups the three telemetry pages: **Control Plane** (the audit log at `/audit`), **Statements** (statement history and trends at `/history`), and **Usage** (the metering ledger at `/usage`). The menu closes on selection, on a click elsewhere, or with Escape, and its trigger stays highlighted while any of the three pages is open.
+The top navigation bar has **Nodes**, **Tenants**, **Users**, **Servers** (superuser admins only, see [Servers (fleet)](#servers-fleet)), an **Audit** dropdown menu, and (for a superuser admin only) **Config** last, plus the user pill and Sign out. The Audit menu groups the three telemetry pages: **Control Plane** (the audit log at `/audit`), **Statements** (statement history and trends at `/history`), and **Usage** (the metering ledger at `/usage`). The menu closes on selection, on a click elsewhere, or with Escape, and its trigger stays highlighted while any of the three pages is open.
 
 The Config tab is hidden for non-superusers, and its backend endpoints reject them as well, so a deep link does not leak it. The whole Audit menu is hidden when `QOD_TELEMETRY_STORE=none`; it is visible to superusers and tenant admins otherwise. Deep links to the three pages keep working regardless (they render a "telemetry is disabled" state when recording is off).
 
@@ -132,6 +132,14 @@ The tenant page's **Branches** tab is the review and approval surface for [branc
 - **Branch list**: live branches with status, owner, fork snapshot, creation and expiry; a checkbox includes merged, discarded and expired history rows.
 - **Expand a branch** for its change set: each touched table with its kind (created, dropped, recreated, modified, altered), insert/delete/update counts and a per-table merge verdict, the conflicts against main, anything v1 cannot merge, and the branch's merge requests with proposer, approver, main snapshot before and after, and the tag. The **rows** link on a table opens the row-level diff between the fork and the branch head, filterable by change type and paginated.
 - **Actions** per row: **propose** on an open branch, **merge** on a proposed branch (after a confirmation), **discard** on any live branch. Merge is refused for the proposer's own identity, so review as a different admin than the agent or user who proposed.
+
+## Servers (fleet)
+
+Superuser admins see a **Servers** entry in the navigation. On a manager running the [fleet runtime](/qod/operating/deploy-fleet) it lists every server that joined with `qod agent`: name, address and node port, a liveness badge (`reachable` / `unreachable` / `dead`, with the seconds since the last heartbeat when not reachable), reported cores and RAM, the node it runs with a link to that node's pool, the agent-reported node state (an **error** badge carries the last error on hover), and the agent and DuckDB versions. The table refreshes every few seconds.
+
+Each row offers **Drain** (or **Undrain** on a drained server, flagged with a `drained` badge) and **Remove**. Remove asks for an in-page confirmation and stays disabled while the server is reachable and not drained: drain it, stop its agent, then remove. On any other runtime the page only states that the manager does not run the fleet runtime.
+
+In fleet mode the **Pools** list also shows an `N pending` badge next to the node count of a pool whose slots wait for a server, suffixed `(no server fits)` when idle servers exist but none has enough RAM for the pool's memory setting.
 
 ## Users and access control
 

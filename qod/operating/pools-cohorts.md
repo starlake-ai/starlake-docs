@@ -69,9 +69,20 @@ A graceful stop (no `--force`) drains in-flight statements before terminating no
 
 A pool can also size itself: declare a `minNodes`/`maxNodes` band and the manager adds and removes read nodes with demand, within those bounds. See [Autoscaling pools](/qod/operating/autoscaling). A pool with a band refuses a manual `scale` outside it.
 
+## Pending slots (fleet runtime)
+
+On the [fleet runtime](/qod/operating/deploy-fleet) a pool can ask for more nodes than there are free servers. The create or scale succeeds, the nodes that can start do, and the remaining slots stay **pending** until servers join; the manager fills them on its reconcile loop. `qod pool list` reports them per pool:
+
+| Field | Meaning |
+|---|---|
+| `pending` | Slots the role distribution wants that no node fills yet (`0` on the local and Kubernetes runtimes). |
+| `pendingReason` | `none_free` (no reachable, schedulable, idle server) or `none_fits` (idle servers exist, none reports enough RAM for the pool's `memory`). |
+
+Each fleet node also carries `serverName` and `serverState` (`reachable` / `unreachable` / `dead`).
+
 ## Node pod sizing (Kubernetes)
 
-On the Kubernetes backend a pool carries optional `cpu` and `memory` quantities. Each is applied as both the request and the limit on the `quack` container of every node pod, so setting both yields Guaranteed QoS. The local backend ignores them.
+On the Kubernetes backend a pool carries optional `cpu` and `memory` quantities. Each is applied as both the request and the limit on the `quack` container of every node pod, so setting both yields Guaranteed QoS. The local backend ignores them. On the [fleet runtime](/qod/operating/deploy-fleet#resource-limits-per-node) the same two values become DuckDB `SET threads` / `SET memory_limit` on each node (engine-enforced; an explicit `SET` in init SQL wins), and `memory` also filters which servers can receive the pool.
 
 ```bash
 qod pool set-resources --tenant acme --db acme_sales --pool bi --cpu 2 --memory 8Gi
