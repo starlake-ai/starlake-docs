@@ -13,7 +13,7 @@ keywords: ["local deployment", "development", "runtime"]
 - Smoke-testing and integration work where Kubernetes is not available or not needed.
 - Small deployments where the total node count fits comfortably on one machine.
 
-For multi-host or container-orchestrated deployments, see the Kubernetes backend instead. For an end-to-end production walkthrough on one machine (environment, sizing, provisioning, RBAC, monitoring, with runnable scripts), see [Single-server production deployment](deploy-single-server.md).
+For multi-host deployments, see the [fleet runtime](deploy-fleet.md) (your own servers, no Kubernetes) or the [Kubernetes backend](deploy-kubernetes.md). For an end-to-end production walkthrough on one machine (environment, sizing, provisioning, RBAC, monitoring, with runnable scripts), see [Single-server production deployment](deploy-single-server.md).
 
 ## Embedded control plane (zero-prerequisite single-node mode)
 

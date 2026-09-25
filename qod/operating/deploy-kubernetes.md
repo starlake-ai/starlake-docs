@@ -11,6 +11,8 @@ Use the Kubernetes backend when you need multi-node, production-grade deployment
 
 For single-machine development and testing, use the local backend (`runtimeType=local`) instead.
 
+If you have several servers but no Kubernetes cluster, the [fleet runtime](deploy-fleet.md) (`runtimeType=fleet`) runs one node per server, joined with `qod agent`, with the same pools, routing and HA support.
+
 ## Configure the backend
 
 Set `quack-on-demand.runtimeType=kubernetes` (or `QOD_RUNTIME_TYPE=kubernetes`) to activate the Kubernetes backend. All `k8s.*` keys are overridable via environment variables.

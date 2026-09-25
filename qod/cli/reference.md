@@ -57,7 +57,7 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | `qod pool delete` | Delete a pool. |
 | `qod pool set-disabled` | Enable or disable a pool. |
 | `qod pool set-autoscale` | Set or clear a pool's autoscale band (omit both bounds to clear). |
-| `qod pool set-resources` | Set CPU/memory requests for a pool's nodes. |
+| `qod pool set-resources` | Set CPU/memory for a pool's nodes (pod request and limit on Kubernetes, DuckDB `threads` / `memory_limit` on a fleet). |
 | `qod pool set-pod-template` | Set the Kubernetes pod template YAML for a pool. |
 | `qod pool suspend` | Scale the pool to zero, keeping its distribution; wakes on the next query. |
 | `qod pool resume` | Wake a suspended pool (respawn to its stored distribution). |
@@ -251,6 +251,23 @@ ALL grant, or DDL plus RO/RW, on the table. For dropped tables, use `qod catalog
 | `qod config server` | Effective manager configuration. |
 | `qod config profiles` | List local CLI profiles; marks the one this invocation resolved to. |
 | `qod config use` | Set the sticky default profile (overridden per call by `--profile` / `QOD_PROFILE`). |
+
+## fleet
+
+Superuser only; the manager must run the [fleet runtime](/qod/operating/deploy-fleet).
+
+| Command | Purpose |
+|---|---|
+| `qod fleet servers` | List joined servers with liveness (`reachable` / `unreachable` / `dead`), capacity, and the node each runs. |
+| `qod fleet drain NAME` | Stop scheduling onto a server and move its node elsewhere (or leave the slot pending). |
+| `qod fleet undrain NAME` | Make a drained server schedulable again. |
+| `qod fleet remove NAME` | Forget a drained or unreachable server; stop its agent first or it rejoins. |
+
+## agent
+
+| Command | Purpose |
+|---|---|
+| `qod agent` | Join this server (Linux, macOS) to a fleet and run the node the manager assigns: `--manager URL`, join token from `QOD_FLEET_JOIN_TOKEN` (or `--join-token`, visible in `ps`), `--name`, `--advertise-host`, `--bind-host`, `--node-port` (default 21900), `--duckdb-bin`, `--state-dir`, `--insecure` (allow an `http://` manager URL). Runs in the foreground, meant for systemd or launchd; see [Fleet deployment](/qod/operating/deploy-fleet#join-a-server). |
 
 ## sql
 

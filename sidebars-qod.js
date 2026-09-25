@@ -58,6 +58,7 @@ const sidebars = {
             'operating/deploy-local',
             'operating/deploy-single-server',
             'operating/deploy-docker',
+            'operating/deploy-fleet',
             'operating/deploy-kubernetes',
             'operating/tls',
             'operating/encryption',
