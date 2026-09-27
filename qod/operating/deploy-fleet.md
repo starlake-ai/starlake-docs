@@ -11,13 +11,15 @@ Scenario: one or more managers, a shared PostgreSQL, a shared object store, and 
 
 ```bash
 # Manager (one host, or several under HA)
+uv tool install qod            # or: pip install qod
 export QOD_RUNTIME_TYPE=fleet
 export QOD_FLEET_JOIN_TOKEN="$(openssl rand -hex 32)"   # keep it: every server needs it
 qod start
 
 # Every server that should run a node (Linux or macOS)
+uv tool install qod            # or: pip install qod
 export QOD_FLEET_JOIN_TOKEN=<the same token>
-qod agent --manager https://mgr.internal:20900 --advertise-host 10.0.3.17
+qod agent --manager https://mgr.internal:20900 [--advertise-host 10.0.3.17 ] [--name srv-07]
 ```
 
 The rest of this page explains each line: what the manager needs, how to run the agent as a service, how nodes are scheduled, what happens when a server goes down, and the security rules that come with a shared join token.
@@ -41,7 +43,7 @@ A fleet is a set of servers that joined by running `qod agent`. Joining means th
 - **Shared object storage for every DuckLake data path.** A node can land on any server, so every database's `dataPath` must be an object-store URL (`s3://...`, `gs://...`, `az://...`) reachable from all servers. A local path would only exist on one of them. [Managed storage](managed-storage.md) satisfies this by construction.
 - **The metastore PostgreSQL reachable from every server.** Nodes attach their DuckLake catalog directly, so each server must reach the Postgres host and port of every database it may serve.
 - **A private network between managers and servers** (VPC, VLAN, WireGuard). The manager talks to nodes over plain HTTP; see [Security](#security).
-- **An HTTPS URL for the manager's REST port.** The agent refuses a plain `http://` manager URL, because each assignment it receives carries database credentials. Put a TLS-terminating reverse proxy or load balancer in front of `:20900` (you need one under HA anyway). `--insecure` accepts an `http://` URL; reserve it for tests on a trusted network.
+- **An HTTPS URL for the manager's REST port.** The agent refuses a plain `http://` manager URL, because each assignment it receives carries database credentials. Put a TLS-terminating reverse proxy or load balancer in front of `:20900` (you need one under HA anyway), and list it in `QOD_FLEET_TRUSTED_PROXIES` so [join approval](#join-approval) sees each server's real address. `--insecure` accepts an `http://` URL; reserve it for tests on a trusted network.
 
 ## Configure the manager
 
@@ -57,8 +59,10 @@ Set `QOD_RUNTIME_TYPE=fleet` and a join token. Everything else has a working def
 | `quack-on-demand.fleet.startupTimeoutSec` | `QOD_FLEET_STARTUP_TIMEOUT_SEC` | `120` | How long the manager waits for an agent to report its new node running before giving the server back. |
 | `quack-on-demand.fleet.stopTimeoutSec` | `QOD_FLEET_STOP_TIMEOUT_SEC` | `60` | How long the manager waits for an agent to report a node stopped. A stop never fails: an unreachable server stops its node on its next heartbeat. |
 | `quack-on-demand.fleet.ephemeral` | `QOD_FLEET_EPHEMERAL` | `fleet` | Where maintenance and branch-merge nodes run: `fleet` claims a server, `local` runs them on the manager host. See [Ephemeral nodes](#ephemeral-nodes). |
+| `quack-on-demand.fleet.autoApprove` | `QOD_FLEET_AUTO_APPROVE` | `0.0.0.0/0,::/0` | Comma-separated CIDRs. A server whose heartbeat comes from one of them is approved as it joins; any other waits for `qod fleet approve`. Empty approves no one automatically. See [Join approval](#join-approval). |
+| `quack-on-demand.fleet.trustedProxies` | `QOD_FLEET_TRUSTED_PROXIES` | (none) | Comma-separated CIDRs of the proxies and load balancers in front of the manager. Only their `X-Forwarded-For` header is believed when resolving a heartbeat's address. |
 
-Invalid combinations (a timeout not above the heartbeat, an unknown `ephemeral` value) are refused at boot with a message naming the key.
+Invalid combinations (a timeout not above the heartbeat, an unknown `ephemeral` value, a malformed CIDR) are refused at boot with a message naming the key.
 
 The usual production settings still apply: pin `QOD_API_KEY` and `QOD_SESSION_JWT_SECRET`, point `QOD_PG_*` at your control-plane Postgres, and follow [Hardening](hardening.md). See the [Configuration reference](/qod/reference/configuration) for every key.
 
@@ -68,10 +72,10 @@ On each server, run the agent with the manager URL and the join token. Pass the 
 
 ```bash
 export QOD_FLEET_JOIN_TOKEN=<the join token>
-qod agent --manager https://mgr.internal:20900 --advertise-host 10.0.3.17 --name srv-07
+qod agent --manager https://mgr.internal:20900 [--advertise-host 10.0.3.17] [--name srv-07]
 ```
 
-The first heartbeat is the join: there is no approval step. The server appears in `qod fleet servers` a few seconds later and becomes eligible for the next node the manager needs to place.
+The first heartbeat is the join. The server appears in `qod fleet servers` a few seconds later. With the default settings it is approved at once and becomes eligible for the next node the manager needs to place; when you restrict [join approval](#join-approval), a server from outside the allowed networks waits for `qod fleet approve` instead.
 
 | Flag | Default | Meaning |
 |---|---|---|
@@ -88,6 +92,37 @@ The first heartbeat is the join: there is no approval step. The server appears i
 **Pick the advertise host deliberately.** On a host with a management interface and a data interface, the default guess can pick the wrong one, silently. The agent logs its choice at start (`advertise host 10.0.3.17 ... override with --advertise-host / --bind-host if this is not the data interface`); check that line, or always pass `--advertise-host`. Because `--bind-host` defaults to the advertise host, the node never listens on the management interface by accident.
 
 The agent restarts its node itself when DuckDB crashes, backing off from 5 seconds to 5 minutes between attempts; the manager only sees the state reports. A node crash is never a scheduling event.
+
+### Join approval
+
+A server takes nodes only once it is approved, and a node's assignment is what carries database credentials. Approval therefore decides which machines ever see a credential.
+
+`QOD_FLEET_AUTO_APPROVE` lists the networks trusted to join on their own, as comma-separated CIDRs:
+
+- The default, `0.0.0.0/0,::/0`, approves every address, so the join token alone is enough. The manager logs a WARN at boot while the list is open like this.
+- A narrower list, for example `10.0.3.0/24`, approves servers from that range as they join. A server from any other address joins as **pending**: it heartbeats and shows up in `qod fleet servers` and on the Servers page, but it never receives a node. Its agent logs `waiting for approval` with a hint.
+- An empty value approves no one automatically: every new server needs an admin.
+
+Approve or refuse a pending server after checking where it came from:
+
+```bash
+qod fleet servers              # approval, sourceAddr, approvedBy, approvedAt
+qod fleet approve srv-07       # let it take nodes
+qod fleet remove srv-07        # refuse it, then stop its agent (otherwise it re-joins as pending)
+```
+
+The rules:
+
+- The address judged is the one the heartbeat connection comes from, never the `--advertise-host` the agent reports.
+- Widening the list approves waiting servers on their next heartbeat; narrowing it never evicts an approved server (drain and remove do that).
+- Approval is kept across agent restarts, drain and undrain. `qod fleet remove` forgets it, and a server that re-joins is judged again.
+- A drained server that comes back from a new address or port loses its approval and is judged again, so a machine holding the token cannot inherit a drained server's approval by taking over its name.
+- Servers that were in the fleet before join approval existed stay approved (`approvedBy: upgrade`).
+
+**Behind a proxy, set `QOD_FLEET_TRUSTED_PROXIES`.** When agents reach the manager through a proxy or load balancer, the connection comes from that intermediary, not from the server. That covers two common setups: a TLS-terminating proxy in front of `:20900` (the manager's REST port has no TLS of its own) and the load balancer in front of HA replicas. Without the setting, every server appears to come from the proxy, so the list approves all of them (proxy inside a listed range) or none of them. Set `QOD_FLEET_TRUSTED_PROXIES` to the proxy's addresses, on every manager replica; their `X-Forwarded-For` header is then believed, read from the right and skipping trusted hops. When agents connect straight to the manager's own `host:20900`, leave it empty.
+
+- Never list a range that contains untrusted clients: a client inside it could choose its own address.
+- A missing or malformed `X-Forwarded-For` behind a trusted proxy leaves the address unknown, and an unknown address is never approved automatically. Entries that carry a port (`10.0.3.17:51234`) count as malformed. A heartbeat with several `X-Forwarded-For` header lines fails with `400`. Configure the proxy to send one header line of plain addresses, appending to any value it received.
 
 ### Run the agent under systemd (Linux)
 
@@ -215,10 +250,11 @@ A node whose DuckDB process keeps crashing on a healthy server is not moved: the
 The fleet commands are superuser-only (superuser session or the static API key), because the fleet is shared by every tenant. They answer `400 fleet_disabled` when the manager does not run the fleet runtime.
 
 ```bash
-qod fleet servers           # every server: liveness, capacity, the node it runs
+qod fleet servers           # every server: liveness, approval, capacity, the node it runs
+qod fleet approve srv-07    # let a pending server take nodes
 qod fleet drain srv-07      # stop scheduling onto it and move its node off
 qod fleet undrain srv-07    # make it schedulable again
-qod fleet remove srv-07     # forget it (drain and stop the agent first)
+qod fleet remove srv-07     # forget it (drain an approved server and stop the agent first)
 ```
 
 `qod fleet servers` (`GET /api/fleet/servers`) returns, per server:
@@ -234,6 +270,9 @@ qod fleet remove srv-07     # forget it (drain and stop the agent first)
 | `cpus`, `memoryBytes` | Capacity the agent reported. |
 | `agentVersion`, `duckdbVersion` | What the server runs. |
 | `joinedAt`, `lastHeartbeatAt` | First and latest heartbeat. |
+| `approval` | `approved`, or `pending` while the server waits for `qod fleet approve`. |
+| `approvedBy`, `approvedAt` | `auto` (its address is in `QOD_FLEET_AUTO_APPROVE`), `upgrade` (joined before join approval existed) or the approving admin, and when. |
+| `sourceAddr` | The address the latest heartbeat came from, resolved by the manager (not reported by the agent). |
 
 ### Maintenance on a server
 
@@ -253,15 +292,15 @@ sudo systemctl disable --now qod-agent      # on srv-07
 qod fleet remove srv-07
 ```
 
-`remove` answers `409 server_active` while the server is reachable and not drained. An unreachable server can be removed directly. An agent left running after `remove` rejoins on its next heartbeat as a new server, so always stop it first.
+`remove` answers `409 server_active` while an approved server is reachable and not drained. An unreachable server, or a pending one (it holds no node), can be removed directly. An agent left running after `remove` rejoins on its next heartbeat as a new server, judged again by [join approval](#join-approval), so always stop it first.
 
 ### Change a server's address
 
-A known server name cannot come back from a different address or port unless it is drained: its heartbeat is refused with `409 address_change_refused`, which the agent logs. To re-address a server: `qod fleet drain`, restart the agent with the new `--advertise-host` or `--node-port`, `qod fleet undrain`.
+A known server name cannot come back from a different address or port unless it is drained: its heartbeat is refused with `409 address_change_refused`, which the agent logs. To re-address a server: `qod fleet drain`, restart the agent with the new `--advertise-host` or `--node-port`, `qod fleet undrain`. The move resets the server's approval and judges the new address: inside `QOD_FLEET_AUTO_APPROVE` it is approved again at once, otherwise run `qod fleet approve` before or after the undrain.
 
 ### The Servers page
 
-Superusers get a **Servers** entry in the [admin UI](admin-ui.md#servers-fleet) navigation. It shows the same table as `qod fleet servers` (liveness badge with the silence duration, capacity, node, pool, node state with its error on hover, agent and DuckDB versions), refreshed every few seconds, with **Drain** / **Undrain** and **Remove** actions per row. Remove asks for an in-page confirmation and stays disabled while the server is reachable and not drained. Pools with unfilled slots carry an `N pending` badge in the pool list, `(no server fits)` when the reason is `none_fits`.
+Superusers get a **Servers** entry in the [admin UI](admin-ui.md#servers-fleet) navigation. It shows the same table as `qod fleet servers` (liveness badge with the silence duration, capacity, node, pool, node state with its error on hover, agent and DuckDB versions), refreshed every few seconds, with **Drain** / **Undrain** and **Remove** actions per row. A server waiting for approval carries a `pending approval` badge and an **Approve** action, and the address column adds the heartbeat's source address when it differs from the advertised one. Remove asks for an in-page confirmation and stays disabled while an approved server is reachable and not drained. Pools with unfilled slots carry an `N pending` badge in the pool list, `(no server fits)` when the reason is `none_fits`.
 
 ## Resource limits per node
 
@@ -293,14 +332,15 @@ Two ways to size for this:
 
 ## Security
 
-**The join token is as sensitive as the control-plane Postgres password.** Whoever holds it can join a server and will receive the credentials of every pool scheduled onto that server: the metastore `pgPassword` and, for encrypted databases, the encryption key. Handle it accordingly:
+**The join token is as sensitive as the control-plane Postgres password.** Whoever holds it can join a server and, once that server is approved, will receive the credentials of every pool scheduled onto it: the metastore `pgPassword` and, for encrypted databases, the encryption key. With the default [join approval](#join-approval) setting every joining server is approved at once, so the token alone is enough. Restricting `QOD_FLEET_AUTO_APPROVE` to your server networks limits a leaked token to those networks: from anywhere else it only yields a pending entry with no node and no credential. Handle the token accordingly:
 
 - Pass it through the environment, never on the command line.
 - Keep unit files and plists readable by root only.
-- Watch `qod fleet servers` for names you did not install.
+- Restrict `QOD_FLEET_AUTO_APPROVE` to the networks your servers live on, or set it empty and approve each server by hand.
+- Watch `qod fleet servers` for names you did not install, and remove pending servers you do not recognize (then find and stop their agents).
 - Rotate on any suspicion: set a new `QOD_FLEET_JOIN_TOKEN` on the managers and restart them, then update every agent. From that point a heartbeat carrying the old value is refused (`401 fleet_unauthorized`), so an agent you have not updated yet goes `unreachable`, then `dead` after `reassignAfterSec`: update agents within that window. Rotation removes no server by itself; drain and remove any server you do not trust.
 
-**A known server name cannot be taken over.** A heartbeat for an existing name from a different address or port is refused unless that server is drained, so a machine holding the token cannot impersonate an idle server either.
+**A known server name cannot be taken over.** A heartbeat for an existing name from a different address or port is refused unless that server is drained, so a machine holding the token cannot impersonate an idle server either. When a drained server does change address, its approval is reset and the new address is judged again, so the move cannot carry an approval to a different machine.
 
 **The manager-to-node hop is plain HTTP**, carrying the node token and result rows. That is true in every runtime; in local and Kubernetes modes the hop stays on one host or one cluster network, in fleet mode it crosses whatever sits between managers and servers. Fleet mode therefore requires a private network between them, and nodes bind only the advertised interface. Do not route this traffic over the internet.
 
@@ -308,7 +348,7 @@ The agent-to-manager hop carries the assignments, so the agent insists on HTTPS 
 
 ## High availability
 
-Fleet is an HA-capable runtime, like Kubernetes: `QOD_HA_ENABLED=true` with `QOD_RUNTIME_TYPE=fleet` runs several active-active managers against the same control-plane Postgres. Point every agent at a load-balanced URL in front of the managers; any replica accepts heartbeats and claims, because both are Postgres writes. Reconcile, and with it pending-slot filling, grace expiry and respawns, runs on the elected leader only. See [Resilience and recovery](resilience.md) for the HA model.
+Fleet is an HA-capable runtime, like Kubernetes: `QOD_HA_ENABLED=true` with `QOD_RUNTIME_TYPE=fleet` runs several active-active managers against the same control-plane Postgres. Point every agent at a load-balanced URL in front of the managers; any replica accepts heartbeats and claims, because both are Postgres writes. List that load balancer in `QOD_FLEET_TRUSTED_PROXIES` on every replica, with the same `QOD_FLEET_AUTO_APPROVE` everywhere, so [join approval](#join-approval) sees each server's real address whichever replica answers. Approval is stored in the shared control plane, so an approval made on one replica holds on all of them. Reconcile, and with it pending-slot filling, grace expiry and respawns, runs on the elected leader only. See [Resilience and recovery](resilience.md) for the HA model.
 
 ## Limits and follow-ups
 
@@ -316,7 +356,7 @@ Not available in this version:
 
 - A Windows agent.
 - TLS between manager and nodes (a TLS front in the agent is planned; until then, the private network is mandatory).
-- Per-server credentials and an admission step replacing the shared join token.
+- Per-server credentials replacing the shared join token (join approval gates which servers take work, but every agent still presents the same token).
 - Placement by server label.
 - Moving a node off a server after repeated crashes.
 - Kernel-enforced cpu and memory limits (systemd scope, cgroups).

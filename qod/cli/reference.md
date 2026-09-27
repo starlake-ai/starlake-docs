@@ -258,10 +258,11 @@ Superuser only; the manager must run the [fleet runtime](/qod/operating/deploy-f
 
 | Command | Purpose |
 |---|---|
-| `qod fleet servers` | List joined servers with liveness (`reachable` / `unreachable` / `dead`), capacity, and the node each runs. |
+| `qod fleet servers` | List joined servers with liveness (`reachable` / `unreachable` / `dead`), approval (`approved` / `pending`) and heartbeat source address, capacity, and the node each runs. |
+| `qod fleet approve NAME` | Let a server that joined from outside `QOD_FLEET_AUTO_APPROVE` take nodes ([join approval](/qod/operating/deploy-fleet#join-approval)). |
 | `qod fleet drain NAME` | Stop scheduling onto a server and move its node elsewhere (or leave the slot pending). |
 | `qod fleet undrain NAME` | Make a drained server schedulable again. |
-| `qod fleet remove NAME` | Forget a drained or unreachable server; stop its agent first or it rejoins. |
+| `qod fleet remove NAME` | Forget a server: a pending one at any time, an approved one once drained or unreachable. Stop its agent too, or it rejoins. |
 
 ## agent
 

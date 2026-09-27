@@ -211,6 +211,8 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.fleet.startupTimeoutSec` | `QOD_FLEET_STARTUP_TIMEOUT_SEC` | `120` |  | How long a claim waits for the agent to report the node running. |
 | `quack-on-demand.fleet.stopTimeoutSec` | `QOD_FLEET_STOP_TIMEOUT_SEC` | `60` |  | How long a release waits for the agent to report the node stopped. |
 | `quack-on-demand.fleet.ephemeral` | `QOD_FLEET_EPHEMERAL` | `fleet` |  | Where maintenance and branch-merge nodes run: 'fleet' claims a server like any node, 'local' runs them on the manager host through the local backend. |
+| `quack-on-demand.fleet.autoApprove` | `QOD_FLEET_AUTO_APPROVE` | `0.0.0.0/0,::/0` |  | Comma-separated CIDRs: a server whose heartbeat comes from one of them is approved on join; any other waits for `qod fleet approve`. Empty = approve none automatically. The default admits every address. |
+| `quack-on-demand.fleet.trustedProxies` | `QOD_FLEET_TRUSTED_PROXIES` | _(unset)_ |  | Comma-separated CIDRs of proxies / load balancers whose X-Forwarded-For is believed when resolving a heartbeat's client address. Empty = believe none. |
 
 ## `quack-on-demand.ha`
 

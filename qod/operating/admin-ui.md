@@ -137,7 +137,9 @@ The tenant page's **Branches** tab is the review and approval surface for [branc
 
 Superuser admins see a **Servers** entry in the navigation. On a manager running the [fleet runtime](/qod/operating/deploy-fleet) it lists every server that joined with `qod agent`: name, address and node port, a liveness badge (`reachable` / `unreachable` / `dead`, with the seconds since the last heartbeat when not reachable), reported cores and RAM, the node it runs with a link to that node's pool, the agent-reported node state (an **error** badge carries the last error on hover), and the agent and DuckDB versions. The table refreshes every few seconds.
 
-Each row offers **Drain** (or **Undrain** on a drained server, flagged with a `drained` badge) and **Remove**. Remove asks for an in-page confirmation and stays disabled while the server is reachable and not drained: drain it, stop its agent, then remove. On any other runtime the page only states that the manager does not run the fleet runtime.
+A server waiting for [join approval](/qod/operating/deploy-fleet#join-approval) carries a `pending approval` badge and an **Approve** action; the address column adds `from <address>` when the heartbeat came from an address other than the advertised one, which is the address to check before approving.
+
+Each row offers **Drain** (or **Undrain** on a drained server, flagged with a `drained` badge) and **Remove**. Remove asks for an in-page confirmation and stays disabled while an approved server is reachable and not drained: drain it, stop its agent, then remove. A pending server can be removed at any time; stop its agent too, or it re-joins as pending. On any other runtime the page only states that the manager does not run the fleet runtime.
 
 In fleet mode the **Pools** list also shows an `N pending` badge next to the node count of a pool whose slots wait for a server, suffixed `(no server fits)` when idle servers exist but none has enough RAM for the pool's memory setting.
 
