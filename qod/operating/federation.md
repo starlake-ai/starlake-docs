@@ -40,7 +40,7 @@ The request body fields are `alias`, `setupSql`, optional `description`, and `di
 - `{{alias}}` becomes the source's `alias`.
 - `{{secret.NAME}}` becomes the resolved value of the secret named `NAME` (see below).
 
-Include `READ_ONLY` in the `ATTACH` for read-only federation; read-only is enforced at attach time by DuckDB, not by the ACL validator.
+A `sql` source is writable by default. To make it read-only, include `READ_ONLY` in the `ATTACH`, which DuckDB enforces at attach time, or set the source's `readOnly` flag (REST `"readOnly": true`), which the edge enforces on every statement; see [Read-only](iceberg.md#read-only) for how the flag works. Neither depends on the ACL.
 
 List, fetch, and delete sources:
 
@@ -90,7 +90,12 @@ Federated tables are governed by the same RBAC graph as native tables. A `qodsta
 Two specifics for federation:
 
 - Reads are authorized by a `SELECT` grant on the alias like any other table.
-- Federated writes (INSERT / UPDATE / DELETE against a federated alias) are denied by default; an `ATTACH ... READ_ONLY` enforces read-only at the DuckDB layer regardless.
+- Writes (INSERT / UPDATE / DELETE, and DDL) are authorized the same way: an `RW`, `DDL` or `ALL` grant on the alias allows them exactly as it would on a DuckLake table. There is no blanket rule that denies writes to a federated catalog.
+- The source's read-only setting is the only thing that refuses a write whatever the grants say: the source's `readOnly` flag, or `READ_ONLY` on a hand-written `ATTACH`. `iceberg_rest` sources are read-only by default; `sql` sources, and every source created before the flag existed, are writable by default.
+
+:::caution ACL is off by default
+`acl.enabled` defaults to `false` (`QOD_ACL_ENABLED`). With the ACL off there are no grant checks at all, so a writable federated source accepts writes from anyone who can connect to the database, and only the read-only setting stops them. Mark sources read-only unless writes through QoD are intended, and enable the ACL before exposing a deployment.
+:::
 
 ## Lifecycle
 
