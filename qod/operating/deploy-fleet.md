@@ -350,15 +350,3 @@ The agent-to-manager hop carries the assignments, so the agent insists on HTTPS 
 
 Fleet is an HA-capable runtime, like Kubernetes: `QOD_HA_ENABLED=true` with `QOD_RUNTIME_TYPE=fleet` runs several active-active managers against the same control-plane Postgres. Point every agent at a load-balanced URL in front of the managers; any replica accepts heartbeats and claims, because both are Postgres writes. List that load balancer in `QOD_FLEET_TRUSTED_PROXIES` on every replica, with the same `QOD_FLEET_AUTO_APPROVE` everywhere, so [join approval](#join-approval) sees each server's real address whichever replica answers. Approval is stored in the shared control plane, so an approval made on one replica holds on all of them. Reconcile, and with it pending-slot filling, grace expiry and respawns, runs on the elected leader only. See [Resilience and recovery](resilience.md) for the HA model.
 
-## Limits and follow-ups
-
-Not available in this version:
-
-- A Windows agent.
-- TLS between manager and nodes (a TLS front in the agent is planned; until then, the private network is mandatory).
-- Per-server credentials replacing the shared join token (join approval gates which servers take work, but every agent still presents the same token).
-- Placement by server label.
-- Moving a node off a server after repeated crashes.
-- Kernel-enforced cpu and memory limits (systemd scope, cgroups).
-- More than one node per server.
-- MCP tools for the fleet: use the CLI, REST or the admin UI.
