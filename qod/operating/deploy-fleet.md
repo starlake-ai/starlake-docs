@@ -77,8 +77,6 @@ qod fleet join --manager https://mgr.internal:20900 [--advertise-host 10.0.3.17]
 
 `qod fleet join` keeps running: it heartbeats the manager and runs the node the manager assigns, so run it as a service (below).
 
-> **Upgrading from 0.9.7:** the command was called `qod agent` and is gone, with no alias. Edit every systemd unit or launchd plist that runs `qod agent ...` to run `qod fleet join ...` with the same flags (the examples below also rename the units to `qod-fleet-join`), then restart it. The server keeps its name, approval and node.
-
 The first heartbeat is the join. The server appears in `qod fleet servers` a few seconds later. With the default settings it is approved at once and becomes eligible for the next node the manager needs to place; when you restrict [join approval](#join-approval), a server from outside the allowed networks waits for `qod fleet approve` instead.
 
 | Flag | Default | Meaning |
