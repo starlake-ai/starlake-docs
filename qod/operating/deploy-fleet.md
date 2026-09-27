@@ -106,23 +106,48 @@ A server takes nodes only once it is approved, and a node's assignment is what c
 Approve or refuse a pending server after checking where it came from:
 
 ```bash
-qod fleet servers              # approval, sourceAddr, approvedBy, approvedAt
+qod fleet servers              # approval, sourceAddr, approvedSource, approvedBy, approvedAt
 qod fleet approve srv-07       # let it take nodes
 qod fleet remove srv-07        # refuse it, then stop its agent (otherwise it re-joins as pending)
 ```
+
+`qod fleet approve` answers `409 source_unknown` while the server's source address is unknown (see the proxy notes below); approve it after a heartbeat with a known source.
 
 The rules:
 
 - The address judged is the one the heartbeat connection comes from, never the `--advertise-host` the agent reports.
 - Widening the list approves waiting servers on their next heartbeat; narrowing it never evicts an approved server (drain and remove do that).
 - Approval is kept across agent restarts, drain and undrain. `qod fleet remove` forgets it, and a server that re-joins is judged again.
-- A drained server that comes back from a new address or port loses its approval and is judged again, so a machine holding the token cannot inherit a drained server's approval by taking over its name.
 - Servers that were in the fleet before join approval existed stay approved (`approvedBy: upgrade`).
+
+#### Approval is bound to the address it was given to
+
+An approval belongs to the machine it was granted to, identified by the source address its heartbeats came from (`approvedSource` in `qod fleet servers`). Name, advertised host and port are what the agent reports, so they alone prove nothing: without the binding, anyone holding the join token could copy an approved server's name, host and port and receive its credentials.
+
+- **Binding.** An automatic approval binds the address it was judged from. `qod fleet approve` binds the address of the server's latest heartbeat, the one `qod fleet servers` shows as `sourceAddr`: check it before approving.
+- **A heartbeat from another address is refused** with `409 source_change_refused` and changes nothing: the server keeps its approval, its node and its binding, and the other machine gets no assignment. Two exceptions:
+  - the new address is inside `QOD_FLEET_AUTO_APPROVE`: the approval moves to it (a move within networks you already trust);
+  - the server is drained and runs no node: its approval is reset and the new address is judged like a new join.
+- **Servers approved before binding existed** (`approvedBy: upgrade`) have no bound address yet. Their first heartbeat binds it, but only from an address inside `QOD_FLEET_AUTO_APPROVE`. From anywhere else the heartbeat is refused with `409 approval_unbound`. With the default open list every server binds on its next heartbeat and nothing changes; with a narrowed list, re-approve each server outside it once (below).
+- **The node keeps running on a refused server** (the agent never stops it on a `409`), but the manager stops routing to it and, after `reassignAfterSec`, moves its slot to another server.
+
+To move an approved server to a new address, or to clear `source_change_refused` / `approval_unbound` on a legitimate server:
+
+```bash
+qod fleet drain srv-07       # its node moves off; the next heartbeat from the new address resets approval
+qod fleet servers            # wait until srv-07 shows approval: pending, and check sourceAddr
+qod fleet approve srv-07     # binds the new address
+qod fleet undrain srv-07     # schedulable again
+```
+
+Skip the approve step when the new address is inside `QOD_FLEET_AUTO_APPROVE`: it is approved again on its own. Forgetting the undrain leaves an approved server that never receives a node.
+
+The binding is by IP address, with the limits that implies: machines behind the same NAT or the same unlisted proxy share one source address, and a server whose address changes (DHCP, or a dual-stack host that switches between IPv4 and IPv6) is refused until it is drained and approved again.
 
 **Behind a proxy, set `QOD_FLEET_TRUSTED_PROXIES`.** When agents reach the manager through a proxy or load balancer, the connection comes from that intermediary, not from the server. That covers two common setups: a TLS-terminating proxy in front of `:20900` (the manager's REST port has no TLS of its own) and the load balancer in front of HA replicas. Without the setting, every server appears to come from the proxy, so the list approves all of them (proxy inside a listed range) or none of them. Set `QOD_FLEET_TRUSTED_PROXIES` to the proxy's addresses, on every manager replica; their `X-Forwarded-For` header is then believed, read from the right and skipping trusted hops. When agents connect straight to the manager's own `host:20900`, leave it empty.
 
 - Never list a range that contains untrusted clients: a client inside it could choose its own address.
-- A missing or malformed `X-Forwarded-For` behind a trusted proxy leaves the address unknown, and an unknown address is never approved automatically. Entries that carry a port (`10.0.3.17:51234`) count as malformed. A heartbeat with several `X-Forwarded-For` header lines fails with `400`. Configure the proxy to send one header line of plain addresses, appending to any value it received.
+- A missing or malformed `X-Forwarded-For` behind a trusted proxy leaves the address unknown. An unknown address is never approved automatically, and `qod fleet approve` refuses it (`409 source_unknown`), so a proxy that does not send the header keeps its servers pending. Entries that carry a port (`10.0.3.17:51234`) count as malformed. A heartbeat with several `X-Forwarded-For` header lines fails with `400`. Configure the proxy to send one header line of plain addresses, appending to any value it received.
 
 ### Run the agent under systemd (Linux)
 
@@ -273,6 +298,7 @@ qod fleet remove srv-07     # forget it (drain an approved server and stop the a
 | `approval` | `approved`, or `pending` while the server waits for `qod fleet approve`. |
 | `approvedBy`, `approvedAt` | `auto` (its address is in `QOD_FLEET_AUTO_APPROVE`), `upgrade` (joined before join approval existed) or the approving admin, and when. |
 | `sourceAddr` | The address the latest heartbeat came from, resolved by the manager (not reported by the agent). |
+| `approvedSource` | The address the approval is [bound to](#approval-is-bound-to-the-address-it-was-given-to); empty while pending, and for a server approved before binding existed until its first heartbeat from inside `QOD_FLEET_AUTO_APPROVE`. |
 
 ### Maintenance on a server
 
@@ -296,7 +322,7 @@ qod fleet remove srv-07
 
 ### Change a server's address
 
-A known server name cannot come back from a different address or port unless it is drained: its heartbeat is refused with `409 address_change_refused`, which the agent logs. To re-address a server: `qod fleet drain`, restart the agent with the new `--advertise-host` or `--node-port`, `qod fleet undrain`. The move resets the server's approval and judges the new address: inside `QOD_FLEET_AUTO_APPROVE` it is approved again at once, otherwise run `qod fleet approve` before or after the undrain.
+A known server name cannot come back from a different address or port unless it is drained: its heartbeat is refused with `409 address_change_refused`, which the agent logs. To re-address a server: `qod fleet drain`, restart the agent with the new `--advertise-host` or `--node-port`, then `qod fleet undrain`. A re-address is accepted only once the drain has released the server's node (a heartbeat in between is refused and the agent retries). The move resets the server's approval and judges the new address: inside `QOD_FLEET_AUTO_APPROVE` it is approved again at once; otherwise wait until `qod fleet servers` shows it pending, run `qod fleet approve`, and only then undrain it (see [Approval is bound to the address it was given to](#approval-is-bound-to-the-address-it-was-given-to)).
 
 ### The Servers page
 
@@ -340,7 +366,7 @@ Two ways to size for this:
 - Watch `qod fleet servers` for names you did not install, and remove pending servers you do not recognize (then find and stop their agents).
 - Rotate on any suspicion: set a new `QOD_FLEET_JOIN_TOKEN` on the managers and restart them, then update every agent. From that point a heartbeat carrying the old value is refused (`401 fleet_unauthorized`), so an agent you have not updated yet goes `unreachable`, then `dead` after `reassignAfterSec`: update agents within that window. Rotation removes no server by itself; drain and remove any server you do not trust.
 
-**A known server name cannot be taken over.** A heartbeat for an existing name from a different address or port is refused unless that server is drained, so a machine holding the token cannot impersonate an idle server either. When a drained server does change address, its approval is reset and the new address is judged again, so the move cannot carry an approval to a different machine.
+**A known server name cannot be taken over.** A heartbeat for an existing name from a different address or port is refused unless that server is drained, so a machine holding the token cannot impersonate an idle server either. When a drained server does change address, its approval is reset and the new address is judged again, so the move cannot carry an approval to a different machine. Copying an approved server's name, host and port exactly does not help either: the approval is [bound to the source address](#approval-is-bound-to-the-address-it-was-given-to) it was granted to, and a heartbeat from anywhere else is refused (`409 source_change_refused`) unless that address is itself inside `QOD_FLEET_AUTO_APPROVE`. The residual exposure is a machine that shares the approved server's source address (same NAT, or an unlisted proxy), and anything inside the auto-approve networks, which you trust by listing them.
 
 **The manager-to-node hop is plain HTTP**, carrying the node token and result rows. That is true in every runtime; in local and Kubernetes modes the hop stays on one host or one cluster network, in fleet mode it crosses whatever sits between managers and servers. Fleet mode therefore requires a private network between them, and nodes bind only the advertised interface. Do not route this traffic over the internet.
 
