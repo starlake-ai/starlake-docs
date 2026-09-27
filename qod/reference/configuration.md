@@ -95,7 +95,7 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.host` | `QOD_ON_DEMAND_HOST` | `0.0.0.0` |  | Manager REST bind address (0.0.0.0 to listen on all interfaces). |
 | `quack-on-demand.port` | `QOD_ON_DEMAND_PORT` | `20900` |  | Manager REST + admin UI port. |
 | `quack-on-demand.apiKey` | `QOD_API_KEY` | `***` | yes | Static admin API key sent as X-API-Key. Unset or empty: outside HA a random key is generated at boot and printed to the console; under HA the static-key arm stays disabled and /api accepts only session and PAT credentials (never open). |
-| `quack-on-demand.runtimeType` | `QOD_RUNTIME_TYPE` | `local` |  | Quack node runtime backend: 'local' (child processes), 'kubernetes', or 'fleet' (servers that join with qod agent). |
+| `quack-on-demand.runtimeType` | `QOD_RUNTIME_TYPE` | `local` |  | Quack node runtime backend: 'local' (child processes), 'kubernetes' (pods) or 'fleet' (one node per server joined through qod fleet join). |
 | `quack-on-demand.minPort` | `QOD_MIN_PORT` | `21900` |  | Lower bound of the port range LocalQuackBackend allocates child nodes from. |
 | `quack-on-demand.maxPort` | `QOD_MAX_PORT` | `22500` |  | Upper bound of the port range LocalQuackBackend allocates child nodes from. |
 | `quack-on-demand.maxNodesTotal` | `QOD_MAX_NODES_TOTAL` | `50` |  | Hard cap on concurrent child nodes across all pools. |
@@ -204,12 +204,12 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 
 | Key | Env var | Default | Sensitive | Description |
 | --- | --- | --- | --- | --- |
-| `quack-on-demand.fleet.joinToken` | `QOD_FLEET_JOIN_TOKEN` | _(unset)_ | yes | Shared secret every agent heartbeat carries. Required when runtimeType=fleet. |
-| `quack-on-demand.fleet.heartbeatSec` | `QOD_FLEET_HEARTBEAT_SEC` | `5` |  | Agent heartbeat interval in seconds; returned to agents in every reply. |
+| `quack-on-demand.fleet.joinToken` | `QOD_FLEET_JOIN_TOKEN` | _(unset)_ | yes | Shared secret every fleet heartbeat carries. Required when runtimeType=fleet. |
+| `quack-on-demand.fleet.heartbeatSec` | `QOD_FLEET_HEARTBEAT_SEC` | `5` |  | Heartbeat interval in seconds; returned to every qod fleet join process in each reply. |
 | `quack-on-demand.fleet.heartbeatTimeoutSec` | `QOD_FLEET_HEARTBEAT_TIMEOUT_SEC` | `30` |  | Silence beyond this many seconds marks a server unreachable. |
 | `quack-on-demand.fleet.reassignAfterSec` | `QOD_FLEET_REASSIGN_AFTER_SEC` | `600` |  | Unreachable beyond this many seconds moves the server's node slot to a free server. 0 = at once, -1 = never. |
-| `quack-on-demand.fleet.startupTimeoutSec` | `QOD_FLEET_STARTUP_TIMEOUT_SEC` | `120` |  | How long a claim waits for the agent to report the node running. |
-| `quack-on-demand.fleet.stopTimeoutSec` | `QOD_FLEET_STOP_TIMEOUT_SEC` | `60` |  | How long a release waits for the agent to report the node stopped. |
+| `quack-on-demand.fleet.startupTimeoutSec` | `QOD_FLEET_STARTUP_TIMEOUT_SEC` | `120` |  | How long a claim waits for the server to report the node running. |
+| `quack-on-demand.fleet.stopTimeoutSec` | `QOD_FLEET_STOP_TIMEOUT_SEC` | `60` |  | How long a release waits for the server to report the node stopped. |
 | `quack-on-demand.fleet.ephemeral` | `QOD_FLEET_EPHEMERAL` | `fleet` |  | Where maintenance and branch-merge nodes run: 'fleet' claims a server like any node, 'local' runs them on the manager host through the local backend. |
 | `quack-on-demand.fleet.autoApprove` | `QOD_FLEET_AUTO_APPROVE` | `0.0.0.0/0,::/0` |  | Comma-separated CIDRs: a server whose heartbeat comes from one of them is approved on join; any other waits for `qod fleet approve`. Empty = approve none automatically. The default admits every address. |
 | `quack-on-demand.fleet.trustedProxies` | `QOD_FLEET_TRUSTED_PROXIES` | _(unset)_ |  | Comma-separated CIDRs of proxies / load balancers whose X-Forwarded-For is believed when resolving a heartbeat's client address. Empty = believe none. |
