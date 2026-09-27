@@ -1,11 +1,11 @@
 ---
 id: catalogs
-title: DuckLake catalogs
-description: "The three database kinds behind a Quack on Demand database, how a DuckLake catalog separates metadata from Parquet data, and the data path."
-keywords: ["ducklake catalog", "duckdb catalog", "parquet", "metadata", "data path"]
+title: Catalogs
+description: "The three database kinds behind a Quack on Demand database, how a DuckLake catalog separates metadata from Parquet data, and how external catalogs such as Iceberg attach alongside it."
+keywords: ["ducklake catalog", "duckdb catalog", "iceberg catalog", "federation", "parquet", "metadata", "data path"]
 ---
 
-Each database (tenant-db) is backed by a catalog that the Quack nodes open. The catalog mode is the database's `kind`. This page explains the three kinds, how a DuckLake catalog separates metadata from data, and how the data path is derived. For creating databases, see [Tenants and databases](/qod/operating/tenants-databases); this page is about how they work.
+Each database (tenant-db) is backed by a catalog that the Quack nodes open. The catalog mode is the database's `kind`. This page explains the three kinds, how a DuckLake catalog separates metadata from data, how the data path is derived, and how external catalogs attach next to the database's own. For creating databases, see [Tenants and databases](/qod/operating/tenants-databases); this page is about how they work.
 
 ## The three kinds
 
@@ -32,8 +32,6 @@ A DuckLake database is addressed by a catalog name (`dbName`) and a default sche
 
 A related guard applies under ACL: a two-part name whose first part matches an attached catalog (the tenant-db itself, a federation alias, or `memory` / `system` / `temp`) is denied as ambiguous and must be written as the full `catalog.schema.table`. See [Table name resolution](/qod/administration/access-control#table-name-resolution).
 
-A session can hold catalogs that are not DuckLake at all. Federated sources attach external catalogs under their own aliases alongside the database's own, and an [external Iceberg REST catalog](/qod/operating/iceberg) is one of them: its tables are addressed as `alias.schema.table` and governed by the same grants. Iceberg's multi-level namespaces do not map onto DuckDB's single schema level, so a table in namespace `a.b` is not addressable.
-
 ## Data path derivation
 
 The global default `dataPath` is a root; each tenant-db gets its own subdirectory under it. The supervisor derives the per-database path by replacing the last component of the global default with the composed `${tenant}_${tenantDb}` name. For example a global default of `/var/ducklake/tpch` yields `/var/ducklake/tpch_tpch1` for the `tpch/tpch1` database. Object-store URIs are handled string-wise (so the `//` after the scheme is preserved), because the path DuckLake records in the catalog must match the operator-supplied URI exactly or the next `ATTACH` is refused.
@@ -50,3 +48,33 @@ Two details worth knowing:
 
 - Small DML can be inlined. DuckLake buffers small inserts and deletes in catalog tables and materializes parquet on the next flush, backdating the files to the snapshot where the change logically happened. AS OF views follow engine semantics, but the current-state row count (from DuckLake's stats) includes inlined rows that the AS OF computation (parquet rows minus delete rows) does not, so the two can briefly differ on a write-hot table.
 - Snapshots are retained until expired. Expiry is a DuckLake maintenance operation (`ducklake_expire_snapshots()` followed by `ducklake_cleanup_old_files()`), not something the manager runs automatically; the browser shows whatever history the catalog retains, and time travel reaches back only to the oldest retained snapshot.
+
+## Native and attached catalogs
+
+A session sees two kinds of catalog side by side:
+
+- The **native catalog** is the database's own, of the kind above. For a `ducklake` database QoD provisions its metadata, derives its data path and, through the admin UI, browses its snapshots. Branching and time travel are features of this catalog.
+- **Attached catalogs** are federated sources: Postgres, MySQL, an Iceberg REST catalog, or anything else a DuckDB extension can `ATTACH`. Each is attached under its own alias, and its data stays where it is. QoD does not copy it, convert it or run maintenance on it.
+
+A federated source is either a free-form `sql` source, where the operator writes the `ATTACH` and QoD substitutes secrets into it, or a typed `iceberg_rest` source, declared as fields (endpoint, warehouse, auth mode) from which QoD renders the `ATTACH` itself. See [Federation](/qod/operating/federation) and [External Iceberg catalogs](/qod/operating/iceberg).
+
+### When a catalog is attached
+
+Attached catalogs are bound when a node spawns, not per query. The supervisor resolves each source's secrets and runs its `ATTACH` as part of the node's init SQL. Two consequences follow:
+
+- Authentication to the external system happens once, at `ATTACH`. There is no per-statement authentication cost, and no per-statement retry either.
+- A source change reaches nodes spawned after it. Running nodes keep what they attached until they exit, so recycling the pool applies a change immediately.
+
+A failed `ATTACH` does not stop the node: it boots and serves every other catalog, with the failed one absent. For Iceberg sources the manager detects this, reports it per source and per node, and retries; see [Attach failures](/qod/operating/iceberg#attach-failures-and-how-they-surface).
+
+### Who does what for Iceberg
+
+The DuckDB `iceberg` extension does the protocol work: it performs the OAuth2 exchange, refreshes the token, and requests per-table vended storage credentials from the catalog. QoD proxies neither, so it holds no access token and, for a catalog that vends credentials, no storage key. What QoD adds is a validated declaration of the catalog, secret resolution at node spawn, a per-catalog read-only switch, and attach-failure reporting.
+
+An Iceberg catalog is read-only by default, since QoD does not own it. Making it writable is an explicit per-source choice, and writes then commit through the external catalog.
+
+### Addressing and access control
+
+Attached tables are addressed as `alias.schema.table` and pass through the same statement pipeline as native tables: the same RBAC graph, the same `RO` / `RW` / `DDL` verbs, and the same audit trail. A grant names the alias as its catalog. The ambiguity guard from [Catalog and schema names](#catalog-and-schema-names) covers every alias, so a two-part name whose first part is an attached catalog must be written in full.
+
+Two limits come from the mapping itself. Iceberg allows multi-level namespaces while DuckDB has a single schema level under a catalog, so a table in namespace `a.b` is not addressable. And features written against DuckLake catalog tables, such as [branching](/qod/operating/branching) and the catalog browser's snapshot history, do not apply to attached catalogs.
