@@ -69,6 +69,12 @@ takes `--config '<json>'`, which wins over the individual flags.
 | `oauth2Scope` | `--oauth2-scope` | `oauth2` | Optional. |
 | `oauth2GrantType` | `--oauth2-grant-type` | `oauth2` | Optional. |
 | `token` | `--token` | `token` | Required. Must be a `{{secret.NAME}}` placeholder. |
+| `awsCredentials` | `--aws-credentials` | `sigv4`, `glue`, `s3_tables` | `config` or `credential_chain`. Optional; turns on the AWS secret. See [AWS credentials](#aws-credentials-sigv4-glue-and-s3-tables). |
+| `awsRegion` | `--aws-region` | `sigv4`, `glue`, `s3_tables` | Required with `awsCredentials` for `sigv4` and `glue`; read off the ARN for `s3_tables`. |
+| `awsKeyId` | `--aws-key-id` | `awsCredentials config` | Required. May be a literal. |
+| `awsSecretAccessKey` | `--aws-secret-access-key` | `awsCredentials config` | Required. Must be a `{{secret.NAME}}` placeholder. |
+| `awsSessionToken` | `--aws-session-token` | `awsCredentials config` | Optional. Must be a `{{secret.NAME}}` placeholder. |
+| `awsScope` | `--aws-scope` (repeatable) | `sigv4`, `glue`, `s3_tables` | Required with `awsCredentials`. The `s3://` prefixes holding the catalog's table data. |
 
 **`authType` and `endpointType` are mutually exclusive, and one of them is required.** DuckDB
 refuses `AUTHORIZATION_TYPE` combined with `ENDPOINT_TYPE`, so setting both, or neither, is a
@@ -80,11 +86,73 @@ set exactly one of authType / endpointType (DuckDB refuses AUTHORIZATION_TYPE co
 
 Each auth mode rejects the fields that do not belong to it rather than ignoring them. `token` is
 refused under `authType oauth2`, `clientId` / `clientSecret` are refused under `authType token`,
-and `none`, `sigv4`, `glue` and `s3_tables` take no credential fields at all.
+and `none`, `sigv4`, `glue` and `s3_tables` take no `clientId`, `clientSecret`, `oauth2*` or
+`token` field. The AWS fields are accepted only on the three AWS-signed modes (`sigv4`, `glue`,
+`s3_tables`) and refused on any other.
 
-`sigv4` is for a REST catalog that signs with AWS credentials directly, and needs an S3 secret
-carrying a region to be resolvable on the node. Glue and S3 Tables select their own signing and are
-reached through `endpointType` instead.
+`sigv4` is for a REST catalog that signs with AWS credentials directly. Glue and S3 Tables select
+their own signing and are reached through `endpointType` instead. All three sign with AWS SigV4,
+and take their credentials from the AWS fields below.
+
+### AWS credentials (sigv4, Glue and S3 Tables)
+
+Without AWS fields, an AWS-signed catalog gets no secret of its own, and DuckDB signs with whatever
+default S3 secret the node already holds. That is usually QoD's own storage credentials, and when
+it is not a usable match the `ATTACH` fails with `Could not find a valid storage secret` or
+`... does not have a region`. Give the source its own credentials instead:
+
+```bash
+qod federation create acme acme_lake --alias glue_lake \
+  --type iceberg-rest \
+  --endpoint-type glue \
+  --warehouse 123456789012 \
+  --aws-credentials config \
+  --aws-region eu-west-1 \
+  --aws-key-id AKIA... \
+  --aws-secret-access-key '{{secret.GLUE_SECRET_KEY}}' \
+  --aws-scope s3://my-lake/
+
+qod federation secret set acme acme_lake glue_lake \
+  --name GLUE_SECRET_KEY --value "$GLUE_SECRET_KEY"
+```
+
+`awsCredentials` picks where the keys come from:
+
+- **`config`**: static keys. `awsKeyId` and `awsSecretAccessKey` are required and `awsSessionToken`
+  is optional. The secret access key and the session token must be `{{secret.NAME}}`
+  placeholders, refused as literals when the source is saved, like `clientSecret`; the key id may
+  be a literal.
+- **`credential_chain`**: the DuckDB `aws` extension resolves the credentials on the node itself
+  (instance role, environment, profile). It takes no key id, secret key or session token.
+
+Once `awsCredentials` is set:
+
+- **`awsRegion` is required** for `sigv4` and `glue`. For `s3_tables` it is optional: the region is
+  read off the table bucket ARN in `warehouse` (`arn:aws:s3tables:<region>:<account>:bucket/<name>`),
+  which is also where DuckDB takes its signing region from. A warehouse that is not such an ARN
+  needs an explicit `awsRegion`.
+- **`awsScope` is required**: one or more `s3://bucket/` or `s3://bucket/path/` prefixes holding the
+  catalog's table data (repeat `--aws-scope`, or pass a list over REST). Each entry must name a
+  bucket; a bare `s3://` is refused.
+
+The scope is mandatory because of how DuckDB picks an S3 secret for a path: the longest matching
+scope wins, and a tie is broken by secret name, alphabetically. An unscoped `qod_ice_<alias>` would
+tie with the node's own unscoped storage secret `quack_s3` and win (`qod` sorts before `qua`), so
+it would sign every S3 read, the database's own data included. Scoped to the catalog's buckets, it
+signs only those paths and every other path keeps its secret.
+
+Setting any AWS field without `awsCredentials` is refused rather than silently dropped, and so is an
+AWS field on a mode that does not sign with AWS. A source stored without AWS fields renders exactly
+as before.
+
+**What `warehouse` means depends on the mode.** For a REST catalog it is the catalog's warehouse
+name. For `glue` it is the AWS account id (12 digits), optionally followed by `:catalog` or a nested
+catalog path, for example `123456789012:mycatalog`. For `s3_tables` it is the table bucket ARN.
+The admin UI's federation form shows the same hint under the Warehouse field for each mode.
+
+The AWS fields are available on every surface that declares a source: REST (inside `config`),
+`qod federation create --aws-*`, the MCP tool `upsert_federated_source` and the admin UI form, which
+offers the credentials as "static keys", "credential chain" or "node default" (no AWS fields).
 
 ### Alias rules
 
@@ -156,10 +224,33 @@ Two details are easy to get wrong when writing the equivalent by hand:
   network call, with `no 'oauth2_server_uri' was provided, and no 'endpoint' was provided to fall
   back on`. The `ATTACH` carries its own `ENDPOINT` as well, for catalog operations; the two are
   textually identical and semantically distinct.
-- **`none` and `sigv4`, and both endpoint types, mint no secret at all.** Only `oauth2` and `token`
-  carry a credential, and both carry it on the `ICEBERG` secret with no `AUTHORIZATION_TYPE`
-  option, since DuckDB defaults that option to `oauth2` and a token-bearing secret satisfies it
-  without performing an exchange.
+- **`oauth2` and `token` carry their credential on an `ICEBERG` secret** with no
+  `AUTHORIZATION_TYPE` option, since DuckDB defaults that option to `oauth2` and a token-bearing
+  secret satisfies it without performing an exchange. `none` mints no secret at all.
+- **`sigv4`, `glue` and `s3_tables` get a `TYPE s3` secret only when `awsCredentials` is set**,
+  named on the `ATTACH` through `SECRET`; without it they mint none and DuckDB falls back to the
+  node's default S3 secret. QoD also loads `httpfs` explicitly, and `aws` for `credential_chain`,
+  rather than relying on autoload.
+
+For the Glue example above, the block is:
+
+```sql
+INSTALL iceberg; LOAD iceberg;
+INSTALL httpfs; LOAD httpfs;
+CREATE OR REPLACE SECRET "qod_ice_glue_lake" (
+  TYPE s3,
+  KEY_ID 'AKIA...',
+  SECRET '...',
+  REGION 'eu-west-1',
+  SCOPE ['s3://my-lake/']
+);
+ATTACH '123456789012' AS "glue_lake" (
+  TYPE ICEBERG,
+  SECRET "qod_ice_glue_lake",
+  ENDPOINT_TYPE 'glue',
+  READ_ONLY
+);
+```
 
 The secret is named `qod_ice_<alias>` inside the node's DuckDB session.
 
@@ -301,6 +392,8 @@ is covered in the same page under
 |---|---|---|
 | `400 invalid_federated_source` on create, naming a placeholder | `clientSecret` or `token` was given a literal value | Store it as a secret and pass `{{secret.NAME}}` |
 | `400` naming `authType / endpointType` | Both were set, or neither | Set exactly one |
+| `400` naming `awsScope` or `awsRegion` | `awsCredentials` is set without a scope, or without a region the manager can use | Add `--aws-scope s3://bucket/`, and `--aws-region` for `sigv4` / `glue` |
+| `Could not find a valid storage secret` or `... does not have a region` in `attachStatus` | An AWS-signed catalog has no AWS fields, so it signs with the node's default S3 secret | Set `awsCredentials`, `awsRegion` and `awsScope` on the source, then recycle the pool |
 | `400 alias '...' is reserved` | The alias collides with the database's own catalog, a sibling source, or `memory` / `system` / `temp` | Rename the source's alias |
 | Client sees `Catalog 'x' does not exist`, pool looks healthy | The `ATTACH` failed at node spawn | Read `attachStatus` on the source and `catalogAttachFailures` on the node for the real DuckDB error |
 | `attachStatus` stuck on a collision message | The alias equals the database's own catalog alias, written through a manifest import | Rename the source's alias; it can never attach |
