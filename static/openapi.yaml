@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Quack on Demand REST API
-  version: 0.9.3
+  version: 0.9.9
 paths:
   /api/scim/v2/{tenant}/Groups/{id}:
     get:
@@ -1296,6 +1296,425 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/catalog/tenant/{tenant}/database/{tenantDb}/iceberg/{alias}/schemas:
+    get:
+      description: Namespaces of an attached Iceberg REST catalog (`alias` is the
+        federated source alias). tableCount is -1 (not counted).
+      operationId: getApiCatalogTenantTenantDatabaseTenantdbIcebergAliasSchemas
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenantDb
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: alias
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogSchemaEntry'
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
+            qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/catalog/tenant/{tenant}/database/{tenantDb}/iceberg/{alias}/schemas/{schema}/tables:
+    get:
+      description: Tables of one namespace of an attached Iceberg REST catalog.
+      operationId: getApiCatalogTenantTenantDatabaseTenantdbIcebergAliasSchemasSchemaTables
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenantDb
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: alias
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: schema
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
+            qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/catalog/tenant/{tenant}/database/{tenantDb}/iceberg/{alias}/schemas/{schema}/tables/{table}:
+    get:
+      description: Columns, current data and delete files, and the current snapshot
+        id of an Iceberg table.
+      operationId: getApiCatalogTenantTenantDatabaseTenantdbIcebergAliasSchemasSchemaTablesTable
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenantDb
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: alias
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: schema
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: table
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IcebergTableDetailResponse'
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
+            qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/catalog/tenant/{tenant}/database/{tenantDb}/iceberg/{alias}/schemas/{schema}/tables/{table}/data-diff:
+    get:
+      description: Row-level diff of an Iceberg table between two snapshot ids (`from`,
+        `to`, strings). `changeType` filters to added | removed.
+      operationId: getApiCatalogTenantTenantDatabaseTenantdbIcebergAliasSchemasSchemaTablesTableData-diff
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenantDb
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: alias
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: schema
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: table
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: changeType
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IcebergDiffResponse'
+        '400':
+          description: 'Invalid value for: query parameter from, Invalid value for:
+            query parameter to, Invalid value for: query parameter limit, Invalid
+            value for: query parameter changeType, Invalid value for: header X-API-Key,
+            Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/catalog/tenant/{tenant}/database/{tenantDb}/iceberg/{alias}/schemas/{schema}/tables/{table}/history:
+    get:
+      description: Snapshot history of an Iceberg table, newest first. `before` is
+        a snapshot id (string) to page past; `operation` filters to append | overwrite
+        | delete | replace.
+      operationId: getApiCatalogTenantTenantDatabaseTenantdbIcebergAliasSchemasSchemaTablesTableHistory
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenantDb
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: alias
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: schema
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: table
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: before
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: operation
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IcebergHistoryResponse'
+        '400':
+          description: 'Invalid value for: query parameter limit, Invalid value for:
+            query parameter before, Invalid value for: query parameter operation,
+            Invalid value for: header X-API-Key, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/catalog/tenant/{tenant}/database/{tenantDb}/iceberg/{alias}/schemas/{schema}/tables/{table}/preview:
+    get:
+      description: Bounded preview of an Iceberg table's rows, optionally as of a
+        snapshot id (asOf, a string) or a timestamp (asOfTs=<ISO-8601>); at most one
+        selector. asOfTag is unsupported for Iceberg. `limit` clamps the row cap downward.
+      operationId: getApiCatalogTenantTenantDatabaseTenantdbIcebergAliasSchemasSchemaTablesTablePreview
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenantDb
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: alias
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: schema
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: table
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: asOf
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: asOfTag
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: asOfTs
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IcebergPreviewResponse'
+        '400':
+          description: 'Invalid value for: query parameter asOf, Invalid value for:
+            query parameter asOfTag, Invalid value for: query parameter asOfTs, Invalid
+            value for: query parameter limit, Invalid value for: header X-API-Key,
+            Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/catalog/tenant/{tenant}/database/{tenantDb}/recoverable:
     get:
       description: Recently dropped tables of a DuckLake tenant-db that are still
@@ -2069,6 +2488,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetastoreDefaultsResponse'
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
+            qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/fleet/servers:
+    get:
+      operationId: getApiFleetServers
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FleetServerListResponse'
         '400':
           description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
             qod_session'
@@ -4537,6 +4990,190 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/fleet/heartbeat:
+    post:
+      operationId: postApiFleetHeartbeat
+      parameters:
+      - name: X-Fleet-Token
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: X-Forwarded-For
+        in: header
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FleetHeartbeatRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FleetHeartbeatResponse'
+        '400':
+          description: 'Invalid value for: body, Invalid value for: header X-Fleet-Token,
+            Invalid value for: header X-Forwarded-For, Invalid value'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/fleet/server/approve:
+    post:
+      operationId: postApiFleetServerApprove
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FleetServerOpRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: body, Invalid value for: header X-API-Key,
+            Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/fleet/server/drain:
+    post:
+      operationId: postApiFleetServerDrain
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FleetServerOpRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: body, Invalid value for: header X-API-Key,
+            Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/fleet/server/remove:
+    post:
+      operationId: postApiFleetServerRemove
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FleetServerOpRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: body, Invalid value for: header X-API-Key,
+            Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/fleet/server/undrain:
+    post:
+      operationId: postApiFleetServerUndrain
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FleetServerOpRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: body, Invalid value for: header X-API-Key,
+            Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/group/create:
     post:
       operationId: postApiGroupCreate
@@ -6686,6 +7323,24 @@ components:
           type: boolean
         reason:
           type: string
+    CatalogAttachFailureDto:
+      title: CatalogAttachFailureDto
+      type: object
+      required:
+      - alias
+      - error
+      - at
+      - attempts
+      properties:
+        alias:
+          type: string
+        error:
+          type: string
+        at:
+          type: string
+        attempts:
+          type: integer
+          format: int32
     CatalogColumnEntry:
       title: CatalogColumnEntry
       type: object
@@ -7354,7 +8009,6 @@ components:
       type: object
       required:
       - alias
-      - setupSql
       - disabled
       properties:
         alias:
@@ -7364,6 +8018,12 @@ components:
         description:
           type: string
         disabled:
+          type: boolean
+        sourceType:
+          type: string
+        config:
+          $ref: '#/components/schemas/IcebergRestConfig'
+        readOnly:
           type: boolean
     FederatedSourceListResponse:
       title: FederatedSourceListResponse
@@ -7380,8 +8040,9 @@ components:
       - id
       - tenantDbId
       - alias
-      - setupSql
       - disabled
+      - sourceType
+      - readOnly
       properties:
         id:
           type: string
@@ -7395,6 +8056,214 @@ components:
           type: string
         disabled:
           type: boolean
+        sourceType:
+          type: string
+        config:
+          $ref: '#/components/schemas/IcebergRestConfig'
+        readOnly:
+          type: boolean
+        attachStatus:
+          type: string
+    FleetAssignmentDto:
+      title: FleetAssignmentDto
+      type: object
+      required:
+      - epoch
+      - nodeId
+      - poolKey
+      - port
+      - token
+      - kind
+      - env
+      - dbInitSql
+      - objectStoreSql
+      - extraSetupSql
+      - lockdownSql
+      properties:
+        epoch:
+          type: integer
+          format: int64
+        nodeId:
+          type: string
+        poolKey:
+          $ref: '#/components/schemas/FleetPoolKeyDto'
+        port:
+          type: integer
+          format: int32
+        token:
+          type: string
+        kind:
+          type: string
+        env:
+          $ref: '#/components/schemas/Map_String'
+        dbInitSql:
+          type: string
+        objectStoreSql:
+          type: string
+        extraSetupSql:
+          type: string
+        lockdownSql:
+          type: string
+    FleetHeartbeatRequest:
+      title: FleetHeartbeatRequest
+      type: object
+      required:
+      - name
+      - advertiseHost
+      - nodePort
+      - node
+      properties:
+        name:
+          type: string
+        advertiseHost:
+          type: string
+        nodePort:
+          type: integer
+          format: int32
+        qodVersion:
+          type: string
+        os:
+          type: string
+        duckdbVersion:
+          type: string
+        cpus:
+          type: integer
+          format: int32
+        memoryBytes:
+          type: integer
+          format: int64
+        node:
+          $ref: '#/components/schemas/FleetNodeReportDto'
+    FleetHeartbeatResponse:
+      title: FleetHeartbeatResponse
+      type: object
+      required:
+      - heartbeatSec
+      - approval
+      properties:
+        heartbeatSec:
+          type: integer
+          format: int32
+        assignment:
+          $ref: '#/components/schemas/FleetAssignmentDto'
+        approval:
+          type: string
+    FleetNodeReportDto:
+      title: FleetNodeReportDto
+      type: object
+      required:
+      - assignmentEpoch
+      - state
+      properties:
+        assignmentEpoch:
+          type: integer
+          format: int64
+        nodeId:
+          type: string
+        state:
+          type: string
+        pid:
+          type: integer
+          format: int64
+        error:
+          type: string
+        startedAt:
+          type: string
+    FleetPoolKeyDto:
+      title: FleetPoolKeyDto
+      type: object
+      required:
+      - tenant
+      - tenantDb
+      - pool
+      properties:
+        tenant:
+          type: string
+        tenantDb:
+          type: string
+        pool:
+          type: string
+    FleetServerDto:
+      title: FleetServerDto
+      type: object
+      required:
+      - name
+      - advertiseHost
+      - nodePort
+      - liveness
+      - silentSeconds
+      - unschedulable
+      - nodeState
+      - joinedAt
+      - lastHeartbeatAt
+      - approval
+      properties:
+        name:
+          type: string
+        advertiseHost:
+          type: string
+        nodePort:
+          type: integer
+          format: int32
+        liveness:
+          type: string
+        silentSeconds:
+          type: integer
+          format: int64
+        unschedulable:
+          type: boolean
+        assignedNodeId:
+          type: string
+        tenant:
+          type: string
+        tenantDb:
+          type: string
+        pool:
+          type: string
+        nodeState:
+          type: string
+        nodeError:
+          type: string
+        qodVersion:
+          type: string
+        duckdbVersion:
+          type: string
+        cpus:
+          type: integer
+          format: int32
+        memoryBytes:
+          type: integer
+          format: int64
+        joinedAt:
+          type: string
+        lastHeartbeatAt:
+          type: string
+        approval:
+          type: string
+        approvedBy:
+          type: string
+        approvedAt:
+          type: string
+        sourceAddr:
+          type: string
+        approvedSource:
+          type: string
+    FleetServerListResponse:
+      title: FleetServerListResponse
+      type: object
+      properties:
+        servers:
+          type: array
+          items:
+            $ref: '#/components/schemas/FleetServerDto'
+    FleetServerOpRequest:
+      title: FleetServerOpRequest
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
     ForgotPasswordRequest:
       title: ForgotPasswordRequest
       type: object
@@ -7477,6 +8346,216 @@ components:
         nodesCount:
           type: integer
           format: int32
+    IcebergDiffResponse:
+      title: IcebergDiffResponse
+      type: object
+      required:
+      - alias
+      - schema
+      - table
+      - from
+      - to
+      - truncated
+      properties:
+        alias:
+          type: string
+        schema:
+          type: string
+        table:
+          type: string
+        from:
+          type: string
+        to:
+          type: string
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/PreviewColumn'
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/IcebergDiffRow'
+        truncated:
+          type: boolean
+    IcebergDiffRow:
+      title: IcebergDiffRow
+      type: object
+      required:
+      - change
+      properties:
+        change:
+          type: string
+        values:
+          type: array
+          items: {}
+    IcebergFileEntry:
+      title: IcebergFileEntry
+      type: object
+      required:
+      - path
+      - content
+      - format
+      - recordCount
+      - sequenceNumber
+      properties:
+        path:
+          type: string
+        content:
+          type: string
+        format:
+          type: string
+        recordCount:
+          type: integer
+          format: int64
+        sequenceNumber:
+          type: integer
+          format: int64
+    IcebergHistoryResponse:
+      title: IcebergHistoryResponse
+      type: object
+      required:
+      - alias
+      - schema
+      - table
+      - hasMore
+      properties:
+        alias:
+          type: string
+        schema:
+          type: string
+        table:
+          type: string
+        snapshots:
+          type: array
+          items:
+            $ref: '#/components/schemas/IcebergSnapshotEntry'
+        hasMore:
+          type: boolean
+    IcebergPreviewResponse:
+      title: IcebergPreviewResponse
+      type: object
+      required:
+      - truncated
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/PreviewColumn'
+        rows:
+          type: array
+          items:
+            type: array
+            items: {}
+        snapshotId:
+          type: string
+        truncated:
+          type: boolean
+    IcebergRestConfig:
+      title: IcebergRestConfig
+      type: object
+      required:
+      - uri
+      - warehouse
+      properties:
+        uri:
+          type: string
+        warehouse:
+          type: string
+        authType:
+          type: string
+        endpointType:
+          type: string
+        clientId:
+          type: string
+        clientSecret:
+          type: string
+        oauth2ServerUri:
+          type: string
+        oauth2Scope:
+          type: string
+        oauth2GrantType:
+          type: string
+        token:
+          type: string
+        awsCredentials:
+          type: string
+        awsRegion:
+          type: string
+        awsKeyId:
+          type: string
+        awsSecretAccessKey:
+          type: string
+        awsSessionToken:
+          type: string
+        awsScope:
+          type: array
+          items:
+            type: string
+    IcebergSnapshotEntry:
+      title: IcebergSnapshotEntry
+      type: object
+      required:
+      - snapshotId
+      - sequenceNumber
+      - committedAt
+      - current
+      properties:
+        snapshotId:
+          type: string
+        parentId:
+          type: string
+        sequenceNumber:
+          type: integer
+          format: int64
+        committedAt:
+          type: string
+          format: date-time
+        operation:
+          type: string
+        addedRecords:
+          type: integer
+          format: int64
+        deletedRecords:
+          type: integer
+          format: int64
+        addedDataFiles:
+          type: integer
+          format: int64
+        deletedDataFiles:
+          type: integer
+          format: int64
+        addedPositionDeletes:
+          type: integer
+          format: int64
+        totalDataFiles:
+          type: integer
+          format: int64
+        current:
+          type: boolean
+    IcebergTableDetailResponse:
+      title: IcebergTableDetailResponse
+      type: object
+      required:
+      - alias
+      - schema
+      - table
+      properties:
+        alias:
+          type: string
+        schema:
+          type: string
+        table:
+          type: string
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogColumnEntry'
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/IcebergFileEntry'
+        currentSnapshot:
+          type: string
     KillStatementRequest:
       title: KillStatementRequest
       type: object
@@ -7887,6 +8966,14 @@ components:
         duckdbSpillBytes:
           type: integer
           format: int64
+        catalogAttachFailures:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogAttachFailureDto'
+        serverName:
+          type: string
+        serverState:
+          type: string
     NodeOpRequest:
       title: NodeOpRequest
       type: object
@@ -8186,6 +9273,7 @@ components:
       - memory
       - lockdown
       - lockdownEffective
+      - pending
       properties:
         tenant:
           type: string
@@ -8227,6 +9315,11 @@ components:
         maxNodes:
           type: integer
           format: int32
+        pending:
+          type: integer
+          format: int32
+        pendingReason:
+          type: string
     PreviewColumn:
       title: PreviewColumn
       type: object
@@ -8813,6 +9906,8 @@ components:
         prepareDurationMs:
           type: integer
           format: int64
+        serverName:
+          type: string
     StatementHistoryResponse:
       title: StatementHistoryResponse
       type: object
@@ -8986,6 +10081,7 @@ components:
       - objectStore
       - initSql
       - managedStorage
+      - encrypted
       properties:
         tenant:
           type: string
@@ -9007,6 +10103,10 @@ components:
           type: string
         managedStorage:
           type: boolean
+        encrypted:
+          type: boolean
+        encryptionKey:
+          type: string
     TenantDbResponse:
       title: TenantDbResponse
       type: object
@@ -9022,6 +10122,7 @@ components:
       - federatedSourceCount
       - initSql
       - effectiveDataPath
+      - encrypted
       properties:
         id:
           type: string
@@ -9053,6 +10154,8 @@ components:
         tableCount:
           type: integer
           format: int32
+        encrypted:
+          type: boolean
     TenantListResponse:
       title: TenantListResponse
       type: object
