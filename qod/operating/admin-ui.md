@@ -34,7 +34,7 @@ The server enforces this independently of the UI: such a session's REST calls ar
 
 ## Navigation
 
-The top navigation bar has **Nodes**, **Tenants**, **Users**, **Servers** (superuser admins only, see [Servers (fleet)](#servers-fleet)), an **Audit** dropdown menu, and (for a superuser admin only) **Config** last, plus the user pill and Sign out. The Audit menu groups the three telemetry pages: **Control Plane** (the audit log at `/audit`), **Statements** (statement history and trends at `/history`), and **Usage** (the metering ledger at `/usage`). The menu closes on selection, on a click elsewhere, or with Escape, and its trigger stays highlighted while any of the three pages is open.
+The top navigation bar has **Nodes**, **Tenants**, **Catalog** (the [catalog browser](#catalog-browser)), **Users**, **Servers** (superuser admins only, see [Servers (fleet)](#servers-fleet)), an **Audit** dropdown menu, and (for a superuser admin only) **Config** last, plus the user pill and Sign out. The Audit menu groups the three telemetry pages: **Control Plane** (the audit log at `/audit`), **Statements** (statement history and trends at `/history`), and **Usage** (the metering ledger at `/usage`). The menu closes on selection, on a click elsewhere, or with Escape, and its trigger stays highlighted while any of the three pages is open.
 
 The Config tab is hidden for non-superusers, and its backend endpoints reject them as well, so a deep link does not leak it. The whole Audit menu is hidden when `QOD_TELEMETRY_STORE=none`; it is visible to superusers and tenant admins otherwise. Deep links to the three pages keep working regardless (they render a "telemetry is disabled" state when recording is off).
 
@@ -167,7 +167,7 @@ The model these screens edit (the EffectiveSet, verbs, wildcards, the two gates)
 
 ## Catalog browser
 
-The catalog browser lists the schemas and tables of a database (the DuckLake catalog). It is reachable at `/ui/catalog` with tenant and database selectors (both preserved in the URL), and contextually from the table-count links on the Databases tab. Use it to confirm what a pool actually exposes, including federated catalogs attached to the database.
+The catalog browser lists the schemas and tables of a database (the DuckLake catalog). It is reachable from the **Catalog** link in the top menu, at `/ui/catalog`, with tenant and database selectors (both preserved in the URL), and contextually from the table-count links on the Databases tab. Use it to confirm what a pool actually exposes, including federated catalogs attached to the database. A database with external Iceberg catalogs also lists them, in both places; see [Iceberg catalogs](#iceberg-catalogs).
 
 ![The catalog browser with a schema's tables listed](/img/ui/catalog.png)
 
@@ -186,6 +186,12 @@ On the table detail page, a **Snapshot** selector switches between the current s
 ![A table viewed as of a snapshot, with the AS OF banner](/img/ui/catalog-asof.png)
 
 Snapshot semantics (linear history, inlined DML, retention and expiry) are covered in [DuckLake catalogs](/qod/concepts/catalogs#snapshots-and-time-travel).
+
+### Iceberg catalogs
+
+Below the DuckLake schemas, an **External Iceberg catalogs** section lists the database's enabled [Iceberg sources](/qod/operating/iceberg) with their attach status; the section is absent when the database has none. It appears both on the Catalog page and in the catalog opened from a database's table count (Tenants > tenant > Databases). Expanding an attached alias shows a **namespace dropdown** (preselected when the catalog has a single namespace) and that namespace's tables; an alias that is not attached shows its status badge instead.
+
+Clicking an Iceberg table opens its detail page, with **Columns**, **Files** (path, content `DATA` / `POSITION_DELETES` / `EQUALITY_DELETES`, format, record count, no size), **Preview** (an "As of" snapshot selector), **Compare** (a row-level diff between two snapshots, filterable to added or removed rows) and **History** (snapshots newest first, filterable by operation, with a per-row action that previews that snapshot). The detail is always the current snapshot; time travel is in Preview and Compare. There is no restore, undrop or tagging here. The rules behind these views (admin-only, preview and diff running as the caller, string snapshot ids, the format v1 refusal and the diff size limit) are on [External Iceberg catalogs](/qod/operating/iceberg#browsing-a-catalog).
 
 #### Restore
 

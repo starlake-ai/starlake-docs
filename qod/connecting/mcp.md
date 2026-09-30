@@ -84,8 +84,8 @@ Claude Desktop or any client that takes a JSON server entry:
 | `run_sql` | `sql`, `database`, `pool?`, `branch?`, `max_rows?` | Columns and rows as JSON, a `truncated` flag, rows affected for writes |
 | `list_databases` | superuser: `tenant?` | Tenant databases with kind and pools |
 | `list_tables` | `database`, `schema?`, `branch?` | Schemas and tables |
-| `describe_table` | `database`, `schema`, `table`, `branch?` | Columns and types plus a few sample rows |
-| `table_history` | `database`, `schema`, `table`, `limit?` | Snapshot history with change verbs |
+| `describe_table` | `database`, `schema`, `table`, `branch?`, `iceberg?` | Columns and types plus a few sample rows |
+| `table_history` | `database`, `schema`, `table`, `limit?`, `iceberg?` | Snapshot history with change verbs |
 | `list_snapshots` | `database`, `limit?` | Snapshots and tags, for time-travel queries (`AT (VERSION => n)`) |
 | `my_usage` | none | Own usage counters and recent statements (PAT principals only) |
 | `create_branch` | `database`, `name`, `ttl_hours?` | A writable zero-copy branch of the database (see [Branching](/qod/operating/branching)) |
@@ -95,7 +95,7 @@ Claude Desktop or any client that takes a JSON server entry:
 | `propose_merge` | `database`, `branch` | Records a merge request with the change set as of now |
 | `discard` | `database`, `branch` | Discards a branch the caller owns (or any branch, as an admin) |
 
-The `branch` argument on `run_sql`, `list_tables` and `describe_table` routes the call to that branch's own pool and catalog; `database` stays the parent name so token scopes keep applying. There is deliberately no merge tool: merging is a human action through the admin console, the CLI or REST, by a principal other than the proposer. A token minted with `branch_only` is refused any write on the live database (`write_requires_branch`) while reads and branch writes work as granted.
+The `branch` argument on `run_sql`, `list_tables` and `describe_table` routes the call to that branch's own pool and catalog; `database` stays the parent name so token scopes keep applying. The `iceberg` argument on `describe_table` and `table_history` names an attached [Iceberg source](/qod/operating/iceberg#browsing-a-catalog); the schema and table are then read inside that catalog. It goes through the same admin-only gate as the REST views, so it needs an admin principal, and Iceberg snapshot ids come back as strings (time travel with `run_sql` and `AT (VERSION => <id>)`). `describe_table` returns the current table detail and files, plus a sample run as the caller that is dropped rather than failing the call when it cannot run. There is deliberately no merge tool: merging is a human action through the admin console, the CLI or REST, by a principal other than the proposer. A token minted with `branch_only` is refused any write on the live database (`write_requires_branch`) while reads and branch writes work as granted.
 
 `run_sql` executes through the same in-process path as the FlightSQL edge: statement validation (ACL), classification, routing, then the node. RBAC verbs decide whether writes are allowed, RLS/CLS apply, and suspended pools wake on the first statement exactly as they do for FlightSQL clients. Results are capped server-side by `QOD_MCP_MAX_ROWS` (default 500); the tool's `max_rows` argument can only lower the cap, and truncated results carry `truncated: true` so the agent aggregates or filters instead of paginating blindly.
 

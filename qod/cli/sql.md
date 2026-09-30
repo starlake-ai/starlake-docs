@@ -74,7 +74,7 @@ qod catalog preview acme acme_tpch main lineitem --as-of <SNAPSHOT_ID>
 qod catalog data-diff acme acme_tpch main lineitem --from <A> --to <B>
 ```
 
-`--as-of` also accepts `--as-of-tag` or `--as-of-ts` (mutually exclusive with each other); `--from` / `--to` on `data-diff` and `schema-diff` accept the same kinds of snapshot selectors. See [Time travel](/qod/concepts/catalogs) for what a snapshot selector can be, and the [Command reference](/qod/cli/reference) for the full `catalog` and `tag` verb lists (including `recoverable` / `undrop` for dropped tables).
+`--as-of` also accepts `--as-of-tag` or `--as-of-ts` (mutually exclusive with each other); `--from` / `--to` on `data-diff` and `schema-diff` accept the same kinds of snapshot selectors. See [Time travel](/qod/concepts/catalogs) for what a snapshot selector can be, and the [Command reference](/qod/cli/reference) for the full `catalog` and `tag` verb lists (including `recoverable` / `undrop` for dropped tables). Add `--iceberg ALIAS` to browse, preview or diff an attached Iceberg catalog instead; see [Browsing a catalog](/qod/operating/iceberg#browsing-a-catalog).
 
 ## Branches from the CLI
 

@@ -358,6 +358,94 @@ attached-catalog set. A two-part reference whose first part is an attached catal
 ambiguous; see
 [Table name resolution](/qod/administration/access-control#table-name-resolution).
 
+## Browsing a catalog
+
+An attached `iceberg_rest` source can be inspected the way the database's own DuckLake catalog is:
+namespaces and tables, a table's columns and files, its snapshot history, a preview of its rows at a
+past snapshot, and a row-level diff between two snapshots. These views are **read-only**.
+
+From the CLI, add `--iceberg ALIAS` to the `qod catalog` commands (`tenant` and `db` positional):
+
+```bash
+qod catalog schemas   acme acme_lake --iceberg sales_lake
+qod catalog tables    acme acme_lake analytics --iceberg sales_lake
+qod catalog describe  acme acme_lake analytics orders --iceberg sales_lake
+qod catalog history   acme acme_lake analytics orders --iceberg sales_lake --limit 20
+qod catalog preview   acme acme_lake analytics orders --iceberg sales_lake --as-of 7761858545720969174
+qod catalog data-diff acme acme_lake analytics orders --iceberg sales_lake --from <old id> --to <new id>
+```
+
+Over REST the routes sit under
+`/api/catalog/tenant/{tenant}/database/{tenantDb}/iceberg/{alias}`:
+
+| Route | Returns |
+|---|---|
+| `GET .../schemas` | The catalog's namespaces (`tableCount` is `-1`: not counted) |
+| `GET .../schemas/{schema}/tables` | Table names of one namespace |
+| `GET .../schemas/{schema}/tables/{table}` | Columns, current data and delete files, current snapshot id |
+| `GET .../schemas/{schema}/tables/{table}/history` | Snapshots newest first; `limit` (default 50, max 200), `before`, `operation` |
+| `GET .../schemas/{schema}/tables/{table}/preview` | A bounded row sample; `asOf` or `asOfTs`, `limit` |
+| `GET .../schemas/{schema}/tables/{table}/data-diff` | Added and removed rows between `from` and `to`; `changeType`, `limit` |
+
+The MCP tools `describe_table` and `table_history` take an optional `iceberg` argument naming the
+alias; see [MCP server](/qod/connecting/mcp). In the admin UI, the database's catalog lists its
+external Iceberg catalogs below its own; see the [catalog browser](admin-ui.md#iceberg-catalogs).
+
+### Who can use them
+
+The views are **admin-only**: a tenant admin of the database's tenant or a superuser, the same gate
+as the DuckLake catalog views. The alias must name an enabled `iceberg_rest` source of that
+database (`404 catalog_not_found` otherwise).
+
+Namespaces, tables, table detail and history are metadata reads that the manager runs itself on a
+live read node of the database's pool. The preview and the diff read table data, so they run **as
+the caller**, through the same pipeline as a normal query: the ACL, column masking and row policies
+apply. A personal access token runs as its owner with the token's own restriction, and its
+`maxRows` caps the preview and diff page. Every preview and diff is audited; the metadata reads are
+audited only when `QOD_AUDIT_CATALOG_READS` is on.
+
+All of them need a pool with a running read node on which the alias is attached: `404 no_pool`
+without a pool, `409 pool_unavailable` without a running node, and `503 catalog_unavailable` when
+no running node has the catalog attached (see
+[Attach failures](#attach-failures-and-how-they-surface)).
+
+### Snapshot ids are strings
+
+Iceberg snapshot ids are random 64-bit values, too large for a JSON number to round-trip safely, so
+they are **strings everywhere**: in every response field and in `asOf`, `before`, `from` and `to`
+(`--as-of`, `--before`, `--from`, `--to`). History is ordered and paged by the snapshot's sequence
+number, since the ids themselves are not sequential: pass the last id of a page as `before` to
+get the next one.
+
+### What each view shows
+
+- **Table detail is current-snapshot only.** It takes no snapshot selector, and the CLI refuses
+  `--as-of`, `--as-of-tag` and `--as-of-ts` on `describe --iceberg`. Time travel lives in the
+  preview and the diff. Each file is listed with its path, content (`DATA`, `POSITION_DELETES` or
+  `EQUALITY_DELETES`), format, record count and sequence number. There is no file size: DuckDB's
+  `iceberg_metadata()` does not report it.
+- **History** carries, per snapshot, the id, parent id, sequence number, commit time, operation and
+  the summary counts (added and deleted records, added and deleted data files, added position
+  deletes, total data files), plus a `current` flag. The `operation` filter takes `append`,
+  `overwrite`, `delete` or `replace`. There is no total-records figure, since position deletes do
+  not reduce it and it would misreport the live row count. The CLI refuses `--from`, `--to` and
+  `--author` with `--iceberg`.
+- **Preview** selects a snapshot by id (`asOf`, `--as-of`) or by time (`asOfTs`, `--as-of-ts`,
+  the latest snapshot at or before it), at most one of the two, or reads the current state. Tags
+  are not supported: `asOfTag` answers `400 unsupported_for_iceberg`.
+- **Data diff** compares two snapshots and returns rows marked `added` or `removed`; `changeType`
+  (`--change-type`) narrows to one of them. It is a set difference of the two versions, so an
+  `UPDATE` shows up as one removed row plus one added row, not as a change in place. There is no
+  cursor: the page is capped at the preview row limit and flagged `truncated`. Because the diff
+  scans both versions in full, it is refused with `413 diff_too_large` once either snapshot has
+  more data files than `QOD_CATALOG_ICEBERG_DIFF_MAX_FILES` (default 200).
+
+**Iceberg format v1 tables are refused** by every view with `400 unsupported_for_iceberg`: v1
+carries no per-snapshot sequence number, which history ordering and paging need.
+
+**No DuckLake-only operations.** Restore, undrop, snapshot tags, schema diff and the catalog-wide
+snapshot list have no Iceberg route; DuckDB's Iceberg extension does not support them.
+
 ## Manifest
 
 `sourceType`, `config` and `readOnly` round-trip through
@@ -382,6 +470,8 @@ is covered in the same page under
   merge are written against DuckLake catalog tables and have no Iceberg-native implementation.
 - **A catalog is required to write.** Only attached REST catalogs are writable; scanning raw
   storage cannot commit new table metadata.
+- **The management views are read-only.** There is no restore, undrop or tagging on an Iceberg
+  table; see [Browsing a catalog](#browsing-a-catalog).
 - **Running or hosting a catalog is out of scope**, as are non-REST catalogs (Hive, Hadoop, JDBC),
   table maintenance (compaction, snapshot expiry, orphan cleanup), converting tables between
   DuckLake and Iceberg, and transactions spanning several catalogs.
@@ -400,3 +490,6 @@ is covered in the same page under
 | `Could not get token from ...` | OAuth2 credentials rotated or revoked, or the token endpoint is unreachable | Update the secret, then wait for the next probe to re-attach, or recycle the pool |
 | A write against a writable catalog is refused as unresolvable | Another source on the same database is read-only, so the edge screen fails closed pool-wide | Fully qualify the write as `catalog.schema.table`, or clear the read-only flag and recycle |
 | Writes still refused after clearing the read-only flag | `READ_ONLY` is on the running nodes' `ATTACH` | Recycle the pool |
+| `400 unsupported_for_iceberg` from a catalog view | The table is Iceberg format v1, or the preview named a tag | Upgrade the table to format v2; select a snapshot by id or time |
+| `413 diff_too_large` | A snapshot of the diff has more data files than `QOD_CATALOG_ICEBERG_DIFF_MAX_FILES` | Diff closer snapshots, or raise the limit |
+| `503 catalog_unavailable` from a catalog view | No running node of the pool has the catalog attached | Read `attachStatus` on the source for the DuckDB error |

@@ -171,6 +171,7 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.catalog.auditCatalogReads` | `QOD_AUDIT_CATALOG_READS` | `false` |  | Audit catalog browser reads: one catalog.read event per gated GET. Off by default (reads are chatty; mutations are always audited). |
 | `quack-on-demand.catalog.previewMaxRows` | `QOD_CATALOG_PREVIEW_MAX_ROWS` | `1000` |  | Hard cap on rows returned by the catalog data-preview endpoint. |
 | `quack-on-demand.catalog.previewTimeoutSec` | `QOD_CATALOG_PREVIEW_TIMEOUT_SEC` | `30` |  | Seconds before a catalog data-preview query is cancelled. |
+| `quack-on-demand.catalog.icebergDiffMaxFiles` | `QOD_CATALOG_ICEBERG_DIFF_MAX_FILES` | `200` |  | Refuse an Iceberg data diff when either snapshot has more data files than this: the diff is a full EXCEPT scan of both versions. |
 | `quack-on-demand.catalog.undropTimeoutSec` | `QOD_CATALOG_UNDROP_TIMEOUT_SEC` | `300` |  | Seconds before an undrop recovery CTAS is abandoned. Larger than the preview timeout because it is a mutation over potentially large tables; on timeout the handler probes whether the table was created anyway and reports accordingly. |
 | `quack-on-demand.catalog.restoreTimeoutSec` | `QOD_CATALOG_RESTORE_TIMEOUT_SEC` | `300` |  | Seconds before a restore CREATE OR REPLACE is abandoned. On timeout the handler probes whether the replace committed anyway and reports accordingly. |
 

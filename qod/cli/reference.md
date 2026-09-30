@@ -179,6 +179,13 @@ dry run first and prints the change summary, then prompts to confirm before writ
 snapshot (skip the prompt with `--yes`, or stop after the preview with `--dry-run`). Requires an
 ALL grant, or DDL plus RO/RW, on the table. For dropped tables, use `qod catalog undrop` instead.
 
+`schemas`, `tables`, `describe`, `history`, `preview` and `data-diff` also take `--iceberg ALIAS` to
+read an attached external Iceberg catalog instead of the database's DuckLake catalog. Snapshot ids
+are then strings, `describe` is current-only (no `--as-of*`), `preview` refuses `--as-of-tag`,
+`history` refuses `--from` / `--to` / `--author`, `data-diff` refuses `--cursor` and its
+`--change-type` is `added` or `removed`. See
+[Browsing a catalog](/qod/operating/iceberg#browsing-a-catalog).
+
 ## tag
 
 | Command | Purpose |
