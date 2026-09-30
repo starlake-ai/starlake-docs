@@ -80,6 +80,8 @@ A user with `tenant IS NULL` in `qodstate_user` is a superuser. Superusers bypas
 
 The superuser flag is purely the absence of a tenant value. The bootstrap admin seeded at startup is a superuser. Only superusers can create other superusers; the API enforces this constraint at the application layer.
 
+User names confer nothing. A tenant user may be called `superuser` and is still an ordinary tenant user: statements the manager runs on a caller's behalf (the catalog preview, data diff, undrop and restore endpoints, and the MCP tools that run SQL) bypass the ACL, column masking and row policies only for a real superuser (`tenant IS NULL`), the static API key and the manager's own internal steps, never because of a name. Everyone else, including a PAT, runs as their own principal with these gates applied; see [Relationship to the REST session](/qod/connecting/authenticating#relationship-to-the-rest-session).
+
 A superuser logs in via the system auth realm: on the UI the **Tenant ID** field is left blank; on FlightSQL the URL carries `?superuser=true` alongside the routing `tenant=X&pool=Y` params. The tenant-realm path looks up `qodstate_user WHERE tenant = ?` and never matches a `tenant IS NULL` row, so a superuser cannot accidentally be authenticated through the tenant realm. See [Authentication](/qod/operating/authentication) for the realm-selection mechanics.
 
 ## Table permissions

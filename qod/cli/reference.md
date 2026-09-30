@@ -178,6 +178,9 @@ qod catalog restore --tenant acme --db acme_tpch --schema tpch1 --table orders -
 dry run first and prints the change summary, then prompts to confirm before writing the new
 snapshot (skip the prompt with `--yes`, or stop after the preview with `--dry-run`). Requires an
 ALL grant, or DDL plus RO/RW, on the table. For dropped tables, use `qod catalog undrop` instead.
+`restore`, `undrop`, `preview` and `data-diff` run their statements as the caller: a session as its
+user, a PAT as its owner with the token's restriction, so the ACL, column masking and row policies
+apply; only the static API key runs as the system caller.
 
 `schemas`, `tables`, `describe`, `history`, `preview` and `data-diff` also take `--iceberg ALIAS` to
 read an attached external Iceberg catalog instead of the database's DuckLake catalog. Snapshot ids

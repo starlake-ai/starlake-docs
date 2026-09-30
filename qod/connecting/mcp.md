@@ -110,6 +110,7 @@ The `branch` argument on `run_sql`, `list_tables` and `describe_table` routes th
 | `active_statements`, `kill_statement` | Inspect and kill running statements |
 | `run_maintenance`, `maintenance_runs` | Trigger and inspect managed maintenance |
 | `create_tag`, `protect_tag` | Protect only; there is no unprotect and no tag delete |
+| `restore_snapshot`, `undrop_table`, `list_recoverable` | Restore and undrop run as the PAT's owner with the token's restriction, so the ACL applies and a table the owner cannot write answers `acl_denied`; the restore `dry_run` reports aggregate change counts only |
 | `audit_search` | Filtered read over the audit log |
 
 `tools/list` is computed per principal: a `role=user` PAT sees the data tier only; a tenant admin sees both tiers scoped to their tenant; superuser and static-key callers see both cross-tenant. `tools/call` re-checks the tier server-side. Tool calls land in the audit trail as the acting user.
@@ -142,5 +143,5 @@ Statement execution inherits the edge's existing timeouts.
 
 - **401 on every call**: the bearer is not a live PAT (revoked, expired, owner disabled) or is a session JWT, which `/mcp` refuses by design. Mint a fresh PAT.
 - **A tool is missing from `tools/list`**: the credential's tier does not include it; admin tools need an admin-owned PAT or the static key.
-- **`run_sql` returns an ACL error**: the message names the table and missing verb; grant the owning role `RO`/`RW`/`DDL` as needed.
+- **`run_sql`, `restore_snapshot` or `undrop_table` returns an ACL error**: the message names the table and missing verb; grant the owning role `RO`/`RW`/`DDL` as needed. These tools run as the PAT's owner, never as a superuser, so an admin-owned PAT still needs the table grants.
 - **"pool is resuming"**: the target pool was suspended and is waking; retry in a few seconds.

@@ -25,7 +25,7 @@ The fork snapshot is recorded per branch and pinned: [managed maintenance](/qod/
 | write | the same principal, targeting the branch | Ordinary SQL through FlightSQL or MCP; ACL, RLS and CLS apply |
 | changes and diff | anyone with access | Touched tables classified as created, dropped, recreated, modified or altered, with row counts; conflicts against main; row-level diff per table |
 | propose | the branch owner or any principal with access | Records a merge request carrying the change set and conflicts as of now |
-| merge | a tenant admin **other than the proposer** | Fast-forward onto main, one snapshot, tagged, branch torn down |
+| merge | a tenant admin **other than the proposer**, not through a branch-only token | Fast-forward onto main, one snapshot, tagged, branch torn down |
 | discard | the owner or a tenant admin | Pool, catalog and branch-only files freed; the row stays as history |
 | expiry | the manager | Live branches past their TTL are discarded by a leader-gated sweep |
 
@@ -44,6 +44,7 @@ The change set is recomputed at merge time. A merge is refused when:
 - main touched any table the branch touched since the fork, or dropped a schema holding one (409 `merge_conflict`, listing the tables);
 - the branch altered a table's columns, or touched views or macros (422 `merge_unsupported`; v1 merges created, dropped, recreated and data-modified tables);
 - the caller is the proposer (403 `self_merge_forbidden`);
+- the caller is a PAT minted with `--branch-only` (403 `branch_only_token`: a merge writes main);
 - `expectedMainSnapshot` was given and main moved past it (409 `concurrent_write`).
 
 Otherwise the manager spawns a short-lived merge node with the branch attached read-only next to main and runs one transaction: created tables are copied with `CREATE TABLE AS`, dropped tables dropped, and for modified tables the rows the branch deleted or updated are removed by row id and the current branch rows for every inserted or updated row id are inserted. Row ids are stable across the clone and preserved by DuckLake on update, which is what makes the replay exact for every interleaving. The commit is stamped with the approver as author and a message naming the branch, the merge id and the proposer; the resulting snapshot is tagged `merge-<branch>-<id>`.
@@ -58,7 +59,9 @@ Mint the agent's personal access token with `--branch-only`:
 qod auth pat create --name agent --branch-only --database acme_tpch
 ```
 
-`INSERT`, `UPDATE`, `DELETE` and DDL on the live database are then refused with `write_requires_branch`; reads are unchanged, writes on any branch work, and every child token inherits the flag. Combined with the absence of a merge tool on MCP, the agent can only ever propose. This gate applies to MCP and REST callers; the raw FlightSQL wire has no token concept.
+`INSERT`, `UPDATE`, `DELETE` and DDL on the live database are then refused with `write_requires_branch`; reads are unchanged, writes on any branch work, and every child token inherits the flag. A branch-only token cannot merge either, not even over REST where the merge endpoint exists: it gets 403 `branch_only_token`. Combined with the absence of a merge tool on MCP, the agent can only ever propose. This gate applies to MCP and REST callers; the raw FlightSQL wire has no token concept.
+
+The branch endpoints (create, changes, propose, merge, discard) act as the caller's own principal. A credential that resolves to no live session, PAT or the static key, such as a session that expired mid-request, is refused with 401 before the branch service runs.
 
 ## From the CLI
 
