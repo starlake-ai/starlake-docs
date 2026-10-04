@@ -109,9 +109,26 @@ The `branch` argument on `run_sql`, `list_tables` and `describe_table` routes th
 | `restart_node`, `quarantine_node`, `unquarantine_node` | Node lifecycle |
 | `active_statements`, `kill_statement` | Inspect and kill running statements |
 | `run_maintenance`, `maintenance_runs` | Trigger and inspect managed maintenance |
-| `create_tag`, `protect_tag` | Protect only; there is no unprotect and no tag delete |
+| `create_pool`, `stop_pool`, `delete_pool` | Pool lifecycle |
+| `set_pool_autoscale`, `set_pool_resources`, `set_pool_pod_template`, `set_pool_disabled`, `set_node_max_concurrent` | Pool settings; band and quota refusals surface as tool errors |
+| `set_pool_lockdown` | Node-lockdown override (`inherit`, `on`, `off`); superuser only |
+| `create_tag`, `protect_tag`, `delete_tag` | Deleting a protected tag is refused; there is no unprotect tool, so a protected tag stays protected over MCP |
 | `restore_snapshot`, `undrop_table`, `list_recoverable` | Restore and undrop run as the PAT's owner with the token's restriction, so the ACL applies and a table the owner cannot write answers `acl_denied`; the restore `dry_run` reports aggregate change counts only |
-| `audit_search` | Filtered read over the audit log |
+| `get_maintenance_policy`, `upsert_maintenance_policy`, `delete_maintenance_policy` | Managed maintenance policies |
+| `list_tenants`, `create_tenant`, `delete_tenant`, `set_tenant_disabled`, `set_tenant_auth`, `set_tenant_acl` | Tenant lifecycle and settings; `delete_tenant` is refused while the tenant still has pools |
+| `list_databases_admin`, `create_database`, `update_database`, `delete_database`, `metastore_defaults` | Database (tenant-db) lifecycle; `delete_database` with `purge_managed_data` also drops manager-provisioned storage |
+| `list_users`, `create_user`, `update_user`, `delete_user`, `user_effective_permissions` | Users (see [User creation over MCP](#user-creation-over-mcp)) |
+| `list_roles`, `create_role`, `delete_role`, `list_role_permissions`, `grant_role_permission`, `revoke_role_permission` | Roles and their table permissions |
+| `list_column_policies`, `create_column_policy`, `update_column_policy`, `delete_column_policy`, `list_row_policies`, `create_row_policy`, `update_row_policy`, `delete_row_policy` | Column masking and row filters on a role |
+| `list_groups`, `create_group`, `delete_group`, `add_membership`, `remove_membership`, `list_group_role_memberships` | Groups and user, group and role memberships |
+| `list_pool_permissions`, `grant_pool_permission`, `revoke_pool_permission` | Pool access grants |
+| `list_federated_sources`, `upsert_federated_source`, `delete_federated_source`, `set_federated_secret`, `delete_federated_secret` | Federated sources and their secrets; refused with `federation_disabled` when federation is not enabled |
+| `create_pat`, `list_pats`, `revoke_pat`, `delete_pat` | Self-scoped: a token mints, lists, revokes and deletes only within its own subtree, and a child's scope can only narrow (see [Scoped tokens and delegation](#scoped-tokens-and-delegation)); the token value is returned once |
+| `manifest_export`, `manifest_import` | Control-plane manifest round-trip; `manifest_import` is superuser only |
+| `get_config` | The manager's configuration registry; superuser only |
+| `audit_search`, `statement_history`, `usage_report`, `usage_trends` | Audit log, statement history and usage |
+
+Built-in roles and groups keep their protection over MCP: a tool call that would delete or edit one answers `builtin_protected`, exactly as on REST.
 
 ### User creation over MCP
 
@@ -119,16 +136,18 @@ The `branch` argument on `run_sql`, `list_tables` and `describe_table` routes th
 
 `tools/list` is computed per principal: a PAT owned by a `kind=user` account sees the data tier only; a tenant admin sees both tiers scoped to their tenant; superuser and static-key callers see both cross-tenant. `tools/call` re-checks the tier server-side. Tool calls land in the audit trail as the acting user.
 
-## Deny-list
+## Not available over MCP
 
-Some operations exist in no tier and have no code path from `/mcp`, regardless of credential:
+The admin tier covers nearly every REST mutation. A small set of operations has no MCP tool by design, whatever the credential:
 
-- Protection-weakening operations: tag unprotect, tag delete, lockdown off, any guardrail loosening
-- Irreversible destruction: tenant delete, database delete or purge, user delete, manifest import
-- Credential and secret operations: password set/reset, PAT management tools, federated secrets
-- RBAC mutations: grants, revokes, memberships, role/group/user create or update
+- Interactive authentication flows: login, logout, password change, forgot and reset password, SSO and OIDC callbacks, SQL-token exchange
+- Branch merge: merging is a human action by a principal other than the proposer (admin console, CLI or REST)
+- The OPA policy dry run (`qod tenant opa-test`), a diagnostic for policy authors
+- Fleet server management (join, heartbeat, approve, drain, remove)
+- The SCIM 2.0 provisioning endpoints, which are the identity provider's wire protocol
+- Tag unprotect: once protected, a tag cannot be unprotected or deleted over MCP
 
-No MCP tool exposes PAT management. Delegation happens over the REST API instead: a PAT presented there may mint and revoke only within its own subtree (see [Scoped tokens and delegation](#scoped-tokens-and-delegation)), while full PAT management - across all of a user's tokens - requires a logged-in session (UI or CLI).
+Tool exposure does not bypass authorization: every tool runs through the same handlers as REST, with the tenant scope, the superuser-only checks, the built-in role and group protection and the token's own restriction applied.
 
 ## Errors
 
