@@ -1,13 +1,13 @@
 ---
 id: day-2-operations
 title: Run the platform
-description: "Operational playbooks for a running DuckDB fleet: watch the Nodes board, scale pools, drain before maintenance, inspect recent statements."
+description: "Operational playbooks for a running DuckDB fleet: watch the node dashboard, scale pools, drain before maintenance, inspect recent statements."
 keywords: ["duckdb operations", "scaling", "nodes board", "drain pool", "qod cli"]
 ---
 
-The Nodes board is the at-a-glance operational view for a running deployment. From it you can spot trouble, scale compute up or down, drain a pool before maintenance, and drill into recent statements. This page walks through each of those tasks as step-by-step playbooks with the equivalent [qod CLI](/qod/cli/) command for scripting and automation.
+The node dashboard is the at-a-glance operational view for a running deployment. From it you can spot trouble, scale compute up or down, drain a pool before maintenance, and drill into recent statements. This page walks through each of those tasks as step-by-step playbooks with the equivalent [qod CLI](/qod/cli/) command for scripting and automation.
 
-## Watch the Nodes board
+## Watch the node dashboard
 
 **Goal:** Confirm the fleet is healthy and identify hot pools, draining nodes, or idle nodes at a glance.
 
@@ -15,8 +15,8 @@ The Nodes board is the at-a-glance operational view for a running deployment. Fr
 
 **Steps (UI):**
 
-1. Click **Nodes** in the top navigation bar. The board loads automatically on sign-in.
-2. The table lists every Quack node across all tenants, grouped by tenant and pool. Each row shows:
+1. Click **Dashboard** in the sidebar. It is the page you land on after sign-in.
+2. The table lists every Quack node of the tenant picked in the sidebar's tenant switcher (every tenant under **All tenants**), grouped by tenant and pool. Each row shows:
    - **In-flight** - statements currently executing on that node.
    - **Total served** - lifetime count since the manager last started.
    - **Avg latency** - exponentially weighted moving average in milliseconds.
@@ -26,7 +26,7 @@ The Nodes board is the at-a-glance operational view for a running deployment. Fr
 4. To spot a **draining node**: the row shows `draining: true`. It is excluded from new routing picks and will disappear once its stop completes.
 5. To spot an **idle node**: in-flight is 0 and total served is low relative to siblings. If the entire pool is idle you may want to scale it down to save resources.
 
-![Nodes overview](/img/ui/nodes.png)
+![Node dashboard](/img/ui/nodes.png)
 
 **CLI equivalent:**
 
@@ -43,7 +43,7 @@ Per-node fields surfaced via `qod --json pool list`:
 - `p50Ms`/`p95Ms`/`p99Ms` - rolling 256-sample window
 - `healthy` / `draining` - tracker flags
 
-**Verify:** Run a query through the FlightSQL edge and reload the Nodes board. The in-flight counter briefly increments during execution, and total-served increments by one after it completes.
+**Verify:** Run a query through the FlightSQL edge and reload the node dashboard. The in-flight counter briefly increments during execution, and total-served increments by one after it completes.
 
 **Related:** [Observability](/qod/operating/observability), [Metrics reference](/qod/reference/metrics).
 
@@ -57,8 +57,8 @@ Per-node fields surfaced via `qod --json pool list`:
 
 **Steps (UI):**
 
-1. Click **Tenants** in the top navigation bar and select the target tenant.
-2. On the **Pools** tab, click the pool name to open its detail page.
+1. Pick the target tenant in the sidebar's tenant switcher.
+2. Open **Tenant > Pools** in the sidebar and click the pool name to open its detail page.
 3. Click **Scale**.
 4. Set the **Role distribution** counts (WriteOnly, ReadOnly, Dual). The target size is their sum, shown above the form.
 5. Click **Apply**. The manager computes the diff: surplus nodes are stopped, and deficit nodes are spawned.
@@ -86,7 +86,7 @@ qod pool scale --tenant acme --db acme_tpch --pool bi --target-size 6 \
   --writeonly 1 --readonly 2 --dual 3
 ```
 
-**Verify:** Return to the Nodes board. The new node count appears as rows grouped under the pool. Newly spawned nodes may show `healthy: false` for up to 5 seconds while the health probe runs its first check.
+**Verify:** Return to the node dashboard. The new node count appears as rows grouped under the pool. Newly spawned nodes may show `healthy: false` for up to 5 seconds while the health probe runs its first check.
 
 **Related:** [Pools and cohorts](/qod/operating/pools-cohorts).
 
@@ -100,7 +100,7 @@ qod pool scale --tenant acme --db acme_tpch --pool bi --target-size 6 \
 
 **Steps (UI):**
 
-1. Click **Tenants**, select the tenant, open the **Pools** tab, and click the pool name to open its detail page.
+1. Pick the tenant in the sidebar's tenant switcher, open **Tenant > Pools**, and click the pool name to open its detail page.
 2. The **Suspend** menu in the header offers two stop actions:
    - **Drain** - graceful stop. Each node is marked as draining in the router so no new statements are routed to it, then the node process is stopped. Use this during planned maintenance when you want to stop routing new queries to the pool before it shuts down. Drain does not wait for in-flight queries to finish, so statements already executing on a node can still be interrupted.
    - **Kill** - immediate stop (`force` on the REST and CLI surface). Nodes are stopped without a draining period. Any statements in flight on those nodes are failed and returned to the client as errors. Use this when a pool is wedged and drain is not making progress.
@@ -118,7 +118,7 @@ qod pool stop --tenant acme --db acme_tpch --pool bi --force
 
 Omit `--force` to drain instead of force-stopping.
 
-**Verify:** On the Nodes board, the pool's rows disappear. The pool itself still appears in the Tenants -> Pools tab with zero nodes, confirming it is registered but stopped.
+**Verify:** On the node dashboard, the pool's rows disappear. The pool itself still appears on the tenant's **Pools** page with zero nodes, confirming it is registered but stopped.
 
 **Related:** [Resilience and recovery](/qod/operating/resilience) (graceful drain detail, reconcile behavior), [Pools and cohorts](/qod/operating/pools-cohorts).
 
@@ -132,9 +132,9 @@ Omit `--force` to drain instead of force-stopping.
 
 **Steps (UI):**
 
-1. Navigate to a tenant detail page (click **Tenants**, then select the tenant).
-2. The page shows a **Recent statements** panel below the pool list. Statements appear newest-first with the SQL text, the node that handled it, the duration, and the status.
-3. The same panel appears on the pool detail page, scoped to statements routed to that pool.
+1. Pick the tenant in the sidebar's tenant switcher (or **All tenants**) and open **Dashboard**.
+2. The page shows a **Recent statements** table below the node table, narrowed to the selected tenant. Statements appear newest-first with the SQL text, the node that handled it, the duration, and the status.
+3. For the durable, searchable history (with trend charts and a pool filter), open **Audit > Statements** in the sidebar; see [Statement history and trends](/qod/operating/history-trends).
 
 **CLI equivalent:**
 

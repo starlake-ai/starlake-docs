@@ -98,4 +98,4 @@ A node response is either OK, a transient failure, or a permanent failure:
 - **Transient failure inside an open transaction:** there is no cross-node retry (a half-applied transaction cannot move nodes). The pin is invalidated and the statement fails with "transient failure inside transaction".
 - **Permanent failure:** returned immediately, no retry.
 
-Each outcome is recorded in the statement history with a status (`ok`, `denied`, `no-pool`, `no-node`, `pin-lost`, `transient`, `permanent`) visible on the tenant detail screen and folded into the `statements_total` metric by status.
+Each outcome is recorded in the statement history with a status (`ok`, `denied`, `no-pool`, `no-node`, `pin-lost`, `transient`, `permanent`) visible on the admin UI's Dashboard (Recent statements) and **Audit > Statements** pages and folded into the `statements_total` metric by status.

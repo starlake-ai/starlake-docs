@@ -84,7 +84,7 @@ Set `QOD_TELEMETRY_STORE=none` to disable the history subsystem entirely:
 - Every query to the history and trends endpoints returns empty.
 - The rollup job, the hourly purge, and the watermark updater are not started.
 - The `qod_journal_dropped_total` counter stays at zero (not recording is intentional, not a drop).
-- The History entry is hidden from the admin UI navigation. A deep link to the History page shows an empty state with a "telemetry is disabled" message.
+- The **Audit** group (Control Plane, Statements, Usage) is hidden from the admin UI sidebar. A deep link to the Statements page shows an empty state with a "telemetry is disabled" message.
 
 The `postgres` and `none` values are the only accepted values for `QOD_TELEMETRY_STORE`. Any other value is refused at startup.
 

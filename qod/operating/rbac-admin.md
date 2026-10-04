@@ -65,7 +65,7 @@ To grant access to every table in a tenant (wildcard), omit `--catalog`, `--sche
 qod role permission grant --role-id <role-id> --verb RO
 ```
 
-In the admin UI: open the tenant detail page, navigate to the Roles tab, create a role, then use the permission editor to add grants.
+In the admin UI: pick the tenant in the sidebar's tenant switcher, open **Users & Access Controls > Roles**, create a role, then use the permission editor to add grants.
 
 ---
 
@@ -93,7 +93,7 @@ To remove the assignment:
 qod membership group-role remove --group-id <group-id> --role-id <role-id>
 ```
 
-In the admin UI: open the tenant detail page, navigate to the Groups tab, create a group, then use the role assignment controls to link roles.
+In the admin UI: pick the tenant in the sidebar's tenant switcher, open **Users & Access Controls > Groups**, create a group, then use the role assignment controls to link roles.
 
 ---
 
@@ -126,7 +126,7 @@ qod user create --username ops-admin --password 'str0ng!' --superuser --kind adm
 
 Passing `--superuser` (and omitting `--tenant`) is equivalent to passing `"tenant": null` on the REST body. Superusers bypass RBAC, so they take no roles or groups (`400 memberships_not_applicable`).
 
-In the admin UI: open the Users page, click "Create user", fill in the form. The **Roles** and **Groups** checkbox dropdowns start preselected on `qod_all_tables` and `qod_all_pools`; the create button stays disabled while either is empty. The superuser option appears only when the logged-in user is themselves a superuser, and disables both dropdowns.
+In the admin UI: open **Users & Access Controls > Users** in the sidebar, click **+ New user** (**+ Pre-provision user** for an OIDC tenant), fill in the form. The **Roles** and **Groups** checkbox dropdowns start preselected on `qod_all_tables` and `qod_all_pools`; the create button stays disabled while either is empty. The superuser option appears only when the logged-in user is themselves a superuser, and disables both dropdowns.
 
 ---
 
@@ -186,7 +186,7 @@ All the filters below are optional; any combination narrows the results:
 qod pool permission list --tenant acme --user-id <user-id>
 ```
 
-In the admin UI: on the pool detail page, use the "Access" tab to add or remove user and group grants.
+In the admin UI: pool grants are managed per group. Open **Users & Access Controls > Groups**, click a group's edit icon, and use its **Pool grants** tab (**+ Grant pool** to add, the revoke icon to remove); a built-in group's pool grants are fixed. Grants given to a single user are visible in the Users page's **Pool grants** column; add or remove them with the CLI or REST.
 
 ---
 
@@ -214,7 +214,7 @@ Example response shape:
 
 `tablePerms` lists every permission reachable through the user's direct roles and through roles inherited via group membership. This is the set the ACL gate evaluates at statement time.
 
-In the admin UI: click a user in the Users page to open the effective-permissions panel.
+In the admin UI: click a user on the **Users** page to open the effective-permissions panel.
 
 ---
 

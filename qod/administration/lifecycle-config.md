@@ -19,8 +19,8 @@ Attach external catalogs, rotate secrets, back up and restore configuration, and
 
 **Steps (UI)**:
 
-1. Go to **Tenants** and select the target tenant.
-2. Open the **Databases** tab and find the target database.
+1. Pick the target tenant in the sidebar's tenant switcher.
+2. Open **Tenant > Databases** in the sidebar and find the target database.
 3. Click **Federation** to open the federated-source panel.
 
    ![Federation panel](/img/ui/federation.png)
@@ -81,10 +81,10 @@ Placeholders in `setupSql`:
 
 **Steps (UI)**:
 
-1. Go to **Tenants** -> **Databases** -> **Federation** for the relevant database.
+1. Pick the tenant in the sidebar's tenant switcher, open **Tenant > Databases**, and click **Federation** on the relevant database.
 2. Find the federated source and open its secret list.
 3. Click the secret row and enter the new value. The `PUT` is an upsert; only the value field changes, not the `setupSql`.
-4. Go to the **Pools** tab and click the name of the pool that uses this database to open its detail page.
+4. Open **Tenant > Pools** and click the name of the pool that uses this database to open its detail page.
 5. In the header, choose **Suspend** -> **Drain** to stop accepting new queries, then wait for in-flight statements to complete. Click **Scale** to bring nodes back up (or use **Suspend** -> **Kill** if immediate replacement is acceptable). New nodes start with the updated secret value injected into their `setupSql`.
 
 **Manifest (YAML)**
@@ -125,15 +125,15 @@ After updating the secret, recycle the pool so new nodes pick up the change. See
 
 **Goal**: Export the entire control-plane configuration to a YAML manifest for backup, version control, or environment cloning, then re-import an edited file.
 
-Note: the Config/Manifest tab and the manifest endpoints are restricted to superusers. A tenant-scoped session receives `403 superuser_required`.
+Note: the Config page (with its Manifest section) and the manifest endpoints are restricted to superusers. A tenant-scoped session receives `403 superuser_required`.
 
 **Prerequisites**:
 
-- Signed in as a superuser (the **Config** tab in the navigation is only visible to superusers).
+- Signed in as a superuser (the **Settings > Config** entry in the sidebar is only visible to superusers).
 
 **Steps (UI)**:
 
-1. Click **Config** in the top navigation bar.
+1. Open **Settings > Config** in the sidebar (`/ui/settings/config`).
 2. Select the **Manifest** section.
 3. Click **Download YAML** to export the current configuration. The file contains all tenants, databases, pools, federated sources, roles, groups, and users. Secret values are written as `***REDACTED***`; plaintext user passwords are never written, but each user's bcrypt `passwordHash` is exported verbatim so a restore keeps the same credential. Treat the downloaded file as sensitive and do not commit it to a public repository.
 4. Edit the file as needed. Leave `***REDACTED***` in place for secrets you do not intend to change; the importer reuses the existing stored value for those entries.
@@ -153,7 +153,7 @@ qod manifest import manifest.yaml
 
 The import response is a JSON count: `{"tenants":2,"tenantDbs":3,"pools":4,...}` (pass `--json` to see it verbatim). The import validates the whole document before writing anything; on failure it returns `400` and changes nothing.
 
-**Verify**: After import, check **Tenants** and **Users** in the UI to confirm the expected tenants, pools, and users are present. If you cloned to a new environment, run a sample query through the FlightSQL edge to confirm the pools came up correctly.
+**Verify**: After import, check the tenant list (**Manage tenants...** in the tenant switcher) and the **Users** page under **All tenants** to confirm the expected tenants, pools, and users are present. If you cloned to a new environment, run a sample query through the FlightSQL edge to confirm the pools came up correctly.
 
 **Related**: [Manifest backup and restore](/qod/operating/manifest).
 
@@ -170,9 +170,9 @@ The import response is a JSON count: `{"tenants":2,"tenantDbs":3,"pools":4,...}`
 
 **Steps (UI)**:
 
-1. **Delete a pool**: Go to **Tenants**, select the tenant, open the **Pools** tab, click the pool name to open its detail page, and click the **Delete** (trash) button in the header. This stops all nodes and removes the pool from the registry. To stop nodes temporarily without removing the pool, use **Suspend** -> **Drain** instead.
-2. **Delete a tenant**: Once all pools are removed, go to **Tenants**, select the tenant, and click **Delete**.
-3. **Remove a user, role, or group**: Go to **Users**, select the tenant scope at the top, find the object on the appropriate tab, and click **Delete**.
+1. **Delete a pool**: Pick the tenant in the sidebar's tenant switcher, open **Tenant > Pools**, click the pool name to open its detail page, and click the **Delete** (trash) button in the header. This stops all nodes and removes the pool from the registry. To stop nodes temporarily without removing the pool, use **Suspend** -> **Drain** instead.
+2. **Delete a tenant**: Once all pools are removed, choose **Manage tenants...** in the tenant switcher and click the delete action on the tenant's row.
+3. **Remove a user, role, or group**: Pick the tenant in the tenant switcher, open **Users**, **Groups**, or **Roles** under **Users & Access Controls**, find the object, and click **Delete**.
 
 **Manifest (YAML):** Declaratively, drop a pool from a tenant that is still in the manifest and re-import; nested collections are replaced, so the omitted pool is pruned. Top-level tenants are upsert-only, so deleting a whole tenant uses the CLI delete below, not omission. See [Manage by manifest](/qod/administration/manage-by-manifest).
 
@@ -186,6 +186,6 @@ qod pool delete --tenant acme --db acme_tpch --pool bi --force
 qod tenant delete acme
 ```
 
-**Verify**: The pool or tenant no longer appears in the **Tenants** or **Nodes** lists. A user removed from the RBAC graph can no longer authenticate against the tenant or run queries.
+**Verify**: The pool or tenant no longer appears in the tenant list or on the **Dashboard**. A user removed from the RBAC graph can no longer authenticate against the tenant or run queries.
 
 **Related**: [Tenants and databases](/qod/operating/tenants-databases), [Administering access](/qod/operating/rbac-admin).

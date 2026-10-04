@@ -18,20 +18,21 @@ Everything on this page, plus user management, can also be done with plain SQL f
 
 **Steps (UI):**
 
-1. Open the **Users** section (top nav) and select the target tenant from the tenant selector.
-2. Go to the **Roles** tab and click **+ New role**. Give the role a name (for example `bi-readers`). Add a table permission with verb `RO` (read) and the target catalog, schema, and table (use `*` to wildcard any field). Save.
+1. Pick the target tenant in the sidebar's tenant switcher. The three pages used below sit under **Users & Access Controls** in the sidebar.
+2. Open **Roles** and click **+ New role**. Give the role a name (for example `bi-readers`). Add a table permission with verb `RO` (read) and the target catalog, schema, and table (use `*` to wildcard any field). Save.
 
-   ![Roles tab](/img/ui/rbac-roles.png)
+   ![Roles page](/img/ui/rbac-roles.png)
 
-3. Go to the **Groups** tab and click **+ New group**. Name it (for example `bi-team`). Add the `bi-readers` role to the group. Save.
+3. Open **Groups** and click **+ New group**. Name it (for example `bi-team`). Add the `bi-readers` role to the group. Save.
 
-   ![Groups tab](/img/ui/rbac-groups.png)
+   ![Groups page](/img/ui/rbac-groups.png)
 
-4. Go to the **Users** tab. For each user who needs access, open their record, assign them to the `bi-team` group, and add a pool grant for the target pool. The pool grant is required for the user to connect to that pool.
+4. Give the group a pool grant for the target pool: on the **Groups** page, click the `bi-team` edit icon, open its **Pool grants** tab, pick the pool, and click **+ Grant pool**. The pool grant is required for the members to connect to that pool.
+5. Open **Users**. For each user who needs access, open their record and assign them to the `bi-team` group.
 
-   ![Users tab](/img/ui/rbac-users.png)
+   ![Users page](/img/ui/rbac-users.png)
 
-5. Confirm the pool grant: in the **Users** tab, verify the user's row shows the pool grant for the target pool.
+6. Confirm the pool grant: on the **Users** page, verify the user's row shows the pool grant for the target pool.
 
 :::note Default memberships
 A user created without explicit roles and groups joins the built-ins `qod_all_tables` and `qod_all_pools`, which already grant every table and every pool of the tenant, so a narrower team grant changes nothing for them. Create team users with `qod_no_tables` / `qod_no_pools` (or with the team's role and group) instead, or remove their built-in memberships. See [Built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups).
@@ -101,7 +102,7 @@ The permission graph is: user -> roles (direct), user -> groups -> roles (via gr
 
 **Steps (UI):**
 
-1. Open **Users** > **Roles** tab and click the edit icon on the target role.
+1. With the tenant picked in the sidebar's tenant switcher, open **Users & Access Controls > Roles** and click the edit icon on the target role.
 2. Add one or more table permissions with the appropriate verb:
    - `RW` for DML (INSERT, UPDATE, DELETE, MERGE, TRUNCATE) - it also covers reads on the same table
    - `DDL` for schema changes (CREATE, DROP, ALTER)
@@ -161,10 +162,10 @@ After **deleting** a federated source, recycle the pool: running nodes keep the 
 
 **Steps (UI):**
 
-1. Open **Users** and select the tenant.
-2. To remove a pool grant: open the user's record in the **Users** tab, find the pool grant row, and click **Remove**.
-3. To remove a role from a group: open the **Groups** tab, edit the group, and delete the role assignment.
-4. To delete a role permission entirely: open the **Roles** tab, edit the role, and delete the permission row.
+1. Pick the tenant in the sidebar's tenant switcher; the pages below sit under **Users & Access Controls**.
+2. To remove a pool grant: open **Groups**, click the group's edit icon, open its **Pool grants** tab, and click the revoke icon on the grant. (A pool grant given directly to one user is removed with the CLI or REST.)
+3. To remove a role from a group: open **Groups**, edit the group, and delete the role assignment.
+4. To delete a role permission entirely: open **Roles**, edit the role, and delete the permission row.
 
 **Effect on active sessions:** `invalidateEffectiveCache()` is called on every RBAC mutation in `PoolSupervisor`. This drops the entire in-process EffectiveSet cache immediately, so the revoked grant takes effect on the **next handshake** - there is no TTL window to wait for.
 

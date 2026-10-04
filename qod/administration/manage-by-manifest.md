@@ -69,6 +69,6 @@ qod manifest import manifest.yaml
 
 Import uses two different strategies depending on nesting level. At the top level the import is purely additive (upsert only): tenants, roles, groups, and users present in the YAML are created or updated; top-level resources absent from the manifest are left untouched - importing only `tenant: acme` does not delete `tenant: widgets`, and an omitted user is never deleted. Within a parent that IS in the manifest, nested collections are replaced (delete-then-upsert): the child collection in the database is made to match the manifest exactly, so a child absent from the YAML is deleted. For example, listing a tenant with only two of its three pools drops the third; a role's `permissions` and a user's `poolGrants` are fully replaced on import. Re-supply any secret values, and set a `password` on a user to (re)set it.
 
-**Verify:** re-export and diff, or confirm the change on the relevant Administration page (Nodes board, Users tab, and so on).
+**Verify:** re-export and diff, or confirm the change on the relevant Administration page (Dashboard, Users page, and so on).
 
 **Related:** [Manifest backup and restore](/qod/operating/manifest), [Back up and restore](/qod/administration/lifecycle-config#back-up-and-restore).

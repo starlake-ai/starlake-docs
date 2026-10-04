@@ -175,7 +175,7 @@ Set `QOD_TELEMETRY_STORE=none` to disable the audit subsystem entirely:
 - Every `listAudit` call returns empty.
 - The journal fiber, the hourly purge duty, and the rollup duties are not started.
 - The `qod_journal_dropped_total` counter stays at zero (not recording is intentional, not a drop).
-- The Audit entry is hidden from the admin UI navigation. A deep link to the Audit page shows an empty state with a "telemetry is disabled" message.
+- The **Audit** group (Control Plane, Statements, Usage) is hidden from the admin UI sidebar. A deep link to the Control Plane page shows an empty state with a "telemetry is disabled" message.
 
 The `postgres` and `none` values are the only accepted values for `QOD_TELEMETRY_STORE`. Any other value is refused at startup.
 

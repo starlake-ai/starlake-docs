@@ -329,7 +329,7 @@ A known server name cannot come back from a different address or port unless it 
 
 ### The Servers page
 
-Superusers get a **Servers** entry in the [admin UI](admin-ui.md#servers-fleet) navigation. It shows the same table as `qod fleet servers` (liveness badge with the silence duration, capacity, node, pool, node state with its error on hover, qod and DuckDB versions), refreshed every few seconds, with **Drain** / **Undrain** and **Remove** actions per row. A server waiting for approval carries a `pending approval` badge and an **Approve** action, and the address column adds the heartbeat's source address when it differs from the advertised one. Remove asks for an in-page confirmation and stays disabled while an approved server is reachable and not drained. Pools with unfilled slots carry an `N pending` badge in the pool list, `(no server fits)` when the reason is `none_fits`.
+Superusers get a **Fleet servers** entry under **Dashboard** in the [admin UI](admin-ui.md#servers-fleet) sidebar (`/ui/servers`). It shows the same table as `qod fleet servers` (liveness badge with the silence duration, capacity, node, pool, node state with its error on hover, qod and DuckDB versions), refreshed every few seconds, with **Drain** / **Undrain** and **Remove** actions per row. A server waiting for approval carries a `pending approval` badge and an **Approve** action, and the address column adds the heartbeat's source address when it differs from the advertised one. Remove asks for an in-page confirmation and stays disabled while an approved server is reachable and not drained. Pools with unfilled slots carry an `N pending` badge in the pool list, `(no server fits)` when the reason is `none_fits`.
 
 ## Resource limits per node
 

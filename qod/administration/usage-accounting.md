@@ -148,6 +148,6 @@ Set `QOD_TELEMETRY_STORE=none` to disable all telemetry:
 - Every rollup write is a no-op, so no daily buckets are created.
 - `GET /api/usage` returns an empty `groups` list.
 - The rollup job, hourly purge duties, and journal fiber are not started.
-- The Usage entry is hidden from the admin UI navigation. A deep link to the Usage page shows a "telemetry is disabled" message.
+- The **Audit** group (Control Plane, Statements, Usage) is hidden from the admin UI sidebar. A deep link to the Usage page shows a "telemetry is disabled" message.
 
 The `postgres` and `none` values are the only accepted values for `QOD_TELEMETRY_STORE`. Any other value is refused at startup.

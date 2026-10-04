@@ -219,7 +219,7 @@ Browse to `http://localhost:20900` and log in with:
 - Username: `admin`
 - Password: `admin`
 
-The Tenants page shows the two bootstrap tenants, `acme` and `globex`. Opening either reveals the Databases, Pools, and Auth provider tabs. The Nodes page shows the live cluster dashboard and the recent-statements history.
+You land on the **Dashboard**, the live cluster view with the recent-statements history. The tenant switcher at the top of the left sidebar lists the two bootstrap tenants, `acme` and `globex`; pick one and its **Databases**, **Pools**, and **Auth Provider** pages appear under **Tenant** in the sidebar (for example `http://localhost:20900/ui/t/acme/pools`). See the [Admin UI guide](/qod/operating/admin-ui#navigation).
 
 ## Run your first query
 
@@ -294,4 +294,4 @@ Tables live under the `tpch1` schema inside the `tpch` tenant's database. The ga
 
 - [Installation](/qod/getting-started/install) - native-jar setup, Docker Compose, Kubernetes, and environment variable reference.
 - [Configuration reference](/qod/reference/configuration) - every `QOD_*` / `PROXY_*` environment variable with its default and description.
-- REST API reference - the interactive API explorer is linked in the top navigation of the admin UI.
+- [REST API reference](pathname:///api/) - the interactive API explorer for every `/api/*` endpoint the admin UI calls.

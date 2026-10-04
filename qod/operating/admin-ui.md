@@ -20,7 +20,7 @@ The login screen takes a username, password, and an optional **Tenant ID**. The 
 
 There is no separate superuser checkbox; the field's presence is the only signal. Pre-existing scripts that called `/api/auth/login` with a `tenant` value for the bootstrap admin need to drop the field (or send an empty string) after upgrading.
 
-When the server has no auth providers configured (the no-auth dev mode), the login screen is skipped and the session is a synthetic anonymous superuser. The signed-in user and role appear in the top-right pill; the no-auth mode shows `anonymous / no-auth`.
+When the server has no auth providers configured (the no-auth dev mode), the login screen is skipped and the session is a synthetic anonymous superuser. The signed-in user and role appear in the user pill at the bottom of the sidebar; the no-auth mode shows `anonymous / no-auth`.
 
 ![The Quack on Demand admin login screen](/img/ui/login.png)
 
@@ -28,51 +28,99 @@ For how credentials are validated and how to wire an external provider, see [Aut
 
 ## Profile page (regular users)
 
-A tenant-scoped `kind=user` principal signing in with a database-backed password login (not OIDC, not the blank/superuser login) lands on a stripped-down `/profile` page instead of the operator console: no Nodes, Tenants, Users, or Audit nav items are even mounted. The page lets them change their own password (username, tenant, and role are read-only) and view their own access statistics - their usage and recent statements, the same data the [Usage](#usage) and [Statements](#statements) pages show an admin, scoped to just that user.
+A tenant-scoped `kind=user` principal signing in with a database-backed password login (not OIDC, not the blank/superuser login) lands on a stripped-down Profile page (`/ui/settings/profile`) instead of the operator console. Their sidebar has no tenant switcher and holds only **Settings > Profile**, **Workbench** when the [Starlake integration](#workbench) is configured, and **Sign out**; no operator route is even mounted, and any other URL lands back on the profile. The page lets them change their own password (username, tenant, and role are read-only) and view their own access statistics - their usage and recent statements, the same data the [Usage](#usage) and [Statements](#statements) pages show an admin, scoped to just that user.
 
 The server enforces this independently of the UI: such a session's REST calls are demoted to a fixed allowlist (`whoami`, `logout`, `/api/profile/usage`, `/api/profile/statements`) and answer `403 admin_required` on everything else, so a deep link to an operator page 403s on its first fetch rather than leaking data. The `qod profile usage` / `qod profile statements` CLI commands hit the same two endpoints.
 
 ## Navigation
 
-The top navigation bar has **Nodes**, **Tenants**, **Catalog** (the [catalog browser](#catalog-browser)), **Users**, **Servers** (superuser admins only, see [Servers (fleet)](#servers-fleet)), an **Audit** dropdown menu, and (for a superuser admin only) **Config** last, plus the user pill and Sign out. The Audit menu groups the three telemetry pages: **Control Plane** (the audit log at `/audit`), **Statements** (statement history and trends at `/history`), and **Usage** (the metering ledger at `/usage`). The menu closes on selection, on a click elsewhere, or with Escape, and its trigger stays highlighted while any of the three pages is open.
+The console is laid out as a left sidebar and a content column. From top to bottom the sidebar holds the brand, the [tenant switcher](#tenant-switcher), the navigation tree, and a footer with the user pill, the collapse toggle, and **Sign out**.
 
-The Config tab is hidden for non-superusers, and its backend endpoints reject them as well, so a deep link does not leak it. The whole Audit menu is hidden when `QOD_TELEMETRY_STORE=none`; it is visible to superusers and tenant admins otherwise. Deep links to the three pages keep working regardless (they render a "telemetry is disabled" state when recording is off).
+The navigation tree, for an admin:
 
-![The top navigation bar](/img/ui/nav.png)
+- **Dashboard** - the live [node dashboard](#dashboard). Under it, **Fleet servers** (see [Servers (fleet)](#servers-fleet)) appears only for a superuser on a manager running the fleet runtime.
+- **Tenant** - **Databases** (with **Catalog**, the [catalog browser](#catalog-browser), nested under it), **Pools**, **Maintenance**, **Branches**, **Auth Provider**, and **Access Control**.
+- **Users & Access Controls** - **Users**, **Groups**, and **Roles** (see [Users and access control](#users-and-access-control)).
+- **Audit** - **Control Plane**, **Statements**, and **Usage**. The whole group is hidden when `QOD_TELEMETRY_STORE=none`; deep links to the three pages keep working and render a "telemetry is disabled" state.
+- **Workbench** - only when the Starlake integration is configured; see [Workbench](#workbench).
+- **Settings** - **Config** (superusers only) and **Profile** (your own password change, usage, and statements).
 
-![The Audit dropdown menu open](/img/ui/nav-audit-menu.png)
+Visibility in the sidebar is a convenience only: the server enforces every gate itself, so a deep link to a page you may not use 403s on its first fetch (or, for **Config** and **Fleet servers**, is not even routed for a non-superuser).
 
-## Nodes
+### Tenant switcher
 
-`Nodes` is the landing page and the at-a-glance operational view. A metrics strip across the top summarizes the deployment: node count, healthy count, statements in flight, QPS (computed client-side from deltas), total served, average latency, worst p95, DuckDB memory in use, and spill volume. A **Tenant filter** dropdown narrows everything on the page to one tenant.
+The switcher at the top of the sidebar sets the tenant every page works in. What it offers depends on who is signed in:
 
-Below the strip, a live table lists every Quack node grouped by tenant and pool: role, status badge (healthy / draining / unhealthy / quarantined), endpoint, in-flight count, total served, average and percentile latency (rolling 256-sample window), DuckDB memory, spill, and a per-node **Max conc.** column. Node ids are links that filter the page to that node. For superusers each row also offers **Quarantine** / **Unquarantine** (stop routing new statements to the node; durable across restarts) and **Restart** (kill and respawn with the same id), both behind confirmation dialogs; the quarantine dialog warns when the node is the pool's last routable one. These are the UI forms of the [incident-response endpoints](/qod/administration/day-2-operations).
+- A **superuser** picks any tenant or **All tenants** (the default after sign-in). The same list also carries **Manage tenants...**, which opens the [Tenants](#tenants) list where tenants are created, enabled or disabled, and deleted, and **New tenant**, which opens that list with the create form already open.
+- A **tenant admin** of a single tenant sees that tenant as a fixed label, not a list.
+- An admin who administers several tenants (OIDC sign-in with admin grants on more than one tenant) can switch among exactly those tenants, starting on the tenant they signed in through.
+
+Under **All tenants**, the entries that need one tenant (Databases, Catalog, Pools, Maintenance, Branches, Auth Provider, Access Control, Groups, Roles) stay visible but greyed out with a "Pick a tenant first" hint; reaching one of them by URL shows a "Pick a tenant" card. Dashboard, Users, Control Plane, Statements, and Usage work under All tenants and then cover every tenant. A tenant admin who edits the URL to name a tenant they do not administer is sent back to their own tenant, and an unknown tenant shows a "Tenant not found" card with a link to the tenant list.
+
+Switching tenant keeps you in the same section: from `/ui/t/acme/pools` picking `globex` goes to `/ui/t/globex/pools`. A detail page (a pool, a catalog table) drops back to its list, since the pool or table belongs to the previous tenant, and switching to All tenants from a tenant-only section goes to the dashboard. Each page starts fresh on a switch, so no filter or selection carries over from the previous tenant.
+
+### URLs
+
+The tenant is part of the URL, so every page is bookmarkable and shareable:
+
+| Section | URL |
+|---|---|
+| Dashboard | `/ui/t/<tenant>/dashboard` or `/ui/all/dashboard` |
+| Databases | `/ui/t/<tenant>/databases` |
+| Catalog | `/ui/t/<tenant>/catalog` (table detail: `/ui/t/<tenant>/catalog/<db>/<schema>/<table>`) |
+| Pools | `/ui/t/<tenant>/pools` (pool detail: `/ui/t/<tenant>/pools/<db>/<pool>`) |
+| Maintenance, Branches | `/ui/t/<tenant>/maintenance`, `/ui/t/<tenant>/branches` |
+| Auth Provider, Access Control | `/ui/t/<tenant>/auth-provider`, `/ui/t/<tenant>/access-control` |
+| Users | `/ui/t/<tenant>/users` or `/ui/all/users` |
+| Groups, Roles | `/ui/t/<tenant>/groups`, `/ui/t/<tenant>/roles` |
+| Control Plane, Statements, Usage | `/ui/t/<tenant>/audit/control-plane`, `.../audit/statements`, `.../audit/usage` (or under `/ui/all/`) |
+| Tenants list | `/ui/tenants` |
+| Fleet servers | `/ui/servers` |
+| Config, Profile | `/ui/settings/config`, `/ui/settings/profile` |
+
+`<tenant>` is the tenant id (slug), for example `/ui/t/acme/pools`; the switcher shows the display name. The unscoped pages (tenants, servers, settings) keep the sidebar links pointing at the last tenant you worked in.
+
+URLs from earlier releases redirect to their new homes, so old bookmarks keep working: `/ui/nodes` and `/ui/` go to the dashboard, `/ui/tenant/<t>` to `/ui/t/<t>/databases`, `/ui/pool/<t>/<db>/<pool>` to the pool detail, `/ui/catalog` (and its table pages) to the catalog, `/ui/users` to Users, `/ui/audit`, `/ui/history`, and `/ui/usage` to Control Plane, Statements, and Usage, and `/ui/config` and `/ui/profile` to the settings pages. A legacy `?tenant=<t>` query parameter becomes the `/ui/t/<t>` prefix; otherwise the redirect uses your default scope (All tenants for a superuser, your own tenant for a tenant admin).
+
+### Collapsing and small screens
+
+The collapse toggle in the sidebar footer shrinks the sidebar to an icon rail; the choice is remembered per browser. In the rail the switcher becomes a single letter (the tenant's initial, `*` for All tenants) that expands the sidebar when clicked. Below 900px wide the sidebar becomes a slide-out drawer opened from the menu button in the top bar; it closes on navigation, on a click outside, or with Escape.
+
+### Workbench
+
+When the Starlake integration is configured, a **Workbench** entry opens Starlake in a new tab, signed in through a single-use SSO ticket minted for your session. It is the only entry besides Profile and Sign out that a regular (non-admin) user also gets.
+
+## Dashboard
+
+**Dashboard** (titled **Quack Nodes**) is the landing page and the at-a-glance operational view. A metrics strip across the top summarizes the deployment: node count, healthy count, statements in flight, QPS (computed client-side from deltas), total served, average latency, worst p95, DuckDB memory in use, and spill volume. The page follows the [tenant switcher](#tenant-switcher): with a tenant selected everything on it is narrowed to that tenant, under All tenants it covers the whole deployment.
+
+Below the strip, a live table lists every Quack node grouped by tenant and pool: role, status badge (healthy / draining / unhealthy / quarantined), endpoint, in-flight count, total served, average and percentile latency (rolling 256-sample window), DuckDB memory, spill, and a per-node **Max conc.** column. Node ids are links that filter the page to that node (a **Clear node filter** button drops it); tenant and pool names link to the tenant's Databases page and the pool detail. For superusers each row also offers **Quarantine** / **Unquarantine** (stop routing new statements to the node; durable across restarts) and **Restart** (kill and respawn with the same id), both behind confirmation dialogs; the quarantine dialog warns when the node is the pool's last routable one. These are the UI forms of the [incident-response endpoints](/qod/administration/day-2-operations).
 
 A **Running statements** card above the Recent statements table shows active queries with the user, tenant/pool, node, a live elapsed counter, and the SQL; each row has a **Kill** button (best-effort stream close; the card reports when the statement had already completed before the kill arrived).
 
 A **Recent statements** table at the bottom shows the last statements routed through the edge with a status badge (`ok`, `denied`, `transient`, `permanent`, `no-node`, `no-pool`, `pin-lost`, `killed`), duration (with the FlightSQL prepare-probe duration as subtext when the statement was prepared), the node that served it, and the SQL with syntax highlighting and a copy button. The page refreshes every 2 seconds.
 
-![The Nodes overview with live per-node counters](/img/ui/nodes.png)
+![The node dashboard with live per-node counters](/img/ui/nodes.png)
 
 ## Tenants
 
-`Tenants` lists every tenant with an enable/disable toggle per row (the disabled state is the data-plane kill switch: the edge rejects fresh handshakes for a disabled tenant) and offers a **New tenant** form. Selecting a tenant opens its detail page.
+The tenant list (`/ui/tenants`, reached through **Manage tenants...** in the [tenant switcher](#tenant-switcher)) shows every tenant with an enable/disable toggle per row (the disabled state is the data-plane kill switch: the edge rejects fresh handshakes for a disabled tenant), a delete action (refused while the tenant still has active pools), and a **+ New tenant** form (also opened by **New tenant** in the switcher). Clicking a tenant name opens its Databases page.
 
-The tenant detail page has three tabs:
+What used to be the tabs of a tenant detail page are now separate sidebar pages under **Tenant**, each working on the tenant picked in the switcher and headed with its display name and id:
 
-- **Databases** - create and manage the tenant's databases (tenant-dbs).
+- **Databases** - create and manage the tenant's databases (tenant-dbs), with **Catalog** nested under it.
 - **Pools** - create pools bound to a database and operate them.
-- **Auth provider** - the tenant's auth provider and its configuration.
+- **Maintenance** and **Branches** - per-database [maintenance](#maintenance) and [branch review](#branches).
+- **Auth Provider** - the tenant's auth provider and its configuration.
+- **Access Control** - who decides data access for the tenant: standard QoD grants (mode `qod`, or the manager default) or the tenant's own OPA server (its URL, policy path, and a write-only bearer token that is never displayed).
 
-The page also links to the tenant's live nodes and recent statements.
-
-![The tenant detail page on the Pools tab](/img/ui/tenant-pools.png)
+![The Pools page](/img/ui/tenant-pools.png)
 
 ### Databases and federation
 
-The **Databases** tab lists the tenant's databases with a kind badge (`ducklake`, `duckdb-file`, or `memory`), schema, and data path (marked `(inherited)` when the manager default applies). The **Tables** count is a link that opens the catalog browser inline, including the database's snapshot history (see [Snapshots and time travel](#snapshots-and-time-travel)); **Federation** (with a badge counting the database's federated sources) opens the federated-source panel. Disabled databases render dimmed with a `(disabled)` marker.
+The **Databases** page lists the tenant's databases with a kind badge (`ducklake`, `duckdb-file`, or `memory`), schema, and data path (marked `(inherited)` when the manager default applies). The **Tables** count is a link that opens the catalog browser inline, including the database's snapshot history (see [Snapshots and time travel](#snapshots-and-time-travel)); **Federation** (with a badge counting the database's federated sources) opens the federated-source panel. Disabled databases render dimmed with a `(disabled)` marker.
 
-![The Databases tab](/img/ui/databases.png)
+![The Databases page](/img/ui/databases.png)
 
 Clicking a database name opens its **edit form**: default database and schema, init SQL, and the metastore and object-store maps as `key=value` lines. The kind is immutable. Editing the metastore, object store, or init SQL restarts all the database's nodes immediately (in-flight statements on them fail); the form warns about this, and the save button changes to **Save and restart nodes** when such a field is dirty. `pgPassword` is kept unless a new value is supplied (sending one rotates it). The form also carries the **Delete database** action.
 
@@ -82,7 +130,7 @@ Clicking **Federation** opens the federated-source panel, where DuckDB `ATTACH` 
 
 ### Pools
 
-The **Pools** tab lists each pool with its database, node count, and an enable/disable toggle. Clicking a pool name opens the pool detail inline; the lifecycle actions (Scale, Suspend, Delete) live on the detail page.
+The **Pools** page lists each pool with its database, node count, and an enable/disable toggle. Clicking a pool name opens the pool detail inline; the same detail is addressable at `/ui/t/<tenant>/pools/<db>/<pool>` (what the dashboard's pool links open). The lifecycle actions (Scale, Suspend, Delete) live on the detail page.
 
 The **New pool** form takes the role distribution, optional pool init SQL, optional CPU and memory limits for the pool's node pods (sliders; applied as both request and limit on Kubernetes), a **Create disabled** toggle (nodes spawn, but the edge rejects fresh handshakes until enabled), and the node-placement section described below.
 
@@ -97,7 +145,7 @@ The pool detail page has tabs for **Nodes**, **Connections**, **Storage**, and *
 
 ![The pool Suspend menu with Hibernate, Drain, and Kill](/img/ui/pool-detail-suspend-menu.png)
 
-The **Nodes** tab shows the per-node table with role, host, and port, plus per-pool **CPU limit** and **Memory limit** editors (checkbox + slider, with a **Save** button; a note reminds that node restarts apply resource changes and that sizing is Kubernetes-only) and a per-node **Max concurrent** input (0 = unlimited, saved on blur). Superusers get the same **Quarantine** / **Restart** actions as on the Nodes page.
+The **Nodes** tab shows the per-node table with role, host, and port, plus per-pool **CPU limit** and **Memory limit** editors (checkbox + slider, with a **Save** button; a note reminds that node restarts apply resource changes and that sizing is Kubernetes-only) and a per-node **Max concurrent** input (0 = unlimited, saved on blur). Superusers get the same **Quarantine** / **Restart** actions as on the Dashboard.
 
 ![The pool detail page on the Nodes tab](/img/ui/pool-detail.png)
 
@@ -115,7 +163,7 @@ When you create a pool, the **New pool** form has a **Node placement** section. 
 
 ### Maintenance
 
-The tenant page's **Maintenance** tab manages [managed DuckLake maintenance](/qod/operating/maintenance) per database. Pick one of the tenant's DuckLake databases to get its panel:
+The **Maintenance** page manages [managed DuckLake maintenance](/qod/operating/maintenance) per database. Pick one of the tenant's DuckLake databases to get its panel:
 
 - **Policy form**, bound to the database-level scope: the enable toggle, retention days (annotated as the bound on time-travel, undrop, and history horizons), compaction knobs (target file size, small-file threshold, rewrite threshold), cleanup grace and orphan age, and the cadence cron. Unset fields show the effective defaults as placeholders; the first save creates the policy row.
 - **Overrides table** listing schema- and table-scope policy rows with their overriding fields; rows can be deleted here (creating overrides needs the [qod CLI](/qod/cli/) for now: `qod maintenance policy-upsert --scope-kind schema` or `--scope-kind table`).
@@ -126,7 +174,7 @@ Maintenance is double-opt-in: the service runs by default but every database sta
 
 ### Branches
 
-The tenant page's **Branches** tab is the review and approval surface for [branching](/qod/operating/branching). Pick one of the tenant's DuckLake databases (branch catalogs themselves are not listed; they are addressed through their parent):
+The **Branches** page is the review and approval surface for [branching](/qod/operating/branching). Pick one of the tenant's DuckLake databases (branch catalogs themselves are not listed; they are addressed through their parent):
 
 - **Create branch**: a name and an optional TTL in hours (blank for the server default, `0` for never). Invalid names, duplicates and the per-database cap surface as the server's error text.
 - **Branch list**: live branches with status, owner, fork snapshot, creation and expiry; a checkbox includes merged, discarded and expired history rows.
@@ -135,45 +183,45 @@ The tenant page's **Branches** tab is the review and approval surface for [branc
 
 ## Servers (fleet)
 
-Superuser admins see a **Servers** entry in the navigation. On a manager running the [fleet runtime](/qod/operating/deploy-fleet) it lists every server that joined with `qod fleet join`: name, address and node port, a liveness badge (`reachable` / `unreachable` / `dead`, with the seconds since the last heartbeat when not reachable), reported cores and RAM, the node it runs with a link to that node's pool, the server-reported node state (an **error** badge carries the last error on hover), and a **Version** column with the qod and DuckDB versions. The table refreshes every few seconds.
+Superuser admins see a **Fleet servers** entry under **Dashboard** in the sidebar when the manager runs the fleet runtime (the page itself, `/ui/servers`, is routed for every superuser). On a manager running the [fleet runtime](/qod/operating/deploy-fleet) it lists every server that joined with `qod fleet join`: name, address and node port, a liveness badge (`reachable` / `unreachable` / `dead`, with the seconds since the last heartbeat when not reachable), reported cores and RAM, the node it runs with a link to that node's pool, the server-reported node state (an **error** badge carries the last error on hover), and a **Version** column with the qod and DuckDB versions. The table refreshes every few seconds.
 
 A server waiting for [join approval](/qod/operating/deploy-fleet#join-approval) carries a `pending approval` badge and an **Approve** action; the address column adds `from <address>` when the heartbeat came from an address other than the advertised one, which is the address to check before approving.
 
 Each row offers **Drain** (or **Undrain** on a drained server, flagged with a `drained` badge) and **Remove**. Remove asks for an in-page confirmation and stays disabled while an approved server is reachable and not drained: drain it, stop its `qod fleet join` process, then remove. A pending server can be removed at any time; stop its `qod fleet join` process too, or it re-joins as pending. On any other runtime the page only states that the manager does not run the fleet runtime.
 
-In fleet mode the **Pools** list also shows an `N pending` badge next to the node count of a pool whose slots wait for a server, suffixed `(no server fits)` when idle servers exist but none has enough RAM for the pool's memory setting.
+In fleet mode the **Pools** page also shows an `N pending` badge next to the node count of a pool whose slots wait for a server, suffixed `(no server fits)` when idle servers exist but none has enough RAM for the pool's memory setting.
 
 ## Users and access control
 
-`Users` is the RBAC console, titled **Users & access control**. A tenant selector at the top scopes the view; besides the concrete tenants it offers two synthetic scopes, **(all)** (every user, superusers included) and **(superusers)** (only rows with `tenant IS NULL`). When a concrete tenant is selected, its configured auth provider and settings are shown next to the selector. Three tabs cover the graph:
+The RBAC console is the **Users & Access Controls** group of the sidebar: three separate pages, each working on the tenant picked in the [tenant switcher](#tenant-switcher). Under a tenant, **Users** lists that tenant's users; under **All tenants** it lists every user, superusers included, and a superuser gets a **Superusers only** checkbox that narrows the list to rows with `tenant IS NULL`. **Groups** and **Roles** need one tenant and are greyed out under All tenants. For a tenant whose auth provider is an external OIDC IdP, the Users page notes that accounts authenticate against the IdP, the rows are pre-provisioned shells that carry roles, groups, and pool grants, and password edits are disabled.
 
 - **Users** - create users, set their account kind (admin or user), and assign roles, groups, and pool grants. The create form's **Roles** and **Groups** checkbox dropdowns list the tenant's roles and groups (built-ins first), start preselected on `qod_all_tables` and `qod_all_pools` (full access to every table and pool of the tenant), and must each keep at least one entry; they are disabled for a superuser, who takes no memberships.
-- **Groups** - define groups and the roles they carry (needs a concrete tenant scope; the tab shows a hint on the synthetic scopes).
-- **Roles** - define roles and their table permissions (needs a concrete tenant scope).
+- **Groups** - define groups and the roles they carry.
+- **Roles** - define roles and their table permissions.
 
 The four [built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups) (`qod_*`) carry a **built-in** badge. They have no delete action, a built-in role opens read-only (its permissions and policies are fixed), and a built-in group only lets you add and remove members.
 
-The **Users** tab lists each user with their assigned roles, groups, and pool grants.
+The **Users** page lists each user with their assigned roles, groups, and pool grants.
 
-![The Users tab](/img/ui/rbac-users.png)
+![The Users page](/img/ui/rbac-users.png)
 
-The **Groups** tab shows each group with its user, role, and pool-grant counts.
+The **Groups** page shows each group with its user, role, and pool-grant counts.
 
-![The Groups tab](/img/ui/rbac-groups.png)
+![The Groups page](/img/ui/rbac-groups.png)
 
-The **Roles** tab lists each role with a per-verb count (RO / RW / DDL / ALL) of its table permissions, and **+ New role** plus per-role edit and delete actions.
+The **Roles** page lists each role with a per-verb count (RO / RW / DDL / ALL) of its table permissions, and **+ New role** plus per-role edit and delete actions.
 
-![The Roles tab](/img/ui/rbac-roles.png)
+![The Roles page](/img/ui/rbac-roles.png)
 
 The model these screens edit (the EffectiveSet, verbs, wildcards, the two gates) is described in the [Access control model](/qod/operating/rbac-model); the step-by-step grant flows are on the "Administering access" page.
 
 ## Catalog browser
 
-The catalog browser lists the schemas and tables of a database (the DuckLake catalog). It is reachable from the **Catalog** link in the top menu, at `/ui/catalog`, with tenant and database selectors (both preserved in the URL), and contextually from the table-count links on the Databases tab. Use it to confirm what a pool actually exposes, including federated catalogs attached to the database. A database with external Iceberg catalogs also lists them, in both places; see [Iceberg catalogs](#iceberg-catalogs).
+The catalog browser lists the schemas and tables of a database (the DuckLake catalog). It is reachable from **Tenant > Databases > Catalog** in the sidebar, at `/ui/t/<tenant>/catalog`, for the tenant picked in the switcher, with a database selector (preserved in the URL as `?tenantDb=`), and contextually from the table-count links on the Databases page. Use it to confirm what a pool actually exposes, including federated catalogs attached to the database. A database with external Iceberg catalogs also lists them, in both places; see [Iceberg catalogs](#iceberg-catalogs).
 
 ![The catalog browser with a schema's tables listed](/img/ui/catalog.png)
 
-Clicking a table opens its detail page, with breadcrumbs back to the catalog and links to the owning tenant and its live nodes. It shows a summary (row count, data-file count, total parquet size, folder), the column list (name, type, nullability, primary-key flag), and the table's parquet files with per-file size, row count, and snapshot id.
+Clicking a table opens its detail page (`/ui/t/<tenant>/catalog/<db>/<schema>/<table>`), with breadcrumbs back to the catalog and links to the owning tenant and its live nodes. It shows a summary (row count, data-file count, total parquet size, folder), the column list (name, type, nullability, primary-key flag), and the table's parquet files with per-file size, row count, and snapshot id.
 
 ### Snapshots and time travel
 
@@ -191,7 +239,7 @@ Snapshot semantics (linear history, inlined DML, retention and expiry) are cover
 
 ### Iceberg catalogs
 
-Below the DuckLake schemas, an **External Iceberg catalogs** section lists the database's enabled [Iceberg sources](/qod/operating/iceberg) with their attach status; the section is absent when the database has none. It appears both on the Catalog page and in the catalog opened from a database's table count (Tenants > tenant > Databases). Expanding an attached alias shows a **namespace dropdown** (preselected when the catalog has a single namespace) and that namespace's tables; an alias that is not attached shows its status badge instead.
+Below the DuckLake schemas, an **External Iceberg catalogs** section lists the database's enabled [Iceberg sources](/qod/operating/iceberg) with their attach status; the section is absent when the database has none. It appears both on the Catalog page and in the catalog opened from a database's table count on the Databases page. Expanding an attached alias shows a **namespace dropdown** (preselected when the catalog has a single namespace) and that namespace's tables; an alias that is not attached shows its status badge instead.
 
 Clicking an Iceberg table opens its detail page, with **Columns**, **Files** (path, content `DATA` / `POSITION_DELETES` / `EQUALITY_DELETES`, format, record count, no size), **Preview** (an "As of" snapshot selector), **Compare** (a row-level diff between two snapshots, filterable to added or removed rows) and **History** (snapshots newest first, filterable by operation, with a per-row action that previews that snapshot). The detail is always the current snapshot; time travel is in Preview and Compare. There is no restore, undrop or tagging here. The rules behind these views (admin-only, preview and diff running as the caller, string snapshot ids, the format v1 refusal and the diff size limit) are on [External Iceberg catalogs](/qod/operating/iceberg#browsing-a-catalog).
 
@@ -226,12 +274,12 @@ The table detail page also carries a **History** tab: a filterable, newest-first
 
 ## Control Plane
 
-The **Control Plane** page (`/audit`, the first entry of the Audit menu) shows a tenant-scoped, newest-first table of administrative and data-plane events. It is available to superusers and tenant admins. When `QOD_TELEMETRY_STORE=none`, a deep link shows an empty state with a "telemetry is disabled" message.
+The **Control Plane** page (**Audit > Control Plane**, `/ui/t/<tenant>/audit/control-plane` or `/ui/all/audit/control-plane`) shows a tenant-scoped, newest-first table of administrative and data-plane events. It is available to superusers and tenant admins. When `QOD_TELEMETRY_STORE=none`, a deep link shows an empty state with a "telemetry is disabled" message.
 
 The page has a filter bar with:
 
 - **Family** - dropdown select for `control-plane`, `auth`, `data-denial`, and `data-write`.
-- **Tenant** - a select populated from the live tenant list, visible to superusers only. Includes a "(no tenant)" option to show only tenant-less events (anonymous authentication failures, node operations, and manifest imports). Tenant admins are pinned to their own tenant and do not see this filter.
+- **Tenant** - the tenant comes from the [tenant switcher](#tenant-switcher). Under All tenants a superuser also gets a select with **all tenants** and **(no tenant)**, the latter showing only tenant-less events (anonymous authentication failures, node operations, and manifest imports). Tenant admins are pinned to their own tenant.
 - **Actor** - filter by username.
 - **Action** - a select populated from the exhaustive action vocabulary served by `GET /api/audit/actions`.
 - **Time range** - from / to fields.
@@ -246,9 +294,9 @@ The four event families, the full action taxonomy, tenant scoping rules, retenti
 
 ## Statements
 
-The **Statements** page (`/history`, the second entry of the Audit menu) gives a time-series view of FlightSQL activity. It is available to superusers and tenant admins; with `QOD_TELEMETRY_STORE=none` a deep link shows the "telemetry is disabled" state.
+The **Statements** page (**Audit > Statements**, `.../audit/statements`) gives a time-series view of FlightSQL activity. It is available to superusers and tenant admins; with `QOD_TELEMETRY_STORE=none` a deep link shows the "telemetry is disabled" state.
 
-A range picker (1h / 24h / 7d / 30d) sets the window shared by the charts and the statement table; ranges up to 48 hours use hourly buckets, wider ranges use daily buckets automatically. Next to it sit a tenant select (superusers only) and a pool select whose options narrow to the chosen tenant; changing a selection reloads immediately.
+A range picker (1h / 24h / 7d / 30d) sets the window shared by the charts and the statement table; ranges up to 48 hours use hourly buckets, wider ranges use daily buckets automatically. The tenant is the one picked in the [tenant switcher](#tenant-switcher) (every tenant under All tenants); next to the range picker a pool select lists that tenant's pools. Changing a selection reloads immediately.
 
 The three charts are:
 
@@ -264,14 +312,14 @@ The storage model, watermark semantics, retention knobs, and the CLI recipes for
 
 ## Usage
 
-The **Usage** page (`/usage`, the third entry of the Audit menu) is the durable metering ledger for FlightSQL activity, aggregated per tenant, pool, or user. It is available to superusers and tenant admins; with `QOD_TELEMETRY_STORE=none` a deep link shows the "telemetry is disabled" state. A note at the top states the metering unit's caveats (engine-ms is manager-measured execution time, the current day trails by up to one rollup tick, and accounting is best-effort measurement).
+The **Usage** page (**Audit > Usage**, `.../audit/usage`) is the durable metering ledger for FlightSQL activity, aggregated per tenant, pool, or user. It is available to superusers and tenant admins; with `QOD_TELEMETRY_STORE=none` a deep link shows the "telemetry is disabled" state. A note at the top states the metering unit's caveats (engine-ms is manager-measured execution time, the current day trails by up to one rollup tick, and accounting is best-effort measurement).
 
 The page has a filter bar at the top with:
 
 - **Period picker** - a month input (defaults to the current calendar month) or a custom date range, toggled by the "custom range" button. Custom ranges translate to a half-open `[from, to)` interval in UTC before being sent to the API.
 - **Group-by selector** - `by tenant` (superusers only), `by pool`, or `by user`. Tenant admins land on the `by pool` grouping; the `by tenant` option is hidden for them because the API pins them to their own tenant.
 - **Metric toggle** - `statements` (total statement count) or `engine-ms` (summed execution time in milliseconds). Switching updates the chart; the totals table always shows all four measures.
-- **Tenant and pool filters** - the tenant filter (visible to superusers only) is a select populated from the live tenant list; the pool select narrows its options to the chosen tenant.
+- **Tenant and pool filters** - the tenant is the one picked in the [tenant switcher](#tenant-switcher) (every tenant under All tenants); the pool select lists that tenant's pools.
 
 Below the filters, a stacked per-day bar chart shows each group's contribution over the period. The top 8 groups by `engineMs` receive distinct colors; all remaining groups are merged into a single gray "other" segment. Periods with no activity show an empty chart.
 
@@ -285,7 +333,7 @@ The full API reference, CSV column contract, retention knob, and scoping rules a
 
 ## Config (superuser only)
 
-`Config` is a cross-tenant view of the whole deployment, so it is restricted to a superuser admin. It has two parts:
+**Settings > Config** (`/ui/settings/config`) is a cross-tenant view of the whole deployment, so it is restricted to a superuser admin. It has two parts:
 
 - **Configuration** - the resolved `application.conf` rendered as a table of each key, its `QOD_*` env var, description, and effective value, grouped by HOCON path section with a filter box that searches paths, env vars, and descriptions. Sensitive values are masked as `(set)` or `(unset)`. This is the live equivalent of the [Configuration reference](/qod/reference/configuration).
 - **Manifest** - export the entire control-plane configuration as YAML (**Download YAML**) and re-import an edited file via a drag-and-drop dropzone with an explicit **Apply** step; a summary grid reports what the import touched (tenants, tenant-dbs, pools, roles, groups, users). The semantics, redaction, and apply rules are on the [Manifest backup and restore](/qod/operating/manifest) page.

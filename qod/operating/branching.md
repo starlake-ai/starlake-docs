@@ -76,7 +76,7 @@ qod branch list    --tenant acme --db acme_tpch --all
 qod branch discard --tenant acme --db acme_tpch --branch feature-x
 ```
 
-`qod branch show` returns a branch with its merge history; `schema-diff` gives the column-level view of one table. The same operations are on the admin console (tenant page, Branches tab, see the [admin UI guide](/qod/operating/admin-ui#branches)) and on REST under `/api/branch/*`.
+`qod branch show` returns a branch with its merge history; `schema-diff` gives the column-level view of one table. The same operations are on the admin console (the tenant's **Branches** page in the sidebar, see the [admin UI guide](/qod/operating/admin-ui#branches)) and on REST under `/api/branch/*`.
 
 ## Configuration
 

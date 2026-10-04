@@ -222,6 +222,8 @@ The admin-UI login mode is resolved **per scope**, not globally:
 - `/ui/?tenant=<id>` reads **that tenant's** `authProvider`: `db` shows the password form, an OIDC provider (`keycloak` / `google` / `azure` / `aws`) redirects to that tenant's IdP. A tenant is therefore pure-password or pure-SSO; there is no password fallback inside an OIDC tenant.
 - The bare `/ui/` (system / superuser scope) uses the manager-wide `auth.management.identitySource`: `db` (default) shows the password form, `oidc` makes it a **pure SSO client** against the manager-wide issuer below.
 
+A tenant-scoped page URL counts as that tenant too: opening `/ui/t/<id>/...` without a session (a bookmark, or a reload after the session expired) resolves the login mode, and for SSO starts the sign-in, against tenant `<id>`, as `/ui/?tenant=<id>` does; an explicit `?tenant=` wins.
+
 The SPA resolves the mode for the tenant in the URL via the unauthenticated `GET /api/auth/mode?tenant=<id>` (omit `tenant` for the system scope) before deciding what to render.
 
 It is **provider-agnostic**: it uses OIDC Discovery, so it works with any compliant IdP (Keycloak, Google, Azure AD, Okta, Auth0, Cognito, ...). You configure an **issuer URL** and a client id/secret; the manager resolves the authorize / token / end-session / JWKS endpoints from `${issuerUrl}/.well-known/openid-configuration`.

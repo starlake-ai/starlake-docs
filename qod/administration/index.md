@@ -37,7 +37,7 @@ Use the table below to jump straight to the playbook for what you need to do.
 
 | Task | Playbook |
 |------|----------|
-| Monitor node health | [Watch the Nodes board](/qod/administration/day-2-operations#watch-the-nodes-board) |
+| Monitor node health | [Watch the node dashboard](/qod/administration/day-2-operations#watch-the-node-dashboard) |
 | Scale a pool up or down | [Scale a pool](/qod/administration/day-2-operations#scale-a-pool) |
 | Drain or force-stop a node | [Drain vs force-stop](/qod/administration/day-2-operations#drain-vs-force-stop) |
 | Audit recent queries | [Read statement history](/qod/administration/day-2-operations#read-statement-history) |

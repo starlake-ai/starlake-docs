@@ -52,12 +52,12 @@ qod login --url http://localhost:20900 --username admin
 
 **Steps (UI):**
 
-1. Click **Tenants** in the top navigation bar.
-2. Click **New tenant**.
-3. Enter a short identifier in the **Name** field (for example, `acme`). The name becomes the routing slug used in connection strings.
+1. Open the tenant switcher at the top of the sidebar and choose **New tenant** (or **Manage tenants...**, then **+ New tenant**).
+2. Enter a **Display name** (for example, `Acme Corporation`). A **Tenant ID** is suggested from it; edit it if needed (for example, `acme`). The tenant ID is the routing slug used in connection strings and in admin UI URLs.
+3. Pick the tenant's **auth provider** (`db` needs no extra config).
 4. Click **Create**.
 
-The form does not have a dedicated screenshot; it is a single-field dialog on the Tenants list page.
+The form does not have a dedicated screenshot; it is a dialog on the tenant list page (`/ui/tenants`).
 
 **Manifest (YAML)**
 
@@ -77,7 +77,7 @@ qod tenant create acme
 
 Metastore settings (database name, schema) are configured per tenant-db, not on the tenant itself - see [Add a database](#add-a-database) below.
 
-**Verify:** The new tenant appears in the Tenants list immediately after creation.
+**Verify:** The new tenant appears in the tenant list and in the sidebar's tenant switcher immediately after creation.
 
 **Related:**
 
@@ -98,8 +98,8 @@ Metastore settings (database name, schema) are configured per tenant-db, not on 
 
 **Steps (UI):**
 
-1. Open the tenant from the Tenants list.
-2. Click the **Databases** tab.
+1. Pick the tenant in the sidebar's tenant switcher.
+2. Open **Tenant > Databases** in the sidebar.
 3. Click **New database**.
 4. Fill in:
    - **Name** - a short identifier for this database (for example, `main`).
@@ -108,7 +108,7 @@ Metastore settings (database name, schema) are configured per tenant-db, not on 
    - **Default schema** - the schema presented to clients when none is specified.
 5. Click **Create**.
 
-![Databases tab](/img/ui/databases.png)
+![Databases page](/img/ui/databases.png)
 
 **Manifest (YAML)**
 
@@ -131,7 +131,7 @@ qod database create --tenant acme --name fed --kind memory \
   --default-database fedpg --default-schema public
 ```
 
-**Verify:** The database appears in the Databases tab with its kind and default schema displayed.
+**Verify:** The database appears on the Databases page with its kind and default schema displayed.
 
 **Related:**
 
@@ -151,8 +151,8 @@ qod database create --tenant acme --name fed --kind memory \
 
 **Steps (UI):**
 
-1. Open the tenant from the Tenants list.
-2. Click the **Pools** tab.
+1. Pick the tenant in the sidebar's tenant switcher.
+2. Open **Tenant > Pools** in the sidebar.
 3. Click **New pool**.
 4. Fill in:
    - **Pool name** - a short identifier (for example, `bi`).
@@ -161,7 +161,7 @@ qod database create --tenant acme --name fed --kind memory \
    - **Create disabled** (optional) - check this to register the pool without immediately spawning nodes.
 5. Click **Create**.
 
-![Pools tab](/img/ui/tenant-pools.png)
+![Pools page](/img/ui/tenant-pools.png)
 
 **Manifest (YAML)**
 
@@ -182,7 +182,7 @@ qod pool create --tenant acme --db acme_tpch --pool bi --size 3 \
   --writeonly 1 --readonly 1 --dual 1
 ```
 
-**Verify:** The pool row appears in the Pools tab and the node count starts incrementing as nodes come up. You can watch the progress on the Nodes tab.
+**Verify:** The pool row appears on the Pools page and the node count starts incrementing as nodes come up. You can watch the progress on the **Dashboard**.
 
 **Related:**
 
@@ -201,11 +201,11 @@ qod pool create --tenant acme --db acme_tpch --pool bi --size 3 \
 
 **Steps (UI):**
 
-1. Click **Nodes** in the top navigation bar (or open the tenant and look at its live-node table).
-2. Locate the pool's rows in the Nodes table.
+1. Click **Dashboard** in the sidebar, with the tenant picked in the tenant switcher (or **All tenants**).
+2. Locate the pool's rows in the node table.
 3. Check that each node shows **healthy = true** and that the in-flight and total-served counters are updating.
 
-![Nodes overview](/img/ui/nodes.png)
+![Node dashboard](/img/ui/nodes.png)
 
 **CLI equivalent:**
 
@@ -235,8 +235,8 @@ qod --json pool list | jq -r '.pools[].nodes[] |
 
 **Steps (UI):**
 
-1. Open the tenant from the Tenants list.
-2. Click the **Pools** tab, then click the pool name to open its detail page.
+1. Pick the tenant in the sidebar's tenant switcher.
+2. Open **Tenant > Pools**, then click the pool name to open its detail page.
 3. Click the **Connections** tab.
 4. Copy the JDBC, ODBC, or ADBC connection string that matches the client tool.
 
