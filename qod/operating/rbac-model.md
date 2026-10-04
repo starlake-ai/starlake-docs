@@ -30,7 +30,7 @@ The RBAC graph is stored in the control-plane Postgres database (default `qod`) 
 
 | Table | What it holds |
 |---|---|
-| `qodstate_user` | One row per principal. `tenant IS NULL` marks a superuser. Tenant-scoped users carry a non-null `tenant` value. |
+| `qodstate_user` | One row per principal. `tenant IS NULL` marks a superuser. Tenant-scoped users carry a non-null `tenant` value. The `kind` column (`admin` or `user`) is the management-rights flag (admin console and REST administration); it is not an RBAC role and grants no table or pool access. |
 | `qodstate_role` | Named, per-tenant bundles of table permissions. |
 | `qodstate_group` | Named, per-tenant containers that collect roles and pool grants. |
 | `qodstate_role_permission` | Table-level grants attached to a role: a verb on a `catalog.schema.table` triple. |
@@ -45,6 +45,25 @@ The RBAC graph is stored in the control-plane Postgres database (default `qod`) 
 | `qodstate_group_role` | Role assignment to a group. |
 
 A user therefore reaches table permissions through two paths: directly via `qodstate_user_role`, or indirectly via any group they belong to and that group's `qodstate_group_role` edges.
+
+### Built-in roles and groups
+
+Every tenant carries four protected built-ins, flagged `builtin: true` in role and group responses:
+
+| Name | Type | Holds |
+|---|---|---|
+| `qod_all_tables` | role | One permission: `ALL` on `*.*.*` (every table of the tenant). |
+| `qod_no_tables` | role | Nothing. |
+| `qod_all_pools` | group | One tenant-wide pool grant (null `pool_id`: every pool of the tenant). Carries no roles. |
+| `qod_no_pools` | group | Nothing. Carries no roles. |
+
+Their definition is frozen: deleting them, changing a built-in role's permissions or column and row policies, binding roles into a built-in group, or changing a built-in group's pool grants answers `409 builtin_protected`. Adding and removing users stays allowed, and a built-in role may be bound into a custom group. The `qod_` name prefix is reserved for them (case-insensitive): creating a role or group whose name starts with it answers `400 reserved_name`.
+
+They are seeded when a tenant is created, on manifest import, and by an idempotent backfill that runs on every manager boot for existing tenants. The backfill renames a user-made role or group already holding a built-in name to `<name>_renamed` (or `<name>_renamed_N`), and folds a pristine legacy `admin` role (exactly one `ALL` on `*.*.*` permission, no column or row policy) into `qod_all_tables`, moving its users and groups over. New tenants no longer get an `admin` role.
+
+### Memberships at user creation
+
+Creating a tenant user (REST, CLI, MCP, SQL `CREATE USER`, or the admin UI) takes the list of role names and the list of group names to attach. An omitted list defaults to `qod_all_tables` and `qod_all_pools` respectively, so a user created without lists gets **full data access to every table and every pool of the tenant**. To start a user from nothing, pass `qod_no_tables` / `qod_no_pools` (or your own roles and groups) explicitly. An explicitly empty list is refused (`400 roles_required` / `groups_required`), and so is an unknown name (`400 unknown_role` / `unknown_group`). Superusers take no lists (`400 memberships_not_applicable`). SCIM provisioning and manifest import attach no defaults, and re-creating an existing user through REST attaches only the lists the request names.
 
 ## The EffectiveSet
 
@@ -560,3 +579,15 @@ The following invariants are enforced at the API layer, not by the database sche
 - These checks apply to every mutation path: REST API, and any admin seeding at startup.
 
 Superusers are not subject to these guards because they bypass the effective-set check entirely.
+
+## Upgrading to the built-in RBAC release
+
+The release that introduces the built-in roles and groups also renames the user column `qodstate_user.role` to `kind`. Plan the upgrade as follows:
+
+- **Stop every manager replica, then start them all on the new version.** There is no rolling upgrade across this release: once the schema migration renames the column, a replica still on the previous version can no longer authenticate anyone.
+- **Rename `role` to `kind` everywhere you set the account kind**: REST `user/create`, `user/update` and `user/list` carry `kind` (a request still sending `role` is refused with `400`), the CLI takes `qod user create/update --kind admin|user` (`qod user create --role` now names an RBAC role to attach), the MCP `create_user` / `update_user` tools take `kind`, and a manifest user entry uses the key `kind` (the old key is refused). The SQL dialect is unchanged (`CREATE USER ... ADMIN`).
+- **Rename the boot setting** `QOD_ADMIN_ROLE` (`quack-on-demand.admin.role`) to `QOD_ADMIN_KIND` (`quack-on-demand.admin.kind`); the old variable is ignored.
+- **Update custom authentication queries**: a `QOD_AUTH_DB_SYSTEM_QUERY` or `QOD_AUTH_DB_TENANT_QUERY` must select `password_hash, kind, enabled, must_change_password`, or boot fails.
+- **Rename user-made `qod_` roles and groups** left from before the prefix was reserved (including backfill-renamed `<name>_renamed` rows): while any exists, manifest export answers `400 reserved_name` and lists them.
+
+The session JWT `role` claim and the login and whoami responses are unchanged.

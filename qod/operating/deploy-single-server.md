@@ -331,9 +331,10 @@ Do it in SQL. Put the grants in a script and run it through the FlightSQL edge w
 CREATE ROLE analyst;
 GRANT SELECT ON acme_sales.main.* TO ROLE analyst;
 
-CREATE USER alice PASSWORD 'Temp123!';
+-- ROLES / GROUPS name exactly what alice gets. Left out, they default to the
+-- built-ins qod_all_tables / qod_all_pools: full access to every table and pool.
+CREATE USER alice PASSWORD 'Temp123!' ROLES analyst GROUPS qod_no_pools;
 ALTER USER alice REQUIRE PASSWORD CHANGE;
-GRANT ROLE analyst TO USER alice;
 
 -- Do not forget pool access: without it the user cannot reach the pool at all
 GRANT CONNECT ON POOL bi TO USER alice;
@@ -364,6 +365,7 @@ The dialect:
 -- Users
 CREATE USER alice PASSWORD 'secret';
 CREATE USER ops PASSWORD 'secret' ADMIN;
+CREATE USER bob PASSWORD 'secret' ROLES analyst GROUPS qod_no_pools;
 ALTER USER alice PASSWORD 'newsecret';
 ALTER USER alice REQUIRE PASSWORD CHANGE;
 ALTER USER alice DISABLE;
@@ -439,7 +441,7 @@ export QOD_ADMIN_USERNAME=admin@yourco.com   # default: admin@localhost.local,ad
 export QOD_ADMIN_PASSWORD='<strong password>' # default: admin. Rotate before go-live.
 ```
 
-The admin row is re-seeded at every boot, so changing the env var and restarting rotates the credential. Create users with `qod user create --tenant acme --username alice --password ... --role user`, via REST `/api/user/create`, or via SQL `CREATE USER` (section 5). Optional account lockout: `QOD_AUTH_LOCKOUT_ENABLED=true` (requires SMTP: `QOD_SMTP_HOST` etc., plus `QOD_PUBLIC_BASE_URL` for the reset link).
+The admin row is re-seeded at every boot, so changing the env var and restarting rotates the credential. Create users with `qod user create --tenant acme --username alice --password ... --role analyst --group qod_no_pools`, via REST `/api/user/create`, or via SQL `CREATE USER` (section 5). Name the roles and groups explicitly: left out, they default to the built-ins `qod_all_tables` / `qod_all_pools` (full access to every table and pool of the tenant); see [Built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups). `--kind admin` (default `user`) grants management rights only. Optional account lockout: `QOD_AUTH_LOCKOUT_ENABLED=true` (requires SMTP: `QOD_SMTP_HOST` etc., plus `QOD_PUBLIC_BASE_URL` for the reset link).
 
 ### 6.2 OIDC on the FlightSQL data plane
 
@@ -744,13 +746,13 @@ GRANT CONNECT ON POOL main TO GROUP analysts;
 GRANT CONNECT ON POOL main TO GROUP engineers;
 
 -- Users: created with a temporary password they must change at first login.
-CREATE USER alice PASSWORD 'Temp123!';
+-- ROLES qod_no_tables keeps the role defaults (qod_all_tables) off: access
+-- comes only through the team group.
+CREATE USER alice PASSWORD 'Temp123!' ROLES qod_no_tables GROUPS analysts;
 ALTER USER alice REQUIRE PASSWORD CHANGE;
-ALTER GROUP analysts ADD USER alice;
 
-CREATE USER bob PASSWORD 'Temp456!';
+CREATE USER bob PASSWORD 'Temp456!' ROLES qod_no_tables GROUPS engineers;
 ALTER USER bob REQUIRE PASSWORD CHANGE;
-ALTER GROUP engineers ADD USER bob;
 
 -- Verify the flattened effective grants (direct + via groups).
 SHOW GRANTS FOR USER alice;
@@ -790,7 +792,7 @@ qod auth pat create --name scim-connector
 #                    auth      Bearer <the qod_pat_... token printed once above>
 ```
 
-The IdP now creates the accounts (no passwords needed; users sign in through SSO), creates the groups (`analysts`, `engineers` by their SCIM displayName), and keeps memberships in sync as people join and leave teams.
+The IdP now creates the accounts (no passwords needed; users sign in through SSO), creates the groups (`analysts`, `engineers` by their SCIM displayName), and keeps memberships in sync as people join and leave teams. Unlike a user created through REST, the CLI or SQL, a SCIM-provisioned user gets no default `qod_all_tables` / `qod_all_pools` memberships: it reaches only what its groups grant.
 
 Step 4: attach the local authorization to the IdP-managed groups. Same SQL as B.2, minus everything the IdP now owns:
 

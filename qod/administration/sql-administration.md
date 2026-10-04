@@ -47,6 +47,13 @@ ALTER GROUP finance ADD USER alice;
 ALTER GROUP finance DROP USER alice;
 ```
 
+Every tenant carries the protected built-ins `qod_all_tables` / `qod_no_tables`
+(roles) and `qod_all_pools` / `qod_no_pools` (groups). Users can be granted or
+revoked from them like any other role or group, but `DROP ROLE`, grants and
+policies on a built-in role, and role bindings or pool grants on a built-in
+group are refused (`builtin_protected`). `CREATE ROLE` refuses any name starting
+with `qod_` (`reserved_name`).
+
 ### Table grants
 
 ```sql
@@ -121,6 +128,7 @@ fails with `unknown_pool` rather than selecting a different pool.
 ```sql
 CREATE USER alice PASSWORD 'secret';
 CREATE USER ops PASSWORD 'secret' ADMIN;
+CREATE USER bob PASSWORD 'secret' ROLES analyst GROUPS qod_no_pools;
 ALTER USER alice PASSWORD 'rotated';
 ALTER USER alice REQUIRE PASSWORD CHANGE;
 ALTER USER alice DISABLE;
@@ -131,10 +139,21 @@ SHOW USERS;
 
 User statements manage **tenant users of the session tenant only**. The
 dialect cannot create superusers; those are minted by superusers through
-REST/CLI. `ADMIN` sets the tenant-admin label, which a tenant admin may grant
-(the same as REST allows). `CREATE USER` is a true create: an existing
-username in the tenant is refused, never overwritten. Email-format usernames
-set the `email` column automatically, exactly as everywhere else.
+REST/CLI. `ADMIN` sets the account kind to `admin` (the tenant-admin label,
+management rights only), which a tenant admin may grant (the same as REST
+allows). `CREATE USER` is a true create: an existing username in the tenant is
+refused, never overwritten. Email-format usernames set the `email` column
+automatically, exactly as everywhere else.
+
+The optional `ROLES r1, r2` and `GROUPS g1, g2` clauses (in that order, each
+at most once, comma-separated names) attach the new user to exactly those
+roles and groups. An omitted clause attaches the built-in default,
+`qod_all_tables` for roles and `qod_all_pools` for groups, so
+`CREATE USER alice PASSWORD 'secret'` alone gives `alice` **full access to every
+table and pool of the tenant**. Use `ROLES qod_no_tables GROUPS qod_no_pools`
+to start from nothing; see
+[Built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups).
+An unknown name is refused.
 
 `ALTER USER ... PASSWORD` uses the same rotation path as REST `user/update`,
 so lockout counters (`failed_attempts`, `locked_at`) are cleared by the write;

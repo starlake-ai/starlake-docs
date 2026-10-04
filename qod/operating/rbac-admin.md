@@ -46,8 +46,10 @@ qod role create --tenant acme --name analyst --description "Read-only analyst ro
 Response includes the generated `id` field. Copy it for the next step.
 
 ```json
-{"id":"r-7a2b...","tenantId":"...","name":"analyst","description":"Read-only analyst role","createdAt":"..."}
+{"id":"r-7a2b...","tenantId":"...","name":"analyst","description":"Read-only analyst role","builtin":false,"createdAt":"..."}
 ```
+
+Names starting with `qod_` (any case) are reserved for the [built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups) every tenant carries (`qod_all_tables`, `qod_no_tables`, `qod_all_pools`, `qod_no_pools`) and are refused with `400 reserved_name`. Built-ins cannot be deleted or edited (`409 builtin_protected`); only their user memberships change.
 
 **Grant a table permission to the role**
 
@@ -99,23 +101,32 @@ In the admin UI: open the tenant detail page, navigate to the Groups tab, create
 
 **Tenant-scoped user**
 
-A tenant-scoped user can only connect to pools belonging to their tenant. The `role` field controls the admin UI role (`user` or `admin`); it is not an RBAC role in the access-control sense.
+A tenant-scoped user can only connect to pools belonging to their tenant. The `kind` field (`--kind`, `user` by default or `admin`) controls management rights in the admin console and REST API; it is not an RBAC role and grants no data access.
+
+Roles and groups are attached at creation with the repeatable `--role` and `--group` flags (role and group names in the user's tenant). Omitting a flag attaches the built-in default: `qod_all_tables` for roles and `qod_all_pools` for groups, which gives the user **full data access to every table and every pool of the tenant**. Name narrower memberships to start smaller:
 
 ```bash
-qod user create --tenant acme --username alice --password s3cr3t --role user
+# Full access (defaults: qod_all_tables + qod_all_pools)
+qod user create --tenant acme --username alice --password s3cr3t
+
+# Only the analyst role, no pool yet (grant pool access in step 5)
+qod user create --tenant acme --username bob --password s3cr3t \
+  --role analyst --group qod_no_pools
 ```
+
+An unknown name is refused with `400 unknown_role` / `unknown_group`; an explicitly empty list in the REST body (`"roles": []`, `"groups": []`) with `400 roles_required` / `groups_required`.
 
 **Superuser (tenant null)**
 
 A superuser has `tenant: null`. Superusers bypass the pool-access gate and the per-statement ACL gate entirely. Only an existing superuser may create another superuser; a tenant-scoped admin attempting this call receives a 403.
 
 ```bash
-qod user create --username ops-admin --password 'str0ng!' --superuser --role admin
+qod user create --username ops-admin --password 'str0ng!' --superuser --kind admin
 ```
 
-Passing `--superuser` (and omitting `--tenant`) is equivalent to passing `"tenant": null` on the REST body.
+Passing `--superuser` (and omitting `--tenant`) is equivalent to passing `"tenant": null` on the REST body. Superusers bypass RBAC, so they take no roles or groups (`400 memberships_not_applicable`).
 
-In the admin UI: open the Users page, click "Create user", fill in the form. The superuser option appears only when the logged-in user is themselves a superuser.
+In the admin UI: open the Users page, click "Create user", fill in the form. The **Roles** and **Groups** checkbox dropdowns start preselected on `qod_all_tables` and `qod_all_pools`; the create button stays disabled while either is empty. The superuser option appears only when the logged-in user is themselves a superuser, and disables both dropdowns.
 
 ---
 
@@ -191,7 +202,7 @@ Example response shape:
 
 ```json
 {
-  "user": {"id":"...","tenant":"acme","username":"alice","role":"user",...},
+  "user": {"id":"...","tenant":"acme","username":"alice","kind":"user",...},
   "roles": [{"id":"...","name":"analyst",...}],
   "groups": [{"id":"...","name":"data-team",...}],
   "pools": [{"id":"...","tenantId":"...","poolId":"<pool-uuid>",...}],

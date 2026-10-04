@@ -5,7 +5,7 @@ description: "Tour of the Quack on Demand admin console: tenants, databases, poo
 keywords: ["admin ui", "console", "duckdb administration"]
 ---
 
-The manager serves a React console at `http://<host>:20900/ui/`. Superusers and tenant admins get the full operator console: it manages tenants, databases, pools, users, and access control, and surfaces live node and statement telemetry. Regular (`role=user`) tenant users can log in too, but land on a self-service [Profile page](#profile-page-regular-users) instead of the operator console. Neither view is an end-user query tool; clients run SQL over the FlightSQL edge, not through this UI.
+The manager serves a React console at `http://<host>:20900/ui/`. Superusers and tenant admins get the full operator console: it manages tenants, databases, pools, users, and access control, and surfaces live node and statement telemetry. Regular (`kind=user`) tenant users can log in too, but land on a self-service [Profile page](#profile-page-regular-users) instead of the operator console. Neither view is an end-user query tool; clients run SQL over the FlightSQL edge, not through this UI.
 
 Every screen here is backed by a REST endpoint documented in the [REST API reference](pathname:///api/); the UI is a thin front end over the same `/api/*` calls shown on the operator pages. Where a screen maps to a task already covered in prose, this guide links there rather than repeating it.
 
@@ -16,7 +16,7 @@ The screenshots below are from a local demo deployment with the bootstrap TPC-H 
 The login screen takes a username, password, and an optional **Tenant ID**. The tenant field is the realm signal:
 
 - **Leave it blank** to log in as a system superuser. Credentials are validated against the manager's global auth providers (`quack-flightsql.auth.*`) and the matching `qodstate_user` row must have `tenant IS NULL`. This path (and the OIDC single sign-on login) is admin-only.
-- **Fill it in** (e.g. `t-02d0e86e`) to log in as a tenant user. Credentials are validated against THAT tenant's configured provider, and the matching `qodstate_user` row must have `tenant = <id>`. A tenant admin lands on the operator console scoped to that tenant; a regular (`role=user`) principal with a database-backed password login lands on the [Profile page](#profile-page-regular-users) instead.
+- **Fill it in** (e.g. `t-02d0e86e`) to log in as a tenant user. Credentials are validated against THAT tenant's configured provider, and the matching `qodstate_user` row must have `tenant = <id>`. A tenant admin lands on the operator console scoped to that tenant; a regular (`kind=user`) principal with a database-backed password login lands on the [Profile page](#profile-page-regular-users) instead.
 
 There is no separate superuser checkbox; the field's presence is the only signal. Pre-existing scripts that called `/api/auth/login` with a `tenant` value for the bootstrap admin need to drop the field (or send an empty string) after upgrading.
 
@@ -28,7 +28,7 @@ For how credentials are validated and how to wire an external provider, see [Aut
 
 ## Profile page (regular users)
 
-A tenant-scoped `role=user` principal signing in with a database-backed password login (not OIDC, not the blank/superuser login) lands on a stripped-down `/profile` page instead of the operator console: no Nodes, Tenants, Users, or Audit nav items are even mounted. The page lets them change their own password (username, tenant, and role are read-only) and view their own access statistics - their usage and recent statements, the same data the [Usage](#usage) and [Statements](#statements) pages show an admin, scoped to just that user.
+A tenant-scoped `kind=user` principal signing in with a database-backed password login (not OIDC, not the blank/superuser login) lands on a stripped-down `/profile` page instead of the operator console: no Nodes, Tenants, Users, or Audit nav items are even mounted. The page lets them change their own password (username, tenant, and role are read-only) and view their own access statistics - their usage and recent statements, the same data the [Usage](#usage) and [Statements](#statements) pages show an admin, scoped to just that user.
 
 The server enforces this independently of the UI: such a session's REST calls are demoted to a fixed allowlist (`whoami`, `logout`, `/api/profile/usage`, `/api/profile/statements`) and answer `403 admin_required` on everything else, so a deep link to an operator page 403s on its first fetch rather than leaking data. The `qod profile usage` / `qod profile statements` CLI commands hit the same two endpoints.
 
@@ -147,9 +147,11 @@ In fleet mode the **Pools** list also shows an `N pending` badge next to the nod
 
 `Users` is the RBAC console, titled **Users & access control**. A tenant selector at the top scopes the view; besides the concrete tenants it offers two synthetic scopes, **(all)** (every user, superusers included) and **(superusers)** (only rows with `tenant IS NULL`). When a concrete tenant is selected, its configured auth provider and settings are shown next to the selector. Three tabs cover the graph:
 
-- **Users** - create users, set their role, and assign roles, groups, and pool grants.
+- **Users** - create users, set their account kind (admin or user), and assign roles, groups, and pool grants. The create form's **Roles** and **Groups** checkbox dropdowns list the tenant's roles and groups (built-ins first), start preselected on `qod_all_tables` and `qod_all_pools` (full access to every table and pool of the tenant), and must each keep at least one entry; they are disabled for a superuser, who takes no memberships.
 - **Groups** - define groups and the roles they carry (needs a concrete tenant scope; the tab shows a hint on the synthetic scopes).
 - **Roles** - define roles and their table permissions (needs a concrete tenant scope).
+
+The four [built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups) (`qod_*`) carry a **built-in** badge. They have no delete action, a built-in role opens read-only (its permissions and policies are fixed), and a built-in group only lets you add and remove members.
 
 The **Users** tab lists each user with their assigned roles, groups, and pool grants.
 

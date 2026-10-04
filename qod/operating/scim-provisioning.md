@@ -50,7 +50,7 @@ curl -s https://manager.example.com/api/scim/v2/acme/Users \
 
 - **The superuser realm is invisible.** Rows with `tenant IS NULL` are never listed, matched, or writable through SCIM; the endpoint only ever sees the tenant's own principals.
 - **Passwordless creates get an unguessable random password.** IdP-provisioned users are expected to sign in through the tenant's OIDC SSO, not with a password. Supplying a `password` on create is still allowed.
-- **SCIM manages identity, not privileges.** What a provisioned user may do still comes from the RBAC graph: link the SCIM-managed groups to roles with [group-role grants](/qod/operating/rbac-admin), and the IdP adding someone to a group is then enough to grant access.
+- **SCIM manages identity, not privileges.** What a provisioned user may do still comes from the RBAC graph: link the SCIM-managed groups to roles with [group-role grants](/qod/operating/rbac-admin), and the IdP adding someone to a group is then enough to grant access. A SCIM-created user gets no default memberships (users created through REST, the CLI or SQL default to the built-ins `qod_all_tables` / `qod_all_pools`), so it reaches nothing until a group grants it. Group names starting with `qod_` are reserved for the [built-in groups](/qod/operating/rbac-model#built-in-roles-and-groups) and are refused.
 - **Deprovisioning**: the connector's DELETE removes the user; flipping `active` to `false` disables login while keeping the row (the usual soft-deprovision IdPs prefer).
 
 ## Connector setup

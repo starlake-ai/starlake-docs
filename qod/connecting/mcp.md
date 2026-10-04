@@ -113,7 +113,11 @@ The `branch` argument on `run_sql`, `list_tables` and `describe_table` routes th
 | `restore_snapshot`, `undrop_table`, `list_recoverable` | Restore and undrop run as the PAT's owner with the token's restriction, so the ACL applies and a table the owner cannot write answers `acl_denied`; the restore `dry_run` reports aggregate change counts only |
 | `audit_search` | Filtered read over the audit log |
 
-`tools/list` is computed per principal: a `role=user` PAT sees the data tier only; a tenant admin sees both tiers scoped to their tenant; superuser and static-key callers see both cross-tenant. `tools/call` re-checks the tier server-side. Tool calls land in the audit trail as the acting user.
+### User creation over MCP
+
+`create_user` takes `username`, `password`, `tenant` (omitting it creates a superuser, which only a superuser credential may do), `kind` (`user` by default, or `admin`: management rights, not an RBAC role), optional `email` and `must_change_password`, and the arrays `roles` and `groups` (role and group names in the tenant). An omitted array defaults to the built-in `qod_all_tables` / `qod_all_pools`, giving the user full access to every table and pool of the tenant; an empty array is refused, and so is an unknown name or either array on a superuser. `update_user` takes `id` plus any of `password`, `kind`, `email`, `must_change_password`, `enabled`. See [Built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups).
+
+`tools/list` is computed per principal: a PAT owned by a `kind=user` account sees the data tier only; a tenant admin sees both tiers scoped to their tenant; superuser and static-key callers see both cross-tenant. `tools/call` re-checks the tier server-side. Tool calls land in the audit trail as the acting user.
 
 ## Deny-list
 

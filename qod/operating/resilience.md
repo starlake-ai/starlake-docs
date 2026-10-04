@@ -25,7 +25,7 @@ When the manager process exits and a supervisor restarts it (systemd, Kubernetes
 
 3. **Reconciliation.** `PoolSupervisor.reconcile()` compares the restored desired state against what the runtime backend reports as alive (PID + socket check for local, pod `Ready` condition for Kubernetes) and respawns any nodes that should be present but are not. The method is idempotent. Drained pools (zero distribution) are left alone. Beyond this boot pass, `reconcile()` then runs on a background fiber every `reconcileIntervalSec` (default 30 s, env `QOD_RECONCILE_INTERVAL_SEC`; set 0 to disable the loop and keep the boot-only behavior), so a node that dies while the manager is up is respawned on the next tick rather than staying dead until the next restart.
 
-4. **Bootstrap re-seed.** `Main.scala` re-runs the bootstrap sequence on every start. Each step is idempotent: the named tenant/tenant-db/pool are skipped when they already exist, the admin user upsert re-hashes the password, and the built-in `admin` role with its wildcard permission is a no-op on re-entry.
+4. **Bootstrap re-seed.** `Main.scala` re-runs the bootstrap sequence on every start. Each step is idempotent: the named tenant/tenant-db/pool are skipped when they already exist, the admin user upsert re-hashes the password, and the backfill of each tenant's [built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups) is a no-op on re-entry.
 
 Typical cold-boot time on a development machine: roughly 5 s process start plus 1 s Liquibase schema diff plus 1 s reconcile plus about 3 s per respawned node. A 3-node pool is back in service in approximately 15 s. A first-ever boot adds another 1-2 s per tenant-db for `CREATE DATABASE` and DuckLake metadata table initialization.
 
@@ -90,7 +90,7 @@ All of these recover through re-population from live traffic. None cause incorre
 
 ## Operational guidance
 
-If you are running the default single-manager mode in production (one manager plus Postgres), the guidance below applies. For zero-downtime rolling deploys and replica-crash tolerance, enable opt-in HA on Kubernetes (`QOD_HA_ENABLED=true`, `replicaCount > 1`) or on the fleet runtime (`QOD_HA_ENABLED=true` on every manager); the same process-supervisor and probe guidance then applies to each replica.
+If you are running the default single-manager mode in production (one manager plus Postgres), the guidance below applies. For zero-downtime rolling deploys and replica-crash tolerance, enable opt-in HA on Kubernetes (`QOD_HA_ENABLED=true`, `replicaCount > 1`) or on the fleet runtime (`QOD_HA_ENABLED=true` on every manager); the same process-supervisor and probe guidance then applies to each replica. Exception: the release that renames `qodstate_user.role` to `kind` cannot be rolled; stop every replica, then start them all on the new version (see [Upgrading to the built-in RBAC release](/qod/operating/rbac-model#upgrading-to-the-built-in-rbac-release)).
 
 - **Run under a process supervisor** that restarts the manager on exit: systemd with `Restart=always`, a Kubernetes `Deployment` with `restartPolicy: Always` (the default), or Docker with `restart: unless-stopped`.
 

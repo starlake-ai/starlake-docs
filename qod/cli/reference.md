@@ -94,8 +94,8 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | Command | Purpose |
 |---|---|
 | `qod user list` | List users. |
-| `qod user create` | Create a user (tenant-scoped, or `--superuser` for tenant-less); `--email` for password-reset links. |
-| `qod user update` | Update a user's tenant, password, role, or email; `--no-enabled` locks the account, `--enabled` unlocks. |
+| `qod user create` | Create a user (tenant-scoped, or `--superuser` for tenant-less); `--kind admin\|user` (management rights, default `user`), repeatable `--role` / `--group` (RBAC role and group names, default `qod_all_tables` / `qod_all_pools`), `--email` for password-reset links. |
+| `qod user update` | Update a user's tenant, password, kind (`--kind`), or email; `--no-enabled` locks the account, `--enabled` unlocks. |
 | `qod user delete` | Delete a user. |
 | `qod user effective` | Closure of roles, groups, table permissions, and pool grants. |
 
@@ -104,8 +104,8 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | Command | Purpose |
 |---|---|
 | `qod role list` | List roles for a tenant. |
-| `qod role create` | Create a role. |
-| `qod role delete` | Delete a role. |
+| `qod role create` | Create a role (the `qod_` name prefix is reserved for the built-ins). |
+| `qod role delete` | Delete a role (built-in roles are refused). |
 
 ## role permission
 
@@ -138,8 +138,8 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | Command | Purpose |
 |---|---|
 | `qod group list` | List groups for a tenant. |
-| `qod group create` | Create a group. |
-| `qod group delete` | Delete a group. |
+| `qod group create` | Create a group (the `qod_` name prefix is reserved for the built-ins). |
+| `qod group delete` | Delete a group (built-in groups are refused). |
 
 ## membership
 

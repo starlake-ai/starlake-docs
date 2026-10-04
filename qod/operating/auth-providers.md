@@ -35,16 +35,18 @@ QOD_AUTH_DB_PASSWORD=secret
 # - systemQuery placeholders in order: username
 # - tenantQuery placeholders in order: tenant, username
 # Both MUST return four columns, in order:
-#   password_hash, role, enabled, must_change_password
+#   password_hash, kind, enabled, must_change_password
 # The last two are mandatory: a shorter projection is refused at boot and
 # fails every login (no tolerant default-to-enabled / default-to-unflagged).
-QOD_AUTH_DB_SYSTEM_QUERY="SELECT password_hash, role, enabled, must_change_password \
+QOD_AUTH_DB_SYSTEM_QUERY="SELECT password_hash, kind, enabled, must_change_password \
   FROM qodstate_user WHERE tenant IS NULL AND username = ? LIMIT 1"
-QOD_AUTH_DB_TENANT_QUERY="SELECT password_hash, role, enabled, must_change_password \
+QOD_AUTH_DB_TENANT_QUERY="SELECT password_hash, kind, enabled, must_change_password \
   FROM qodstate_user WHERE tenant = ? AND username = ? LIMIT 1"
 ```
 
-Rotate the bootstrap admin password by changing `QOD_ADMIN_PASSWORD` and restarting; the row is re-hashed on every boot.
+The second column is the account kind (`admin` or `user`). The column was named `role` before the [built-in RBAC release](/qod/operating/rbac-model#upgrading-to-the-built-in-rbac-release): a custom query that still selects `role` from `qodstate_user` fails at boot.
+
+Rotate the bootstrap admin password by changing `QOD_ADMIN_PASSWORD` and restarting; the row is re-hashed on every boot. The seeded admin's account kind is `QOD_ADMIN_KIND` (default `admin`; formerly `QOD_ADMIN_ROLE`, now ignored).
 
 On the management plane (REST/UI), DB credentials are accepted when `auth.management.identitySource=db` (the default). Setting it to `oidc` skips the DB authenticator on the management login even with this provider enabled; the edge keeps using it.
 
@@ -248,7 +250,7 @@ ${QOD_MGMT_PUBLIC_BASE_URL}/api/auth/oidc/callback
 
 ### Login URLs and scope
 
-- `/ui/` (no tenant) is the **system / superuser** login. Its mode follows `QOD_MGMT_IDENTITY_SOURCE`; in `oidc` it authenticates against the manager-wide issuer above. Only a superuser (`qodstate_user.tenant IS NULL`, role admin) may complete it; a non-superuser is rejected and must sign in through their tenant.
+- `/ui/` (no tenant) is the **system / superuser** login. Its mode follows `QOD_MGMT_IDENTITY_SOURCE`; in `oidc` it authenticates against the manager-wide issuer above. Only a superuser (`qodstate_user.tenant IS NULL`, kind admin) may complete it; a non-superuser is rejected and must sign in through their tenant.
 - `/ui/?tenant=<id>` follows **that tenant's** `authProvider`: a `db` tenant gets the password form, an OIDC tenant authenticates against that tenant's OIDC client. Either way it requires an admin grant for that tenant.
 
 ### Per-tenant OIDC

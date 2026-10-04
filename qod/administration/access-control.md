@@ -33,6 +33,10 @@ Everything on this page, plus user management, can also be done with plain SQL f
 
 5. Confirm the pool grant: in the **Users** tab, verify the user's row shows the pool grant for the target pool.
 
+:::note Default memberships
+A user created without explicit roles and groups joins the built-ins `qod_all_tables` and `qod_all_pools`, which already grant every table and every pool of the tenant, so a narrower team grant changes nothing for them. Create team users with `qod_no_tables` / `qod_no_pools` (or with the team's role and group) instead, or remove their built-in memberships. See [Built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups).
+:::
+
 **Manifest (YAML)**
 
 ```yaml

@@ -30,6 +30,8 @@ Isolation is enforced at three layers, not by a single guard:
 
 Together these mean a tenant-scoped principal is confined to their tenant's databases by storage layout, by who may connect, and by what statements are authorized.
 
+Every tenant is created with four protected [built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups): `qod_all_tables` / `qod_no_tables` and `qod_all_pools` / `qod_no_pools`. A tenant user created without explicit roles and groups joins `qod_all_tables` and `qod_all_pools`, which reach every table and pool of that tenant only.
+
 ## Superusers
 
 A superuser (`qodstate_user.tenant IS NULL`) is the one principal that is not tenant-scoped. Superusers bypass both the pool-access gate and the per-statement ACL gate, so they can connect to any pool in any tenant and run any statement. The bootstrap admin is a superuser, and only superusers can create other superusers. Manifest export and import, which span every tenant, are superuser-only for the same reason; see [Manifest backup and restore](/qod/operating/manifest).

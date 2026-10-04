@@ -15,6 +15,8 @@ An embedded engine trusts its process. That is fine for one analyst and breaks t
 
 Set `QOD_ACL_ENABLED=true` and every statement, whether it arrives over Arrow Flight SQL, DuckDB's native Quack protocol, the MCP server or an admin endpoint that previews, diffs, restores or undrops a table, is matched against the caller's effective permission set. A personal access token runs as its owner, narrowed by the token's own scope; no user name, including `superuser`, bypasses the check. Roles bundle table verbs (`RO`, `RW`, `DDL`, `ALL`) on `catalog.schema.table` triples with wildcards. Groups collect roles and pool grants. A user reaches permissions directly or through their groups, and admission to a pool is what admits them to that pool's database. Row policies rewrite a matching `SELECT` with a filter, and column policies mask or deny a column before the SQL reaches DuckDB.
 
+Every tenant also carries four protected [built-ins](/qod/operating/rbac-model#built-in-roles-and-groups): the roles `qod_all_tables` and `qod_no_tables` and the groups `qod_all_pools` and `qod_no_pools`. A user created without naming roles and groups joins `qod_all_tables` and `qod_all_pools`, which give full access to the tenant; name the roles and groups at creation (`CREATE USER bob PASSWORD '...' ROLES analyst GROUPS finance`) to start narrower.
+
 You can manage all of it from the admin UI, the `qod` CLI, or plain SQL from any connected client:
 
 ```sql

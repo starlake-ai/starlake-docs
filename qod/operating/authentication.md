@@ -153,8 +153,8 @@ The JWT's `preferred_username` claim is matched against `qodstate_user.username`
 
 A management session carries two pieces of authorization state:
 
-- `superuser` - `true` iff the user has a `qodstate_user` row with `tenant IS NULL` and `role = admin`. Cross-tenant by design.
-- `manageableTenants` - the set of tenants where the user has `role = admin`. Empty for a pure superuser; non-empty for tenant-scoped admins.
+- `superuser` - `true` iff the user has a `qodstate_user` row with `tenant IS NULL` and `kind = admin`. Cross-tenant by design.
+- `manageableTenants` - the set of tenants where the user has `kind = admin`. Empty for a pure superuser; non-empty for tenant-scoped admins.
 
 The UI exposes both via `/api/auth/login` and `/api/auth/whoami` so a multi-tenant admin sees a per-screen tenant switcher rather than picking one tenant at login time.
 

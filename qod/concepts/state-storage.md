@@ -12,7 +12,7 @@ The manager keeps its control-plane state (tenants, databases, pools, nodes, the
 The control plane is a set of normalized tables with the `qodstate_` prefix, managed by Liquibase, living in a dedicated control-plane database (`qod` by default):
 
 - **Registry:** `qodstate_tenant`, `qodstate_tenant_db`, `qodstate_pool`, `qodstate_node`.
-- **RBAC graph:** `qodstate_user`, `qodstate_role`, `qodstate_role_permission`, `qodstate_group`, and the edge tables (`qodstate_user_role`, `qodstate_user_group`, `qodstate_group_role`), plus `qodstate_pool_permission`.
+- **RBAC graph:** `qodstate_user`, `qodstate_role`, `qodstate_role_permission`, `qodstate_group`, and the edge tables (`qodstate_user_role`, `qodstate_user_group`, `qodstate_group_role`), plus `qodstate_pool_permission`. `qodstate_user.kind` (`admin` or `user`) is the account's management-rights flag; roles and groups flagged `builtin` are the four protected [built-ins](/qod/operating/rbac-model#built-in-roles-and-groups) every tenant carries.
 - **Federation:** `qodstate_federated_source`, `qodstate_federated_secret`.
 
 Liquibase applies the changelog at boot (idempotent: already-applied changesets are skipped), so the schema is created and migrated automatically.

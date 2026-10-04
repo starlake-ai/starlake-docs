@@ -39,8 +39,8 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-flightsql.auth.database.jdbcUrl` | `QOD_AUTH_DB_JDBC_URL` | `jdbc:postgresql://localhost:5432/qod` |  | JDBC URL for the auth-lookup database. |
 | `quack-flightsql.auth.database.username` | `QOD_AUTH_DB_USER` | `postgres` |  | Username for the auth-lookup JDBC connection. |
 | `quack-flightsql.auth.database.password` | `QOD_AUTH_DB_PASSWORD` | `***` | yes | Password for the auth-lookup JDBC connection. |
-| `quack-flightsql.auth.database.systemQuery` | `QOD_AUTH_DB_SYSTEM_QUERY` | `SELECT password_hash, role, enabled, must_change_password FROM qodstate_user WHERE tenant IS NULL AND username = ? LIMIT 1` |  | SQL template for AuthScope.System (empty tenant / superuser=true). MUST return the four mandatory columns (password_hash, role, enabled, must_change_password) and accepts one ? placeholder for username; matches WHERE tenant IS NULL. |
-| `quack-flightsql.auth.database.tenantQuery` | `QOD_AUTH_DB_TENANT_QUERY` | `SELECT password_hash, role, enabled, must_change_password FROM qodstate_user WHERE tenant = ? AND username = ? LIMIT 1` |  | SQL template for AuthScope.Tenant. MUST return the four mandatory columns (password_hash, role, enabled, must_change_password) and accepts two ? placeholders in order: tenant, username. |
+| `quack-flightsql.auth.database.systemQuery` | `QOD_AUTH_DB_SYSTEM_QUERY` | `SELECT password_hash, kind, enabled, must_change_password FROM qodstate_user WHERE tenant IS NULL AND username = ? LIMIT 1` |  | SQL template for AuthScope.System (empty tenant / superuser=true). MUST return the four mandatory columns (password_hash, kind, enabled, must_change_password) and accepts one ? placeholder for username; matches WHERE tenant IS NULL. |
+| `quack-flightsql.auth.database.tenantQuery` | `QOD_AUTH_DB_TENANT_QUERY` | `SELECT password_hash, kind, enabled, must_change_password FROM qodstate_user WHERE tenant = ? AND username = ? LIMIT 1` |  | SQL template for AuthScope.Tenant. MUST return the four mandatory columns (password_hash, kind, enabled, must_change_password) and accepts two ? placeholders in order: tenant, username. |
 | `quack-flightsql.auth.keycloak.enabled` | `QOD_AUTH_KEYCLOAK_ENABLED` | `false` |  | Enable the Keycloak OIDC bearer provider. |
 | `quack-flightsql.auth.keycloak.baseUrl` | `QOD_AUTH_KEYCLOAK_BASE_URL` | `https://keycloak.example.com` |  | Keycloak base URL (e.g. https://keycloak.example.com). |
 | `quack-flightsql.auth.keycloak.realm` | `QOD_AUTH_KEYCLOAK_REALM` | `quack` |  | Keycloak realm name. |
@@ -116,7 +116,7 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | --- | --- | --- | --- | --- |
 | `quack-on-demand.admin.username` | `QOD_ADMIN_USERNAME` | `admin@localhost.local,admin` |  | Comma-separated admin usernames seeded into qodstate_user. |
 | `quack-on-demand.admin.password` | `QOD_ADMIN_PASSWORD` | `***` | yes | Bootstrap admin password (re-hashed on every boot). |
-| `quack-on-demand.admin.role` | `QOD_ADMIN_ROLE` | `admin` |  | Role assigned to the bootstrap admin user. |
+| `quack-on-demand.admin.kind` | `QOD_ADMIN_KIND` | `admin` |  | Account kind (qodstate_user.kind) assigned to the bootstrap admin user. |
 
 ## `quack-on-demand.auth`
 

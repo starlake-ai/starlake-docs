@@ -49,6 +49,8 @@ qod manifest export --out manifest.yaml
 
 Plaintext passwords are never exported (none exist; only bcrypt hashes are stored), but each user's **bcrypt password hash is exported verbatim** in `passwordHash` so a backup restores the same credential. Federated secret values are redacted. Treat a downloaded manifest as **sensitive**: bcrypt hashes are subject to offline cracking of weak passwords, so do not commit an export to a public repository; store it like any other credential material. On import, a present `passwordHash` is applied as-is; if absent, existing users keep their current password.
 
+The export omits the built-in `qod_*` roles and groups (every tenant carries them). It is refused with `400 reserved_name`, listing the rows, while any tenant holds a user-made role or group whose name starts with `qod_`; rename those rows and export again.
+
 **Related:** [Manifest backup and restore](/qod/operating/manifest).
 
 ## Edit and re-import

@@ -45,13 +45,14 @@ This starts 2 nodes for the `bi` pool: 1 writeonly and 1 readonly (the role dist
 ## Create a user
 
 ```bash
-qod user create --tenant initech --username peter --role user
+qod user create --tenant initech --username peter --role qod_no_tables --group qod_no_pools
 ```
 
-Prompts for (and confirms) a password. `--role` here is the coarse REST-level role (`user` vs `admin`), not a table-permission role - those come from `qod role create` below. Capture the new user's id for the steps that need it:
+Prompts for (and confirms) a password. `--role` and `--group` (repeatable) attach RBAC roles and groups by name. Left out, they default to the built-ins `qod_all_tables` and `qod_all_pools`, which give the user full access to every table and pool of the tenant; this walkthrough starts `peter` from nothing with the empty built-ins and grants access step by step below. The separate `--kind admin|user` flag (default `user`) sets management rights, not data access. Capture the new user's id for the steps that need it:
 
 ```bash
-USER_ID=$(qod --json user create --tenant initech --username peter --role user | jq -r .id)
+USER_ID=$(qod --json user create --tenant initech --username peter \
+  --role qod_no_tables --group qod_no_pools | jq -r .id)
 ```
 
 `--json` only changes how the response is printed - the password prompt still happens interactively either way, and the captured id comes from the create response.

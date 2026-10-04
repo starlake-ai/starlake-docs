@@ -36,7 +36,9 @@ The document mirrors the object hierarchy:
   - `identities[]` - external identity mappings for the tenant.
 - `roles[]` - each `(tenant, name)` with its `permissions[]` (catalog/schema/table/verb).
 - `groups[]` - each `(tenant, name)` with its assigned `roles[]`.
-- `users[]` - `tenant` (omitted/null for a superuser), `username`, `passwordHash`, `role`, `enabled`, `mustChangePassword` (optional, default `false`), and the user's `roles[]`, `groups[]`, and `poolGrants[]`.
+- `users[]` - `tenant` (omitted/null for a superuser), `username`, `passwordHash`, `kind` (`admin` or `user`; the key was named `role` before the [built-in RBAC release](/qod/operating/rbac-model#upgrading-to-the-built-in-rbac-release), and a manifest still using `role` is refused), `enabled`, `mustChangePassword` (optional, default `false`), and the user's `roles[]`, `groups[]`, and `poolGrants[]`.
+
+The four [built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups) (`qod_all_tables`, `qod_no_tables`, `qod_all_pools`, `qod_no_pools`) are not exported: every tenant carries them, and users and groups reference them by name. While any tenant holds a user-made role or group whose name starts with `qod_` (left from before the prefix was reserved, or renamed `<name>_renamed` by the upgrade backfill), the whole export is refused with `400 reserved_name`, listing the offending rows: such a manifest could not be imported. Rename those rows, then export again.
 
 ### Sensitivity of an export
 
@@ -71,7 +73,9 @@ qod manifest import manifest.yaml
 Import validates the whole document before writing anything. On failure it returns `400` and changes nothing:
 
 - `invalid-yaml` - the body did not parse as YAML.
-- `invalid-manifest` - validation failed: a wrong `apiVersion` (must be `quack-on-demand/v1`), duplicate keys (tenant name, `(tenant, role)`, `(tenant, group)`, `(tenant, user)`, or a nested duplicate), or a user/role/group that references a tenant not present in the manifest or already in the database.
+- `invalid-manifest` - validation failed: a wrong `apiVersion` (must be `quack-on-demand/v1`), duplicate keys (tenant name, `(tenant, role)`, `(tenant, group)`, `(tenant, user)`, or a nested duplicate), a user/role/group that references a tenant not present in the manifest or already in the database, a user still carrying the old `role` key, or a role or group named with the reserved `qod_` prefix (only a built-in in its exact built-in shape is accepted, as a no-op).
+
+Import seeds the built-in roles and groups into every tenant it touches. It attaches no default memberships: a user gets exactly the `roles` and `groups` the manifest lists, which may name the built-ins.
 
 After a successful import the manager reloads its in-memory caches (tenants, databases, pools, RBAC effective sets) immediately. No restart is needed for the new configuration to take effect.
 
