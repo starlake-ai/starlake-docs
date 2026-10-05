@@ -268,7 +268,7 @@ The admin commands are superuser only; the manager must run the [fleet runtime](
 
 | Command | Purpose |
 |---|---|
-| `qod fleet join` | Join this server (Linux, macOS) to a fleet and run the node the manager assigns: `--manager URL`, join token from `QOD_FLEET_JOIN_TOKEN` (or `--join-token`, visible in `ps`), `--name`, `--advertise-host`, `--bind-host`, `--node-port` (default 21900), `--duckdb-bin`, `--state-dir`, `--insecure` (allow an `http://` manager URL). Long-running, meant for systemd or launchd; see [Fleet deployment](/qod/operating/deploy-fleet#join-a-server). |
+| `qod fleet join` | Join this server (Linux, macOS) to a fleet and run the node the manager assigns: `--manager URL`, join token from `QOD_FLEET_JOIN_TOKEN` (or `--join-token`, visible in `ps`), `--name`, `--advertise-host`, `--bind-host`, `--node-port` (default 21900; each also read from `QOD_FLEET_NAME` / `QOD_FLEET_ADVERTISE_HOST` / `QOD_FLEET_BIND_HOST` / `QOD_FLEET_NODE_PORT`), `--duckdb-bin`, `--state-dir`, `--insecure` (allow an `http://` manager URL). Long-running, meant for systemd or launchd; see [Fleet deployment](/qod/operating/deploy-fleet#join-a-server). |
 | `qod fleet servers` | List joined servers with liveness (`reachable` / `unreachable` / `dead`), approval (`approved` / `pending`) and heartbeat source address, capacity, and the node each runs. |
 | `qod fleet approve NAME` | Let a server that joined from outside `QOD_FLEET_AUTO_APPROVE` take nodes ([join approval](/qod/operating/deploy-fleet#join-approval)). |
 | `qod fleet drain NAME` | Stop scheduling onto a server and move its node elsewhere (or leave the slot pending). |

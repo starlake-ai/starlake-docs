@@ -137,6 +137,15 @@ docker compose --profile observability up -d
 
 Prometheus scrapes the in-network `quack` service; Grafana serves a pre-provisioned dashboard on `:3000` (anonymous admin, so do not expose it to a public network as-is). See the Resilience and metrics references for what is scraped.
 
+### Fleet mode (manager and workers as containers)
+
+`docker-compose.fleet.yml` layers on the base file and runs the stack with the [fleet runtime](deploy-fleet.md#run-servers-as-docker-containers): the manager schedules nodes onto two worker containers (`fleet-worker-1` on port `21901`, `fleet-worker-2` on `21902`) instead of spawning them itself. It needs a join token in `.env` and the SeaweedFS profile:
+
+```bash
+echo "FLEET_JOIN_TOKEN=$(openssl rand -hex 24)" >> .env
+docker compose -f docker-compose.yml -f docker-compose.fleet.yml --profile seaweedfs up -d --build
+```
+
 ## Corporate proxy
 
 When the host needs an HTTP proxy to reach the public internet (for DuckDB extension downloads from `extensions.duckdb.org`), set `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` in `.env`. Compose forwards them into both the build and the runtime, and the manager translates them into DuckDB's `SET http_proxy` before `INSTALL`. The in-network hostnames (`postgres`, `seaweedfs`) are always added to `NO_PROXY` so intra-stack traffic and S3 PUTs bypass the proxy. Note that `docker pull` itself reads the Docker daemon's proxy config, not these variables.

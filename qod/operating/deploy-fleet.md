@@ -2,8 +2,8 @@
 id: deploy-fleet
 title: "Fleet deployment: nodes on your own servers, no Kubernetes"
 sidebar_label: Fleet (bare servers)
-description: "Run DuckDB nodes across many Linux or macOS servers without Kubernetes: servers join with qod fleet join, the manager schedules one node per server from a shared fleet."
-keywords: ["duckdb cluster", "bare metal", "fleet", "qod fleet join", "systemd", "launchd", "no kubernetes", "duckdb deployment"]
+description: "Run DuckDB nodes across many Linux or macOS servers, or Docker containers, without Kubernetes: servers join with qod fleet join, the manager schedules one node per server from a shared fleet."
+keywords: ["duckdb cluster", "bare metal", "fleet", "qod fleet join", "systemd", "launchd", "docker", "no kubernetes", "duckdb deployment"]
 ---
 
 Audience: platform engineer or DBA who has several servers (VMs or physical hosts) but no Kubernetes cluster.
@@ -38,7 +38,7 @@ A fleet is a set of servers that joined by running `qod fleet join`. Joining mea
 
 ## Prerequisites
 
-- **Linux or macOS servers.** `qod fleet join` is not available on Windows yet.
+- **Linux or macOS servers, or Docker containers.** `qod fleet join` is not available on Windows yet. To run servers (and the manager) as containers, see [Run servers as Docker containers](#run-servers-as-docker-containers).
 - **The `qod` CLI on every server** (`pip install qod`, or run it through `uvx qod fleet join ...`). The join process provisions a `duckdb` binary into its cache on first start; pass `--duckdb-bin /path/to/duckdb` to use one you installed yourself.
 - **Shared object storage for every DuckLake data path.** A node can land on any server, so every database's `dataPath` must be an object-store URL (`s3://...`, `gs://...`, `az://...`) reachable from all servers. A local path would only exist on one of them. [Managed storage](managed-storage.md) satisfies this by construction.
 - **The metastore PostgreSQL reachable from every server.** Nodes attach their DuckLake catalog directly, so each server must reach the Postgres host and port of every database it may serve.
@@ -61,6 +61,8 @@ Set `QOD_RUNTIME_TYPE=fleet` and a join token. Everything else has a working def
 | `quack-on-demand.fleet.ephemeral` | `QOD_FLEET_EPHEMERAL` | `fleet` | Where maintenance and branch-merge nodes run: `fleet` claims a server, `local` runs them on the manager host. See [Ephemeral nodes](#ephemeral-nodes). |
 | `quack-on-demand.fleet.autoApprove` | `QOD_FLEET_AUTO_APPROVE` | `0.0.0.0/0,::/0` | Comma-separated CIDRs. A server whose heartbeat comes from one of them is approved as it joins; any other waits for `qod fleet approve`. Empty approves no one automatically. See [Join approval](#join-approval). |
 | `quack-on-demand.fleet.trustedProxies` | `QOD_FLEET_TRUSTED_PROXIES` | (none) | Comma-separated CIDRs of the proxies and load balancers in front of the manager. Only their `X-Forwarded-For` header is believed when resolving a heartbeat's address. |
+| `quack-on-demand.fleet.nodePgHost` | `QOD_FLEET_NODE_PG_HOST` | (none) | Address servers dial for the managed Postgres when it differs from the manager's own, for example when the manager reaches it by a container-only name. Replaces `pgHost` in the assignments of databases on the default metastore only. |
+| `quack-on-demand.fleet.nodePgPort` | `QOD_FLEET_NODE_PG_PORT` | (none) | Port servers dial for the managed Postgres. Replaces `pgPort` only where it equals the default metastore's port. |
 
 Invalid combinations (a timeout not above the heartbeat, an unknown `ephemeral` value, a malformed CIDR) are refused at boot with a message naming the key.
 
@@ -83,11 +85,11 @@ The first heartbeat is the join. The server appears in `qod fleet servers` a few
 |---|---|---|
 | `--manager` | env `QOD_MANAGER_URL` | Manager base URL, `https://host:20900`. Required. |
 | `--join-token` | env `QOD_FLEET_JOIN_TOKEN` | The fleet join token. Prefer the environment variable. |
-| `--name` | the hostname | Server identity. Must be unique in the fleet. |
-| `--advertise-host` | first non-loopback IPv4 | Address the manager dials to reach the node. Set it explicitly on hosts with more than one network interface. |
-| `--bind-host` | the advertise host | Interface the node listens on. `0.0.0.0` listens on every interface. |
-| `--node-port` | `21900` | Port the node listens on. |
-| `--duckdb-bin` | provisioned into the qod cache | DuckDB executable to run the node with. |
+| `--name` | env `QOD_FLEET_NAME`, else the hostname | Server identity. Must be unique in the fleet. |
+| `--advertise-host` | env `QOD_FLEET_ADVERTISE_HOST`, else the first non-loopback IPv4 | Address the manager dials to reach the node. Set it explicitly on hosts with more than one network interface. |
+| `--bind-host` | env `QOD_FLEET_BIND_HOST`, else the advertise host | Interface the node listens on. `0.0.0.0` listens on every interface. |
+| `--node-port` | env `QOD_FLEET_NODE_PORT`, else `21900` | Port the node listens on. |
+| `--duckdb-bin` | provisioned into the qod cache | DuckDB executable to run the node with. The server reports that binary's version. |
 | `--state-dir` | the qod cache | Where the node pidfile lives. |
 | `--insecure` | off | Accept a plain `http://` manager URL. |
 
@@ -229,6 +231,54 @@ Metastore connection settings that a server needs go on the join process's unit 
 
 Anything else exported on the join process never reaches a node.
 
+## Run servers as Docker containers
+
+The manager and the servers can all be containers. Each server is one container from `starlakeai/quack-on-demand-worker`, an image that bundles DuckDB (same version as the manager) and runs `qod fleet join` as a non-root user:
+
+```bash
+docker run -d --name qod-worker --restart unless-stopped --stop-timeout 70 \
+  -p 21900:21900 \
+  -e QOD_MANAGER_URL=https://mgr.internal:20900 \
+  -e QOD_FLEET_JOIN_TOKEN=<the join token> \
+  -e QOD_FLEET_NAME=srv-07 \
+  -e QOD_FLEET_ADVERTISE_HOST=10.0.3.17 \
+  -e QOD_FLEET_NODE_PORT=21900 \
+  -e QOD_S3_ENDPOINT=... -e QOD_S3_ACCESS_KEY_ID=... -e QOD_S3_SECRET_ACCESS_KEY=... \
+  starlakeai/quack-on-demand-worker:latest
+```
+
+| Variable | Required | Meaning |
+|---|---|---|
+| `QOD_MANAGER_URL` | yes | Manager base URL. |
+| `QOD_FLEET_JOIN_TOKEN` | yes | The fleet join token. |
+| `QOD_FLEET_NAME` | yes | A stable server name. A container's hostname is its id and changes on every recreate, so without a fixed name each recreate would join as a new server. |
+| `QOD_FLEET_ADVERTISE_HOST` | yes | The **host's** address the manager can dial. The container's own address is a bridge address no other host can reach. |
+| `QOD_FLEET_NODE_PORT` | no (`21900`) | The node port, published with the same number on both sides. |
+| `QOD_FLEET_INSECURE` | no | `true` accepts a plain `http://` manager URL. Same caveat as `--insecure`. |
+| `QOD_S3_*`, `QOD_AZURE_*` | for object storage | Passed to the node: each server sets an endpoint it can reach. |
+
+The container stays in the foreground under `tini`; `docker stop` stops the node before the join process exits, which takes up to 60 seconds, hence `--stop-timeout 70`.
+
+**Publish the node port with the same number inside and out.** The node binds the port it advertises, so `-p 21901:21901 -e QOD_FLEET_NODE_PORT=21901` works and `-p 21901:21900` does not. Several worker containers on one host each take their own port.
+
+**Capacity follows the container's limits.** The server reports the smaller of the host's resources and the container's cgroup limits (v1 or v2), so `docker run --memory 8g --cpus 4` reports 8 GiB and 4 CPUs, and a pool asking for `--memory 16Gi` is never placed there.
+
+**The manager as a container.** Run `starlakeai/quack-on-demand` with `QOD_RUNTIME_TYPE=fleet`, the same `QOD_FLEET_JOIN_TOKEN`, and an object-storage data path. When the manager reaches the metastore Postgres by a name the servers cannot resolve (a compose service name such as `postgres`), set `QOD_FLEET_NODE_PG_HOST` (and `QOD_FLEET_NODE_PG_PORT` if the published port differs) to the address the servers use. Only assignments change: the manager keeps its own address, and a database on its own Postgres is left as is, so that Postgres and any object-store endpoint a database sets must be reachable from the manager and every server under the same address.
+
+**Approval behind Docker NAT.** The manager may see a gateway address as a server's source rather than its advertised host. The default `QOD_FLEET_AUTO_APPROVE` admits it; a narrowed list must include that address (`qod fleet servers` shows it in the source column).
+
+### Try it on one machine
+
+The repository's compose files run the whole stack in fleet mode on one host, with two worker containers standing in for two servers. The workers sit on their own Docker network and reach the manager, Postgres and SeaweedFS only through ports published on the host, as they would between real hosts:
+
+```bash
+echo "FLEET_JOIN_TOKEN=$(openssl rand -hex 24)" >> .env
+docker compose -f docker-compose.yml -f docker-compose.fleet.yml --profile seaweedfs up -d --build
+qod fleet servers    # fleet-worker-1 and fleet-worker-2, approved
+```
+
+The manager runs maintenance and merge nodes itself (`QOD_FLEET_EPHEMERAL=local`), and the workers publish ports `21901` and `21902`. Docker Compose 2.24 or later is required. See [Docker Compose](deploy-docker.md) for the base stack.
+
 ## How scheduling works
 
 When a pool needs a node (create, scale up, a respawn), the manager claims one server from the fleet in a single Postgres statement. A server qualifies when it is:
@@ -347,7 +397,7 @@ qod pool set-resources --tenant acme --db acme_sales --pool bi --cpu 2 --memory 
 
 - These are engine limits, not kernel limits: DuckDB caps its worker threads and buffer manager, but allocations outside the buffer manager can overshoot `memory_limit`. Leave headroom on the server.
 - An explicit `SET threads` or `SET memory_limit` in the database or pool init SQL runs later and wins over the `--cpu` / `--memory` value.
-- `--memory` is also the scheduling filter: a pool asking for `64Gi` is never placed on a server that reported 32 GiB of RAM.
+- `--memory` is also the scheduling filter: a pool asking for `64Gi` is never placed on a server that reported 32 GiB of RAM. A server in a container reports its cgroup limits when they are lower than the host's.
 - New values apply when a node next starts; restart the pool's nodes to apply them now.
 
 ## Ephemeral nodes
