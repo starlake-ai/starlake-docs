@@ -1,3 +1,7 @@
+---
+description: "Starlake Python transforms on Spark: the SL_THIS output view, parameters, write strategies, SQL hooks, file exports, expectations and scheduling."
+---
+
 # Python Transformations
 
 ## 1. PySpark Runtime

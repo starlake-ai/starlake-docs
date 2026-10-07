@@ -1,3 +1,7 @@
+---
+description: "How Starlake generates Airflow, Dagster and Snowflake Tasks DAGs from load and transform dependencies, with lineage and scheduling options."
+---
+
 # Orchestration Capabilities
 
 ## 1. DAG Generation

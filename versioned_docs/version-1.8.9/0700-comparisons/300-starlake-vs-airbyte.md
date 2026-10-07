@@ -1,3 +1,7 @@
+---
+description: "Starlake vs Airbyte: a declarative ELT platform versus a connector-based EL platform, compared on sources, CDC, transforms and data quality."
+---
+
 # Starlake vs Airbyte
 
 Starlake and Airbyte are both open-source data integration tools, but they serve different roles in the data stack.

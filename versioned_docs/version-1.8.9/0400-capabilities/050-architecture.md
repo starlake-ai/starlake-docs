@@ -1,3 +1,7 @@
+---
+description: "How Starlake works: the declarative YAML and SQL model, the extract, load, transform and orchestrate stages, engines, connections and lineage."
+---
+
 # Architecture
 
 ## 1. Declarative Pipeline Model

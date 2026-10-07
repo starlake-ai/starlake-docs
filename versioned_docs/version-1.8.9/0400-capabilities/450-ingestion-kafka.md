@@ -1,3 +1,7 @@
+---
+description: "Use Apache Kafka as a Starlake source or sink, in batch or streaming mode: connections, offsets, serialization formats, loading and offloading."
+---
+
 # Kafka Ingestion & Offloading
 
 Starlake supports Apache Kafka as both a **source** (consuming messages into tables) and a **sink** (publishing data to topics). Two execution modes are available: **batch** and **streaming**.

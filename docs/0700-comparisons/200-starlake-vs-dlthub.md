@@ -1,3 +1,7 @@
+---
+description: "Starlake vs dlt: declarative YAML and SQL versus Python code, compared on sources, CDC, transforms, data quality, orchestration and testing."
+---
+
 # Starlake vs dlt
 
 Starlake and dlt are both open-source data pipeline tools, but they take fundamentally different approaches.

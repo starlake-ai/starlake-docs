@@ -1,3 +1,7 @@
+---
+description: "Test Starlake loads and transforms locally on DuckDB, with no cloud credentials: test layout, expectations, data comparison, coverage and reports."
+---
+
 # Test Capabilities
 
 ## 1. Local Execution with DuckDB

@@ -1,3 +1,7 @@
+---
+description: "How Starlake loads XML files: row tags, attribute prefixes, nested structures, XSD validation, type checks, privacy transforms and foreign keys."
+---
+
 # XML Files Ingestion
 
 ## 1. Row Tag Detection
