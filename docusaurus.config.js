@@ -323,7 +323,9 @@ const config = {
           "",
           "Quack on Demand turns DuckDB and DuckLake into a governed service with authentication, single sign-on, role-based access control with row and column security, and ADBC, JDBC and ODBC access over Arrow Flight SQL.",
           "",
-          `These files cover Quack on Demand ${latestQodVersion} and Starflow ${latestStarflowVersion}. Every link points to a Markdown copy of the page; drop the .md suffix for the HTML version. The full text of every page is in https://docs.starlake.ai/llms-full.txt.`,
+          "The Quack on Demand REST API is described by an OpenAPI 3.1 spec at https://docs.starlake.ai/openapi.yaml, with a browsable reference at https://docs.starlake.ai/api/.",
+          "",
+          `These files cover Quack on Demand ${latestQodVersion} and Starflow ${latestStarflowVersion}. Every page link points to a Markdown copy of the page; drop the .md suffix for the HTML version. The full text of every page is in https://docs.starlake.ai/llms-full.txt.`,
         ].join("\n"),
         docsDir: [
           {
