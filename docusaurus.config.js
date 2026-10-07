@@ -397,6 +397,9 @@ const config = {
     qodGaId: process.env.QOD_DOCS_GA_ID,
     starflowGaId: process.env.STARFLOW_DOCS_GA_ID,
     qodVersion,
+    // docusaurus-plugin-llms writes a .md copy of each latest-version doc,
+    // which the page actions and <link rel="alternate"> point to.
+    llmsMarkdown: !isBlog,
   },
   clientModules: isBlog ? [] : [require.resolve("./src/clientModules/sectionAnalytics.js")],
 };
