@@ -1,0 +1,328 @@
+---
+title: "Type Validation in Starlake — Built-in and Custom Types with Regex"
+description: "Validate data types during ingestion with Starlake. Define schemas with built-in and custom types using regex patterns, with SQL-mapped primitive types. Rejected records go to an audit table."
+keywords: [starlake, type validation, data types, schema validation, regex, ingestion, custom types, primitive types, data quality]
+---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does Starlake validate data types during ingestion?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Each attribute in the YAML schema is associated with a type. Starlake uses the regex pattern associated with that type to validate every value. Non-conforming records are rejected to an audit table."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I define custom validation types in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Create a custom.sl.yml file in the metadata/types directory. Each custom type needs a name, a regex pattern for validation, a primitiveType mapping (string, long, double, boolean, timestamp, decimal, date, byte, or short), and optionally a sample value and comment."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use regex patterns for data validation in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, every type in Starlake is validated using a regex pattern. Built-in types like int, double, and boolean have predefined patterns. You can create custom types with your own regex patterns, such as email addresses, phone numbers, or zip codes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens when data fails validation in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Records that fail type validation are rejected and stored in an audit rejected table. Valid records are loaded into the target table. This ensures that only data matching the expected schema and types reaches your data warehouse."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What built-in types does Starlake provide for validation?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake provides built-in types including string, int, integer, long, short, byte, double, decimal, boolean, date, timestamp, and numerous ISO date/time formats (ISO_LOCAL_DATE, ISO_DATE_TIME, RFC_1123_DATE_TIME, etc.). These are defined in metadata/types/default.sl.yml."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is a primitiveType in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A primitiveType is the underlying SQL type that a custom type maps to. Possible values are: string, long, double, byte, short, boolean, timestamp, decimal, date."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where are default types defined in a Starlake project?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In the file metadata/types/default.sl.yml. This file contains all built-in types with their pattern, primitiveType, sample and comment."
+          }
+        }
+      ]
+    })}
+  </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to define custom validation types in Starlake",
+      "description": "Create custom data types with regex validation for use during Starlake data ingestion.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Create the custom types file",
+          "text": "Create a file named custom.sl.yml in the metadata/types directory of your Starlake project."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Define a custom type",
+          "text": "Add a type entry with name, pattern (regex), primitiveType (e.g. string), and optionally sample and comment."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Use the custom type in a table schema",
+          "text": "Reference the custom type name in the type field of an attribute in your table YAML file (metadata/load/<domain>/<table>.sl.yml)."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the load",
+          "text": "Records matching the regex are loaded into the target table. Non-matching records are rejected to the audit table."
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# Type Validation
+
+Starlake validates every incoming record against a type schema before loading it into the data warehouse. Each attribute in the table YAML is assigned a type, and each type carries a regex pattern. Values that match the pattern are loaded into the target table. Values that fail validation are rejected to an audit table.
+
+Built-in types cover common SQL primitives (int, double, boolean, timestamp, date, etc.). You can also define custom types with domain-specific regex patterns for formats like email, phone number or zip code.
+
+:::tip
+Type validation runs in Spark mode only. [Native load mode](/starflow/guides/load/native) skips this step entirely. Use post-load [expectations](/starflow/guides/load/expectations) as an alternative quality gate when running in native mode.
+:::
+
+## How type validation works
+
+The schema is described in the `attributes` section of the table YAML file. Each attribute specifies a `type` that determines how values are validated.
+
+```yaml {7,9,11,13} title="metadata/load/starbake/order_line.sl.yml - validation section"
+table:
+  pattern: "order_line.*.csv"
+  metadata:
+    - ...
+  attributes:
+  - name: "order_id"
+    type: "int"
+  - name: "product_id"
+    type: "int"
+  - name: "quantity"
+    type: "int"
+  - name: "sale_price"
+    type: "double"
+```
+
+In this example, `int` and `double` are built-in types mapped to their corresponding SQL primitives. Starlake validates each value against the regex pattern defined for the type. Non-conforming records are rejected and routed to the audit table.
+
+## Built-in types
+
+Starlake provides the following built-in types in `metadata/types/default.sl.yml`. Each type defines a `name`, a `primitiveType` (the SQL type it maps to), a `pattern` (regex or named date format), and a `sample`.
+
+```yaml title="metadata/types/default.sl.yml"
+types:
+  - name: "string"
+    primitiveType: "string"
+    pattern: ".+"
+    sample: "Hello World"
+    comment: "Any set of chars"
+  - name: "int"
+    pattern: "[-|\\+|0-9][0-9]*"
+    primitiveType: "long"
+    sample: "1234"
+    comment: "Int number"
+  - name: "integer"
+    pattern: "[-|\\+|0-9][0-9]*"
+    primitiveType: "long"
+    sample: "1234"
+    comment: "Int number"
+  - name: "byte"
+    primitiveType: "byte"
+    pattern: "."
+    sample: "x"
+    comment: "Any set of chars"
+  - name: "double"
+    primitiveType: "double"
+    pattern: "[-+]?\\d*\\.?\\d+[Ee]?[-+]?\\d*"
+    sample: "-45.78"
+    comment: "Any floating value"
+  - name: "long"
+    primitiveType: "long"
+    pattern: "[-|\\+|0-9][0-9]*"
+    sample: "-64564"
+    comment: "any positive or negative number"
+  - name: "short"
+    primitiveType: "short"
+    pattern: "-?\\d+"
+    sample: "564"
+    comment: "any positive or negative number"
+  - name: "boolean"
+    primitiveType: "boolean"
+    pattern: "(?i)true|yes|[y1]<-TF->(?i)false|no|[n0]"
+    sample: "TruE"
+  - name: "timestamp"
+    primitiveType: "timestamp"
+    pattern: "ISO_DATE_TIME"
+    sample: "2019-12-31 23:59:02"
+    comment: "date/time in epoch millis"
+  - name: "decimal"
+    primitiveType: "decimal"
+    pattern: "-?\\d*\\.{0,1}\\d+"
+    sample: "-45.787686786876"
+    comment: "Any floating value"
+  - name: "date"
+    primitiveType: "date"
+    pattern: "yyyy-MM-dd"
+    sample: "2018-07-21"
+    comment: "Date in the format yyyy-MM-dd"
+  - name: "basic_iso_date"
+    primitiveType: "timestamp"
+    pattern: "BASIC_ISO_DATE"
+    sample: "20111203"
+    comment: "Timestamp based on yyyMMdd pattern"
+  - name: "iso_local_date"
+    primitiveType: "timestamp"
+    pattern: "ISO_LOCAL_DATE"
+    sample: "2011-12-03"
+    comment: "Timestamp based on yyyy-MM-dd pattern"
+  - name: "iso_offset_date"
+    primitiveType: "timestamp"
+    pattern: "ISO_OFFSET_DATE"
+    sample: "2011-12-03+02:00"
+    comment: "Timestamp based on `ISO Date with offset` pattern"
+  - name: "iso_date"
+    primitiveType: "timestamp"
+    pattern: "ISO_DATE"
+    sample: "2011-12-03+02:00"
+    comment: "Timestamp based on `ISO Date with or without offset` pattern"
+  - name: "iso_local_date_time"
+    primitiveType: "timestamp"
+    pattern: "ISO_LOCAL_DATE_TIME"
+    sample: "2011-12-03T10:15:30"
+    comment: "Timestamp based on `ISO Local Date and Time` pattern"
+  - name: "iso_offset_date_time"
+    primitiveType: "timestamp"
+    pattern: "ISO_OFFSET_DATE_TIME"
+    sample: "2011-12-03T10:15:30+01:00"
+    comment: "Timestamp based on `ISO Local Date and Time` pattern"
+  - name: "iso_zoned_date_time"
+    primitiveType: "timestamp"
+    pattern: "ISO_ZONED_DATE_TIME"
+    sample: "2011-12-03T10:15:30+01:00[Europe/Paris]"
+    comment: "Timestamp based on `ISO Zoned Date Time` pattern"
+  - name: "iso_date_time"
+    primitiveType: "timestamp"
+    pattern: "ISO_DATE_TIME"
+    sample: "2011-12-03T10:15:30+01:00[Europe/Paris]"
+    comment: "Timestamp based on `ISO Date and time with ZoneId` pattern"
+  - name: "iso_ordinal_date"
+    primitiveType: "timestamp"
+    pattern: "ISO_ORDINAL_DATE"
+    sample: "2012-337"
+    comment: "Timestamp based on `year and day of year` pattern"
+  - name: "iso_week_date"
+    primitiveType: "timestamp"
+    pattern: "ISO_WEEK_DATE"
+    sample: "2012-W48-6"
+    comment: "Timestamp based on `Year and Week` pattern"
+  - name: "iso_instant"
+    primitiveType: "timestamp"
+    pattern: "ISO_INSTANT"
+    sample: "2011-12-03T10:15:30Z"
+    comment: "Timestamp based on `Date and Time of an Instant` pattern (UTC only)"
+  - name: "rfc_1123_date_time"
+    primitiveType: "timestamp"
+    pattern: "RFC_1123_DATE_TIME"
+    sample: "Tue, 3 Jun 2008 11:05:30 GMT"
+    comment: "Timestamp based on `RFC 1123 / RFC 822` patterns"
+```
+
+## Custom types
+
+You can define custom types or override built-in types in a `custom.sl.yml` file inside the `metadata/types` directory. Custom types let you enforce domain-specific validation rules such as email format, phone numbers or postal codes.
+
+Each custom type requires:
+- **`name`** -- The type name you reference in table attributes.
+- **`pattern`** -- A regex pattern for validation.
+- **`primitiveType`** -- The SQL type this custom type maps to.
+- **`sample`** (optional) -- An example value.
+- **`comment`** (optional) -- A description.
+
+```yaml title="metadata/types/custom.sl.yml"
+
+types:
+  - name: "email"
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    primitiveType: "string"
+    sample: "user@example.com"
+    comment: "Email address"
+  - name: "phone"
+    pattern: "^[0-9]{10}$"
+    primitiveType: "string"
+    sample: "1234567890"
+    comment: "Phone number"
+  - name: "zip_code"
+    pattern: "^[0-9]{5}$"
+    primitiveType: "string"
+    sample: "12345"
+    comment: "Zip code"
+```
+
+## Supported primitive types
+
+Every type (built-in or custom) maps to one of these SQL primitive types:
+
+| Primitive type | Description |
+|---|---|
+| `string` | Text values |
+| `long` | 64-bit integer |
+| `double` | Double-precision floating point |
+| `byte` | Single byte |
+| `short` | 16-bit integer |
+| `boolean` | True/false |
+| `timestamp` | Date and time |
+| `decimal` | Arbitrary-precision decimal |
+| `date` | Date without time |
+
+## Frequently Asked Questions
+
+### How does Starlake validate data types during ingestion?
+Each attribute in the YAML schema is associated with a type. Starlake uses the regex pattern of that type to validate every value. Non-conforming records are rejected to an audit table.
+
+### How do I define custom validation types in Starlake?
+Create a `custom.sl.yml` file in the `metadata/types` directory. Each custom type needs a name, a regex pattern for validation, a `primitiveType` mapping (string, long, double, boolean, timestamp, decimal, date, byte, or short), and optionally a sample value and comment.
+
+### Can I use regex patterns for data validation in Starlake?
+Yes, every type in Starlake is validated using a regex pattern. Built-in types like `int`, `double`, and `boolean` have predefined patterns. You can create custom types with your own regex patterns, such as email addresses, phone numbers, or zip codes.
+
+### What happens when data fails validation in Starlake?
+Records that fail type validation are rejected and stored in an audit rejected table. Valid records are loaded into the target table. This ensures that only data matching the expected schema and types reaches your data warehouse.
+
+### What built-in types does Starlake provide for validation?
+Starlake provides built-in types including string, int, integer, long, short, byte, double, decimal, boolean, date, timestamp, and numerous ISO date/time formats (ISO_LOCAL_DATE, ISO_DATE_TIME, RFC_1123_DATE_TIME, etc.). These are defined in `metadata/types/default.sl.yml`.
+
+### What is a primitiveType in Starlake?
+A `primitiveType` is the underlying SQL type that a custom type maps to. Possible values are: string, long, double, byte, short, boolean, timestamp, decimal, date.
+
+### Where are default types defined in a Starlake project?
+In the file `metadata/types/default.sl.yml`. This file contains all built-in types with their pattern, primitiveType, sample and comment.

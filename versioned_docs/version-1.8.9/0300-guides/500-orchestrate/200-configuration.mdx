@@ -1,0 +1,208 @@
+---
+toc_min_heading_level: 2
+toc_max_heading_level: 4
+---
+# DAG Configuration
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Starlake DAG generation relies on:
+
+- **starlake** command line tool
+- **DAG configuration**(s) and their **references** within the loads and tasks
+- **template**(s) that may be customized
+- **starlake-orchestration** Python framework to dynamically generate the tasks
+- **dependency management** between tasks to execute transforms in the correct order
+
+## Prerequisites
+
+Before using Starlake DAG generation, ensure the following minimum versions are installed:
+
+- **starlake**: 1.0.1 or higher
+
+<Tabs groupId="schedulers">
+<TabItem label="Airflow" value="airflow" default>
+
+- **Apache Airflow**: 3.0 or higher
+- **starlake-airflow**: 0.5.0 or higher
+
+</TabItem>
+<TabItem label="Dagster" value="dagster">
+
+- **Dagster**: 1.6.0 or higher
+- **starlake-dagster**: 0.1.2 or higher
+
+</TabItem>
+<TabItem label="Snowflake Tasks" value="snowflake">
+
+- **Snowflake Snowpark**: Latest
+- **starlake-snowflake**: 0.5.0 or higher
+
+</TabItem>
+</Tabs>
+
+## Command
+
+```bash
+starlake dag-generate [options]
+```
+
+| Parameter               | Cardinality | Description                                                                                                |
+| ----------------------- | ----------- | ---------------------------------------------------------------------------------------------------------- |
+| --outputDir `<value>` | optional    | Path for saving the resulting DAG file(s) (`${SL_ROOT}/metadata/dags/generated` by default)                |
+| --clean                 | optional    | Remove existing DAG file(s) first (`false` by default)                                                     |
+| --domains               | optional    | Generate DAG file(s) to load schema(s) (`true` by default if `--tasks` not specified)                      |
+| --tasks                 | optional    | Generate DAG file(s) for tasks (`true` by default if `--domains` not specified)                            |
+| --tags `<value>`      | optional    | Generate DAG file(s) for the specified tags only (no tags by default)                                       |
+
+## Configuration files
+
+All DAG configuration files are located in `${SL_ROOT}/metadata/dags`. The root element is **dag**.
+
+```yaml title="Example: metadata/dags/airflow_bash_load.sl.yml"
+dag:
+  comment: "DAG for loading tables using bash"
+  template: "load/airflow_scheduled_table_bash.py.j2"
+  filename: "airflow_all_tables.py"
+  options:
+    sl_env_var: '{"SL_ROOT": "/opt/starlake"}'
+    pre_load_strategy: "imported"
+```
+
+## References
+
+We reference a DAG configuration by using the configuration file name **without its extension**.
+
+### Loading data
+
+The configuration files for **loading** data can be defined at three levels (from broadest to most specific):
+
+**Project level** &mdash; in `${SL_ROOT}/metadata/application.sl.yml` under `application.dagRef.load`:
+
+```yaml
+application:
+  dagRef:
+    load: airflow_bash_load
+```
+
+**Domain level** &mdash; in `${SL_ROOT}/metadata/load/{domain}/_config.sl.yml` under `load.metadata.dagRef`:
+
+```yaml
+load:
+  metadata:
+    dagRef: airflow_bash_load
+```
+
+**Table level** &mdash; in `${SL_ROOT}/metadata/load/{domain}/{table}.sl.yml` under `table.metadata.dagRef`:
+
+```yaml
+table:
+  metadata:
+    dagRef: airflow_bash_load
+```
+
+### Transforming data
+
+The configuration files for **transforming** data can be defined at two levels:
+
+**Project level** &mdash; in `${SL_ROOT}/metadata/application.sl.yml` under `application.dagRef.transform`:
+
+```yaml
+application:
+  dagRef:
+    transform: airflow_bash_transform
+```
+
+**Transformation level** &mdash; in `${SL_ROOT}/metadata/transform/{domain}/{transformation}.sl.yml` under `task.dagRef`:
+
+```yaml
+task:
+  dagRef: airflow_bash_transform
+```
+
+## Properties
+
+A DAG configuration defines four properties: **comment**, **template**, **filename**, and **options**.
+
+### comment
+
+A short description of the generated DAG. This appears as the DAG description in your orchestrator's UI.
+
+### template
+
+The path to the Jinja2 template that will generate the DAG(s). This can be:
+
+- An **absolute** path on the filesystem
+- A **relative** path to the `${SL_ROOT}/metadata/dags/templates/` directory
+- A **built-in** template name from the [starlake resource directory](https://github.com/starlake-ai/starlake/tree/master/src/main/resources/templates/dags)
+
+### filename
+
+The relative path (from `outputDir`) where the generated DAG file will be saved. May include special variables that control the **number of generated DAGs**:
+
+| Variable         | Effect                                                          |
+| ---------------- | --------------------------------------------------------------- |
+| `{{domain}}`   | One DAG per domain                                              |
+| `{{table}}`    | One DAG per table (combined with `{{domain}}`)                |
+| *(neither)*      | A single DAG for all tables/tasks affected by this config       |
+
+```yaml
+# One DAG per domain
+filename: "{{domain}}_load.py"
+
+# One DAG per table
+filename: "{{domain}}_{{table}}_load.py"
+
+# Single DAG
+filename: "all_tasks.py"
+```
+
+### options
+
+A dictionary of key-value pairs passed to the template. This is where you configure the behavior of the generated DAGs.
+
+```yaml
+dag:
+  options:
+    sl_env_var: '{"SL_ROOT": "/opt/starlake", "SL_ENV": "PROD"}'
+    pre_load_strategy: "imported"
+    run_dependencies_first: "true"
+    SL_STARLAKE_PATH: "/usr/local/bin/starlake"
+```
+
+See the [Options Reference](./options) page for a complete list of all available options organized by capability.
+
+## How options are resolved
+
+Options follow a multi-level resolution strategy. When the orchestration library needs a value, it looks in this order:
+
+<Tabs groupId="schedulers">
+<TabItem label="Airflow" value="airflow" default>
+
+1. `options` dictionary (from the DAG configuration)
+2. Default value (hardcoded in the library)
+3. **Airflow Variable** (stored in Airflow's metadata database)
+4. **Environment variable**
+5. Raises `MissingEnvironmentVariable` if not found anywhere
+
+</TabItem>
+<TabItem label="Dagster" value="dagster">
+
+1. `options` dictionary (from the DAG configuration)
+2. Default value (hardcoded in the library)
+3. **Environment variable**
+4. Raises `MissingEnvironmentVariable` if not found anywhere
+
+</TabItem>
+<TabItem label="Snowflake Tasks" value="snowflake">
+
+1. `options` dictionary (from the DAG configuration)
+2. Default value (hardcoded in the library)
+3. **Environment variable**
+4. Raises `MissingEnvironmentVariable` if not found anywhere
+
+</TabItem>
+</Tabs>
+
+This means you can set options in your DAG config YAML, as Airflow Variables, or as environment variables &mdash; whichever is most convenient for your deployment.

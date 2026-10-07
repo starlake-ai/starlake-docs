@@ -1,0 +1,188 @@
+---
+id: snowflake-native-app-setup
+title: "Starlake Snowflake Native App: Post-Installation Permissions Setup"
+description: "Post-installation guide for the Starlake Snowflake Native App. Grant account-level, data, and warehouse permissions using caller's rights for secure operation."
+keywords: [snowflake native app, starlake setup, snowflake permissions, etl
+    post-installation, data pipeline security, caller's rights]
+---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What permissions does the Starlake Snowflake Native App need?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The app needs account-level operational rights (CREATE DATABASE, EXECUTE TASK, READ SESSION), inherited caller privileges on databases/schemas/tables/views/functions/procedures, and warehouse usage. All permissions operate under caller's rights."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is the Starlake Snowflake app secure?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The app uses Snowflake's caller's rights model. It can only perform actions that the calling user is already authorized to do. No permanent privilege escalation is possible."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the caller's rights principle?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The application runs with the privileges of the user who calls it. The GRANT statements delegate specific rights that you already possess to the application. The app does not gain any rights beyond what the caller has."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I restrict the Starlake app to a single database?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Use Option B (Restricted Database Access) to replace IN ACCOUNT with IN DATABASE <your_database> in the GRANT commands. This limits the app's data access to the specified database only."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the difference between Option A and Option B for permissions?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Option A grants inherited caller privileges on all objects in the account. Option B restricts access to a specific database. Option B is the preferred approach when the app only needs access to a specific trust boundary."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do the GRANT commands give the app elevated privileges?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. The GRANT commands delegate your existing privileges to the app via caller's rights. If you cannot access a table, the app running on your behalf cannot access it either."
+          }
+        }
+      ]
+    })}
+  </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to configure Snowflake Native App permissions for Starlake",
+      "step": [
+        {"@type": "HowToStep", "name": "Grant account-level operational rights", "text": "Execute GRANT CALLER CREATE DATABASE, EXECUTE TASK, EXECUTE MANAGED TASK, and READ SESSION ON ACCOUNT TO APPLICATION starlake_app."},
+        {"@type": "HowToStep", "name": "Grant data interaction rights", "text": "Choose Option A (all databases in account) or Option B (restricted to a single database). Grant inherited caller privileges on databases, schemas, tables, views, functions, and procedures."},
+        {"@type": "HowToStep", "name": "Grant warehouse usage", "text": "Execute GRANT CALLER USAGE ON WAREHOUSE COMPUTE_WH TO APPLICATION starlake_app to allow the app to run queries."},
+        {"@type": "HowToStep", "name": "Grant ownership rights", "text": "Execute GRANT INHERITED CALLER OWNERSHIP on tables and schemas to allow the app to manage objects it creates."}
+      ]
+    })}
+  </script>
+</Head>
+
+# Starlake Snowflake Native App: Post-Installation Permissions
+
+The Starlake Snowflake Native App runs inside Snowflake using the caller's rights model. This means the app can only perform actions the calling user is already authorized to do. After installing the app from the Snowflake Marketplace, you must run a set of GRANT commands to delegate your existing privileges to the application. No permanent privilege escalation is possible.
+
+## Prerequisites
+
+- The `starlake_app` is installed from the [Snowflake Marketplace](https://app.snowflake.com/marketplace)
+- You have a role with sufficient privileges to execute GRANT commands (e.g., `ACCOUNTADMIN`)
+- A warehouse is available (e.g., `COMPUTE_WH`)
+
+## Grant Permissions After Installing the Starlake Snowflake App
+
+After installing `starlake_app`, execute the GRANT commands described below. These commands are grouped into three categories: account-level operations, data access, and warehouse usage.
+
+### Step-by-Step Overview
+
+1. **Grant account-level operational rights** -- Allow the app to create databases, execute tasks, and read session information.
+2. **Grant data interaction rights** -- Choose between full account access (Option A) or access restricted to a single database (Option B).
+3. **Grant warehouse usage** -- Allow the app to run queries on a specific warehouse.
+4. **Grant ownership rights** -- Allow the app to manage (create, alter, drop) its own objects.
+
+## How Caller's Rights Secure the Starlake App
+
+The app runs with the privileges of the user who calls it. The GRANT statements delegate specific rights that you already possess to the application. The app does not gain any rights beyond what the caller has.
+
+- **You maintain control**: The app can only perform actions that the calling user is authorized to do.
+- **No elevated privileges**: The app does not gain any rights beyond what the caller has. It acts on your behalf.
+- **Access is inherited**: If you cannot access a table, the app running on your behalf cannot access it either.
+- **No permanent privilege escalation**: The app cannot grant itself or any other user higher privileges than the calling user possesses.
+
+## Required GRANT Commands by Category
+
+### 1. Account-Level Operational Rights
+
+These grants allow the app to manage fundamental Snowflake objects and execute processes.
+
+| Command | Purpose |
+|---------|---------|
+| `GRANT CALLER CREATE DATABASE ON ACCOUNT TO APPLICATION starlake_app;` | Allows the app to create new databases for setting up its environment. |
+| `GRANT CALLER EXECUTE TASK ON ACCOUNT TO APPLICATION starlake_app;` | Permits the app to run scheduled tasks for data processing. |
+| `GRANT CALLER EXECUTE MANAGED TASK ON ACCOUNT TO APPLICATION starlake_app;` | Permits the app to run managed tasks for automatic data pipelines. |
+| `GRANT CALLER READ SESSION ON ACCOUNT TO APPLICATION starlake_app;` | Allows the app to read session information for logging and runtime adjustments. |
+
+### 2. Data Interaction Rights (Inherited Privileges)
+
+These grants allow the app to interact with your data by inheriting the privileges of the calling user. The `INHERITED CALLER PRIVILEGES` keywords ensure the app can view, query, or modify objects only if the calling user can.
+
+Choose one of the two options below.
+
+#### Option A: Grant Access to All Databases in Account
+
+Use this option when the app needs access to all databases in your Snowflake account.
+
+```sql
+GRANT ALL INHERITED CALLER PRIVILEGES ON ALL DATABASES IN ACCOUNT TO APPLICATION starlake_app;
+GRANT ALL INHERITED CALLER PRIVILEGES ON ALL SCHEMAS IN ACCOUNT TO APPLICATION starlake_app;
+GRANT ALL INHERITED CALLER PRIVILEGES ON ALL TABLES IN ACCOUNT TO APPLICATION starlake_app;
+GRANT ALL INHERITED CALLER PRIVILEGES ON ALL VIEWS IN ACCOUNT TO APPLICATION starlake_app;
+GRANT ALL INHERITED CALLER PRIVILEGES ON ALL FUNCTIONS IN ACCOUNT TO APPLICATION starlake_app;
+GRANT ALL INHERITED CALLER PRIVILEGES ON ALL PROCEDURES IN ACCOUNT TO APPLICATION starlake_app;
+```
+
+#### Option B: Restrict Access to a Single Database
+
+Use this option to limit the app's data access to a specific database only. Replace `DEV_DATABASE` with your database name. This is the preferred approach when the app only needs access to a specific trust boundary.
+
+```sql
+GRANT CALLER USAGE ON DATABASE DEV_DATABASE TO APPLICATION starlake_app;
+GRANT ALL INHERITED CALLER PRIVILEGES ON ALL SCHEMAS IN DATABASE DEV_DATABASE TO APPLICATION starlake_app;
+GRANT ALL INHERITED CALLER PRIVILEGES ON ALL TABLES IN DATABASE DEV_DATABASE TO APPLICATION starlake_app;
+GRANT ALL INHERITED CALLER PRIVILEGES ON ALL VIEWS IN DATABASE DEV_DATABASE TO APPLICATION starlake_app;
+GRANT INHERITED CALLER OWNERSHIP ON ALL TABLES IN DATABASE DEV_DATABASE TO APPLICATION starlake_app;
+GRANT INHERITED CALLER OWNERSHIP ON ALL SCHEMAS IN DATABASE DEV_DATABASE TO APPLICATION starlake_app;
+```
+
+### 3. Warehouse Usage and Ownership
+
+These grants allow the app to use a warehouse for query execution and to manage objects it creates.
+
+```sql
+GRANT CALLER USAGE ON WAREHOUSE COMPUTE_WH TO APPLICATION starlake_app;
+GRANT INHERITED CALLER OWNERSHIP ON ALL TABLES IN ACCOUNT TO APPLICATION starlake_app;
+GRANT INHERITED CALLER OWNERSHIP ON ALL SCHEMAS IN ACCOUNT TO APPLICATION starlake_app;
+```
+
+Replace `COMPUTE_WH` with the name of your warehouse. Billing for warehouse usage is tied to your account.
+
+## Frequently Asked Questions
+
+### What permissions does the Starlake Snowflake Native App need?
+The app needs account-level operational rights (CREATE DATABASE, EXECUTE TASK, READ SESSION), inherited caller privileges on databases/schemas/tables/views/functions/procedures, and warehouse usage. All permissions operate under caller's rights.
+
+### Is the Starlake Snowflake app secure?
+Yes. The app uses Snowflake's caller's rights model. It can only perform actions that the calling user is already authorized to do. No permanent privilege escalation is possible.
+
+### What is the caller's rights principle?
+The application runs with the privileges of the user who calls it. The GRANT statements delegate specific rights that you already possess to the application. The app does not gain any rights beyond what the caller has.
+
+### Can I restrict the Starlake app to a single database?
+Yes. Use Option B (Restricted Database Access) to replace `IN ACCOUNT` with `IN DATABASE <your_database>` in the GRANT commands. This limits the app's data access to the specified database only.
+
+### What is the difference between Option A and Option B for permissions?
+Option A grants inherited caller privileges on all objects in the account. Option B restricts access to a specific database. Option B is the preferred approach when the app only needs access to a specific trust boundary.
+
+### Do the GRANT commands give the app elevated privileges?
+No. The GRANT commands delegate your existing privileges to the app via caller's rights. If you cannot access a table, the app running on your behalf cannot access it either.

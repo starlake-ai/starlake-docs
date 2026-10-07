@@ -1,0 +1,302 @@
+---
+id: quickstart
+title: "Quickstart: a governed DuckDB gateway in one command"
+sidebar_label: "Quickstart"
+description: "Boot a multi-tenant DuckDB gateway, connect a client over Flight SQL or native ATTACH, and run your first query on TPC-H data."
+keywords: ["duckdb quickstart", "duckdb server", "flight sql", "ducklake", "getting started"]
+---
+
+Boot the gateway, connect a client, and run your first SQL query against a live TPC-H dataset.
+
+## Demo mode (self-contained, no Postgres)
+
+The fastest way to try Quack on Demand end to end. `demo` boots a fully seeded instance against an **embedded, ephemeral Postgres** - so unlike every other path below, it needs **no external Postgres and no Docker**.
+
+With [uv](https://docs.astral.sh/uv/) installed there are no other prerequisites - the `qod` launcher downloads the release jar (verified against the published sha256), a Java runtime if none is on your machine (cached), and the ABI-pinned `duckdb` CLI, all under your user cache directory. The same command works on macOS, Linux, and Windows:
+
+```bash
+uvx qod@latest serve --demo
+```
+
+`pip install qod && qod serve --demo` is equivalent (`qod start --demo` still works as a deprecated alias). Two more routes to the same demo:
+
+```bash
+# Docker (trivial on Linux; on Mac/Windows requires Docker Desktop or a
+# drop-in replacement like Podman, Colima, or OrbStack)
+docker run --rm -p 20900:20900 -p 31338:31338 starlakeai/quack-on-demand demo
+
+# from a source checkout or a downloaded assembly jar
+# (needs a JDK and the duckdb CLI on PATH):
+java -Darrow.allocation.manager.type=Unsafe \
+  -jar distrib/quack-on-demand-assembly-*.jar demo
+```
+
+It starts an embedded throwaway Postgres, seeds the minimal demo (tenant `acme`, tenant-db `acme_tpch`, schema `tpch1`) with a small TPC-H dataset, boots the manager REST API on `:20900`, the FlightSQL edge on `:31338` (TLS on with an auto-generated self-signed cert; clients skip verification) and the native Quack front door on `:9494` (what a DuckDB client `ATTACH`es to), and prints a connect snippet. All state lives under `/tmp/qod-demo` and is removed on exit (Ctrl-C).
+
+## Serve your own data (one command, no Postgres)
+
+The demo is throwaway. To point the same gateway at data you already have, with nothing else to install:
+
+```bash
+uvx qod@latest serve ./sales.duckdb          # an existing DuckDB file
+uvx qod@latest serve ./warehouse/            # a directory of parquet / csv
+uvx qod@latest serve s3://bucket/sales/      # a remote prefix
+uvx qod@latest serve                         # a fresh, empty DuckLake to load into
+QOD_ADMIN_PASSWORD='change-me' uvx qod@latest serve ./sales.duckdb  # set the admin password up front, no prompt
+
+# admin login: user admin; password admin with --demo, otherwise the one chosen on the first run
+#   (prompted, or QOD_ADMIN_PASSWORD; first run only, never stored; `uvx qod@latest admin reset-password` recovers it)
+```
+
+One command provisions a tenant, a database, and a pool around the target, then prints the JDBC / ADBC / ODBC strings. The control plane runs on a bundled **persistent** embedded Postgres under your user data dir: restart and everything is still there, and re-running adds a second database beside the first instead of replacing it.
+
+Unlike `--demo`, this keeps the normal secure posture: TLS on, database auth on, ACL on, and an admin password you choose on the first run: prompted on a terminal, or taken from `QOD_ADMIN_PASSWORD` (without either, a non-interactive first run refuses to start). It is never stored, a later `QOD_ADMIN_PASSWORD` does not change it, and `qod admin reset-password` recovers it. An existing `.duckdb` file is attached read-write and served by a single node; parquet and CSV targets become views (`read_parquet` / `read_csv`), so nothing is copied or converted.
+
+### Which command do I want?
+
+| Command | What it is | Needs |
+|---|---|---|
+| `qod serve --demo` | throwaway showcase on sample data, insecure by design | nothing |
+| `qod serve ./your-data` | persistent gateway over your own data, secure defaults | nothing |
+| `qod start` | your deployment: your own Postgres, your config | Postgres + `qod setup` |
+
+### Demo admin console
+
+Browse to **`http://localhost:20900/ui/`** and log in with:
+
+| Tenant ID | Username | Password | View |
+|---|---|---|---|
+| leave blank | `root` | `demo-root` | superuser console (all tenants) |
+| leave blank | `admin` | `admin`, or your `QOD_ADMIN_PASSWORD` if exported | superuser console (all tenants) |
+| leave blank | `admin@localhost.local` | same as `admin` | superuser console (all tenants) |
+| `acme` | `acme-admin` | `demo-acme-admin` | acme-scoped roles, groups, users, pools |
+| `acme` | `alice` | `demo-alice` | acme-scoped view |
+
+### Demo SQL clients
+
+All four users work with any Arrow Flight SQL client (JDBC, ADBC, ODBC) against `localhost:31338`, and with DuckDB itself against `quack:localhost:9494`, routed by `tenant=acme` and `pool=bi`. What each sees demonstrates row + column security, on either wire:
+
+| Username | Password | Access |
+|---|---|---|
+| `alice` | `demo-alice` | analyst: `customer`, `orders`, `nation`, `region` read-only; `c_phone` masked to `***`; only `c_mktsegment = 'BUILDING'` rows; any other table denied |
+| `acme-admin` | `demo-acme-admin` | everything in acme, full and unmasked |
+| `root` | `demo-root` | superuser, bypasses per-statement ACL |
+| `admin` | `admin` | superuser, same as `root` |
+
+**JDBC** (DBeaver, Spark, any JDBC tool; driver `org.apache.arrow:flight-sql-jdbc-driver`):
+
+```
+jdbc:arrow-flight-sql://localhost:31338?useEncryption=true&disableCertificateVerification=true&user=alice&password=demo-alice&tenant=acme&pool=bi
+```
+
+Swap `user` / `password` for any row above; for `root` or `admin` exclusively also append `&superuser=true`.
+
+**ADBC** (Python, `pip install adbc_driver_flightsql adbc_driver_manager`):
+
+```python
+from adbc_driver_flightsql import dbapi
+conn = dbapi.connect("grpc+tls://localhost:31338",
+                     db_kwargs={"username": "alice", "password": "demo-alice",
+                                "adbc.flight.sql.client_option.tls_skip_verify": "true",
+                                "adbc.flight.sql.rpc.call_header.tenant": "acme",
+                                "adbc.flight.sql.rpc.call_header.pool": "bi",
+                                "adbc.flight.sql.rpc.call_header.db": "acme_tpch"})
+```
+
+**ODBC** (any Arrow Flight SQL ODBC driver, e.g. the Dremio one; see [ODBC](/qod/connecting/clients#odbc) for the `odbc.ini` form):
+
+```
+Driver={Arrow Flight SQL ODBC Driver};HOST=localhost;PORT=31338;useEncryption=true;disableCertificateVerification=true;UID=alice;PWD=demo-alice;RPCCallHeaders=tenant=acme;pool=bi
+```
+
+**DuckDB** (the CLI or the Python package, over DuckDB's native Quack protocol on port `9494`, no driver; see [DuckDB (native Quack)](/qod/connecting/duckdb)):
+
+```sql
+ATTACH 'quack:localhost:9494' AS qod (TYPE quack, TOKEN 'tenant=acme&pool=bi&user=alice&password=demo-alice');
+SELECT c_name, c_phone, c_mktsegment FROM qod.tpch1.customer LIMIT 5;
+```
+
+Once connected, try:
+
+```sql
+SELECT c_name, c_phone, c_mktsegment FROM acme_tpch.tpch1.customer LIMIT 5;
+```
+
+As `alice`, `c_phone` comes back masked and only BUILDING-segment rows appear; reconnect as `acme-admin` and the same query returns full data.
+
+:::warning
+Demo mode is insecure by design (self-signed TLS, open REST, demo credentials, ephemeral catalog). It is for evaluation only - never expose it or use it in production. For a durable install, use the paths below with your own Postgres.
+:::
+
+## Prerequisites
+
+- **Native path (Option A):** a **Postgres 16 or later** reachable at `localhost:5432` (the default) for the control-plane schema and tenant catalogs. Everything else (Java, DuckDB) is auto-provisioned by `qod start`.
+- **Docker Compose path (Option B):** just Docker. The stack ships its own Postgres, so you need nothing else installed.
+- **Ports 20900, 31338 and 9494 free** on the host (admin REST/UI on 20900, FlightSQL edge on 31338, native Quack front door on 9494), for either path.
+
+For alternative deployment paths (Kubernetes) and the full environment-variable model, see the [Installation guide](/qod/getting-started/install).
+
+## Boot the manager
+
+### Option A: Native (`qod start`)
+
+If you have a reachable Postgres:
+
+```bash
+uv tool install qod    # or: pip install qod
+qod start
+```
+
+On first run `qod start` downloads the release jar from GitHub Releases (sha256-verified), self-installs the pinned DuckDB, creates the control-plane database (`qod`) when `psql` is available, then starts QoD. Stop it with `qod stop` (SIGTERM, then SIGKILL after 10 seconds).
+
+On **Windows** (experimental), the same `pip install qod && qod start` works natively; see [Run on Windows](/qod/getting-started/install#run-on-windows) for the current gaps (no `qod stop`, no `LOAD_*` seeding).
+
+### Option B: Docker Compose (no prerequisites)
+
+Only Docker is required - the stack ships its own Postgres. From the root of a cloned repository:
+
+```bash
+./scripts/docker/run-docker-compose.sh
+```
+
+This pulls the published `starlakeai/quack-on-demand` image plus a bundled `postgres:16-alpine`, brings the whole stack up, and waits for the manager to become ready - no local JDK or Postgres needed. Stop it with:
+
+```bash
+./scripts/docker/stop-docker-compose.sh
+```
+
+### What comes up
+
+Either path brings up the same surface:
+
+- Admin REST + UI on `http://localhost:20900`
+- Arrow FlightSQL edge on `localhost:31338` (TLS on, self-signed cert auto-generated under `certs/`)
+- Native Quack front door on `quack:localhost:9494` (plain HTTP by default; what a DuckDB client `ATTACH`es to)
+- Two admin accounts seeded - `admin` and `admin@localhost.local` - both with the `ADMIN_PASSWORD` from `.env` (`admin` unless you change it before the first boot)
+- Two bootstrap tenants seeded from `src/main/resources/bootstrap-demo.yaml`: `acme` (tenant-db `acme_tpch`, pools `bi` + `etl`) and `globex` (tenant-db `globex_tpcds`, pool `bi`). Idempotent on restart.
+
+### Boot flags
+
+The same flags work on both `qod start` and `run-docker-compose.sh`, and they combine:
+
+| Flag | Effect |
+|---|---|
+| `LOAD_TPCH=N` | Seeds TPC-H sf=N into `acme/acme_tpch` (8 tables in schema `tpch1`). The native path runs the loader on the host (DuckDB CLI + `libduckdb` are auto-installed by `qod start` on first boot, see [Run from Linux/MacOS](/qod/getting-started/install#run-from-linuxmacos)); the Compose path seeds inside the container. `LOAD_TPCH=1` is ~6 M lineitem rows; SF=10 is ~60 M. Any seed flag being set also exports `QOD_BOOTSTRAP_YAML` so the manager imports the bundled demo manifest. |
+| `LOAD_TPCDS=N` | Seeds TPC-DS sf=N into `globex/globex_tpcds` (24 tables in schema `tpcds1`). Slower than TPC-H at the same SF (SF=10 ≈ several minutes; SF=100+ spills to disk). |
+| `LOAD_SSB=N` | Seeds the SSB (Star Schema Benchmark) star schema at sf=N: 5 tables (`lineorder`, `customer`, `supplier`, `part`, `dwdate`) derived from TPC-H dbgen into schema `ssb1` of `acme/acme_tpch`, next to the TPC-H tables and served by the same acme pools. |
+| `LOAD_TPC=N` | Legacy shortcut: equivalent to setting `LOAD_TPCH=N`, `LOAD_TPCDS=N`, and `LOAD_SSB=N`. Explicit per-bench vars override it. |
+| `DEMO=full\|minimal` | Bootstrap profile for the demo seed. `full` (the default) imports the two-tenant `acme` + `globex` manifest and exercises multi-tenancy, multiple pools, and federation; `minimal` imports `bootstrap-demo-minimal.yaml` instead - the shape for fronting a single DuckDB/DuckLake database: one tenant (`acme`), one pool (`bi`), one dual node serving both reads and writes, plus the analyst RLS/CLS demo. Only consulted when a `LOAD_*` flag is set and `QOD_BOOTSTRAP_YAML` is unset. `DEMO=minimal` with `LOAD_TPCDS` warns and skips the TPC-DS loader (no `globex` tenant in this profile). |
+| `NUKE=1` | Tear down and wipe local state (Postgres data, parquet under `ducklake/`, `certs/`) before booting. **Irreversible.** |
+| `QOD_VERSION=latest-snapshot` | Use the latest snapshot image/jar instead of the latest release. |
+| Build from source | Compose: `BUILD=1` builds the image from the repo Dockerfile instead of pulling. Native: `QOD_VERSION=BUILD` runs `sbt assembly` first, and `QOD_VERSION=LOCAL` reuses the newest jar already in `distrib/` without rebuilding. |
+
+For a clean, freshly seeded environment in one shot, combine them. This wipes any previous state and boots with both demo datasets at scale-factor 1:
+
+```bash
+NUKE=1 LOAD_TPCH=1 LOAD_TPCDS=1 ./scripts/docker/run-docker-compose.sh
+```
+
+Any seed flag (or the legacy `LOAD_TPC=1` shortcut, which enables all three) imports the bundled manifest under `src/main/resources/bootstrap-demo.yaml`, which declares the tenants, roles, groups, and users for both `acme` and `globex`; see the [Access control model](/qod/operating/rbac-model) for the full ACL matrix.
+
+To run the gateway in front of a single DuckDB instance instead, `DEMO=minimal` swaps in `bootstrap-demo-minimal.yaml`: one tenant (`acme`), one pool (`bi`), and one dual node serving both reads and writes, plus the analyst RLS/CLS demo. Bootstrap only imports into a fresh control plane, so switch profiles with `NUKE=1`:
+
+```bash
+NUKE=1 DEMO=minimal LOAD_TPCH=1 qod start
+```
+
+Pick one benchmark to keep boot snappy:
+
+```bash
+NUKE=1 LOAD_TPCH=1 ./scripts/docker/run-docker-compose.sh        # TPC-H only, ~10 s seed
+NUKE=1 LOAD_TPCDS=10 ./scripts/docker/run-docker-compose.sh      # TPC-DS only, SF=10
+```
+
+The native path takes the same flags:
+
+```bash
+NUKE=1 LOAD_TPCH=1 LOAD_TPCDS=1 qod start
+```
+
+## Open the admin console
+
+Browse to `http://localhost:20900` and log in with:
+
+- Username: `admin`
+- Password: `admin`
+
+You land on the **Dashboard**, the live cluster view with the recent-statements history. The tenant switcher at the top of the left sidebar lists the two bootstrap tenants, `acme` and `globex`; pick one and its **Databases**, **Pools**, and **Auth Provider** pages appear under **Tenant** in the sidebar (for example `http://localhost:20900/ui/t/acme/pools`). See the [Admin UI guide](/qod/operating/admin-ui#navigation).
+
+## Run your first query
+
+### DBeaver / JDBC
+
+Install the Apache Arrow Flight SQL JDBC driver (`org.apache.arrow:flight-sql-jdbc-driver`, available on Maven Central). In DBeaver, create a new connection and paste this URL directly into the JDBC URL field:
+
+```
+jdbc:arrow-flight-sql://localhost:31338?useEncryption=true&disableCertificateVerification=true&user=admin&password=admin&tenant=acme&pool=bi&superuser=true
+```
+
+Set the driver class to `org.apache.arrow.driver.jdbc.ArrowFlightJdbcDriver`.
+
+The `disableCertificateVerification=true` parameter is required because the gateway starts with an auto-generated self-signed certificate (see the TLS guide for how to supply a CA-signed cert and remove that flag).
+
+The `tenant=acme&pool=bi` parameters are routing headers: the FlightSQL edge requires both to resolve which pool services the connection. Swap in `tenant=globex&pool=bi` to drive the TPC-DS demo instead.
+
+The `superuser=true` parameter is required when login as admin/admin.
+
+### Python (ADBC)
+
+Install the driver:
+
+```bash
+pip install --user adbc_driver_flightsql adbc_driver_manager
+```
+
+Run the bundled `tpch-load-test` as a one-shot client (defaults to the TPC-H workload against `acme`'s `tpch1` schema):
+
+```bash
+python3 ./scripts/bench/tpch-load-test/tpch-load-test.py \
+  --url grpc+tls://localhost:31338 --insecure \
+  --user admin --password admin --superuser \
+  --tenant acme --pool bi \
+  -w 1 -i 1 --warmup 0
+```
+
+`--tenant` and `--pool` are required (or set `LT_TENANT` / `LT_POOL`); the demo bootstrap creates tenants `acme` and `globex`, each with a pool named `bi`. The `--insecure` flag skips certificate verification for the auto-generated self-signed cert. The `--superuser` flag adds the `superuser=true` gRPC header so the bootstrap `admin` user (which lives in `qodstate_user` with `tenant IS NULL`) authenticates against the system realm; drop it when running as a tenant-scoped user.
+
+:::note Windows
+Run the Python ADBC client from a neutral working directory (e.g. your home folder), **not** the repository root. Windows includes the current directory in the DLL search path, so a native `arrow`/`duckdb` DLL sitting in the checkout can get loaded into the client process ahead of the one shipped with `adbc_driver_flightsql` and crash it. The runner itself already forces UTF-8 output so the results table renders in a `cp1252` console.
+:::
+
+To switch workload, pass `--workload tpcds` (or set `LT_WORKLOAD=tpcds`). The runner ships two curated benchmarks:
+
+| Workload | Default schema | Default tenant/pool wiring | Tables touched |
+|---|---|---|---|
+| `tpch` (default) | `tpch1` | `acme` / `bi` (demo bootstrap) | `lineitem`, `customer`, `orders`, `nation`, `region`, `supplier`, `part` |
+| `tpcds` | `tpcds1` | `globex` / `bi` (demo bootstrap) | the 24 TPC-DS tables seeded by `scripts/load-tpcds-dbgen.sh` |
+
+Each workload cycles a handful of representative queries (per-group aggregation, multi-way joins, top-N, window functions, date-range filters). The TPC-DS workload requires the target tenant-db to be seeded first:
+
+```bash
+SF=1 ./scripts/load-tpcds-dbgen.sh                                            # seeds globex_tpcds.tpcds1
+python3 ./scripts/bench/tpch-load-test/tpch-load-test.py --workload tpcds --tenant globex --pool bi \
+  --user admin --password admin --superuser --insecure -w 4 -i 50
+```
+
+Override the schema with `--schema tpcds10` when you've seeded at a larger scale factor.
+
+### Example SQL
+
+Once connected, run:
+
+```sql
+SELECT count(*) FROM tpch1.customer;
+```
+
+Tables live under the `tpch1` schema inside the `tpch` tenant's database. The gateway auto-qualifies unqualified table names to the pool's default database and schema, so `customer` and `tpch1.customer` are equivalent once the session is scoped to the `tpch`/`sales` pool.
+
+## Next steps
+
+- [Installation](/qod/getting-started/install) - native-jar setup, Docker Compose, Kubernetes, and environment variable reference.
+- [Configuration reference](/qod/reference/configuration) - every `QOD_*` / `PROXY_*` environment variable with its default and description.
+- [REST API reference](pathname:///api/) - the interactive API explorer for every `/api/*` endpoint the admin UI calls.

@@ -1,0 +1,259 @@
+---
+title: "Extract Starlake Schemas from OpenAPI Definitions (REST API to Tables)"
+description: "Map OpenAPI routes and schemas to Starlake domains and tables using YAML configuration. Supports route filtering, schema exclusion, explode strategies, and name normalization."
+keywords: [starlake, OpenAPI, schema extraction, API, YAML configuration, REST API, sanitizeAttributeName]
+---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What OpenAPI operations does Starlake extract?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "By default, Starlake extracts GET operations. POST operations can be configured via the operations field in the routes section. Schemas that are not objects or arrays of objects are filtered out."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How are table names generated from OpenAPI paths?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake removes path parameters, removes accents, replaces non-alphanumeric characters with underscores, adds underscores before capitals preceded by lowercase, and lowercases everything."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What does the basePath field do in OpenAPI extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The basePath is removed from the beginning of the path before generating the table name. This avoids unnecessary prefixes in the names. It can be defined at root level or at domain level."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I exclude schemas or routes in Starlake OpenAPI extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use schemas.exclude to exclude schemas by name (regex supported) and routes.exclude to exclude paths. schemas.include allows keeping only certain schemas."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the explode strategy work in Starlake OpenAPI extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The explode.on field defines how Starlake treats complex properties: ALL keeps objects and arrays, ARRAY keeps objects but does not dive into arrays, OBJECT keeps arrays but dives deeper into objects."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is sanitizeAttributeName in Starlake OpenAPI extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Two modes: ON_EXTRACT (default) sanitizes the name and stores it directly as the field name. ON_LOAD sanitizes the name and stores it as a rename property when it differs from the original name."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What type of connection is required for OpenAPI extraction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A connection of type fs (filesystem) pointing to the OpenAPI definition file (JSON). The file is by convention placed in metadata/extract/openapi/."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Extract Schemas from OpenAPI Definitions with Starlake",
+      "description": "Map OpenAPI routes and schemas to Starlake domains and tables using a YAML configuration, then run extract-schema to generate load-ready table definitions.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Define the OpenAPI-Starlake mapping",
+          "text": "Create a YAML configuration file in metadata/extract/ specifying connectionRef, basePath, domains, route filters, schema exclusions, and explode strategies.",
+          "position": 1
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Configure the filesystem connection",
+          "text": "In metadata/application.sl.yml, add a connection of type 'fs' pointing to the OpenAPI JSON definition file.",
+          "position": 2
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Place the OpenAPI definition file",
+          "text": "Drop the OpenAPI JSON file into metadata/extract/openapi/ (or the path specified in the connection).",
+          "position": 3
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Run the extract-schema command",
+          "text": "Execute 'starlake extract-schema --config my_openapi_extract_config' to generate Starlake table definitions in the load folder.",
+          "position": 4
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# OpenAPI Schema Extraction
+
+Starlake generates table schemas from OpenAPI definitions by mapping API routes and response schemas to Starlake domains and tables. This page covers `extract-schema` only -- no data extraction occurs from OpenAPI definitions. The mapping is configured in a YAML file that supports route filtering, schema exclusion, explode strategies for nested structures, and attribute name normalization. By default, Starlake processes GET operations and filters out schemas that are not objects or arrays of objects.
+
+## How Starlake Maps OpenAPI to Domains and Tables
+
+The extraction process reads an OpenAPI JSON definition and converts each eligible route into a Starlake table. Starlake filters out schemas that are not objects or arrays of objects. Root arrays are flattened, and the output follows JSON Lines format.
+
+Each API route produces one table per response schema. The table name is derived from the API path after normalization. Routes are grouped into Starlake domains, which map to database schemas.
+
+## Step-by-Step OpenAPI Extraction Configuration
+
+### 1. Define the YAML Mapping Between OpenAPI Routes and Starlake Tables
+
+Create a YAML configuration file in `metadata/extract/`:
+
+```yaml {7,8} title="metadata/extract/my_openapi_extract_config.sl.yml"
+version: 1
+extract:
+  connectionRef: "my_open_api"
+  openAPI:
+    basePath: /api/v2
+    domains:
+      - name: api
+        schemas:
+          exclude:
+            - Model\.Common\.Id
+        routes:
+          - paths:
+              - ^/api/v2/clients/\{id}/details$
+            explode:
+              on: ARRAY
+              rename:
+                postal_addresses: adresses
+```
+
+### Full Configuration Reference
+
+The following fields are available in the extraction YAML:
+
+- **`sanitizeAttributeName`** -- Controls how attribute names are normalized:
+  - `ON_EXTRACT` (default): sanitizes the name and stores it directly as the field name.
+  - `ON_LOAD`: sanitizes the name and stores it as a `rename` property when it differs from the original.
+- **`connectionRef`** -- References a filesystem connection pointing to the OpenAPI JSON file.
+- **`openAPI`** -- Root configuration block:
+  - **`basePath`** -- Removed from the beginning of the path before generating table names. Avoids unnecessary prefixes.
+  - **`formatTypeMapping`** -- Map of `String -> String` to map custom OpenAPI formats to Starlake types. Unknown formats default to `String`.
+  - **`domains`** -- List of domain configurations:
+    - **`basePath`** -- Overrides the root `basePath` for this domain. Useful when APIs under `/api/v2/referentials/` should produce table names like `products` instead of `referentials_products`.
+    - **`name`** -- Starlake domain name. Groups multiple routes under one domain.
+    - **`schemas`** -- Filtering rules for OpenAPI named schemas:
+      - `include` -- Keep only these schemas (applied first).
+      - `exclude` -- Remove these schemas (applied second). Supports regex.
+    - **`routes`** -- List of route configurations:
+      - **`paths`** -- Regex patterns for paths to include. Defaults to all paths.
+      - **`as`** -- Forces the table name. Only valid when `paths` matches a single schema.
+      - **`operations`** -- `GET` or `POST`. Defaults to `GET`.
+      - **`exclude`** -- Paths to exclude after `paths` matching.
+      - **`excludeFields`** -- Regex patterns for response schema fields to drop (e.g., deprecated attributes).
+      - **`explode`** -- Controls how nested/complex properties are handled:
+        - **`on`** -- Strategy for complex types:
+
+          | Value | Objects | Arrays |
+          |-------|---------|--------|
+          | `ALL` | Keep as property | Keep as property |
+          | `ARRAY` | Keep as property | Do not dive into arrays |
+          | `OBJECT` | Dive deeper into objects | Keep as property |
+
+        - **`exclude`** -- Properties to ignore during explosion. Sub-properties use `_` as separator (e.g., `postal_address_number`).
+        - **`rename`** -- Map of `table_name -> property_pattern`. Renames exploded tables. Setting the value to `""` produces a table name equal to the API path without a suffix.
+
+### 2. Configure the Filesystem Connection to the OpenAPI File
+
+```yaml {7,8} title="metadata/application.sl.yml"
+version: 1
+application:
+  connections:
+    my_open_api:
+        type: "fs"
+        options:
+            path: my_open_api_file.json
+```
+
+The `path` field points to the OpenAPI definition file. By convention, place OpenAPI files in `metadata/extract/openapi/`, but you can specify an absolute path or use a substitution variable.
+
+### 3. Place the OpenAPI Definition File in Your Project
+
+Drop the OpenAPI JSON file at the location specified in the connection. For the example above:
+
+```
+metadata/extract/openapi/my_open_api_file.json
+```
+
+### 4. Run extract-schema to Generate Starlake Schemas
+
+```shell
+$ starlake extract-schema --config my_openapi_extract_config
+```
+
+Schema extraction generates table definitions in the `load` folder by default. You can specify another location with `--outputDir`. If any domain or table already exists, the definitions are merged.
+
+## Table and Attribute Name Normalization Rules
+
+Starlake normalizes names from OpenAPI paths and attributes to ensure database compatibility.
+
+### Table Name Normalization
+
+Table names are derived from the API path. The normalization steps are:
+1. Remove path parameters (e.g., `{id}`)
+2. Remove all accents
+3. Replace non-alphanumeric characters with underscores
+4. Replace consecutive and trailing underscores
+5. Add an underscore before capitals preceded by lowercase (camelCase splitting)
+6. Add an underscore after a group of consecutive capitals
+7. Convert to lowercase
+
+### Attribute Name Normalization
+
+Attribute names follow the same rules except step 1 (no path parameters) and step 7 (case is preserved for `ON_LOAD` mode):
+1. Remove all accents
+2. Replace non-alphanumeric characters with underscores
+3. Replace consecutive and trailing underscores
+4. Add an underscore before capitals preceded by lowercase
+5. Add an underscore after a group of consecutive capitals
+
+## Frequently Asked Questions
+
+### What OpenAPI operations does Starlake extract?
+By default, Starlake extracts GET operations. POST operations can be configured via the `operations` field in the `routes` section. Schemas that are not objects or arrays of objects are filtered out.
+
+### How are table names generated from OpenAPI paths?
+Starlake removes path parameters, removes accents, replaces non-alphanumeric characters with underscores, adds underscores before capitals preceded by lowercase, and lowercases everything.
+
+### What does the basePath field do in OpenAPI extraction?
+The `basePath` is removed from the beginning of the path before generating the table name. This avoids unnecessary prefixes in the names. It can be defined at root level or at domain level.
+
+### How do I exclude schemas or routes in Starlake OpenAPI extraction?
+Use `schemas.exclude` to exclude schemas by name (regex supported) and `routes.exclude` to exclude paths. `schemas.include` allows keeping only certain schemas.
+
+### How does the explode strategy work in Starlake OpenAPI extraction?
+The `explode.on` field defines how Starlake treats complex properties: `ALL` keeps objects and arrays, `ARRAY` keeps objects but does not dive into arrays, `OBJECT` keeps arrays but dives deeper into objects.
+
+### What is sanitizeAttributeName in Starlake OpenAPI extraction?
+Two modes: `ON_EXTRACT` (default) sanitizes the name and stores it directly as the field name. `ON_LOAD` sanitizes the name and stores it as a `rename` property when it differs from the original name.
+
+### What type of connection is required for OpenAPI extraction?
+A connection of type `fs` (filesystem) pointing to the OpenAPI definition file (JSON). The file is by convention placed in `metadata/extract/openapi/`.

@@ -1,0 +1,28 @@
+---
+sidebar_position: 370
+title: site
+description: "Generate a documentation site from your Starflow project."
+keywords: [starlake site, documentation generation, docusaurus, data catalog, project docs]
+---
+
+
+## Synopsis
+
+**starlake site [options]**
+
+## Description
+
+Generate a documentation portal from your Starflow project metadata (schemas, tasks, lineage). See [Site Builder Guide](/starflow/guides/documentation/starlake-site-builder).
+
+Generate site
+
+
+## Parameters
+
+Parameter|Cardinality|Description
+---|---|---
+--outputDir `<value>`|*Optional*|Output Directory
+--template `<value>`|*Optional*|Template name or path to custom templates (default: standalone)
+--format `<value>`|*Optional*|json / html (default: html)
+--json `<value>`|*Optional*|output result as json
+--clean `<value>`|*Optional*|Whether to clean the output directory before generating the site
