@@ -1,3 +1,7 @@
+---
+description: "How Starlake loads CSV and DSV files: separators, headers, quoting, encoding, validation, required fields, privacy transforms and computed columns."
+---
+
 # CSV/DSV Files Ingestion
 
 ## 1. Delimiter Parsing

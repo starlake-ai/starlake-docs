@@ -1,35 +1,20 @@
 import React from 'react';
 import Content from '@theme-original/DocItem/Content';
 import Head from '@docusaurus/Head';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import {useDoc, useDocsVersion} from '@docusaurus/plugin-content-docs/client';
 import PageActions from '@site/src/components/PageActions';
-
-// Absolute URL of the page's Markdown copy, or null when none is generated:
-// docusaurus-plugin-llms only covers the latest version of each docs
-// instance, and never runs on the blog site.
-function useMarkdownUrl() {
-  const {siteConfig} = useDocusaurusContext();
-  const {metadata} = useDoc();
-  const version = useDocsVersion();
-  if (!siteConfig.customFields.llmsMarkdown || !version.isLast) {
-    return null;
-  }
-  return `${siteConfig.url}${metadata.permalink.replace(/\/$/, '')}.md`;
-}
+import {useDesktopTOCShown, useMarkdownUrl} from '@site/src/components/PageActions/hooks';
 
 export default function ContentWrapper(props) {
   const markdownUrl = useMarkdownUrl();
+  const tocShown = useDesktopTOCShown();
   return (
     <>
       {markdownUrl && (
-        <>
-          <Head>
-            <link rel="alternate" type="text/markdown" href={markdownUrl} />
-          </Head>
-          <PageActions markdownUrl={markdownUrl} />
-        </>
+        <Head>
+          <link rel="alternate" type="text/markdown" href={markdownUrl} />
+        </Head>
       )}
+      {markdownUrl && !tocShown && <PageActions markdownUrl={markdownUrl} />}
       <Content {...props} />
     </>
   );

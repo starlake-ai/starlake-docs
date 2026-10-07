@@ -1,4 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
+import clsx from 'clsx';
 import {LuCheck, LuChevronDown, LuCopy, LuFileText} from 'react-icons/lu';
 import {SiClaude, SiOpenai} from 'react-icons/si';
 import styles from './styles.module.css';
@@ -28,7 +29,8 @@ function chatPrompt(markdownUrl) {
   return encodeURIComponent(`Read ${markdownUrl} so I can ask questions about it.`);
 }
 
-export default function PageActions({markdownUrl}) {
+// placement: 'inline' above the content, or 'toc' atop the right-hand TOC.
+export default function PageActions({markdownUrl, placement = 'inline'}) {
   const [status, setStatus] = useState('idle'); // idle | copied | error
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
@@ -85,7 +87,7 @@ export default function PageActions({markdownUrl}) {
   ];
 
   return (
-    <div className={styles.bar}>
+    <div className={clsx(styles.bar, placement === 'toc' && styles.toc)}>
       <div className={styles.group} ref={rootRef}>
         <button type="button" className={styles.copy} onClick={onCopy}>
           {status === 'copied' ? <LuCheck /> : <LuCopy />}

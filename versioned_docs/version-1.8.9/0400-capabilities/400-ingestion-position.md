@@ -1,3 +1,7 @@
+---
+description: "How Starlake loads fixed-width (POSITION) files: column boundaries, encoding, regex row filters, trimming, type validation and privacy transforms."
+---
+
 # POSITION (Fixed-Width) Files Ingestion
 
 ## 1. Column Boundary Parsing

@@ -1,3 +1,7 @@
+---
+description: "How Starlake loads JSON files: JSON, JSON_FLAT and JSON_ARRAY formats, multiline records, nested structures, validation, privacy and SQL hooks."
+---
+
 # JSON Files Ingestion
 
 ## 1. Format Detection

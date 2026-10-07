@@ -1,3 +1,7 @@
+---
+description: "Starlake vs Fivetran: open-source declarative ELT versus managed proprietary connectors, compared on sources, CDC, transforms, deployment and pricing."
+---
+
 # Starlake vs Fivetran
 
 Starlake and Fivetran both move data into cloud warehouses, but they differ in scope, openness, and how much of the pipeline they own.

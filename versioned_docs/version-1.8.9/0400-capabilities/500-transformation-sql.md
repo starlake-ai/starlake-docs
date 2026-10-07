@@ -1,3 +1,7 @@
+---
+description: "Starlake SQL transforms: SELECT materialization, custom DML, incremental models, dialect transpilation, dependency detection and write strategies."
+---
+
 # SQL Transformations
 
 ## 1. SELECT Materialization
