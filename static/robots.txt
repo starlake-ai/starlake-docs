@@ -1,20 +1,55 @@
 User-agent: *
 Disallow:
 
-# AI Crawlers - Explicitly allowed
+# AI crawlers, explicitly allowed. Already covered by the * group above;
+# listed by name to document intent. Search and user-fetch agents matter
+# most: they decide whether these docs are cited in AI answers.
+
+# OpenAI: training, ChatGPT search index, user-triggered fetches
 User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
 Allow: /
 
 User-agent: ChatGPT-User
 Allow: /
 
+# Anthropic: training, Claude search index, user-triggered fetches
 User-agent: ClaudeBot
 Allow: /
 
-User-agent: Claude-Web
+User-agent: Claude-SearchBot
 Allow: /
 
+User-agent: Claude-User
+Allow: /
+
+# Perplexity: search index, user-triggered fetches
 User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+# Google (Gemini) and Apple (Apple Intelligence) training opt-ins
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Common Crawl, used by many model training sets
+User-agent: CCBot
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: DuckAssistBot
+Allow: /
+
+User-agent: MistralAI-User
 Allow: /
 
 User-agent: Bytespider
