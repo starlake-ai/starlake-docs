@@ -79,7 +79,7 @@ function HeroSection() {
             </Link>
           </div>
           <p className={styles.proofLine}>
-            Apache-2.0 · In production at BPCE Payment Services, Estreem, Axereal, ZE Energy, and Asendia
+            Apache-2.0 · In production at BPCE Payment Services, Estreem, Axereal, ZE Energy, Asendia, and Carrefour Banque
           </p>
         </div>
         <div className={styles.compare}>
