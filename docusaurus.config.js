@@ -4,22 +4,7 @@
 const lightCodeTheme = require("prism-react-renderer").themes.github;
 const darkCodeTheme = require("prism-react-renderer").themes.dracula;
 const {GlobExcludeDefault} = require('@docusaurus/utils');
-const fs = require("fs");
-const path = require("path");
 const isBlog = process.env.IS_BLOG === 'true';
-
-// QoD version shown in the navbar badge; sourced from the generated OpenAPI
-// spec so the badge and the /api/ reference can never disagree.
-function readQodVersion() {
-  try {
-    const spec = fs.readFileSync(path.join(__dirname, "static", "openapi.yaml"), "utf8");
-    const m = spec.match(/^\s+version:\s*(\S+)\s*$/m);
-    return m ? m[1] : null;
-  } catch {
-    return null;
-  }
-}
-const qodVersion = readQodVersion();
 
 // Newest released snapshot of each docs instance (first entry of its
 // versions file). The LLM files index only these, never the Next tree.
@@ -146,10 +131,6 @@ const config = {
         !isBlog ? {
           to: "/qod",
           label: "Quack on Demand",
-          position: "left",
-        } : null,
-        !isBlog ? {
-          type: "custom-qodVersion",
           position: "left",
         } : null,
         !isBlog ? {
@@ -396,7 +377,6 @@ const config = {
   customFields: {
     qodGaId: process.env.QOD_DOCS_GA_ID,
     starflowGaId: process.env.STARFLOW_DOCS_GA_ID,
-    qodVersion,
     // docusaurus-plugin-llms writes a .md copy of each latest-version doc,
     // which the page actions and <link rel="alternate"> point to.
     llmsMarkdown: !isBlog,

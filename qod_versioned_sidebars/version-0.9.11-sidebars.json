@@ -138,11 +138,6 @@
       "label": "Reference",
       "items": [
         "reference/configuration",
-        {
-          "type": "link",
-          "label": "REST API",
-          "href": "pathname:///api/"
-        },
         "reference/cli",
         "reference/metrics"
       ]
@@ -155,6 +150,11 @@
         "contributing/architecture-map",
         "contributing/extending"
       ]
+    },
+    {
+      "type": "link",
+      "label": "REST API",
+      "href": "pathname:///api/"
     }
   ]
 }

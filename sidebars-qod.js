@@ -123,7 +123,6 @@ const sidebars = {
       label: 'Reference',
       items: [
         'reference/configuration',
-        { type: 'link', label: 'REST API', href: 'pathname:///api/' },
         'reference/cli',
         'reference/metrics',
       ],
@@ -137,6 +136,7 @@ const sidebars = {
         'contributing/extending',
       ],
     },
+    { type: 'link', label: 'REST API', href: 'pathname:///api/' },
   ],
 };
 
