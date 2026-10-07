@@ -88,7 +88,7 @@ The collapse toggle in the sidebar footer shrinks the sidebar to an icon rail; t
 
 ### Workbench
 
-When the Starlake integration is configured, a **Workbench** entry opens Starlake in a new tab, signed in through a single-use SSO ticket minted for your session. It is the only entry besides Profile and Sign out that a regular (non-admin) user also gets.
+When the Starlake integration is configured, a **Workbench** entry opens Starlake in a new tab, signed in through a single-use SSO ticket minted for your session. It is the only entry besides Profile and Sign out that a regular (non-admin) user also gets. `qod start --with-starflow` and the Docker Compose [`starflow` profile](/qod/operating/deploy-docker#starflow) both configure it for you.
 
 ## Dashboard
 
