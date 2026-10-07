@@ -4,6 +4,19 @@
   margin-bottom: 0.5rem;
 }
 
+/* Atop the TOC: align with the TOC links and open the menu rightward so it
+   stays within the column. */
+.toc {
+  justify-content: flex-start;
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+}
+
+.toc .menu {
+  right: auto;
+  left: 0;
+}
+
 .group {
   position: relative;
   display: inline-flex;
