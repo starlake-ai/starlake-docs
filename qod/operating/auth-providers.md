@@ -46,7 +46,7 @@ QOD_AUTH_DB_TENANT_QUERY="SELECT password_hash, kind, enabled, must_change_passw
 
 The second column is the account kind (`admin` or `user`). The column was named `role` before the [built-in RBAC release](/qod/operating/rbac-model#upgrading-to-the-built-in-rbac-release): a custom query that still selects `role` from `qodstate_user` fails at boot.
 
-Rotate the bootstrap admin password by changing `QOD_ADMIN_PASSWORD` and restarting; the row is re-hashed on every boot. The seeded admin's account kind is `QOD_ADMIN_KIND` (default `admin`; formerly `QOD_ADMIN_ROLE`, now ignored).
+`QOD_ADMIN_PASSWORD` is used on the first boot only, to create each admin row that is missing; changing it and restarting rotates nothing. Rotate the password with `qod auth change-password`, and recover a lost one with `qod admin reset-password` (works with the manager down). The seeded admin's account kind is `QOD_ADMIN_KIND` (default `admin`; formerly `QOD_ADMIN_ROLE`, now ignored).
 
 On the management plane (REST/UI), DB credentials are accepted when `auth.management.identitySource=db` (the default). Setting it to `oidc` skips the DB authenticator on the management login even with this provider enabled; the edge keeps using it.
 

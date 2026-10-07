@@ -26,7 +26,7 @@ The script requires `PG_HOST` and `PG_PASSWORD`. Key options:
 | `EDGE_PORT` | `31338` | Host port for FlightSQL edge |
 | `QUACK_PORT` | `9494` | Host port for the native Quack front door (DuckDB `ATTACH`) |
 | `TLS` | `false` | Enable FlightSQL TLS inside the container |
-| `ADMIN_PASSWORD` | `admin` | Admin login password (rotate before production) |
+| `ADMIN_PASSWORD` | `admin` | Admin login password, used on the first boot only (`QOD_ADMIN_PASSWORD` also works and wins). Rotate it afterwards with `qod auth change-password`. |
 | `API_KEY` | unset | REST `X-API-Key` static key |
 | `BUILD` | `0` | Set to `1` to build the image from the local Dockerfile instead of pulling |
 
@@ -215,7 +215,7 @@ Every scalar in `application.conf` accepts a matching `QOD_*` environment variab
 
 | Setting | Env var | Insecure default |
 |---|---|---|
-| Admin password | `QOD_ADMIN_PASSWORD` | `admin` |
+| Admin password | `QOD_ADMIN_PASSWORD` | none for the jar (no admin is seeded until you set it on the first boot); `admin` under the Docker launchers |
 | Postgres password | `QOD_PG_PASSWORD` | `azizam` |
 | REST API key | `QOD_API_KEY` | unset (random key generated each boot) |
 | Session JWT secret | `QOD_SESSION_JWT_SECRET` | unset (random secret generated each boot) |

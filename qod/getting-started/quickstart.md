@@ -42,11 +42,15 @@ uvx qod@latest serve ./sales.duckdb          # an existing DuckDB file
 uvx qod@latest serve ./warehouse/            # a directory of parquet / csv
 uvx qod@latest serve s3://bucket/sales/      # a remote prefix
 uvx qod@latest serve                         # a fresh, empty DuckLake to load into
+QOD_ADMIN_PASSWORD='change-me' uvx qod@latest serve ./sales.duckdb  # set the admin password up front, no prompt
+
+# admin login: user admin; password admin with --demo, otherwise the one chosen on the first run
+#   (prompted, or QOD_ADMIN_PASSWORD; first run only, never stored; `uvx qod@latest admin reset-password` recovers it)
 ```
 
 One command provisions a tenant, a database, and a pool around the target, then prints the JDBC / ADBC / ODBC strings. The control plane runs on a bundled **persistent** embedded Postgres under your user data dir: restart and everything is still there, and re-running adds a second database beside the first instead of replacing it.
 
-Unlike `--demo`, this keeps the normal secure posture: TLS on, database auth on, ACL on, and a random admin password generated on the first run, printed once, and stored in the CLI config file. An existing `.duckdb` file is attached read-write and served by a single node; parquet and CSV targets become views (`read_parquet` / `read_csv`), so nothing is copied or converted.
+Unlike `--demo`, this keeps the normal secure posture: TLS on, database auth on, ACL on, and an admin password you choose on the first run: prompted on a terminal, or taken from `QOD_ADMIN_PASSWORD` (without either, a non-interactive first run refuses to start). It is never stored, a later `QOD_ADMIN_PASSWORD` does not change it, and `qod admin reset-password` recovers it. An existing `.duckdb` file is attached read-write and served by a single node; parquet and CSV targets become views (`read_parquet` / `read_csv`), so nothing is copied or converted.
 
 ### Which command do I want?
 
@@ -63,7 +67,8 @@ Browse to **`http://localhost:20900/ui/`** and log in with:
 | Tenant ID | Username | Password | View |
 |---|---|---|---|
 | leave blank | `root` | `demo-root` | superuser console (all tenants) |
-| leave blank | `admin` | `admin` | superuser console (all tenants) |
+| leave blank | `admin` | `admin`, or your `QOD_ADMIN_PASSWORD` if exported | superuser console (all tenants) |
+| leave blank | `admin@localhost.local` | same as `admin` | superuser console (all tenants) |
 | `acme` | `acme-admin` | `demo-acme-admin` | acme-scoped roles, groups, users, pools |
 | `acme` | `alice` | `demo-alice` | acme-scoped view |
 

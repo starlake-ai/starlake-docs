@@ -71,7 +71,7 @@ export QOD_MANAGED_STORE_URL_STYLE=path
 ```
 
    Important: the rustfs bucket used as the managed root must have **versioning OFF**, otherwise deleted data is never really purged.
-4. **Enable security before exposing anything**: `QOD_ACL_ENABLED=true` (enforce grants), rotate `QOD_ADMIN_PASSWORD`, keep TLS on the FlightSQL edge, set `QOD_API_KEY` or rely on login sessions for `/api`.
+4. **Enable security before exposing anything**: `QOD_ACL_ENABLED=true` (enforce grants), rotate the admin password with `qod auth change-password` (`QOD_ADMIN_PASSWORD` only sets it on the first boot), keep TLS on the FlightSQL edge, set `QOD_API_KEY` or rely on login sessions for `/api`.
 
 ### 0.1 The complete environment for this deployment
 
@@ -438,7 +438,7 @@ Bcrypt-hashed users in the `qodstate_user` table of the control-plane Postgres. 
 
 ```bash
 export QOD_ADMIN_USERNAME=admin@yourco.com   # default: admin@localhost.local,admin
-export QOD_ADMIN_PASSWORD='<strong password>' # default: admin. Rotate before go-live.
+export QOD_ADMIN_PASSWORD='<strong password>' # first boot only; no default (nothing is seeded without it)
 ```
 
 The admin row is re-seeded at every boot, so changing the env var and restarting rotates the credential. Create users with `qod user create --tenant acme --username alice --password ... --role analyst --group qod_no_pools`, via REST `/api/user/create`, or via SQL `CREATE USER` (section 5). Name the roles and groups explicitly: left out, they default to the built-ins `qod_all_tables` / `qod_all_pools` (full access to every table and pool of the tenant); see [Built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups). `--kind admin` (default `user`) grants management rights only. Optional account lockout: `QOD_AUTH_LOCKOUT_ENABLED=true` (requires SMTP: `QOD_SMTP_HOST` etc., plus `QOD_PUBLIC_BASE_URL` for the reset link).

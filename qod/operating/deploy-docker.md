@@ -197,7 +197,7 @@ The defaults are tuned for a fast local smoke test. Change these before any non-
 
 | Setting | Env var | Insecure default |
 |---|---|---|
-| Admin password | `ADMIN_PASSWORD` | `admin` |
+| Admin password | `ADMIN_PASSWORD` (or `QOD_ADMIN_PASSWORD`, which wins) | `admin`, set on the first boot only; afterwards rotate with `qod auth change-password` |
 | Postgres password | `PG_PASSWORD` | `azizam` |
 | REST API key | `API_KEY` | unset (open API) |
 | Session signing secret | `SESSION_JWT_SECRET` | unset (random per boot; generated into `.env` with the `starflow` profile) |
