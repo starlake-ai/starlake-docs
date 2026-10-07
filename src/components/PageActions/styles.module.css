@@ -56,14 +56,15 @@
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
-  z-index: 10;
+  z-index: var(--ifm-z-index-dropdown);
   min-width: 15rem;
   margin: 0;
   padding: 0.3rem;
   list-style: none;
   border: 1px solid var(--sl-color-border);
   border-radius: 8px;
-  background: var(--ifm-background-color);
+  /* Opaque surface: --ifm-background-color is transparent in Infima. */
+  background: var(--ifm-dropdown-background-color);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
 }
 
