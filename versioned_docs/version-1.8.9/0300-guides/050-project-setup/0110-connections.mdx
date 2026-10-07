@@ -1,0 +1,692 @@
+---
+title: "Configure Starlake Database Connections"
+description: "Configure Starlake connections to BigQuery, Snowflake (with OAuth SSO), Databricks, Redshift, DuckDB, DuckLake, PostgreSQL, and any JDBC database. YAML examples for application.sl.yml."
+keywords: [starlake, database connections, bigquery, snowflake, databricks, redshift, duckdb, ducklake, postgresql, jdbc, quack]
+---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I configure a BigQuery connection in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Define a connection of type 'bigquery' in the connections section of application.sl.yml. Set the location, authType (APPLICATION_DEFAULT, SERVICE_ACCOUNT_JSON_KEYFILE, or ACCESS_TOKEN), and optionally enable the Spark BigQuery connector by setting sparkFormat to 'bigquery'."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Starlake support Snowflake OAuth (SSO)?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Starlake supports Snowflake OAuth for Single Sign-On. You need to create an OAuth security integration in Snowflake, then configure the account, client ID, and client secret in the Starlake UI admin page under the Snowflake SSO tab."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which databases can Starlake connect to?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake supports BigQuery, Snowflake, Databricks/Spark, Amazon Redshift, DuckDB, DuckLake, PostgreSQL, and any JDBC-compliant database. Connections are configured in the application.sl.yml file."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use Starlake with DuckDB or DuckLake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Starlake supports DuckDB as a JDBC connection. Configure it with the DuckDB JDBC URL and driver in application.sl.yml. DuckLake is also supported by adding a preActions setting to attach the DuckLake metadata catalog."
+          }
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Configure Starlake Database Connections
+
+Starlake supports connections to BigQuery, Snowflake, Databricks/Spark, Amazon Redshift, DuckDB, DuckLake, PostgreSQL, and any JDBC-compliant database. All connections are defined in the `connections` section of `metadata/application.sl.yml`. Each connection type has specific options for authentication, driver, and runtime settings.
+
+## Supported Connection Types
+
+- [Local File System](#connect-starlake-to-the-local-file-system)
+- [Google BigQuery](#connect-starlake-to-google-bigquery)
+- [Snowflake (JDBC and OAuth SSO)](#connect-starlake-to-snowflake)
+- [Apache Spark / Databricks](#connect-starlake-to-spark-and-databricks)
+- [Amazon Redshift](#connect-starlake-to-amazon-redshift)
+- [DuckDB / DuckLake](#connect-starlake-to-duckdb-and-ducklake)
+- [Arrow Flight SQL](#connect-starlake-to-an-arrow-flight-sql-endpoint)
+- [Google Cloud Logging (Audit)](#connect-starlake-to-google-cloud-logging-audit)
+- [PostgreSQL / Any JDBC Database](#connect-starlake-to-any-jdbc-database)
+
+## Connect Starlake to the Local File System
+
+The local file system connection reads and writes files to disk. Files are stored in subdirectories under `datasets/`. Each subdirectory represents a processing stage in the data pipeline.
+
+```yaml
+application:
+    connections:
+    local:
+        type: local
+```
+
+The `area` settings control the directory names for each stage. You can override them with environment variables.
+
+```yaml
+application:
+    datasets: "{{root}}/datasets" # or set with the SL_DATASETS environment variable
+    area:
+        pending: "pending"       # Files waiting to be loaded (SL_AREA_PENDING)
+        unresolved: "unresolved" # Files that do not match any pattern (SL_AREA_UNRESOLVED)
+        archive: "archive"       # Files moved after processing (SL_AREA_ARCHIVE)
+        ingesting: "ingesting"   # Files currently being processed (SL_AREA_INGESTING)
+        accepted: "accepted"     # Files processed and accepted (SL_AREA_ACCEPTED)
+        rejected: "rejected"     # Files processed and rejected (SL_AREA_REJECTED)
+        business: "business"     # Transform task results (SL_AREA_BUSINESS)
+        replay: "replay"         # Rejected records in original format (SL_AREA_REPLAY)
+        hiveDatabase: "${domain}_${area}" # Hive database name (SL_AREA_HIVE_DATABASE)
+```
+
+## Connect Starlake to Google BigQuery
+
+Starlake supports native and Spark BigQuery connections. The native connection is the default. To use the Spark BigQuery connector, set `sparkFormat: "bigquery"`.
+
+### BigQuery Authentication Methods
+
+Starlake supports three authentication methods for BigQuery:
+- **APPLICATION_DEFAULT**: Uses the default credentials configured in your environment (e.g., `gcloud auth application-default login`)
+- **SERVICE_ACCOUNT_JSON_KEYFILE**: Uses a JSON key file for a service account
+- **ACCESS_TOKEN**: Uses a direct GCP access token
+
+### BigQuery Connection Configuration
+
+```yaml
+application:
+  connections:
+    bigquery:
+      type: "bigquery"
+      # Uncomment the line below to use the Spark BigQuery connector instead of the native one.
+      # sparkFormat: "bigquery"
+      options:
+        location: "us-central1" # EU or US or any BigQuery region
+        authType: "APPLICATION_DEFAULT"
+        authScopes: "https://www.googleapis.com/auth/cloud-platform"
+        # writeMethod: "direct" # Only when sparkFormat is set. "direct" or "indirect"
+        # temporaryGcsBucket: "bucket_name" # Only when sparkFormat is set. No "gcs://" prefix
+        #authType: SERVICE_ACCOUNT_JSON_KEYFILE
+        #jsonKeyfile: "/Users/me/.gcloud/keys/starlake-me.json"
+        #authType: "ACCESS_TOKEN"
+        #gcpAccessToken: "your-access-token"
+  accessPolicies: # Required when applying Column Level Security
+    apply: true
+    location: EU
+    taxonomy: RGPD
+```
+
+## Connect Starlake to Snowflake
+
+Starlake connects to Snowflake using the JDBC driver. Two authentication methods are available: user/password and OAuth SSO.
+
+### Snowflake User/Password Authentication
+
+Use the native Snowflake JDBC driver for most use cases. The Spark Snowflake connector is only needed when exporting data to Excel, CSV, or Parquet files, or when loading data using the embedded Spark library.
+
+```yaml
+application:
+  connections:
+    snowflake:
+      type: jdbc
+      # Uncomment the line below to use the Snowflake Spark connector instead of JDBC.
+      # sparkFormat: snowflake
+      options:
+        url: "jdbc:snowflake://{{SNOWFLAKE_ACCOUNT}}.snowflakecomputing.com"
+        driver: "net.snowflake.client.jdbc.SnowflakeDriver"
+        user: "{{SNOWFLAKE_USER}}"
+        password: "{{SNOWFLAKE_PASSWORD}}"
+        warehouse: "{{SNOWFLAKE_WAREHOUSE}}"
+        db: "{{SNOWFLAKE_DB}}"
+        keep_column_case: "off"
+        preActions: "alter session set TIMESTAMP_TYPE_MAPPING = 'TIMESTAMP_LTZ';ALTER SESSION SET QUOTED_IDENTIFIERS_IGNORE_CASE = true"
+        sfUrl: "{{SNOWFLAKE_ACCOUNT}}.snowflakecomputing.com" # Do not prefix with jdbc:snowflake://
+        # When sparkFormat is set, prefix keys with "sf":
+        # sfUrl: "jdbc:snowflake://{{SNOWFLAKE_ACCOUNT}}.snowflakecomputing.com"
+        # sfUser: "{{SNOWFLAKE_USER}}"
+        # sfPassword: "{{SNOWFLAKE_PASSWORD}}"
+        # sfWarehouse: "{{SNOWFLAKE_WAREHOUSE}}"
+        # sfDatabase: "{{SNOWFLAKE_DB}}"
+```
+
+### Snowflake OAuth Single Sign-On (SSO)
+
+SSO is supported via the OAuth authentication type. It is only compatible with the native Snowflake JDBC driver.
+
+When a user authenticates through Snowflake OAuth, Starlake automatically switches to the OAuth authentication type. The `user` and `password` fields in the configuration are ignored and replaced by the token generated by Snowflake.
+
+#### Step 1: Create the OAuth Security Integration in Snowflake
+
+Log in to Snowflake with the `ACCOUNTADMIN` role (or another role with `CREATE INTEGRATION` privileges) and run:
+
+```sql
+CREATE OR REPLACE SECURITY INTEGRATION STARLAKE
+  TYPE = OAUTH
+  ENABLED = TRUE
+  OAUTH_CLIENT = CUSTOM
+  OAUTH_CLIENT_TYPE = 'CONFIDENTIAL'
+  OAUTH_REDIRECT_URI = '<REDIRECT_URI>'
+  OAUTH_ISSUE_REFRESH_TOKENS = TRUE
+  OAUTH_REFRESH_TOKEN_VALIDITY = 7776000 -- Valid for 90 days
+  OAUTH_USE_SECONDARY_ROLES = 'IMPLICIT';
+```
+
+**OAuth Redirect URI values:**
+- Local development: `http://localhost:8080/api/v1/auth/snowflake/callback`
+- Snowflake native app: `https://<account>.snowflakecomputing.com/api/v1/auth/snowflake/callback`
+
+**Token validity:**
+- Access token: 10 minutes
+- Refresh token: 90 days (automatically renews the access token). After 90 days, the user must reauthenticate.
+
+#### Step 2: Retrieve Integration Credentials
+
+Run the following SQL to extract the account name, client ID, and client secret:
+
+```sql
+WITH SECURITY_INTEGRATION as (
+  SELECT PARSE_JSON(SYSTEM$SHOW_OAUTH_CLIENT_SECRETS('STARLAKE')) as OAUTH_CLIENT_SECRETS
+)
+select
+CURRENT_ORGANIZATION_NAME() || '-' || CURRENT_ACCOUNT_NAME() as account,
+  OAUTH_CLIENT_SECRETS:"OAUTH_CLIENT_ID"::string     as client_id,
+  OAUTH_CLIENT_SECRETS:"OAUTH_CLIENT_SECRET"::string as client_secret
+from
+  SECURITY_INTEGRATION;
+```
+
+#### Step 3: Configure Starlake UI
+
+In the Starlake UI, log in as an admin and navigate to **Admin > Snowflake SSO**. Enter the `Account`, `Client ID`, and `Client Secret` values from Step 2.
+
+## Connect Starlake to Spark and Databricks
+
+Spark connections support three write formats: Parquet, Delta, and Iceberg. Each format requires specific Spark extensions.
+
+<Tabs groupId="spark_connections">
+
+<TabItem label="Spark Parquet" value="spark-parquet">
+
+```yaml
+application:
+  defaultWriteFormat: parquet
+  connections:
+    spark:
+      type: "spark"
+      options:
+        # any spark configuration can be set here
+```
+
+</TabItem>
+
+<TabItem label="Spark Delta" value="spark-delta">
+
+```yaml
+application:
+  defaultWriteFormat: delta
+  connections:
+    spark:
+      type: "spark"
+      options:
+        # any spark configuration can be set here
+  spark:
+    sql:
+      extensions: "io.delta.sql.DeltaSparkSessionExtension"
+      catalog:
+        spark_catalog: "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+```
+
+</TabItem>
+
+<TabItem label="Spark Iceberg" value="spark-iceberg">
+
+```yaml
+application:
+  defaultWriteFormat: iceberg
+  connections:
+    spark:
+      type: "spark"
+      options:
+        # any spark configuration can be set here
+  spark:
+    sql.extensions: "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
+    sql.catalog.spark_catalog: org.apache.iceberg.spark.SparkSessionCatalog
+    sql.catalog.spark_catalog.type: hadoop
+    sql.catalog.local: org.apache.iceberg.spark.SparkCatalog
+    sql.catalog.local.type: hadoop
+    sql.catalog.spark_catalog.warehouse: "{{SL_ROOT}}/warehouse"
+    sql.catalog.local.warehouse: "{{SL_ROOT}}/warehouse"
+    sql.defaultCatalog:  local
+```
+
+</TabItem>
+
+</Tabs>
+
+## Connect Starlake to Amazon Redshift
+
+Use the Redshift JDBC driver. If running on Spark or Databricks, uncomment the `sparkFormat` line.
+
+```yaml
+application:
+  connections:
+    redshift:
+      type: jdbc
+      # Uncomment the line below if running on Spark or Databricks
+      # sparkFormat: "io.github.spark_redshift_community.spark.redshift"  # Use "redshift" on Databricks
+      options:
+        url: "jdbc:redshift://account.region.redshift.amazonaws.com:5439/database"
+        driver: com.amazon.redshift.Driver
+        password: "{{REDSHIFT_PASSWORD}}"
+        tempdir: "s3a://bucketName/data"
+        tempdir_region: "eu-central-1" # Required only when running from outside AWS
+        aws_iam_role: "arn:aws:iam::aws_count_id:role/role_name"
+```
+
+## Connect Starlake to DuckDB and DuckLake
+
+DuckDB is a lightweight, in-process SQL OLAP database. Starlake connects to DuckDB via JDBC. DuckLake extends DuckDB with a metadata catalog layer.
+
+```yaml
+application:
+  connections:
+    duckdb:
+      type: jdbc
+      options:
+        url: "jdbc:duckdb:{{DUCKDB_PATH}}"
+        driver: "org.duckdb.DuckDBDriver"
+        user: "{{DATABASE_USER}}"
+        password: "{{DATABASE_PASSWORD}}"
+        ## Uncomment and customize the line below for DuckLake
+        # preActions: "ATTACH IF NOT EXISTS 'ducklake:metadata.ducklake' As my_ducklake (DATA_PATH 'file_path/');USE my_ducklake;"
+```
+
+For DuckLake, the `preActions` setting attaches the DuckLake metadata catalog before running any queries.
+
+### DuckDB option filtering
+
+Several option keys in a DuckDB / DuckLake / Quack connection are interpreted by Starlake itself and are stripped before the remaining keys are passed to the DuckDB JDBC driver. If you place an unrelated key in `options:` the DuckDB driver will reject the connection with `Invalid Input Error: The following options were not recognized: …`.
+
+Keys filtered out by Starlake on the DuckDB path:
+
+`url`, `driver`, `dbtable`, `numpartitions`, `sl_access_token`, `account`, `allowUnderscoresInHost`, `database`, `db`, `authenticator`, `user`, `password`, `preActions`, `postActions`, `DATA_PATH`, `SL_DATA_PATH`, `storageType`, `quoteIdentifiers`, `quote`, `separator`, `quackServerToken`, `quackBind`, `quackPort`
+
+Any option whose name starts with `SL_` (uppercase) or `fs.` (lowercase) is also filtered out — `SL_*` keys are Starlake-internal, and `fs.s3a.*` keys are translated into DuckDB S3 settings (`s3_endpoint`, `s3_region`, `s3_access_key_id`, `s3_secret_access_key`) at connection time.
+
+### Quack (DuckDB remote)
+
+:::note DuckDB version
+Quack requires DuckDB engine `1.5.3+` (Quack is a core extension). Starlake bundles the `1.5.3` DuckDB JDBC driver. ODBC clients connecting to a Quack server must also use a DuckDB ODBC driver whose embedded engine is `1.5.3` or newer.
+:::
+
+
+[Quack](https://duckdb.org/docs/extensions/quack) is a DuckDB extension that turns a DuckDB instance into a query server. The recommended way to expose a DuckLake lakehouse without sharing object-storage credentials with clients.
+
+:::tip Quack at fleet scale
+For multi-tenant Quack fleets with autoscaling, per-statement ACLs, and federated queries, see [Quack on Demand](/qod/), documented in its own section of this site. Everything below also applies to connecting to a QoD endpoint.
+:::
+
+**Client connection** (consumer, no DuckLake, no S3):
+
+```yaml
+connections:
+  warehouse-quack:
+    type: JDBC
+    options:
+      url: "jdbc:duckdb:"
+      driver: "org.duckdb.DuckDBDriver"
+      preActions: |
+        INSTALL quack; LOAD quack;
+        CREATE SECRET (TYPE quack, TOKEN '{{quackToken}}');
+        ATTACH 'quack:warehouse-host:9494' AS remote;
+      quote: "\""
+```
+
+**Server connection — local file catalog + S3 data** (producer, single server, file-based DuckLake catalog):
+
+```yaml
+connections:
+  warehouse-server:
+    type: JDBC
+    options:
+      url: "jdbc:duckdb:"
+      driver: "org.duckdb.DuckDBDriver"
+      preActions: |
+        INSTALL ducklake; LOAD ducklake; INSTALL quack; LOAD quack;
+        CREATE SECRET (TYPE s3, KEY_ID '{{s3Key}}', SECRET '{{s3Secret}}', REGION 'eu-west-1');
+        ATTACH 'ducklake:my_catalog.ducklake' AS lake (DATA_PATH 's3://my-bucket/data/');
+      quackServerToken: "{{quackToken}}"
+      quackBind: "127.0.0.1"
+      quackPort: "9494"
+      quote: "\""
+```
+
+**Server connection — PostgreSQL catalog + S3 data** (producer, shared catalog in Postgres, durable across server restarts and shareable between multiple Quack servers):
+
+```yaml
+connections:
+  warehouse-server-pg:
+    type: JDBC
+    options:
+      url: "jdbc:duckdb:"
+      driver: "org.duckdb.DuckDBDriver"
+      preActions: |
+        INSTALL POSTGRES; LOAD POSTGRES;
+        INSTALL ducklake; LOAD ducklake;
+        INSTALL quack;    LOAD quack;
+        CREATE SECRET (
+          TYPE s3,
+          KEY_ID '{{s3Key}}',
+          SECRET '{{s3Secret}}',
+          REGION 'eu-west-1'
+        );
+        ATTACH 'ducklake:postgres:
+            dbname={{pgDatabase}}
+            host={{pgHost}}
+            port={{pgPort}}
+            user={{pgUser}}
+            password={{pgPassword}}' AS lake
+          (DATA_PATH 's3://my-bucket/data/');
+      quackServerToken: "{{quackToken}}"
+      quackBind: "127.0.0.1"
+      quackPort: "9494"
+      quote: "\""
+```
+
+The connection-string fields inside `ATTACH 'ducklake:postgres:...'` (`dbname`, `host`, `port`, `user`, `password`) are interpreted by DuckLake's Postgres backend — they don't need to be top-level connection options. Substitute them via Jinja from your env profile (`metadata/env.*.sl.yml`).
+
+**Server connection — PostgreSQL catalog via DuckDB SECRET** (producer, host/user/password live in a Postgres secret so only `dbname` appears in the ATTACH string):
+
+```yaml
+connections:
+  warehouse-server-pg-secret:
+    type: JDBC
+    options:
+      url: "jdbc:duckdb:"
+      driver: "org.duckdb.DuckDBDriver"
+      preActions: |
+        INSTALL POSTGRES; LOAD POSTGRES;
+        INSTALL ducklake; LOAD ducklake;
+        INSTALL quack;    LOAD quack;
+        CREATE SECRET pg_catalog (
+          TYPE postgres,
+          HOST '{{pgHost}}',
+          PORT {{pgPort}},
+          DATABASE '{{pgDatabase}}',
+          USER '{{pgUser}}',
+          PASSWORD '{{pgPassword}}'
+        );
+        CREATE SECRET s3_lake (
+          TYPE s3,
+          KEY_ID '{{s3Key}}',
+          SECRET '{{s3Secret}}',
+          REGION 'eu-west-1'
+        );
+        ATTACH 'ducklake:postgres:dbname={{pgDatabase}}' AS lake
+          (DATA_PATH 's3://my-bucket/data/');
+      quackServerToken: "{{quackToken}}"
+      quackBind: "127.0.0.1"
+      quackPort: "9494"
+      quote: "\""
+```
+
+With a Postgres secret in place, the ATTACH only needs `dbname=...`; DuckDB resolves `host`, `port`, `user`, and `password` from the matching secret. This keeps catalog credentials out of the ATTACH literal and lets you rotate them by replacing the secret alone. Combine with [DuckDB persistent secrets](https://duckdb.org/docs/configuration/secrets_manager) if you want the secret to survive process restarts without re-running `preActions`.
+
+:::note Secret names are not referenced from ATTACH
+The names `pg_catalog` and `s3_lake` never appear in the ATTACH statement — DuckDB picks secrets by *scope* (matching `TYPE` + URL/host), not by name. Names are management labels for `DROP SECRET` and `FROM duckdb_secrets()`. Add an explicit `SCOPE` clause only when two secrets of the same type would otherwise both match the target.
+:::
+
+**Disambiguating with `SCOPE`** — when a single server needs different credentials per bucket (e.g. catalog metadata in one bucket, data files in another), scope each S3 secret to its URL prefix. The longest matching prefix wins; an unscoped secret acts as a catch-all default.
+
+```yaml
+connections:
+  warehouse-server-multi-bucket:
+    type: JDBC
+    options:
+      url: "jdbc:duckdb:"
+      driver: "org.duckdb.DuckDBDriver"
+      preActions: |
+        INSTALL POSTGRES; LOAD POSTGRES;
+        INSTALL ducklake; LOAD ducklake;
+        INSTALL quack;    LOAD quack;
+
+        CREATE SECRET s3_catalog (
+          TYPE s3,
+          SCOPE 's3://catalog-bucket',
+          KEY_ID '{{s3CatalogKey}}',
+          SECRET '{{s3CatalogSecret}}',
+          REGION 'eu-west-1'
+        );
+        CREATE SECRET s3_lake (
+          TYPE s3,
+          SCOPE 's3://data-bucket',
+          KEY_ID '{{s3LakeKey}}',
+          SECRET '{{s3LakeSecret}}',
+          REGION 'eu-west-1'
+        );
+
+        ATTACH 'ducklake:postgres:dbname={{pgDatabase}}' AS lake
+          (DATA_PATH 's3://data-bucket/lake/');
+      quackServerToken: "{{quackToken}}"
+      quackBind: "127.0.0.1"
+      quackPort: "9494"
+      quote: "\""
+```
+
+Reads from `s3://catalog-bucket/...` resolve via `s3_catalog`; reads/writes under `s3://data-bucket/...` resolve via `s3_lake`. The same pattern works for Postgres secrets — DuckDB matches on the connection's `HOST`/`PORT`/`DATABASE` triple, so two Postgres secrets targeting different hosts coexist without explicit scopes.
+
+#### Quack server options
+
+The three `quack*` keys are interpreted by Starlake (consumed by `ConnectionInfo` and `QuackCmd`) and never reach the DuckDB driver. The presence of `quackServerToken` is also what flags a connection as a Quack server for connection-pool de-duplication.
+
+Option | Required | Default | Description
+---|---|---|---
+`quackServerToken` | Yes (server) | — | Shared secret clients must present. Bootstrapped into the server via `CALL quack_serve(..., token => …)`. The `--token` CLI flag overrides it for a single invocation.
+`quackBind` | No | `127.0.0.1` | Bind address for the embedded Quack server. Bind to `0.0.0.0` only behind a TLS-terminating reverse proxy. The `--bind` CLI flag overrides it.
+`quackPort` | No | `9494` | TCP port the server listens on. The `--port` CLI flag overrides it.
+
+#### Quack server authentication and authorization
+
+A Quack server exposes the **full SQL surface** of its DuckDB session — every table the server can see is readable and writable by any client that knows the token. Lock the server down with two server-side callbacks registered in the server connection's `preActions` so they are in place before `starlake quack serve` accepts clients.
+
+Hook | DuckDB setting | Default | Signature
+---|---|---|---
+Authentication | `quack_authentication_function` | `quack_check_token` | `(session_id, client_token, server_token) -> BOOLEAN`
+Authorization  | `quack_authorization_function`  | `quack_nop_authorization` | `(connection_id, query) -> BOOLEAN`
+
+Rules:
+
+- Use **`SET GLOBAL`**. A plain `RESET` only clears the session view and the auth path keeps reading the stale global value, so use `RESET GLOBAL` to restore defaults.
+- Callbacks are **fail-closed** — any error rejects the request, so a buggy macro locks every client out.
+- Each callback runs in a **fresh server-side connection**, so it cannot rely on session-local state. Python UDFs created with `con.create_function` do not work; use SQL macros or scalar functions registered via a DuckDB extension.
+
+**Read-only Quack server** (clients may only run `SELECT` / `FROM` / `WITH` / `EXPLAIN` / `DESCRIBE` / `SHOW`):
+
+```yaml
+connections:
+  warehouse-server-readonly:
+    type: JDBC
+    options:
+      url: "jdbc:duckdb:"
+      driver: "org.duckdb.DuckDBDriver"
+      preActions: |
+        INSTALL ducklake; LOAD ducklake; INSTALL quack; LOAD quack;
+        CREATE SECRET (TYPE s3, KEY_ID '{{s3Key}}', SECRET '{{s3Secret}}', REGION 'eu-west-1');
+        ATTACH 'ducklake:my_catalog.ducklake' AS lake (DATA_PATH 's3://my-bucket/data/');
+
+        CREATE OR REPLACE MACRO read_only(sid, query) AS
+            regexp_matches(upper(trim(query)), '^(SELECT|FROM|WITH|EXPLAIN|DESCRIBE|SHOW)\b');
+        SET GLOBAL quack_authorization_function = 'read_only';
+      quackServerToken: "{{quackToken}}"
+      quote: "\""
+```
+
+**Per-user tokens** (authenticate against a table of allowed tokens instead of the single `quackServerToken`):
+
+```yaml
+connections:
+  warehouse-server-multitoken:
+    type: JDBC
+    options:
+      url: "jdbc:duckdb:"
+      driver: "org.duckdb.DuckDBDriver"
+      preActions: |
+        INSTALL ducklake; LOAD ducklake; INSTALL quack; LOAD quack;
+        CREATE SECRET (TYPE s3, KEY_ID '{{s3Key}}', SECRET '{{s3Secret}}', REGION 'eu-west-1');
+        ATTACH 'ducklake:my_catalog.ducklake' AS lake (DATA_PATH 's3://my-bucket/data/');
+
+        CREATE TABLE IF NOT EXISTS quack_tokens (auth_token VARCHAR, user_name VARCHAR);
+        -- INSERT rows out-of-band: INSERT INTO quack_tokens VALUES ('alice-key-123', 'alice');
+        CREATE OR REPLACE MACRO check_token(sid, client_token, server_token) AS (
+            EXISTS (SELECT 1 FROM quack_tokens WHERE auth_token = client_token)
+        );
+        SET GLOBAL quack_authentication_function = 'check_token';
+      quackServerToken: "{{quackToken}}"
+      quote: "\""
+```
+
+`quackServerToken` is still required — it is the token Starlake itself uses to bootstrap `quack_serve(...)`. The `check_token` macro replaces the default token check for client connections so every user can present their own token.
+
+**Per-user ACLs** (combine auth + authz). The authorization hook receives a `connection_id` that matches the `session_id` the authentication hook saw. Link them via a `quack_sessions` table populated by the auth side, then look it up in `acl_check`. A macro body is a single expression and cannot do DML — the part that *records* sessions must be a scalar UDF registered through a DuckDB extension; the lookup side can stay a macro.
+
+:::tip Inspecting what the hook actually sees
+The `query` argument is the raw SQL the client sent — including any `remote.query('...')` wrapper. Enable Quack logging to see exactly what each callback will be matched against:
+
+```sql
+CALL enable_logging('Quack');
+-- run a client query, then:
+SELECT * FROM duckdb_logs_parsed('Quack');
+```
+
+Regex-on-SQL is reliable for kind-level matches (`SELECT` vs `INSERT`) but fragile for table-level rules. For genuine table isolation, restrict what the server's session can see (expose only specific views) and use the authorization hook only for the read/write distinction.
+:::
+
+See [`starlake quack`](../../0800-cli/quack.md) for the server-lifecycle CLI.
+
+## Connect Starlake to an Arrow Flight SQL Endpoint
+
+Starlake can act as a client of any [Arrow Flight SQL](https://arrow.apache.org/docs/format/FlightSql.html) server: a quack-on-demand gateway, GizmoSQL, Dremio, Doris, or any other engine fronted by Flight SQL. The primary scenario is a DuckDB or DuckLake lakehouse exposed through a Flight SQL server: the server attaches the catalog and holds the object-storage credentials, while Starlake stays a pure remote client that only ever speaks SQL.
+
+```yaml
+application:
+  connections:
+    qod_bi:
+      type: jdbc
+      options:
+        url: "jdbc:arrow-flight-sql://localhost:31338?useEncryption=true&disableCertificateVerification=true&tenant=acme&pool=bi&superuser=true"
+        user: "{{FLIGHT_USER}}"
+        password: "{{FLIGHT_PASSWORD}}"
+        # dialect: duckdb   # optional, duckdb is the default
+        # driver: "..."     # optional, defaults to the Arrow Flight SQL JDBC driver
+```
+
+Everything after `host:port` is passed to the Arrow driver untouched: `useEncryption` and `disableCertificateVerification` are TLS flags consumed by the driver itself, while parameters such as `tenant`, `pool` and `superuser` are forwarded to the server (quack-on-demand uses them for routing). Connections with different query strings get distinct connection pools.
+
+**The `dialect` option.** Flight SQL is a transport, not a dialect: the endpoint fronts a real engine whose SQL Starlake must generate. The `dialect` option selects the engine profile used for DDL, merge strategies, audit tables and identifier quoting. It defaults to `duckdb`, which is what quack-on-demand and GizmoSQL front; set `dialect: postgresql`, `dialect: snowflake`, etc. for other backends. `mariadb` normalizes to the `mysql` profile and `databricks` to `spark`, following Starlake's usual engine aliasing.
+
+**Driver installation.** The Arrow Flight SQL JDBC driver is not bundled in the Starlake assembly. The setup tool downloads it into `bin/deps` when `ENABLE_FLIGHTSQL` is on (the default); pin another driver version with `FLIGHT_SQL_JDBC_VERSION`. The driver class defaults to `org.apache.arrow.driver.jdbc.ArrowFlightJdbcDriver`.
+
+**The client stays fully remote.** Starlake never runs `ATTACH 'ducklake:...'` on a Flight SQL connection and skips all local DuckDB session setup (S3 secrets, `home_directory`); credentials live server-side, exactly as in the [Quack isolation model](#quack-duckdb-remote). `preActions` and `postActions`, if present, still run as plain session SQL over the remote connection.
+
+:::note
+With a duckdb dialect, load SQL such as `read_csv(...)` executes on the server, so file paths referenced by load jobs must be visible to the server (object storage it has credentials for, or a shared filesystem). Paths that only exist on the client machine fail with the server's error.
+:::
+
+## Connect Starlake to Google Cloud Logging (Audit)
+
+Starlake can send audit logs to [Google Cloud Logging](https://cloud.google.com/logging) instead of a database table. This is useful when you want audit data in Cloud Logging where it can be routed to BigQuery, Pub/Sub, or Cloud Storage via log sinks.
+
+```yaml
+application:
+  connections:
+    gcplog:
+      type: "GCPLOG"
+      options:
+        projectId: "my-gcp-project"
+
+  audit:
+    active: true
+    domain: "starlake-audit"  # Cloud Logging log name
+    sink:
+      connectionRef: "gcplog"
+```
+
+With this configuration:
+- Audit entries are sent to Cloud Logging under `projects/my-gcp-project/logs/starlake-audit`
+- Each entry is a JSON payload with fields: `jobid`, `domain`, `schema`, `success`, `count`, `countAccepted`, `countRejected`, `timestamp`, `duration`, `message`, `step`, `tenant`
+- Entries are labeled with `type=audit` and `app=starlake`
+- Authentication uses [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials) (same as `gcloud auth application-default login` or a service account via `GOOGLE_APPLICATION_CREDENTIALS`)
+
+The `domain` field defaults to `"audit"` if omitted. Logs are chunked into 9 MB batches to respect Cloud Logging API limits.
+
+:::tip
+To route audit logs from Cloud Logging to BigQuery for querying, create a [log sink](https://cloud.google.com/logging/docs/export/configure_export_v2) with filter `logName="projects/my-gcp-project/logs/starlake-audit"`.
+:::
+
+## Connect Starlake to Any JDBC Database
+
+Starlake connects to any JDBC-compliant database (PostgreSQL, MySQL, etc.) using the generic `jdbc` connection type. The example below uses PostgreSQL.
+
+```yaml
+application:
+  connectionRef: "postgresql"
+  connections:
+    postgresql:
+      type: jdbc
+      # Uncomment the line below to use the Spark JDBC connector
+      # sparkFormat: jdbc
+      options:
+        url: "jdbc:postgresql://{{POSTGRES_HOST}}:{{POSTGRES_PORT}}/{{POSTGRES_DATABASE}}"
+        driver: "org.postgresql.Driver"
+        user: "{{DATABASE_USER}}"
+        password: "{{DATABASE_PASSWORD}}"
+        quoteIdentifiers: false
+```
+
+Replace the connection name, URL, and driver class to connect to any JDBC-compliant database.
+
+## Frequently Asked Questions
+
+### How do I configure a BigQuery connection in Starlake?
+Define a connection of type `bigquery` in the `connections` section of `application.sl.yml`. Set the `location`, `authType` (APPLICATION_DEFAULT, SERVICE_ACCOUNT_JSON_KEYFILE, or ACCESS_TOKEN), and optionally enable the Spark BigQuery connector by setting `sparkFormat` to `bigquery`.
+
+### Does Starlake support Snowflake OAuth (SSO)?
+Yes, Starlake supports Snowflake OAuth for Single Sign-On. You need to create an OAuth security integration in Snowflake, then configure the account, client ID, and client secret in the Starlake UI admin page under the Snowflake SSO tab.
+
+### Which databases can Starlake connect to?
+Starlake supports BigQuery, Snowflake, Databricks/Spark, Amazon Redshift, DuckDB, DuckLake, PostgreSQL, and any JDBC-compliant database. Connections are configured in the `application.sl.yml` file.
+
+### Can I use Starlake with DuckDB or DuckLake?
+Yes, Starlake supports DuckDB as a JDBC connection. Configure it with the DuckDB JDBC URL and driver in `application.sl.yml`. DuckLake is also supported by adding a `preActions` setting to attach the DuckLake metadata catalog.
+
+### What BigQuery authentication methods does Starlake support?
+Starlake supports three methods: APPLICATION_DEFAULT (default credentials), SERVICE_ACCOUNT_JSON_KEYFILE (JSON key file), and ACCESS_TOKEN (direct GCP access token).
+
+### How do I send Starlake audit logs to Google Cloud Logging?
+Define a connection of type `GCPLOG` with a `projectId` option, then set `audit.sink.connectionRef` to that connection in `application.sl.yml`. Audit entries are sent as structured JSON to Cloud Logging under the log name specified in `audit.domain`.
+
+### How do I configure a Redshift connection in Starlake?
+Use a JDBC connection with `url: "jdbc:redshift://<account>.<region>.redshift.amazonaws.com:5439/<database>"` and `driver: com.amazon.redshift.Driver`. Provide the password, a temporary S3 bucket, and an IAM role ARN.
+
+## Related
+
+- [Extract Data from Databases](../extract/tutorial) -- use connections to extract tables as CSV files
+- [Load Data into Your Warehouse](../load/tutorial) -- load files into the connected data warehouse
+- [Transform Data with SQL](../transform/tutorial) -- run SQL transforms against the connected database
+- [Environment Variables](./environment) -- manage connection settings across DEV and PROD environments

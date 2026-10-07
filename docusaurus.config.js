@@ -51,11 +51,18 @@ const config = {
           path: 'blog-docs',  // Point to a different directory when in blog mode
           sidebarPath: require.resolve("./sidebars.js"),
           routeBasePath: '/docs',
+          // versions.json belongs to the Starflow docs; ignore it here.
+          disableVersioning: true,
         } : {
           path: 'docs',  // Regular docs directory
           sidebarPath: require.resolve("./sidebars.js"),
           routeBasePath: 'starflow',
           exclude: ['superpowers/**'],
+          // Released snapshots live in versioned_docs/ (see versions.json);
+          // docs/ is the unreleased tree, served under /starflow/next.
+          versions: {
+            current: { label: 'Next', noIndex: true },
+          },
         },
         blog: isBlog ? {
           blogSidebarCount: 0,
@@ -134,11 +141,18 @@ const config = {
           label: "Blog home",
           position: "left",
         },
+        // One version dropdown per product, each shown only in its section.
+        !isBlog ? {
+          type: "custom-sectionVersionDropdown",
+          docsPluginId: "default",
+          position: "right",
+        } : null,
+        !isBlog ? {
+          type: "custom-sectionVersionDropdown",
+          docsPluginId: "qod",
+          position: "right",
+        } : null,
         /*
-        {
-          type: 'docsVersionDropdown',
-          position: 'right',
-        },
                 {
                     href: 'https://search.maven.org/search?q=ai.starlake',
                     position: 'right',
@@ -276,6 +290,11 @@ const config = {
         routeBasePath: "qod",
         sidebarPath: require.resolve("./sidebars-qod.js"),
         editUrl: "https://github.com/starlake-ai/starlake-docs/tree/main/",
+        // Released snapshots live in qod_versioned_docs/ (see
+        // qod_versions.json); qod/ is the unreleased tree, under /qod/next.
+        versions: {
+          current: { label: "Next", noIndex: true },
+        },
       },
     ],
     [

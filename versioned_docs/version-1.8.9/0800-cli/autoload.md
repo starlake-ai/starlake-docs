@@ -1,0 +1,26 @@
+---
+sidebar_position: 30
+title: autoload
+description: "Automatically watch and load incoming data files into specified domains and tables with optional scheduling and substitutions."
+keywords: [starlake autoload, auto load, data ingestion, file watching, ETL]
+---
+
+
+## Synopsis
+
+**starlake autoload [options]**
+
+## Description
+Automatically infer schemas from files in the incoming directory and load them into the data warehouse in a single step. This combines the `infer-schema` and `load` commands, making it ideal for quick ingestion of new data sources. See [Autoload Guide](/starflow/guides/load/autoload).
+
+## Parameters
+
+Parameter|Cardinality|Description
+---|---|---
+--domains `domain1,domain2...`|*Optional*|Domains to watch
+--tables `table1,table2,table3 ...`|*Optional*|Tables to watch
+--clean `<value>`|*Optional*|Overwrite existing mapping files before starting
+--accessToken `<value>`|*Optional*|Access token to use for authentication
+--scheduledDate `<value>`|*Optional*|Scheduled date for the job, in format yyyy-MM-dd'T'HH:mm:ss.SSSZ
+--options `k1=v1,k2=v2...`|*Optional*|Watch arguments to be used as substitutions
+--reportFormat `<value>`|*Optional*|Report format: console, json, html

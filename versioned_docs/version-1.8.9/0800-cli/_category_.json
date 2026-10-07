@@ -1,0 +1,7 @@
+{
+  "label": "Command line tools",
+  "link": {
+    "type": "generated-index",
+    "description": "Starlake Command line interface",
+  }
+}

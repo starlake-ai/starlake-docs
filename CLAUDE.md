@@ -49,6 +49,23 @@ Interactive guides live in `src/data/guides/` as markdown files with frontmatter
 
 Docs use numeric prefixes for ordering: `0000-overview.md`, `0200-setup/`, `0300-guides/`, etc. Subdirectories follow the same pattern. The sidebar is auto-generated from this structure (`sidebars.js`).
 
+### Documentation Versioning
+
+QoD and Starflow are separate docs instances, versioned independently with their own release numbers:
+
+| Product | Live (unreleased) tree | Snapshots | Version list | Cut a release |
+|---|---|---|---|---|
+| Starflow (`default` instance) | `docs/` → `/starflow/next` | `versioned_docs/`, `versioned_sidebars/` | `versions.json` | `yarn docusaurus docs:version <x.y.z>` |
+| QoD (`qod` instance) | `qod/` → `/qod/next` | `qod_versioned_docs/`, `qod_versioned_sidebars/` | `qod_versions.json` | `yarn docusaurus docs:version:qod <x.y.z>` |
+
+- The newest snapshot is served at the unprefixed route (`/qod/...`, `/starflow/...`); older ones at `/qod/<version>/...`.
+- `Next` pages show an "unreleased" banner, are `noindex`, and are left out of the sitemap.
+- Edits for upcoming releases go in `docs/` or `qod/`. Fix a released version by editing its snapshot directly.
+- After `docs:version` (Starflow), delete `versioned_docs/version-<x.y.z>/superpowers/` (internal plans, excluded from the build).
+- In `Next` docs, link to pages in the same instance with relative file links (`./foo.md`). An absolute `/qod/foo` link resolves to the latest snapshot and breaks the build when the page only exists in `Next`.
+- Each navbar version dropdown (`custom-sectionVersionDropdown`, `src/components/SectionVersionDropdown/`) renders only inside its own instance.
+- Blog mode sets `disableVersioning`, so `versions.json` never affects blog.starlake.ai.
+
 ### Content Locations
 
 - `docs/` — main documentation (setup, guides, configuration, CLI reference, dev guides)

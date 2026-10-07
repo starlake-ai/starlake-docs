@@ -1,0 +1,361 @@
+---
+title: "Write Strategies in Starlake: APPEND, OVERWRITE, UPSERT, SCD2, DELETE_THEN_INSERT"
+description: "Configure write strategies in Starlake: APPEND, OVERWRITE, UPSERT_BY_KEY, SCD2, DELETE_THEN_INSERT and ADAPTATIVE. Declarative YAML config for BigQuery, Snowflake and Databricks."
+keywords: [starlake, write strategy, APPEND, OVERWRITE, UPSERT, SCD2, DELETE_THEN_INSERT, merge, ADAPTATIVE, BigQuery, Snowflake, Databricks]
+---
+
+import Head from '@docusaurus/Head';
+
+<Head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What write strategies are available in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starlake provides eight write strategies: APPEND, OVERWRITE, UPSERT_BY_KEY, UPSERT_BY_KEY_AND_TIMESTAMP, OVERWRITE_BY_PARTITION, DELETE_THEN_INSERT, SCD2 and ADAPTATIVE. Configure them via the metadata.writeStrategy property in the table YAML file."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "When should I use UPSERT_BY_KEY vs SCD2 in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use UPSERT_BY_KEY when you only need the latest version of each record identified by a key. Use SCD2 (Slowly Changing Dimension Type 2) when you need to preserve the full history of changes to each record, with start and end timestamps tracking each version."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the difference between APPEND and OVERWRITE write strategies?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "APPEND inserts all new rows into the table without modifying existing data. OVERWRITE replaces all existing rows in the table with the new rows, effectively deleting everything and inserting fresh data."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the ADAPTATIVE write strategy in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The ADAPTATIVE write strategy allows you to change the write mode at runtime based on criteria such as day of the week, file size, or file name pattern. For example, you can APPEND data on weekdays and OVERWRITE on Sundays."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does DELETE_THEN_INSERT differ from UPSERT_BY_KEY?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "DELETE_THEN_INSERT first deletes all rows in the target table that have matching keys in the incoming data, then inserts all incoming rows. UPSERT_BY_KEY performs a merge operation, updating existing rows and inserting new ones in a single step."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "When should I use UPSERT_BY_KEY_AND_TIMESTAMP instead of UPSERT_BY_KEY?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use UPSERT_BY_KEY_AND_TIMESTAMP when the source can send multiple versions of the same record. Only the most recent version (based on the timestamp column) overwrites the existing row."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does OVERWRITE_BY_PARTITION work in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Only the partitions present in the incoming data are overwritten. Partitions absent from the incoming batch remain untouched. This strategy requires a partition configuration in the sink section."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can the write strategy be defined at the domain level?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The strategy defined in _config.sl.yml at the domain level propagates to all tables in the domain, unless a table overrides it locally."
+          }
+        }
+      ]
+    })}
+  </script>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to configure write strategies in Starlake",
+      "description": "Set up APPEND, OVERWRITE, UPSERT, SCD2 or ADAPTATIVE write strategies for data loading in Starlake using YAML configuration.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Open the table YAML file",
+          "text": "Navigate to metadata/load/<domain>/<table>.sl.yml in your Starlake project."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Set the writeStrategy type",
+          "text": "Add writeStrategy.type under metadata. Available values: APPEND, OVERWRITE, UPSERT_BY_KEY, UPSERT_BY_KEY_AND_TIMESTAMP, OVERWRITE_BY_PARTITION, DELETE_THEN_INSERT, SCD2."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Specify key and timestamp if needed",
+          "text": "For UPSERT_BY_KEY or SCD2, set writeStrategy.key (list of columns). For SCD2, also set writeStrategy.timestamp, startTs and endTs."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Use ADAPTATIVE for dynamic strategies",
+          "text": "Set writeStrategy.types as a map of strategy to boolean expression. Criteria include dayOfWeek, fileSize, and group() for filename patterns."
+        }
+      ]
+    })}
+  </script>
+</Head>
+
+# Write Strategies
+
+Starlake provides eight write strategies that control how incoming data merges into target tables on BigQuery, Snowflake and Databricks. You declare the strategy in the `metadata.writeStrategy` property of your table YAML file. Available strategies range from simple APPEND and OVERWRITE to key-based UPSERT, SCD2 history tracking and runtime-adaptive mode.
+
+## Strategy overview
+
+| Strategy | Description |
+|---|---|
+| APPEND | Insert all incoming rows. Existing data stays untouched. |
+| OVERWRITE | Replace all existing rows with the incoming rows. |
+| UPSERT_BY_KEY | Merge by key: update existing rows, insert new ones. |
+| UPSERT_BY_KEY_AND_TIMESTAMP | Merge by key. Overwrite only when the incoming timestamp is newer. |
+| OVERWRITE_BY_PARTITION | Overwrite only the partitions present in the incoming data. Other partitions remain intact. Requires a partition in the [sink configuration](/starflow/guides/load/sink). |
+| DELETE_THEN_INSERT | Delete target rows matching the incoming keys, then insert all incoming rows. |
+| SCD2 | Slowly Changing Dimension Type 2. Preserves the full history of each record with start/end timestamps. |
+| ADAPTATIVE | Selects the strategy at runtime based on file size, date, day of week or file name pattern. |
+
+The strategy can be set at the **table** level or at the **domain** level (in `_config.sl.yml`). A domain-level strategy propagates to all tables unless a table overrides it.
+
+## APPEND
+
+Creates the table if it does not exist. Inserts all incoming rows without modifying existing data.
+
+```yaml title="Append to the table."
+table:
+  pattern: "<table>.*.csv"
+  metadata:
+    ...
+    writeStrategy:
+      type: "APPEND"
+  attributes:
+    - ...
+```
+
+## OVERWRITE
+
+Creates the table if it does not exist. Replaces all existing rows with the incoming data.
+
+```yaml title="Overwrite the table."
+table:
+  pattern: "<table>.*.csv"
+  metadata:
+    ...
+    writeStrategy:
+      type: "OVERWRITE"
+  attributes:
+    - ...
+```
+
+## UPSERT_BY_KEY
+
+Creates the table if it does not exist. Performs a merge: rows with a matching key are updated; new rows are inserted.
+
+```yaml title="Upsert by key. The column 'id' is used as key."
+table:
+  pattern: "<table>.*.csv"
+  metadata:
+    ...
+    writeStrategy:
+      type: "UPSERT_BY_KEY"
+      key: ["id"]
+      on: TARGET
+  attributes:
+    - ...
+```
+
+## UPSERT_BY_KEY_AND_TIMESTAMP
+
+Creates the table if it does not exist. Performs a merge by key. Overwrites the existing row only when the incoming timestamp is more recent. Use this when the source can send multiple versions of the same record.
+
+```yaml title="Upsert by key and timestamp. The column 'id' is used as key."
+table:
+  pattern: "<table>.*.csv"
+  metadata:
+    ...
+    writeStrategy:
+      type: "UPSERT_BY_KEY_AND_TIMESTAMP"
+      key: ["id"]
+      timestamp: "valid_from"
+      on: TARGET
+  attributes:
+    - ...
+```
+
+## OVERWRITE_BY_PARTITION
+
+Creates the table if it does not exist. Overwrites only the partitions present in the incoming data. All other partitions remain untouched. New partitions are appended.
+
+This strategy requires a partition configuration in the [`sink` section](/starflow/guides/load/sink).
+
+```yaml title="Overwrite by partition. Requires the partition property in metadata.sink."
+table:
+  pattern: "<table>.*.csv"
+  metadata:
+    ...
+    writeStrategy:
+      type: "OVERWRITE_BY_PARTITION"
+      on: TARGET
+  attributes:
+    - ...
+```
+
+## DELETE_THEN_INSERT
+
+Creates the table if it does not exist. Deletes all target rows whose keys match the incoming data, then inserts every incoming row. Unlike UPSERT_BY_KEY (which performs a single merge operation), DELETE_THEN_INSERT executes two steps: delete then insert.
+
+```yaml title="Delete then insert."
+table:
+  pattern: "<table>.*.csv"
+  metadata:
+    ...
+    writeStrategy:
+      type: "DELETE_THEN_INSERT"
+      key: ["id", "name" ...]
+  attributes:
+    - ...
+```
+
+## SCD2
+
+Creates the table if it does not exist. Implements [Slowly Changing Dimension Type 2](https://en.wikipedia.org/wiki/Slowly_changing_dimension) to preserve the full history of each record. Each version carries start and end timestamps.
+
+```yaml title="SCD2. The column 'id' is the key, 'date' is the timestamp."
+table:
+  pattern: "<table>.*.csv"
+  metadata:
+    ...
+    writeStrategy:
+      type: "SCD2"
+      key: ["id"]
+      timestamp: "date"
+      startTs: "valid_from"
+      endTs: "valid_to"
+      on: BOTH
+  attributes:
+    - ...
+```
+
+The `startTs` and `endTs` properties define the column names that store the start and end timestamps of each version.
+
+They are optional. When omitted, Starlake uses `sl_start_ts` and `sl_end_ts` as defaults. You can change these defaults in `metadata/application.sl.yml`:
+
+```yaml
+application:
+  ...
+  scd2StartTimestamp: "sl_start_ts"
+  scd2EndTimestamp: "sl_end_ts"
+```
+
+## ADAPTATIVE write strategy
+
+The ADAPTATIVE strategy selects the write mode at runtime based on criteria such as day of the week, file size or file name pattern. This removes the need for manual intervention when the loading behavior must change periodically.
+
+**Example: APPEND on weekdays, OVERWRITE on Sundays.** Set this at the domain level to propagate to all tables:
+
+```yaml
+# _config.sl.yml
+load:
+   name: "DOMAIN"
+   metadata:
+      ...
+      writeStrategy:
+         types:
+             APPEND: 'dayOfWeek != 7'
+             OVERWRITE: 'dayOfWeek == 7'
+```
+
+**Example: strategy based on file name pattern.** Use capture groups in the table pattern and reference them with `group()`:
+
+```yaml
+# _config.sl.yml
+load:
+   name: "DOMAIN"
+   metadata:
+      ...
+      writeStrategy:
+         types:
+             OVERWRITE: 'group("mode") == "FULL"'
+             APPEND: 'group("mode") == "APPEND"'
+```
+
+```yaml
+#my_table.sl.yml
+table:
+  ...
+  pattern: ".*-(?<mode>FULL|APPEND).csv$"
+```
+
+Combine criteria with boolean operators `!`, `&&` and `||`. Use parentheses as needed.
+
+:::note
+When using strings in expressions, wrap them with double quotes `"`.
+:::
+
+### Available criteria
+
+Criteria| Description | Example
+:---|:---|:---
+group(index or name) | File pattern must use (named) capture groups | pattern: `my-file-(F|D).csv$` => m.group(1) == "F"
+fileSize | Current file size in bytes | fileSize > 1000
+fileSizeB | Current file size in bytes. Alias of fileSize |
+fileSizeKo | Current file size in Ko |
+fileSizeMo | Current file size in Mo |
+fileSizeGo | Current file size in Go |
+fileSizeTo | Current file size in To |
+isFirstDayOfMonth | Current day is first day of month|
+isLastDayOfMonth | Current day is last day of month|
+dayOfWeek | Integer representing day of week. Monday = 1, ..., Sunday = 7|
+isFileFirstDayOfMonth | File modification date is first day of month|
+isFileLastDayOfMonth | File modification date is last day of month|
+fileDayOfWeek | Integer representing file modification day of week. Monday = 1, ..., Sunday = 7|
+
+:::note
+For a criteria relying on datetime, you can change its timezone with `timezone` application settings in `application.sl.yml`
+:::
+
+## Frequently Asked Questions
+
+### What write strategies are available in Starlake?
+Starlake provides eight strategies: `APPEND`, `OVERWRITE`, `UPSERT_BY_KEY`, `UPSERT_BY_KEY_AND_TIMESTAMP`, `OVERWRITE_BY_PARTITION`, `DELETE_THEN_INSERT`, `SCD2` and `ADAPTATIVE`. Configure them via `metadata.writeStrategy` in the table YAML file.
+
+### When should I use UPSERT_BY_KEY vs SCD2?
+Use `UPSERT_BY_KEY` when you only need the latest version of each record identified by a key. Use `SCD2` (Slowly Changing Dimension Type 2) when you need to preserve the full history of changes to each record, with start and end timestamps tracking each version.
+
+### What is the difference between APPEND and OVERWRITE?
+`APPEND` inserts all new rows into the table without modifying existing data. `OVERWRITE` replaces all existing rows in the table with the new rows, effectively deleting everything and inserting fresh data.
+
+### What is the ADAPTATIVE write strategy?
+The `ADAPTATIVE` write strategy allows you to change the write mode at runtime based on criteria such as day of the week, file size, or file name pattern. For example, you can APPEND data on weekdays and OVERWRITE on Sundays.
+
+### How does DELETE_THEN_INSERT differ from UPSERT_BY_KEY?
+`DELETE_THEN_INSERT` first deletes all rows in the target table that have matching keys in the incoming data, then inserts all incoming rows. `UPSERT_BY_KEY` performs a merge operation, updating existing rows and inserting new ones in a single step.
+
+### When should I use UPSERT_BY_KEY_AND_TIMESTAMP instead of UPSERT_BY_KEY?
+Use `UPSERT_BY_KEY_AND_TIMESTAMP` when the source can send multiple versions of the same record. Only the most recent version (based on the timestamp column) overwrites the existing row.
+
+### How does OVERWRITE_BY_PARTITION work?
+Only the partitions present in the incoming data are overwritten. Partitions absent from the incoming batch remain untouched. This strategy requires a partition configured in the [`sink` section](/starflow/guides/load/sink).
+
+### Can the write strategy be defined at the domain level?
+Yes. The strategy defined in `_config.sl.yml` at the domain level propagates to all tables in the domain, unless a table overrides it locally.
+
+## Related
+
+- [Load Tutorial](./tutorial) -- end-to-end walkthrough for loading files into your warehouse
+- [Load Strategies](./load-strategies) -- control the order in which files are processed
+- [Transform Configuration](../transform/config) -- apply write strategies to SQL transform output
+- [Unit Test Load Pipelines](../unit-tests/load-tests) -- validate write strategy behavior locally
