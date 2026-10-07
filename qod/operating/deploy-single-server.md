@@ -397,7 +397,7 @@ SHOW GRANTS FOR USER alice;
 
 Notes worth passing to the DBA:
 
-- Admin SQL is available on the FlightSQL wire only (not over MCP or REST previews); any ADBC/JDBC client works, e.g. `scripts/adbc.sh`.
+- Admin SQL is available on the FlightSQL wire only (not over MCP or REST previews); any ADBC/JDBC client works, e.g. `scripts/bench/adbc.sh`.
 - Admin statements commit immediately; they are not covered by a surrounding `BEGIN`.
 - `SHOW USERS` / `SHOW ROLES` / `SHOW GRANTS` shadow real tables with those names; quote the identifier (`SHOW "users"`) to reach the table instead.
 - Password literals are redacted from statement history and logs.
@@ -607,7 +607,7 @@ Panels cover: overview stats (total QPS, error rate, active sessions, sessions i
 
 ### Option C: bundled full stack (evaluation only)
 
-`PROFILES=observability ./scripts/run-docker-compose.sh` starts manager + Postgres + Prometheus (`:9090`) + Grafana (`:3000`) with everything pre-wired. Note the bundled Grafana runs with anonymous admin access; do not expose it publicly.
+`PROFILES=observability ./scripts/docker/run-docker-compose.sh` starts manager + Postgres + Prometheus (`:9090`) + Grafana (`:3000`) with everything pre-wired. Note the bundled Grafana runs with anonymous admin access; do not expose it publicly.
 
 ---
 
@@ -825,7 +825,7 @@ Rules of the road in this configuration:
 Size nodes with DuckDB's published guidance (1 to 4 GB of memory per thread, 3 to 4 GB per thread for join-heavy workloads), then validate on the actual server with the shipped load tester before going live:
 
 ```bash
-./scripts/tpch-load-test/tpch-load-test.py --tenant acme --pool bi --workers 24 --iterations 50
+./scripts/bench/tpch-load-test/tpch-load-test.py --tenant acme --pool bi --workers 24 --iterations 50
 ```
 
 It reports throughput, success rate, and p50/p95/p99 latency. For a stress run, use 64 workers x 500 iterations. Watch the per-node DuckDB memory and spill gauges on the Grafana dashboard (section 8) while it runs: sustained spilling means the node's `memory_limit` is undersized for the workload.

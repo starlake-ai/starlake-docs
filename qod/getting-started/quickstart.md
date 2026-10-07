@@ -151,13 +151,13 @@ On **Windows** (experimental), the same `pip install qod && qod start` works nat
 Only Docker is required - the stack ships its own Postgres. From the root of a cloned repository:
 
 ```bash
-./scripts/run-docker-compose.sh
+./scripts/docker/run-docker-compose.sh
 ```
 
 This pulls the published `starlakeai/quack-on-demand` image plus a bundled `postgres:16-alpine`, brings the whole stack up, and waits for the manager to become ready - no local JDK or Postgres needed. Stop it with:
 
 ```bash
-./scripts/stop-docker-compose.sh
+./scripts/docker/stop-docker-compose.sh
 ```
 
 ### What comes up
@@ -167,7 +167,7 @@ Either path brings up the same surface:
 - Admin REST + UI on `http://localhost:20900`
 - Arrow FlightSQL edge on `localhost:31338` (TLS on, self-signed cert auto-generated under `certs/`)
 - Native Quack front door on `quack:localhost:9494` (plain HTTP by default; what a DuckDB client `ATTACH`es to)
-- Two admin accounts seeded - `admin` and `admin@localhost.local` - both with password `admin`
+- Two admin accounts seeded - `admin` and `admin@localhost.local` - both with the `ADMIN_PASSWORD` from `.env` (`admin` unless you change it before the first boot)
 - Two bootstrap tenants seeded from `src/main/resources/bootstrap-demo.yaml`: `acme` (tenant-db `acme_tpch`, pools `bi` + `etl`) and `globex` (tenant-db `globex_tpcds`, pool `bi`). Idempotent on restart.
 
 ### Boot flags
@@ -188,7 +188,7 @@ The same flags work on both `qod start` and `run-docker-compose.sh`, and they co
 For a clean, freshly seeded environment in one shot, combine them. This wipes any previous state and boots with both demo datasets at scale-factor 1:
 
 ```bash
-NUKE=1 LOAD_TPCH=1 LOAD_TPCDS=1 ./scripts/run-docker-compose.sh
+NUKE=1 LOAD_TPCH=1 LOAD_TPCDS=1 ./scripts/docker/run-docker-compose.sh
 ```
 
 Any seed flag (or the legacy `LOAD_TPC=1` shortcut, which enables all three) imports the bundled manifest under `src/main/resources/bootstrap-demo.yaml`, which declares the tenants, roles, groups, and users for both `acme` and `globex`; see the [Access control model](/qod/operating/rbac-model) for the full ACL matrix.
@@ -202,8 +202,8 @@ NUKE=1 DEMO=minimal LOAD_TPCH=1 qod start
 Pick one benchmark to keep boot snappy:
 
 ```bash
-NUKE=1 LOAD_TPCH=1 ./scripts/run-docker-compose.sh        # TPC-H only, ~10 s seed
-NUKE=1 LOAD_TPCDS=10 ./scripts/run-docker-compose.sh      # TPC-DS only, SF=10
+NUKE=1 LOAD_TPCH=1 ./scripts/docker/run-docker-compose.sh        # TPC-H only, ~10 s seed
+NUKE=1 LOAD_TPCDS=10 ./scripts/docker/run-docker-compose.sh      # TPC-DS only, SF=10
 ```
 
 The native path takes the same flags:
@@ -250,7 +250,7 @@ pip install --user adbc_driver_flightsql adbc_driver_manager
 Run the bundled `tpch-load-test` as a one-shot client (defaults to the TPC-H workload against `acme`'s `tpch1` schema):
 
 ```bash
-python3 ./scripts/tpch-load-test/tpch-load-test.py \
+python3 ./scripts/bench/tpch-load-test/tpch-load-test.py \
   --url grpc+tls://localhost:31338 --insecure \
   --user admin --password admin --superuser \
   --tenant acme --pool bi \
@@ -274,7 +274,7 @@ Each workload cycles a handful of representative queries (per-group aggregation,
 
 ```bash
 SF=1 ./scripts/load-tpcds-dbgen.sh                                            # seeds globex_tpcds.tpcds1
-python3 ./scripts/tpch-load-test/tpch-load-test.py --workload tpcds --tenant globex --pool bi \
+python3 ./scripts/bench/tpch-load-test/tpch-load-test.py --workload tpcds --tenant globex --pool bi \
   --user admin --password admin --superuser --insecure -w 4 -i 50
 ```
 

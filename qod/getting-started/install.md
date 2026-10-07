@@ -9,10 +9,10 @@ Quack on Demand ships as a Docker image and as a single uber-jar driven by the `
 
 ## Docker
 
-The published image is `starlakeai/quack-on-demand`. Use `scripts/run-docker.sh` to pull and run it against an external Postgres:
+The published image is `starlakeai/quack-on-demand`. Use `scripts/docker/run-docker.sh` to pull and run it against an external Postgres:
 
 ```bash
-PG_HOST=db.internal PG_PASSWORD=*** ./scripts/run-docker.sh
+PG_HOST=db.internal PG_PASSWORD=*** ./scripts/docker/run-docker.sh
 ```
 
 The script requires `PG_HOST` and `PG_PASSWORD`. Key options:
@@ -33,8 +33,8 @@ The script requires `PG_HOST` and `PG_PASSWORD`. Key options:
 To pin a version or use the latest snapshot:
 
 ```bash
-QOD_VERSION=0.3.2 PG_HOST=... PG_PASSWORD=*** ./scripts/run-docker.sh
-QOD_VERSION=latest-snapshot PG_HOST=... PG_PASSWORD=*** ./scripts/run-docker.sh
+QOD_VERSION=0.3.2 PG_HOST=... PG_PASSWORD=*** ./scripts/docker/run-docker.sh
+QOD_VERSION=latest-snapshot PG_HOST=... PG_PASSWORD=*** ./scripts/docker/run-docker.sh
 ```
 
 **Note:** do not mix Docker and native-jar runs against the same catalog DB. DuckLake records the absolute data path in Postgres metadata. Inside the container that path is `/app/ducklake/<db>`; natively it is `<host-cwd>/ducklake/<db>`. Use a different `PG_DBNAME` (or `QOD_PG_DBNAME`) per mode, or wipe the data directory between switches.

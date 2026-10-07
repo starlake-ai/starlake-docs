@@ -17,7 +17,7 @@ For first-boot-to-first-query, see the [Quickstart](/qod/getting-started/quickst
 
 ## What comes up
 
-`docker compose up` (or the `scripts/run-docker-compose.sh` wrapper) starts two services:
+`docker compose up` (or the `scripts/docker/run-docker-compose.sh` wrapper) starts two services:
 
 | Service | Role |
 |---|---|
@@ -28,20 +28,20 @@ Three optional profiles add services only when you ask for them: `seaweedfs` (an
 
 ## Boot it
 
-The `scripts/run-docker-compose.sh` wrapper handles port preflight, profile auto-detection, optional demo seeding, and readiness waiting. `QOD_VERSION` picks where the image comes from: a published tag (default `latest`) is pulled, `BUILD` builds it from the repo's Dockerfile, and `LOCAL` reuses the image a previous `BUILD` produced:
+The `scripts/docker/run-docker-compose.sh` wrapper handles port preflight, profile auto-detection, optional demo seeding, and readiness waiting. `QOD_VERSION` picks where the image comes from: a published tag (default `latest`) is pulled, `BUILD` builds it from the repo's Dockerfile, and `LOCAL` reuses the image a previous `BUILD` produced:
 
 ```bash
 # Pull the published image starlakeai/quack-on-demand and start (default).
-./scripts/run-docker-compose.sh
+./scripts/docker/run-docker-compose.sh
 
 # Pin a version.
-QOD_VERSION=0.3.2 ./scripts/run-docker-compose.sh
+QOD_VERSION=0.3.2 ./scripts/docker/run-docker-compose.sh
 
 # Build the image from this repo's Dockerfile instead of pulling.
-QOD_VERSION=BUILD ./scripts/run-docker-compose.sh
+QOD_VERSION=BUILD ./scripts/docker/run-docker-compose.sh
 
 # Reuse the image from a previous BUILD, without pulling or rebuilding.
-QOD_VERSION=LOCAL ./scripts/run-docker-compose.sh
+QOD_VERSION=LOCAL ./scripts/docker/run-docker-compose.sh
 ```
 
 Settings come from a `.env` file (copied from `.env.example` on first run). Edit it before booting, or pass the same keys as environment variables. The admin UI is at `http://localhost:20900/ui/`; log in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` (defaults `admin` / `admin`).
@@ -65,13 +65,13 @@ For example, to keep the metastore and DuckLake data under `/data`:
 
 ```bash
 PGDATA_DIR=/data/qod/pgdata DUCKLAKE_DIR=/data/qod/ducklake \
-  ./scripts/run-docker-compose.sh
+  ./scripts/docker/run-docker-compose.sh
 ```
 
 When DuckLake writes to an S3-compatible bucket instead of the filesystem (`QOD_DUCKLAKE_DATA_PATH=s3://...`), the `./ducklake` mount is unused; the catalog persists the `s3://` URL and every Quack node resolves it identically regardless of host. See [Object storage](#object-storage-s3-compatible).
 
 :::caution
-`NUKE=1 ./scripts/run-docker-compose.sh` asks you to type the project name on a terminal before wiping (non-tty runs skip the prompt) and only wipes the repo-relative defaults (`./pgdata`, `./ducklake`, `./certs`, `./seaweedfs`, `./seaweedfs-config`, `./starflow`, plus a legacy `./rustfs` left by checkouts that ran the briefly-bundled RustFS). External folders you point these overrides at are **not** auto-wiped; remove them by hand.
+`NUKE=1 ./scripts/docker/run-docker-compose.sh` asks you to type the project name on a terminal before wiping (non-tty runs skip the prompt) and only wipes the repo-relative defaults (`./pgdata`, `./ducklake`, `./certs`, `./seaweedfs`, `./seaweedfs-config`, `./starflow`, plus a legacy `./rustfs` left by checkouts that ran the briefly-bundled RustFS). External folders you point these overrides at are **not** auto-wiped; remove them by hand.
 :::
 
 Do not mix a Docker run and a native-jar run against the same catalog database. DuckLake records the absolute data path in Postgres metadata: inside the container it is `/app/ducklake/<db>`, natively it is `<host-cwd>/ducklake/<db>`. Use a different control-plane database name per mode, or wipe the data between switches.
@@ -93,18 +93,18 @@ The wrapper exposes these host ports (override in `.env`):
 
 ```bash
 # Tear down the stack and wipe the repo-relative state folders, then boot clean.
-NUKE=1 ./scripts/run-docker-compose.sh
+NUKE=1 ./scripts/docker/run-docker-compose.sh
 
 # Seed the demo tenants before the manager is ready.
 # Numeric value = scale factor for TPC-H, TPC-DS, and the SSB star schema.
 # (SF=1 is roughly 6M lineitem rows for TPC-H.)
-LOAD_TPC=1 ./scripts/run-docker-compose.sh
+LOAD_TPC=1 ./scripts/docker/run-docker-compose.sh
 
 # Both flags combine.
-NUKE=1 LOAD_TPC=1 ./scripts/run-docker-compose.sh
+NUKE=1 LOAD_TPC=1 ./scripts/docker/run-docker-compose.sh
 
 # Single-DuckDB profile: one tenant, one pool, one dual node.
-NUKE=1 DEMO=minimal LOAD_TPCH=1 ./scripts/run-docker-compose.sh
+NUKE=1 DEMO=minimal LOAD_TPCH=1 ./scripts/docker/run-docker-compose.sh
 ```
 
 `LOAD_TPC=1` seeds two demo tenants inside the container: `acme` loaded with TPC-H (8 tables in schema `tpch1`, database `acme_tpch`) plus the SSB star schema derived from it (5 tables in schema `ssb1`, same database), and `globex` loaded with TPC-DS (24 tables in schema `tpcds1`, database `globex_tpcds`). Use `LOAD_TPCH` / `LOAD_TPCDS` / `LOAD_SSB` to seed each independently. The bundled manifest `bootstrap-demo.yaml` declares the tenants, pools, roles, groups, and users; `QOD_BOOTSTRAP_YAML=classpath:bootstrap-demo.yaml` is injected into `.env` automatically so the manager imports it on startup.
@@ -137,7 +137,7 @@ The `.env.example` file has ready-to-uncomment blocks for both. The `spawn-quack
 
 ```bash
 docker compose --profile observability up -d
-# or: PROFILES=observability ./scripts/run-docker-compose.sh
+# or: PROFILES=observability ./scripts/docker/run-docker-compose.sh
 ```
 
 Prometheus scrapes the in-network `quack` service; Grafana serves a pre-provisioned dashboard on `:3000` (anonymous admin, so do not expose it to a public network as-is). See the Resilience and metrics references for what is scraped.
@@ -147,7 +147,7 @@ Prometheus scrapes the in-network `quack` service; Grafana serves a pre-provisio
 The `starflow` profile runs [Starflow](/starflow/overview) (the Starlake API + UI) next to the manager, paired with it over SSO: the admin UI's [Workbench](/qod/operating/admin-ui#workbench) entry opens Starflow already signed in, and Starflow queries the gateway as the signed-in QoD user. It is the Docker equivalent of `qod start --with-starflow`.
 
 ```bash
-STARFLOW_ENABLED=true ./scripts/run-docker-compose.sh
+STARFLOW_ENABLED=true ./scripts/docker/run-docker-compose.sh
 ```
 
 The wrapper activates the profile, generates the two shared secrets into `.env` when they are missing (`API_KEY` and `SESSION_JWT_SECRET`, printed by name only), picks the edge URL Starflow uses from `TLS`, and waits for Starflow before printing its URL (`http://localhost:9900` by default). The first run builds the Starflow image locally (`docker/starflow`), which downloads a Starflow release of several hundred MB.

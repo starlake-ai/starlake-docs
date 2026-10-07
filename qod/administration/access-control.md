@@ -205,7 +205,7 @@ qod pool permission list --tenant acme
 
 **Goal:** Confirm that a user sees exactly the rows and columns the policy intends - no more, no less.
 
-**Prerequisites:** `scripts/adbc.sh` is available (ships in the repo). The tenant, pool, and at least one data table exist.
+**Prerequisites:** `scripts/bench/adbc.sh` is available (ships in the repo). The tenant, pool, and at least one data table exist.
 
 **Steps (CLI - two-realm diff):**
 
@@ -214,20 +214,20 @@ Run the same query twice: once as the tenant user (policy enforced) and once as 
 ```bash
 # Query as a tenant user (Basic auth + tenant/pool routing headers).
 # --insecure trusts the edge's self-signed dev cert.
-scripts/adbc.sh --url grpc+tls://localhost:31338 \
+scripts/bench/adbc.sh --url grpc+tls://localhost:31338 \
   --user alice --password demo-alice \
   --tenant acme --pool bi --insecure \
   --query "SELECT c_mktsegment, count(*) FROM tpch1.customer GROUP BY 1 ORDER BY 1"
 
 # Same query as the bootstrap superuser (system realm) -- bypasses RLS/CLS,
 # so diffing the two outputs shows exactly what a policy filtered or masked.
-scripts/adbc.sh --url grpc+tls://localhost:31338 \
+scripts/bench/adbc.sh --url grpc+tls://localhost:31338 \
   --user root --password demo-root \
   --tenant acme --pool bi --superuser --insecure \
   --query "SELECT c_mktsegment, count(*) FROM tpch1.customer GROUP BY 1 ORDER BY 1"
 ```
 
-Note: `scripts/adbc.sh` is a CLI tool, not a REST call. It speaks the FlightSQL wire protocol over gRPC. On first run it provisions an ADBC Python venv under `${QOD_ADBC_VENV:-$HOME/.cache/qod-adbc/venv}`; set `PIP_PROXY` if you are behind a proxy.
+Note: `scripts/bench/adbc.sh` is a CLI tool, not a REST call. It speaks the FlightSQL wire protocol over gRPC. On first run it provisions an ADBC Python venv under `${QOD_ADBC_VENV:-$HOME/.cache/qod-adbc/venv}`; set `PIP_PROXY` if you are behind a proxy.
 
 **Verify:** The diff between the two outputs should match the intended policy - the tenant user's result should contain only the rows and columns the grant allows. If the outputs are identical, check that `QOD_ACL_ENABLED=true` is set; ACL is off by default.
 

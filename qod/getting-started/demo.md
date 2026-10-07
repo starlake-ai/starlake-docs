@@ -18,7 +18,7 @@ NUKE=1 LOAD_TPCH=1 qod start
 NUKE=1 LOAD_TPCH=1 LOAD_SSB=1 qod start
 
 # docker compose, TPC-DS only at SF=10
-QOD_VERSION=BUILD NUKE=1 LOAD_TPCDS=10 ./scripts/run-docker-compose.sh
+QOD_VERSION=BUILD NUKE=1 LOAD_TPCDS=10 ./scripts/docker/run-docker-compose.sh
 
 # kubernetes (local stack), both TPC benchmarks at independent scale factors
 NUKE=1 LOAD_TPCH=1 LOAD_TPCDS=10 ./charts/quack-on-demand/local-stack-k8s/run-local-stack-k8s.sh
