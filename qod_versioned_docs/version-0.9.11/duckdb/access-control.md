@@ -29,7 +29,7 @@ CREATE OR REPLACE ROW POLICY ON acme_tpch.tpch1.orders FOR ROLE analyst
   USING (region = ${tenantId} OR owner = ${user});
 
 CREATE OR REPLACE COLUMN POLICY ON acme_tpch.tpch1.customer COLUMN c_email
-  FOR ROLE analyst MASK USING (SHA256(CAST(c_email AS VARCHAR)));
+  FOR ROLE analyst MASK USING (SHA256('<long-random-secret>' || CAST(c_email AS VARCHAR)));
 ```
 
 Every grant, denial and policy change lands in the audit log. Quack on Demand runs as a single Docker container on one node, or on Kubernetes for multi-host fleets.

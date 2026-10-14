@@ -98,7 +98,7 @@ Comments are not allowed anywhere in an expression body. Dollar-quoted
 
 ```sql
 CREATE OR REPLACE COLUMN POLICY ON acme_tpch.tpch1.customer COLUMN c_email
-  FOR ROLE analyst MASK USING (SHA256(CAST(c_email AS VARCHAR)));
+  FOR ROLE analyst MASK USING (SHA256('<long-random-secret>' || CAST(c_email AS VARCHAR)));
 
 CREATE COLUMN POLICY ON acme_tpch.tpch1.customer COLUMN c_ssn
   FOR ROLE analyst DENY;
@@ -110,6 +110,15 @@ DROP COLUMN POLICY IF EXISTS ON acme_tpch.tpch1.customer COLUMN c_email
 Keyed by `(role, catalog, schema, table, column)`, same `OR REPLACE`
 semantics. Mask expressions run through the same transform validator as the
 UI: one scalar expression referencing only the protected column.
+
+A plain hash of a guessable value such as an email can be reversed by
+hashing candidate values and comparing. Prefix a secret key, as above: the
+masked values stay stable, so joins and `GROUP BY` on them still work, but
+they cannot be matched against a list. Generate the key yourself (for
+example `openssl rand -hex 32`) and keep it out of source control. It is
+stored in the policy, which only superusers and tenant admins can read, and
+it appears in manifest exports, so treat those as secret. Changing the key
+changes every masked value.
 
 ### Pool access
 

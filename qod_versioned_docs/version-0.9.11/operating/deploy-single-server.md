@@ -384,7 +384,7 @@ REVOKE ALL ON acme_sales.main.orders FROM ROLE analyst;
 CREATE ROW POLICY ON acme_sales.main.orders FOR ROLE analyst
   USING (region = ${tenantId} OR owner = ${user});
 CREATE COLUMN POLICY ON acme_sales.main.customers COLUMN email FOR ROLE analyst
-  MASK USING (SHA256(CAST(email AS VARCHAR)));
+  MASK USING (SHA256('<long-random-secret>' || CAST(email AS VARCHAR)));
 
 -- Pool connectivity
 GRANT CONNECT ON POOL bi TO USER alice;
