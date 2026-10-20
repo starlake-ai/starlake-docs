@@ -126,7 +126,7 @@ To use the Starlake JDBC driver from a SQL client, set the driver class to `ai.s
 ## Limitations
 
 - Only BigQuery and Snowflake are supported. Every other engine ignores the setting.
-- On BigQuery, [expectations](../200-load/210-expectations.mdx) run after a branched transform query the production table, not the branch copy. Check the branch output with your own queries.
+- On BigQuery, [expectations](../200-load/210-expectations.mdx) of a branched transform or native load query the production table, not the branch copy. Check the branch output with your own queries. Fixed in 1.8.14, where expectations check the branch copy.
 - On BigQuery, branch tables live in a single dataset, so table names must be unique across the domains you run on the branch.
 - The connection-level `sl_data_branch` option is read on BigQuery only.
 - Branches are never cleaned up automatically: drop them when you are done, or they keep accruing storage for the rows they change.

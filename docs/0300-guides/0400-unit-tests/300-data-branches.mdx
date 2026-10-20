@@ -61,6 +61,8 @@ When a native BigQuery transform runs on a branch, Starlake:
 
 A native load on a branch clones the target table and loads the files into `<branch>.<table>`.
 
+[Expectations](../200-load/210-expectations.mdx) of a branched transform or native load check the branch copy, the table the job actually wrote. Their reports record the branch name as the domain, so the expectations audit table tells branch runs apart from production runs.
+
 ```yaml
 # metadata/application.sl.yml
 application:
@@ -126,7 +128,6 @@ To use the Starlake JDBC driver from a SQL client, set the driver class to `ai.s
 ## Limitations
 
 - Only BigQuery and Snowflake are supported. Every other engine ignores the setting.
-- On BigQuery, [expectations](../200-load/210-expectations.mdx) run after a branched transform query the production table, not the branch copy. Check the branch output with your own queries.
 - On BigQuery, branch tables live in a single dataset, so table names must be unique across the domains you run on the branch.
 - The connection-level `sl_data_branch` option is read on BigQuery only.
 - Branches are never cleaned up automatically: drop them when you are done, or they keep accruing storage for the rows they change.
