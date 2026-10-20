@@ -1,0 +1,132 @@
+---
+title: "Testing on Production Data with Data Branches"
+description: "Run Starlake loads and transforms against production data on BigQuery or Snowflake without touching production tables. Set SL_DATA_BRANCH and every write lands in a sandbox built from zero-copy table clones."
+keywords: [starlake, data branch, zero-copy clone, bigquery clone, snowflake clone, SL_DATA_BRANCH, testing on production data, sandbox]
+---
+
+# Testing on production data with data branches
+
+[Unit tests](./050-concepts.mdx) run your pipeline on DuckDB against fixture data. Sometimes you need more: validating a new transform on the real production volume, or checking that a schema change does not break a MERGE on last month's data. A **data branch** does that. Set `SL_DATA_BRANCH` and Starlake redirects every write of the job into a sandbox built from zero-copy clones of your production tables. Production tables are never modified.
+
+:::note
+This page covers branches on BigQuery and Snowflake, driven by `SL_DATA_BRANCH`. DuckLake databases served by Quack-on-Demand have their own branching, with row-level diffs and reviewed merges: see [QoD branching](/qod/operating/branching).
+:::
+
+## Supported engines
+
+| Engine | How the branch is built | Where the results land |
+|---|---|---|
+| BigQuery (native transforms and native loads) | Source and target tables are copied with `CREATE TABLE ... CLONE`, and the task SQL is rewritten to use the copies | Dataset `<branch>` in the target table's project |
+| Snowflake (transforms and native loads) | The Starlake JDBC proxy driver clones each table with `CREATE TABLE ... CLONE` the first time a statement modifies it | Schema `<branch>` |
+| Any other engine | Not supported | Production: the setting is ignored |
+
+:::warning
+On PostgreSQL, DuckDB, Redshift and every other engine, `SL_DATA_BRANCH` has no effect and the job writes to production as usual. Do not rely on a branch there.
+:::
+
+## Enabling a branch
+
+The branch name is resolved in this order, first match wins:
+
+1. `SL_DATA_BRANCH` (or `sl_data_branch`) in the active environment: your shell, `metadata/env.sl.yml` or `metadata/env.<ENV>.sl.yml`
+2. `sl_data_branch` (or `SL_DATA_BRANCH`) in the options of the sink connection. BigQuery only: the Snowflake path reads the environment alone.
+
+An empty value or `None` disables branching.
+
+From the command line:
+
+```bash
+SL_DATA_BRANCH=test_order_summary starlake transform --name kpi.order_summary
+SL_DATA_BRANCH=test_order_summary starlake load --domains sales
+```
+
+Or for a whole environment, in `metadata/env.BRANCH.sl.yml`, activated with `SL_ENV=BRANCH`:
+
+```yaml
+version: 1
+env:
+  SL_DATA_BRANCH: "test_order_summary"
+```
+
+The branch name becomes a BigQuery dataset or a Snowflake schema, so use letters, digits and underscores only.
+
+## BigQuery
+
+When a native BigQuery transform runs on a branch, Starlake:
+
+1. Creates the dataset `<branch>` in the target table's project, in the `location` of the sink connection. `location` is required: the job fails without it.
+2. Parses the task SQL and clones every source table it references into `<branch>`, unless a table with that name already exists there.
+3. Clones the existing target table into `<branch>`, so MERGE and upsert [write strategies](../200-load/160-write-strategies.mdx) start from the production rows.
+4. Rewrites the presql, main SQL and postsql to read from and write to the clones. The result lands in `<branch>.<table>`.
+
+A native load on a branch clones the target table and loads the files into `<branch>.<table>`.
+
+```yaml
+# metadata/application.sl.yml
+application:
+  connectionRef: "bigquery"
+  connections:
+    bigquery:
+      type: "bigquery"
+      options:
+        location: "europe-west1"   # required for branching
+        authType: "APPLICATION_DEFAULT"
+```
+
+What this means in practice:
+
+- **The snapshot is taken on first use.** A source table is cloned the first time a task on the branch reads it, and later runs reuse that clone. To pick up fresh production data, use a new branch name or drop the branch dataset.
+- **Chained tasks see each other's output.** When a downstream task reads a table that an upstream task already wrote on the branch, it finds that table in `<branch>` and reads the branch version, not production. Running a whole DAG on the same branch therefore tests the chain end to end.
+- **All domains share one dataset.** `sales.orders` and `kpi.orders` would both map to `<branch>.orders`. Inside a single task the second one gets a `_1` suffix, but across tasks the first table created under that name wins. Keep table names unique across the domains you run on a branch.
+- **Spark-engine tasks are only half branched.** A task that runs on Spark and writes to BigQuery writes to `<branch>.<table>`, but reads its sources from production: only native BigQuery SQL is rewritten.
+
+## Snowflake
+
+On a branch, Starlake routes Snowflake connections through the Starlake JDBC proxy driver, which ships with Starlake: the URL `jdbc:snowflake:...` becomes `jdbc:starlake:snowflake:...`. On every new connection, Starlake opens the branch with:
+
+```sql
+BRANCH START <branch> WITH PERSIST = TRUE, KEEP = TRUE
+```
+
+From then on:
+
+- **Copy on write.** The first statement that modifies a table clones it into schema `<branch>`. That statement and all the later ones are rewritten to use the copy.
+- **Reads of untouched tables hit production.** A table the branch never modified is not copied, so reads see live production data, not a frozen snapshot.
+- **The branch outlives the job.** `PERSIST` keeps the history of the statements run on the branch, and `KEEP` keeps the copies after the connection closes. A later run with the same branch name picks up where the previous one stopped.
+
+## Inspecting the results
+
+On BigQuery, query the branch dataset and compare it with production:
+
+```sql
+-- rows the branch produces that production does not have
+SELECT * FROM `my-project.test_order_summary.order_summary`
+EXCEPT DISTINCT
+SELECT * FROM `my-project.kpi.order_summary`;
+```
+
+On Snowflake, query `<branch>.<table>` the same way. Through a connection opened with the Starlake JDBC driver, you can also run:
+
+```sql
+BRANCH DESCRIBE test_order_summary;  -- statements recorded on the branch, with their timestamps
+BRANCH STATUS test_order_summary;
+```
+
+## Promoting or discarding a branch
+
+There is no `starlake` command to apply or drop a branch yet. Do it directly on the warehouse:
+
+| Engine | Discard | Promote |
+|---|---|---|
+| BigQuery | Delete the dataset: `bq rm -r -f -d my-project:test_order_summary` | No apply step: run the job again without `SL_DATA_BRANCH` |
+| Snowflake | `BRANCH DROP test_order_summary` through the Starlake JDBC driver: drops the copies and the history | `BRANCH APPLY test_order_summary` replays the recorded statements on production. Or run the job again without `SL_DATA_BRANCH` |
+
+To use the Starlake JDBC driver from a SQL client, set the driver class to `ai.starlake.jdbc.StarlakeDriver` and prefix your usual Snowflake URL: `jdbc:starlake:snowflake://<account>.snowflakecomputing.com/...`.
+
+## Limitations
+
+- Only BigQuery and Snowflake are supported. Every other engine ignores the setting.
+- On BigQuery, [expectations](../200-load/210-expectations.mdx) run after a branched transform query the production table, not the branch copy. Check the branch output with your own queries.
+- On BigQuery, branch tables live in a single dataset, so table names must be unique across the domains you run on the branch.
+- The connection-level `sl_data_branch` option is read on BigQuery only.
+- Branches are never cleaned up automatically: drop them when you are done, or they keep accruing storage for the rows they change.

@@ -7,7 +7,7 @@ keywords: ["ducklake branching", "zero-copy branch", "data branching", "agents"]
 
 A branch is a writable, zero-copy clone of a DuckLake database at its current head. Agents and pipelines write on the branch, a human reviews the change set and the row-level diff, then merges it into main in one stamped, tagged snapshot. Reads and writes on a branch never touch the live database, and a branch-only token makes writing main impossible for the agent that holds it.
 
-Branching applies to `ducklake` databases only, and a branch cannot itself be branched.
+Branching applies to `ducklake` databases only, and a branch cannot itself be branched. To test Starflow pipelines on BigQuery or Snowflake production data, use [Starflow data branches](/starflow/guides/unit-tests/data-branches) instead.
 
 ## How a branch is built
 
