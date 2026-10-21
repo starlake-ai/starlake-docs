@@ -5,7 +5,6 @@ description: "DuckDB was built to run inside one process for one user. Put it be
 slug: securing-duckdb-server-in-production
 authors: [starlake]
 tags: [qod, duckdb, ducklake, security, engineering]
-draft: true
 ---
 
 ## Abstract
