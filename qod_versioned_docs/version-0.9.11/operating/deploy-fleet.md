@@ -19,7 +19,7 @@ qod start
 # Every server that should run a node (Linux or macOS)
 uv tool install qod            # or: pip install qod
 export QOD_FLEET_JOIN_TOKEN=<the same token>
-qod fleet join --manager https://mgr.internal:20900 [--advertise-host 10.0.3.17 ] [--name srv-07]
+qod fleet join --manager https://mgr.internal [--advertise-host 10.0.3.17 ] [--name srv-07]
 ```
 
 The rest of this page explains each line: what the manager needs, how to run `qod fleet join` as a service, how nodes are scheduled, what happens when a server goes down, and the security rules that come with a shared join token.
@@ -43,7 +43,7 @@ A fleet is a set of servers that joined by running `qod fleet join`. Joining mea
 - **Shared object storage for every DuckLake data path.** A node can land on any server, so every database's `dataPath` must be an object-store URL (`s3://...`, `gs://...`, `az://...`) reachable from all servers. A local path would only exist on one of them. [Managed storage](managed-storage.md) satisfies this by construction.
 - **The metastore PostgreSQL reachable from every server.** Nodes attach their DuckLake catalog directly, so each server must reach the Postgres host and port of every database it may serve.
 - **A private network between managers and servers** (VPC, VLAN, WireGuard). The manager talks to nodes over plain HTTP; see [Security](#security).
-- **An HTTPS URL for the manager's REST port.** The join process refuses a plain `http://` manager URL, because each assignment it receives carries database credentials. Put a TLS-terminating reverse proxy or load balancer in front of `:20900` (you need one under HA anyway), and list it in `QOD_FLEET_TRUSTED_PROXIES` so [join approval](#join-approval) sees each server's real address. `--insecure` accepts an `http://` URL; reserve it for tests on a trusted network.
+- **An HTTPS URL for the manager's REST port.** The join process refuses a plain `http://` manager URL, because each assignment it receives carries database credentials. Put a TLS-terminating reverse proxy or load balancer in front of `:20900` (you need one under HA anyway), and list it in `QOD_FLEET_TRUSTED_PROXIES` so [join approval](#join-approval) sees each server's real address. Point `--manager` at that proxy (`https://mgr.internal`), never `https://` at `:20900` itself: the REST port speaks plain HTTP, and `qod fleet join` keeps failing with a hint on that mismatch. `--insecure` accepts an `http://` URL such as `http://mgr.internal:20900`; reserve it for tests on a trusted network.
 
 ## Configure the manager
 
@@ -74,7 +74,7 @@ On each server, run `qod fleet join` with the manager URL and the join token. Pa
 
 ```bash
 export QOD_FLEET_JOIN_TOKEN=<the join token>
-qod fleet join --manager https://mgr.internal:20900 [--advertise-host 10.0.3.17] [--name srv-07]
+qod fleet join --manager https://mgr.internal [--advertise-host 10.0.3.17] [--name srv-07]
 ```
 
 `qod fleet join` keeps running: it heartbeats the manager and runs the node the manager assigns, so run it as a service (below).
@@ -83,7 +83,7 @@ The first heartbeat is the join. The server appears in `qod fleet servers` a few
 
 | Flag | Default | Meaning |
 |---|---|---|
-| `--manager` | env `QOD_MANAGER_URL` | Manager base URL, `https://host:20900`. Required. |
+| `--manager` | env `QOD_MANAGER_URL` | Manager base URL: the TLS proxy in front of the REST port, `https://host`. `http://host:20900` needs `--insecure`. Required. |
 | `--join-token` | env `QOD_FLEET_JOIN_TOKEN` | The fleet join token. Prefer the environment variable. |
 | `--name` | env `QOD_FLEET_NAME`, else the hostname | Server identity. Must be unique in the fleet. |
 | `--advertise-host` | env `QOD_FLEET_ADVERTISE_HOST`, else the first non-loopback IPv4 | Address the manager dials to reach the node. Set it explicitly on hosts with more than one network interface. |
@@ -164,7 +164,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=/usr/local/bin/qod fleet join --manager https://mgr.internal:20900 --advertise-host 10.0.3.17 --name %H
+ExecStart=/usr/local/bin/qod fleet join --manager https://mgr.internal --advertise-host 10.0.3.17 --name %H
 Environment=QOD_FLEET_JOIN_TOKEN=<the join token>
 Restart=always
 KillMode=control-group
@@ -197,7 +197,7 @@ journalctl -u qod-fleet-join -f
     <string>/usr/local/bin/qod</string>
     <string>fleet</string>
     <string>join</string>
-    <string>--manager</string><string>https://mgr.internal:20900</string>
+    <string>--manager</string><string>https://mgr.internal</string>
     <string>--advertise-host</string><string>10.0.3.18</string>
     <string>--name</string><string>mac-01</string>
   </array>
@@ -238,7 +238,7 @@ The manager and the servers can all be containers. Each server is one container 
 ```bash
 docker run -d --name qod-worker --restart unless-stopped --stop-timeout 70 \
   -p 21900:21900 \
-  -e QOD_MANAGER_URL=https://mgr.internal:20900 \
+  -e QOD_MANAGER_URL=https://mgr.internal \
   -e QOD_FLEET_JOIN_TOKEN=<the join token> \
   -e QOD_FLEET_NAME=srv-07 \
   -e QOD_FLEET_ADVERTISE_HOST=10.0.3.17 \

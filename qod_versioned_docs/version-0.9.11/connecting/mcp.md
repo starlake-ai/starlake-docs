@@ -72,7 +72,7 @@ Claude Desktop or any client that takes a JSON server entry:
 
 ```json
 {
-  "url": "https://your-manager:20900/mcp",
+  "url": "https://your-manager/mcp",
   "headers": { "Authorization": "Bearer qod_pat_..." }
 }
 ```
