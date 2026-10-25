@@ -136,14 +136,14 @@ When `QOD_SESSION_JWT_SECRET` is unset, the manager generates a fresh random sec
 
 ## Management plane (REST and UI)
 
-The management plane covers `/api/*` calls from the admin UI and any REST client. It runs through the same `AuthenticationService` chain as the edge for the password check, but its **authorization** (the user's role and the set of tenants they may manage) is resolved separately: for the login without a tenant by `auth.management.identitySource`, for a tenant login by that tenant's own sign-in mode (a `db` tenant takes the authenticating user's row, an OIDC tenant the single sign-on lookup of its own rows).
+The management plane covers `/api/*` calls from the admin UI and any REST client. It runs through the same `AuthenticationService` chain as the edge for the password check, but its **authorization** (the user's role and the set of tenants they may manage) is resolved separately, and always from `qodstate_user` rows, never from an identity provider's claim. A password the Database provider verified is its own grant (a `db` tenant's login takes that tenant's row; the login without a tenant, under `identitySource=db`, takes the system row). An identity an IdP proved is looked up in `qodstate_user` in the realm the login names instead: a tenant's single sign-on, the manager-wide Keycloak or Azure password grant, and, under `identitySource=oidc`, every login without a tenant.
 
 ### Identity source
 
 `auth.management.identitySource` (env `QOD_MGMT_IDENTITY_SOURCE`, default `db`):
 
-- **`db`** - the authenticating profile IS the grant. Whatever provider validated the password (Database or OIDC ROPC) determines `role` and `tenant`. JWT role claims directly mint admin sessions, so this is appropriate when an OIDC IdP is trusted as the role source, or in single-system DB-only deployments.
-- **`oidc`** - the JWT's role and tenant claims are **discarded**. After authentication succeeds, the management plane looks up the user in `qodstate_user` and resolves role + the set of tenants they may manage from the database. An OIDC-verified identity with no matching `qodstate_user` row is rejected with `403 not_provisioned`.
+- **`db`** - a password the Database provider verified IS the grant: the `qodstate_user` row it checked (the `(tenant, username)` row, or the system row when no tenant was given) determines `role` and `tenant`. A login answered by an OIDC password-grant (ROPC) provider is not: the IdP only proves who the user is, its role and tenant claims are **discarded**, and the grants come from the `qodstate_user` rows of the realm the login names, as in `oidc` below. An IdP admin claim alone makes nobody an admin.
+- **`oidc`** - the JWT's role and tenant claims are **discarded**, for every login without a tenant. After authentication succeeds, the management plane looks up the user in `qodstate_user` and resolves role + the set of tenants they may manage from the database. An identity with no matching `qodstate_user` row is rejected with `403 not_provisioned`.
 
 In `oidc` mode the REST login without a tenant (`POST /api/auth/login`, which `qod login` uses) still runs the same authentication chain, the database authenticator included, so a DB password is checked there as in `db` mode; what changes is the grant, which is looked up in `qodstate_user` as described below instead of being the authenticating profile's. The admin UI's bare `/ui/` offers single sign-on instead of the password form. A tenant whose own sign-in is OIDC refuses DB credentials under either `identitySource` (`400 sso_required`). The DB authenticator also serves the FlightSQL edge.
 
@@ -151,11 +151,15 @@ The JWT's `preferred_username` claim is matched against `qodstate_user.username`
 
 A tenant's own SSO (`/ui/?tenant=<id>`) resolves its grants this way whatever `identitySource` says, and only from that tenant's rows: an identity whose rows are all in other tenants, or whose only row is a superuser's, is refused `403 not_provisioned`, and the session is never a superuser's. Superusers sign in through the bare `/ui/`. See [Per-tenant OIDC](./auth-providers.md#per-tenant-oidc).
 
+So does a password login answered by the manager-wide Keycloak or Azure password grant, under either `identitySource`. A login naming a `db` tenant reads that tenant's rows only: an admin row opens the operator console, a `kind=user` row the [Profile page](./admin-ui.md#profile-page-regular-users), and no row at all is `403 not_provisioned`, whatever role claim the IdP issues and even when a superuser of the same name exists. A login without a tenant reads the rows the identity holds in any realm: a superuser row makes a superuser session, admin rows of tenants a multi-tenant admin session.
+
+> **Upgrading to 0.10.2: IdP password logins need a `qodstate_user` row.** Before 0.10.2 a password login answered by the Keycloak or Azure password grant took its role from the IdP's claim, for a `db` tenant's login form and for the login without a tenant under the default `identitySource=db`: an `admin` claim opened a superuser session with no `qodstate_user` row at all. It now needs a row in the realm it names (a row of the tenant for a tenant login; a superuser row or tenant admin rows without a tenant). Before upgrading, create the rows of the people who rely on such a login (`qod user create`).
+
 ### Multi-tenant scope
 
 A management session carries two pieces of authorization state:
 
-- `superuser` - for the system login (blank Tenant ID), `true` iff the user has a `qodstate_user` row with `tenant IS NULL` and `kind = admin` (under `identitySource=db`, an admin role claim of an OIDC password-grant provider counts too, as described above). Cross-tenant by design. A tenant's single sign-on never yields it: it reads that tenant's rows only.
+- `superuser` - for the system login (blank Tenant ID), `true` iff the user has a `qodstate_user` row with `tenant IS NULL` and `kind = admin`; an IdP's admin role claim never counts. Cross-tenant by design. A login naming a tenant never yields it (a tenant's single sign-on, or an IdP password grant on a `db` tenant's form): it reads that tenant's rows only.
 - `manageableTenants` - the set of tenants where the user has `kind = admin`. Empty for a pure superuser; non-empty for tenant-scoped admins.
 
 The UI exposes both via `/api/auth/login` and `/api/auth/whoami` so a multi-tenant admin sees a per-screen tenant switcher rather than picking one tenant at login time.
@@ -170,10 +174,10 @@ A per-request guard rejects management calls that target a tenant outside `manag
 |---|---|---|---|---|---|
 | true | no | db | DB Basic only (Bearer rejected) | DB Basic only | role + tenant from the DB row |
 | true | no | oidc | DB Basic only | DB Basic only (the bare `/ui/` offers SSO instead of the password form) | qodstate_user grant lookup keyed on the authenticated username |
-| true | yes | db | DB Basic; OIDC ROPC; OIDC Bearer | DB Basic; then OIDC ROPC. First match wins. JWT role claim can mint admin. | role + tenant from the authenticating profile |
+| true | yes | db | DB Basic; OIDC ROPC; OIDC Bearer | DB Basic; then OIDC ROPC. First match wins. | DB Basic: role + tenant from the row it verified. OIDC ROPC: qodstate_user grant lookup in the login's realm; JWT role/tenant discarded |
 | true | yes | oidc | DB Basic; OIDC ROPC; OIDC Bearer | DB Basic tried first; then OIDC ROPC. First match wins. | qodstate_user grant lookup keyed on the verified `preferred_username` / `email`; JWT role/tenant discarded |
 | false | no | any | nothing enabled; all requests rejected | nothing enabled; all requests rejected | n/a |
-| false | yes | db | OIDC ROPC; OIDC Bearer | OIDC ROPC only | role + tenant from the OIDC-authenticated profile; JWT role claim can mint admin |
+| false | yes | db | OIDC ROPC; OIDC Bearer | OIDC ROPC only | qodstate_user grant lookup in the login's realm; JWT role/tenant discarded |
 | false | yes | oidc | OIDC ROPC; OIDC Bearer | OIDC ROPC only | qodstate_user grant lookup; JWT role/tenant discarded |
 
 Two cross-cutting refinements that the column structure above does not show:
@@ -187,7 +191,7 @@ Recommended combinations:
 - Production with an IdP, strict OIDC management: `database.enabled=false`, OIDC enabled, `identitySource=oidc`. Every login goes through the IdP and the manager controls authorization via `qodstate_user`.
 - Production with IdP and DB break-glass for edge clients: `database.enabled=true`, OIDC enabled, `identitySource=oidc`. JDBC clients can still hit FlightSQL with DB credentials, but management login is forced through the IdP.
 
-The combination `identitySource=db` with OIDC enabled trusts whatever role claim the IdP issues; only use it when the IdP and the role mapping are fully under your control.
+With an OIDC provider enabled, an IdP's role claim grants nothing on the management plane under either `identitySource`: provision the `qodstate_user` rows of the people who sign in through the IdP's password grant too (`qod user create`), as for single sign-on.
 
 ## Per-tenant OIDC client override (Google)
 

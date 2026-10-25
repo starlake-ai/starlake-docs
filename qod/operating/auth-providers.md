@@ -131,6 +131,8 @@ QOD_AUTH_KEYCLOAK_CLIENT_SECRET=client-secret
 
 The JWKS URL is derived automatically as `{baseUrl}/realms/{realm}/protocol/openid-connect/certs`. For ROPC, the token endpoint is `{baseUrl}/realms/{realm}/protocol/openid-connect/token`.
 
+On the admin console (`POST /api/auth/login`, the UI form, `qod login`), a password login answered by this grant only proves who the user is: its rights come from the user's `qodstate_user` rows, never from the role claim (see [Identity source](./authentication.md#identity-source)).
+
 ---
 
 ## Google
@@ -178,6 +180,8 @@ QOD_AUTH_AZURE_CLIENT_SECRET=your-app-client-secret
 ```
 
 The JWKS URL is derived as `https://login.microsoftonline.com/{tenantId}/discovery/v2.0/keys`. For ROPC the token endpoint is `https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token`.
+
+As with Keycloak, a password login to the admin console answered by this grant takes its rights from the user's `qodstate_user` rows, never from the role claim (see [Identity source](./authentication.md#identity-source)).
 
 ---
 
@@ -251,12 +255,12 @@ Register this **redirect URI** on each IdP client:
 ${QOD_MGMT_PUBLIC_BASE_URL}/api/auth/oidc/callback
 ```
 
-The boot warning about an unset `QOD_MGMT_PUBLIC_BASE_URL` (logged at WARN, so printed only with `QOD_LOG_LEVEL=WARN` or lower) appears only when `auth.management.identitySource` is `oidc`, but a tenant's SSO runs under the default `db` as well, and builds its redirect URI the same way: set the URL before any tenant signs in through its IdP anywhere but on localhost. Otherwise the redirect URI the manager sends is `http://localhost:<manager port>` (20900 by default).
+The boot warning about an unset `QOD_MGMT_PUBLIC_BASE_URL` (logged at WARN, so printed only with `QOD_LOG_LEVEL=WARN` or lower) appears only when `auth.management.identitySource` is `oidc`, but a tenant's SSO runs under the default `db` as well, and builds its redirect URI the same way: set the URL before any tenant signs in through its IdP anywhere but on localhost. Otherwise the redirect URI the manager sends is `http://localhost:<manager port>/api/auth/oidc/callback` (the base plus the callback path; 20900 is the default port).
 
 ### Login URLs and scope
 
 - `/ui/` (no tenant) is the **system / superuser** login. Its mode follows `QOD_MGMT_IDENTITY_SOURCE`; in `oidc` it authenticates against the manager-wide issuer above. Only a superuser (`qodstate_user.tenant IS NULL`, kind admin) may complete it; a non-superuser is rejected and must sign in through their tenant.
-- `/ui/?tenant=<id>` follows **that tenant's** `authProvider`: a `db` tenant gets the password form, an OIDC tenant authenticates against that tenant's OIDC client, whatever `QOD_MGMT_IDENTITY_SOURCE` says. The SSO login reads that tenant's `qodstate_user` rows only and needs an admin grant on one of them (a `kind=user` row answers `403 admin_required`), so the session it opens is never a superuser's: an SSO identity whose rows are all in other tenants, or whose only row is a superuser's, is refused `403 not_provisioned` (the callback lands on `/ui/?error=not_provisioned`). Superusers sign in through the bare `/ui/`. A `db` tenant's password login takes the authenticated user's own row instead: an admin lands on the operator console, a regular (`kind=user`) user on the [Profile page](./admin-ui.md#profile-page-regular-users). When the manager-wide Keycloak or Azure provider is enabled, its password-grant backend can also answer that login, with no tenant and the IdP's role claim (an admin claim yields a superuser session); trusting that claim is the operator's decision, see [Identity source](./authentication.md#identity-source).
+- `/ui/?tenant=<id>` follows **that tenant's** `authProvider`: a `db` tenant gets the password form, an OIDC tenant authenticates against that tenant's OIDC client, whatever `QOD_MGMT_IDENTITY_SOURCE` says. The SSO login reads that tenant's `qodstate_user` rows only and needs an admin grant on one of them (a `kind=user` row answers `403 admin_required`), so the session it opens is never a superuser's: an SSO identity whose rows are all in other tenants, or whose only row is a superuser's, is refused `403 not_provisioned` (the callback lands on `/ui/?error=not_provisioned`). Superusers sign in through the bare `/ui/`. A `db` tenant's password login takes the authenticated user's own row instead: an admin lands on the operator console, a regular (`kind=user`) user on the [Profile page](./admin-ui.md#profile-page-regular-users). When the manager-wide Keycloak or Azure provider is enabled, its password-grant backend can also answer that login (the chain tries it after the database check), but it only proves who the user is: the login is read like the SSO one, from that tenant's `qodstate_user` rows alone. It needs an admin row for the console or a `kind=user` row for the Profile page, whatever role claim the IdP issues, and an identity with no row in the tenant is refused `403 not_provisioned`; a login without a tenant reads the rows the identity holds in any realm. See [Identity source](./authentication.md#identity-source).
 
 ### Per-tenant OIDC
 
