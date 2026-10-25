@@ -35,16 +35,16 @@ qod tenant create acme
 
 ```bash
 qod tenant create acme --auth-provider keycloak \
-  --auth-config issuer=https://kc.example.com/realms/acme --auth-config realm=acme
+  --auth-config issuerUrl=https://kc.example.com/realms/acme --auth-config clientId=qod-acme \
+  --auth-config baseUrl=https://kc.example.com --auth-config realm=acme
 ```
 
-`authConfig` is empty for `db`. For OIDC providers it expects `issuer` (full URL) plus one of `realm` (Keycloak), `hd` (Google Workspace domain), `tenantId` (Azure), or `userPoolId` (Cognito).
+`authConfig` is empty for `db`. For OIDC providers two things read it, each with the keys it needs:
 
-For Google, one optional extra key gives the tenant its own OAuth client instead of sharing the manager-wide one from `quack-flightsql.auth.google.*`:
+- The admin-console sign-in reads `issuerUrl` (the OIDC discovery base), `clientId` and an optional `scopes`, plus a client secret that is kept outside `authConfig`: set it with `qod tenant set-auth ... --client-secret-prompt` (that command replaces the whole `authConfig`, so repeat the keys above; a superuser may use `clientSecretRef` instead). The tenant's console sign-in is on once `issuerUrl`, `clientId` and a secret are all set.
+- FlightSQL bearer validation reads `clientId` plus the provider's own fields: `baseUrl` and `realm` (Keycloak), `tenantId` (Azure AD), `region` and `userPoolId` (Cognito). Google needs only `clientId`. A tenant that sets all of its provider's fields gets its own OAuth client, whose `clientId` is the audience of its tokens, instead of sharing the manager-wide one from `quack-flightsql.auth.<provider>.*`; a missing field falls back to the global client.
 
-- `clientId` - the tenant's Google OAuth client ID.
-
-Leaving it blank falls back to the global client. Keycloak, Azure AD and AWS Cognito tenants get the same override from their own fields. The client secret of the tenant's admin-console sign-in is a separate, write-only value (`qod tenant set-auth --client-secret-prompt`, never part of `--auth-config`). See [Authentication providers](./auth-providers.md#per-tenant-google-oauth-clients) for the per-provider details.
+See [Per-tenant OIDC](./auth-providers.md#per-tenant-oidc) for the console sign-in and [Authentication providers](./auth-providers.md#per-tenant-google-oauth-clients) for the bearer override.
 
 ### List, disable, change auth, delete
 

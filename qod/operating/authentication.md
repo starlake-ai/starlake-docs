@@ -136,7 +136,7 @@ When `QOD_SESSION_JWT_SECRET` is unset, the manager generates a fresh random sec
 
 ## Management plane (REST and UI)
 
-The management plane covers `/api/*` calls from the admin UI and any REST client. It runs through the same `AuthenticationService` chain as the edge for the password check, but its **authorization** (the user's role and the set of tenants they may manage) is resolved separately by `auth.management.identitySource`.
+The management plane covers `/api/*` calls from the admin UI and any REST client. It runs through the same `AuthenticationService` chain as the edge for the password check, but its **authorization** (the user's role and the set of tenants they may manage) is resolved separately: for the login without a tenant by `auth.management.identitySource`, for a tenant login by that tenant's own sign-in mode (a `db` tenant takes the authenticating user's row, an OIDC tenant the single sign-on lookup of its own rows).
 
 ### Identity source
 
@@ -145,7 +145,7 @@ The management plane covers `/api/*` calls from the admin UI and any REST client
 - **`db`** - the authenticating profile IS the grant. Whatever provider validated the password (Database or OIDC ROPC) determines `role` and `tenant`. JWT role claims directly mint admin sessions, so this is appropriate when an OIDC IdP is trusted as the role source, or in single-system DB-only deployments.
 - **`oidc`** - the JWT's role and tenant claims are **discarded**. After authentication succeeds, the management plane looks up the user in `qodstate_user` and resolves role + the set of tenants they may manage from the database. An OIDC-verified identity with no matching `qodstate_user` row is rejected with `403 not_provisioned`.
 
-In `oidc` mode the management login skips the database authenticator entirely, even if `auth.database.enabled=true`. The DB authenticator continues to serve the FlightSQL edge.
+In `oidc` mode the REST login without a tenant (`POST /api/auth/login`, which `qod login` uses) still runs the same authentication chain, the database authenticator included, so a DB password is checked there as in `db` mode; what changes is the grant, which is looked up in `qodstate_user` as described below instead of being the authenticating profile's. The admin UI's bare `/ui/` offers single sign-on instead of the password form. A tenant whose own sign-in is OIDC refuses DB credentials under either `identitySource` (`400 sso_required`). The DB authenticator also serves the FlightSQL edge.
 
 The JWT's `preferred_username` claim is matched against `qodstate_user.username`; the `email` claim is tried as a fallback.
 
@@ -155,7 +155,7 @@ A tenant's own SSO (`/ui/?tenant=<id>`) resolves its grants this way whatever `i
 
 A management session carries two pieces of authorization state:
 
-- `superuser` - `true` iff the user has a `qodstate_user` row with `tenant IS NULL` and `kind = admin`. Cross-tenant by design.
+- `superuser` - for the system login (blank Tenant ID), `true` iff the user has a `qodstate_user` row with `tenant IS NULL` and `kind = admin` (under `identitySource=db`, an admin role claim of an OIDC password-grant provider counts too, as described above). Cross-tenant by design. A tenant's single sign-on never yields it: it reads that tenant's rows only.
 - `manageableTenants` - the set of tenants where the user has `kind = admin`. Empty for a pure superuser; non-empty for tenant-scoped admins.
 
 The UI exposes both via `/api/auth/login` and `/api/auth/whoami` so a multi-tenant admin sees a per-screen tenant switcher rather than picking one tenant at login time.
@@ -169,7 +169,7 @@ A per-request guard rejects management calls that target a tenant outside `manag
 | `database.enabled` | OIDC provider enabled | `identitySource` | Edge authentication | REST mgmt authentication | REST mgmt authorization |
 |---|---|---|---|---|---|
 | true | no | db | DB Basic only (Bearer rejected) | DB Basic only | role + tenant from the DB row |
-| true | no | oidc | DB Basic only | impossible: no OIDC provider to call, login always fails | n/a |
+| true | no | oidc | DB Basic only | DB Basic only (the bare `/ui/` offers SSO instead of the password form) | qodstate_user grant lookup keyed on the authenticated username |
 | true | yes | db | DB Basic; OIDC ROPC; OIDC Bearer | DB Basic; then OIDC ROPC. First match wins. JWT role claim can mint admin. | role + tenant from the authenticating profile |
 | true | yes | oidc | DB Basic; OIDC ROPC; OIDC Bearer | DB Basic tried first; then OIDC ROPC. First match wins. | qodstate_user grant lookup keyed on the verified `preferred_username` / `email`; JWT role/tenant discarded |
 | false | no | any | nothing enabled; all requests rejected | nothing enabled; all requests rejected | n/a |
@@ -197,7 +197,7 @@ By default every Google OIDC tenant validates tokens against the single `quack-f
 
 When set, the edge substitutes the per-tenant authenticator into the bearer chain for that tenant's handshakes; for every other tenant the global Google authenticator is used as before. Validating a bearer token needs only Google's public keys and the client id, so the override reads no client secret; the client secret a tenant stores serves its admin-console sign-in ([Per-tenant OIDC](./auth-providers.md#per-tenant-oidc)). Keycloak, Azure AD and AWS Cognito tenants get the same override from their own fields ([Authentication providers](./auth-providers.md#per-tenant-google-oauth-clients)). The `setTenantAuth` REST endpoint invalidates the cached per-tenant entry so the next handshake re-reads `qodstate_tenant.authConfig`.
 
-Tenants that have NOT set `clientId` keep using the global block - adoption is incremental. Other selectors (`issuer`, `hd` for Google Workspace domain) keep working in both modes.
+Tenants that have NOT set `clientId` keep using the global block - adoption is incremental.
 
 ## Running without providers (development only)
 

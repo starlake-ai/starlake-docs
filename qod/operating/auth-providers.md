@@ -48,7 +48,7 @@ The second column is the account kind (`admin` or `user`). The column was named 
 
 `QOD_ADMIN_PASSWORD` is used on the first boot only, to create each admin row that is missing; changing it and restarting rotates nothing. Rotate the password with `qod auth change-password`, and recover a lost one with `qod admin reset-password`. It writes straight into the control-plane database and never starts Postgres: against your own Postgres it works with the manager down, while the `qod serve` embedded control plane must be running (a stopped one is refused; the default target is the embedded one only while it runs, else `QOD_PG_*`). The seeded admin's account kind is `QOD_ADMIN_KIND` (default `admin`; formerly `QOD_ADMIN_ROLE`, now ignored).
 
-On the management plane (REST/UI), DB credentials are accepted when `auth.management.identitySource=db` (the default). Setting it to `oidc` skips the DB authenticator on the management login even with this provider enabled; the edge keeps using it.
+On the management plane (REST/UI), DB credentials are checked under either value of `auth.management.identitySource`: for the login without a tenant the setting changes how the session's grants are resolved (see [Identity source](./authentication.md#identity-source)), not whether this provider runs, although under `oidc` the bare `/ui/` offers single sign-on instead of the password form. A tenant whose own sign-in is OIDC refuses DB credentials under either value (`400 sso_required`, see [Admin UI single sign-on](#admin-ui-single-sign-on-oidc)). The edge takes them in every case.
 
 > **Upgrading from a single-query deployment**: the old `QOD_AUTH_DB_QUERY` setting is gone, along with the `(tenant IS NULL OR tenant = ?)` wildcard fallback. Pre-existing JDBC URLs that used the bootstrap admin (`admin@localhost.local`) against tenants must now add `?superuser=true` to the URL. There is no migration on the `qodstate_user` table itself.
 
@@ -238,8 +238,10 @@ QOD_MGMT_OIDC_CLIENT_ID=qod-admin
 QOD_MGMT_OIDC_CLIENT_SECRET=...                     # confidential client secret
 QOD_MGMT_OIDC_SCOPES="openid email profile"         # default "openid email profile"
 
-# Externally visible manager URL, used to build the redirect_uri. MUST match the
-# redirect URI registered on the IdP client. When unset, derived from the request.
+# Externally visible manager URL, used to build the redirect_uri of the bare /ui/ and
+# of every tenant's SSO. MUST match the redirect URI registered on the IdP client.
+# When unset it is http://localhost:<manager port>, NOT derived from the request:
+# set it for any non-localhost deploy.
 QOD_MGMT_PUBLIC_BASE_URL=https://qod.example.com
 ```
 
@@ -249,10 +251,12 @@ Register this **redirect URI** on each IdP client:
 ${QOD_MGMT_PUBLIC_BASE_URL}/api/auth/oidc/callback
 ```
 
+The boot warning about an unset `QOD_MGMT_PUBLIC_BASE_URL` (logged at WARN, so printed only with `QOD_LOG_LEVEL=WARN` or lower) appears only when `auth.management.identitySource` is `oidc`, but a tenant's SSO runs under the default `db` as well, and builds its redirect URI the same way: set the URL before any tenant signs in through its IdP anywhere but on localhost. Otherwise the redirect URI the manager sends is `http://localhost:<manager port>` (20900 by default).
+
 ### Login URLs and scope
 
 - `/ui/` (no tenant) is the **system / superuser** login. Its mode follows `QOD_MGMT_IDENTITY_SOURCE`; in `oidc` it authenticates against the manager-wide issuer above. Only a superuser (`qodstate_user.tenant IS NULL`, kind admin) may complete it; a non-superuser is rejected and must sign in through their tenant.
-- `/ui/?tenant=<id>` follows **that tenant's** `authProvider`: a `db` tenant gets the password form, an OIDC tenant authenticates against that tenant's OIDC client, whatever `QOD_MGMT_IDENTITY_SOURCE` says. Either way it requires an admin grant on a `qodstate_user` row of that tenant, and the session it opens is never a superuser's: an SSO identity whose rows are all in other tenants, or whose only row is a superuser's, is refused `403 not_provisioned` (the callback lands on `/ui/?error=not_provisioned`). Superusers sign in through the bare `/ui/`.
+- `/ui/?tenant=<id>` follows **that tenant's** `authProvider`: a `db` tenant gets the password form, an OIDC tenant authenticates against that tenant's OIDC client, whatever `QOD_MGMT_IDENTITY_SOURCE` says. The SSO login reads that tenant's `qodstate_user` rows only and needs an admin grant on one of them (a `kind=user` row answers `403 admin_required`), so the session it opens is never a superuser's: an SSO identity whose rows are all in other tenants, or whose only row is a superuser's, is refused `403 not_provisioned` (the callback lands on `/ui/?error=not_provisioned`). Superusers sign in through the bare `/ui/`. A `db` tenant's password login takes the authenticated user's own row instead: an admin lands on the operator console, a regular (`kind=user`) user on the [Profile page](./admin-ui.md#profile-page-regular-users). When the manager-wide Keycloak or Azure provider is enabled, its password-grant backend can also answer that login, with no tenant and the IdP's role claim (an admin claim yields a superuser session); trusting that claim is the operator's decision, see [Identity source](./authentication.md#identity-source).
 
 ### Per-tenant OIDC
 
@@ -285,7 +289,7 @@ qod tenant set-auth acme --auth-provider keycloak \
 
 > **Upgrading to 0.10.2: tenant SSO binds that tenant's rows only.** Before 0.10.2 a tenant's SSO matched the identity against the `qodstate_user` rows of every tenant and the superuser rows. It now matches that tenant's rows alone, so a superuser who holds no row of that tenant and signs in through its IdP gets `403 not_provisioned`: superusers sign in through the bare `/ui/`.
 
-> **Upgrading to 0.10.2: parked references.** Secret references saved before 0.10.2 are parked, because who saved them was not recorded. Changeset `0048` moves each tenant's `clientSecretRef` to `clientSecretRefUnconfirmed`, which nothing reads, so that tenant's console sign-in answers `tenant_oidc_misconfigured` until it is restored. Every boot logs an error line per parked tenant: the tenant, the parked reference, a request to confirm that the tenant's `issuerUrl` is its own identity provider (the secret is sent to it), and the restore command. A superuser restores the reference by saving it again:
+> **Upgrading to 0.10.2: parked references.** Secret references saved before 0.10.2 are parked, because who saved them was not recorded. Changeset `0048` moves each tenant's `clientSecretRef` to `clientSecretRefUnconfirmed`, which nothing reads, so that tenant's console sign-in answers `tenant_oidc_misconfigured` until it is restored. Every boot logs an error line per parked tenant: the tenant, the parked reference (a value that is not a reference is not printed, see below), a request to confirm that the tenant's `issuerUrl` is its own identity provider (the secret is sent to it), and the restore command. A superuser restores the reference by saving it again:
 >
 > ```bash
 > qod tenant set-auth <tenant> --auth-provider <provider> \
@@ -293,7 +297,7 @@ qod tenant set-auth acme --auth-provider keycloak \
 >   --auth-config clientSecretRef=<reference>
 > ```
 >
-> The save replaces the whole `authConfig`, so repeat the tenant's other keys (`scopes`, `baseUrl`, `realm`, ...) too. The line prints the reference inside the command only when it is made of letters, digits and `_ : . / = -`; for any other value the command shows `clientSecretRef=...`: read the full value with `qod --json tenant list`, check that it is meant for this tenant, and type it by hand. The tenant's admins can instead store the secret itself with `--client-secret-prompt`. The parked key goes with any save that carries a secret value or a reference, through any client (REST, MCP, the CLI or the admin UI), and with a save that changes the issuer URL or leaves the key out; a manifest import applies the same rule. That ends the error line, but a save that holds no secret source leaves the sign-in misconfigured until one is set.
+> The save replaces the whole `authConfig`, so repeat the tenant's other keys (`scopes`, `baseUrl`, `realm`, ...) too. The line prints the reference inside the command only when it is made of letters, digits and `_ : . / = -`; for any other value the command shows `clientSecretRef=...` and the printed copy is sanitized and may be cut: read the full value with `qod --json tenant list`, check that it is meant for this tenant, and type it by hand. If the parked value is not a secret reference (it starts with none of `env:`, `aws-sm:`, `gcp-sm:`, `azure-kv:`, `vault:`, for example a secret typed into the wrong key), the line does not print it: it shows `<not a secret reference, not shown>` and advises a superuser to set a secret source instead of restoring anything: the tenant's own client secret (`--client-secret-prompt`) or a reference (the command at the end of the line, where `clientSecretRef=...` is yours to fill in). The tenant's admins can always store the secret itself with `--client-secret-prompt`. The parked key goes with any save that carries a secret value or a reference, through any client (REST, MCP, the CLI or the admin UI), and with a save that changes the issuer URL or leaves the key out; a manifest import applies the same rule. That ends the error line, but a save that holds no secret source leaves the sign-in misconfigured until one is set.
 
 ### Logout
 
