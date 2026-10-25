@@ -35,7 +35,7 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | `qod tenant create` | Create a tenant. |
 | `qod tenant delete` | Delete a tenant (must have no pools). |
 | `qod tenant set-disabled` | Enable or disable a tenant. |
-| `qod tenant set-auth` | Change a tenant's auth provider/config. |
+| `qod tenant set-auth` | Change a tenant's auth provider/config (`--auth-provider`, repeatable `--auth-config KEY=VALUE`). The write-only OIDC client secret never goes on argv: `--client-secret-prompt` (hidden, asked twice) or `--client-secret-stdin`; `--clear-client-secret` removes it (at most one of the three). Adding or changing a `clientSecretRef` needs a superuser. |
 
 ## database
 

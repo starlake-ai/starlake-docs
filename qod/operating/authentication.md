@@ -149,6 +149,8 @@ In `oidc` mode the management login skips the database authenticator entirely, e
 
 The JWT's `preferred_username` claim is matched against `qodstate_user.username`; the `email` claim is tried as a fallback.
 
+A tenant's own SSO (`/ui/?tenant=<id>`) resolves its grants this way whatever `identitySource` says, and only from that tenant's rows: an identity whose rows are all in other tenants, or whose only row is a superuser's, is refused `403 not_provisioned`, and the session is never a superuser's. Superusers sign in through the bare `/ui/`. See [Per-tenant OIDC](./auth-providers.md#per-tenant-oidc).
+
 ### Multi-tenant scope
 
 A management session carries two pieces of authorization state:
@@ -176,7 +178,7 @@ A per-request guard rejects management calls that target a tenant outside `manag
 
 Two cross-cutting refinements that the column structure above does not show:
 
-- **Per-tenant Google client (edge only).** When a tenant configures its own `clientId` / `clientSecretRef` on `qodstate_tenant.authConfig`, the OIDC Bearer entry for that tenant's handshakes validates tokens against the tenant's own Google client instead of the manager-wide one. Other providers and the chain shape are unchanged.
+- **Per-tenant bearer client (edge only).** When a tenant configures its own client on `qodstate_tenant.authConfig` (`clientId`, plus its provider's other fields: see [Per-tenant OIDC client override](#per-tenant-oidc-client-override-google)), the OIDC Bearer entry for that tenant's handshakes validates tokens against that client instead of the manager-wide one. No client secret is involved, and the chain shape is unchanged.
 - **Realm-aware DB lookup (edge + mgmt).** The DB authenticator uses `systemQuery` (matching `tenant IS NULL`) for system-realm logins - UI form with empty Tenant field, or FlightSQL handshake with `?superuser=true` - and `tenantQuery` (matching `tenant = ?`) for tenant-realm logins. Same chain placement, different row.
 
 Recommended combinations:
@@ -189,16 +191,13 @@ The combination `identitySource=db` with OIDC enabled trusts whatever role claim
 
 ## Per-tenant OIDC client override (Google)
 
-By default every Google OIDC tenant validates tokens against the single `quack-flightsql.auth.google.*` block - one `clientId` / `clientSecret` for the whole manager. Tenants on Google can OPT IN to a dedicated OAuth client by setting the per-tenant `clientId` + `clientSecretRef` fields on the tenant's auth provider in the UI (or via `setTenantAuth` in the REST API):
+By default every Google OIDC tenant validates tokens against the single `quack-flightsql.auth.google.*` block - one `clientId` / `clientSecret` for the whole manager. Tenants on Google can OPT IN to a dedicated OAuth client by setting the per-tenant `clientId` field on the tenant's auth provider in the UI (or via `setTenantAuth` in the REST API):
 
 - `clientId` - the tenant's Google OAuth client ID (e.g. `<tenant>.apps.googleusercontent.com`).
-- `clientSecretRef` - a **reference** to the secret, never a literal value. Today only `env:NAME` is supported (e.g. `env:GOOGLE_CS_TPCH`); cloud-backed prefixes (`aws-sm:`, `gcp-sm:`, `azure-kv:`, `vault:`) are reserved.
 
-When set, the edge substitutes the per-tenant authenticator into the bearer chain for that tenant's handshakes; for every other tenant the global Google authenticator is used as before. The `setTenantAuth` REST endpoint invalidates the cached per-tenant entry so the next handshake re-reads `qodstate_tenant.authConfig`.
+When set, the edge substitutes the per-tenant authenticator into the bearer chain for that tenant's handshakes; for every other tenant the global Google authenticator is used as before. Validating a bearer token needs only Google's public keys and the client id, so the override reads no client secret; the client secret a tenant stores serves its admin-console sign-in ([Per-tenant OIDC](./auth-providers.md#per-tenant-oidc)). Keycloak, Azure AD and AWS Cognito tenants get the same override from their own fields ([Authentication providers](./auth-providers.md#per-tenant-google-oauth-clients)). The `setTenantAuth` REST endpoint invalidates the cached per-tenant entry so the next handshake re-reads `qodstate_tenant.authConfig`.
 
 Tenants that have NOT set `clientId` keep using the global block - adoption is incremental. Other selectors (`issuer`, `hd` for Google Workspace domain) keep working in both modes.
-
-This mechanism is currently Google-only. Keycloak / Azure / AWS still share a single per-manager OAuth client.
 
 ## Running without providers (development only)
 

@@ -152,18 +152,17 @@ The service account key JSON must contain `client_email`, `private_key`, and `to
 
 ### Per-tenant Google OAuth clients
 
-The HOCON block above defines a **single** Google OAuth client used by every Google tenant by default. To give a tenant its own client (separate consent screen, separate `clientId`, independent revocation blast radius), set per-tenant fields on the tenant's auth provider in the admin UI or via `setTenantAuth`:
+The HOCON block above defines a **single** Google OAuth client used by every Google tenant by default. To give a tenant its own client (separate consent screen, separate `clientId`, independent revocation blast radius), set the tenant's `clientId` on its auth provider in the admin UI or via `setTenantAuth`:
 
 | Field | Value |
 |---|---|
 | `clientId` | The tenant's Google OAuth client ID, e.g. `<tenant>.apps.googleusercontent.com` |
-| `clientSecretRef` | A reference to the secret, NOT the literal value. Today only `env:NAME` is supported (e.g. `env:GOOGLE_CS_TPCH`) |
 
-When BOTH are set, the edge builds a per-tenant `OidcBearerAuthenticator` and substitutes it into the bearer chain for that tenant's handshakes. Tenants that leave the fields blank keep using the global block.
+When it is set, the edge builds a per-tenant `OidcBearerAuthenticator` and substitutes it into the bearer chain for that tenant's handshakes. Tenants that leave it blank keep using the global block. Validating a bearer token needs only the issuer's public keys and the client id, so this override reads no client secret; the secret a tenant stores serves its admin-console sign-in (see [Per-tenant OIDC](#per-tenant-oidc)). Mutations via `setTenantAuth` automatically invalidate the cached per-tenant authenticator.
 
-The `clientSecret` is never stored in the tenant row. Only the reference (`env:NAME`) is persisted, and the env var must be set on the manager process at boot. Mutations via `setTenantAuth` automatically invalidate the cached per-tenant authenticator.
+Keycloak (`baseUrl`, `realm`, `clientId`), Azure AD (`tenantId`, `clientId`) and AWS Cognito (`region`, `userPoolId`, `clientId`) tenants get the same override from their own fields, all-or-nothing per provider: a tenant missing one of its provider's fields uses the global block.
 
-This mechanism is currently Google-only; Keycloak / Azure / AWS still share a single per-manager OAuth client.
+> **Upgrading to 0.10.2**: the Google, Keycloak and Azure AD overrides no longer require a `clientSecretRef`. A tenant that set its other fields without one used the global block before and now gets its own authenticator, so bearer tokens for its handshakes must carry the tenant's client id as audience. Because the override needs no reference (which only a superuser may set), a tenant's own admins can switch their tenant to its own client by setting the public fields alone.
 
 ---
 
@@ -219,12 +218,12 @@ The providers above govern the **FlightSQL data plane** (how a SQL client authen
 
 The admin-UI login mode is resolved **per scope**, not globally:
 
-- `/ui/?tenant=<id>` reads **that tenant's** `authProvider`: `db` shows the password form, an OIDC provider (`keycloak` / `google` / `azure` / `aws`) redirects to that tenant's IdP. A tenant is therefore pure-password or pure-SSO; there is no password fallback inside an OIDC tenant.
-- The bare `/ui/` (system / superuser scope) uses the manager-wide `auth.management.identitySource`: `db` (default) shows the password form, `oidc` makes it a **pure SSO client** against the manager-wide issuer below.
+- `/ui/?tenant=<id>` reads **that tenant's** `authProvider`: `db` shows the password form, an OIDC provider (`keycloak` / `google` / `azure` / `aws`) redirects to that tenant's IdP. A tenant is therefore pure-password or pure-SSO; there is no password fallback inside an OIDC tenant: a password login naming it (`POST /api/auth/login` with that `tenant`, or `qod login --tenant <id>`) answers `400 sso_required` before any password is checked, so no lockout counter moves (a tenant whose OIDC sign-in is incomplete still checks the password, then answers `400 tenant_oidc_misconfigured`). Scripts and the `qod` CLI use a [personal access token](../connecting/authenticating.md) for such a tenant: sign in through the IdP, create one under **Settings > Profile**, and send it as `X-API-Key` (`QOD_API_KEY` for the `qod` CLI). SQL clients are unaffected: FlightSQL and the native Quack front door still take the tenant users' database passwords.
+- The bare `/ui/` (system / superuser scope) uses the manager-wide `auth.management.identitySource`: `db` (default) shows the password form, `oidc` makes it a **pure SSO client** against the manager-wide issuer below. The setting governs the bare `/ui/` only: a tenant's SSO works under either value, and under `db` the bare `/ui/` stays a password form even when the `QOD_MGMT_OIDC_*` settings below are set.
 
 A tenant-scoped page URL counts as that tenant too: opening `/ui/t/<id>/...` without a session (a bookmark, or a reload after the session expired) resolves the login mode, and for SSO starts the sign-in, against tenant `<id>`, as `/ui/?tenant=<id>` does; an explicit `?tenant=` wins.
 
-The SPA resolves the mode for the tenant in the URL via the unauthenticated `GET /api/auth/mode?tenant=<id>` (omit `tenant` for the system scope) before deciding what to render.
+The SPA resolves the mode for the tenant in the URL via the unauthenticated `GET /api/auth/mode?tenant=<id>` (omit `tenant` for the system scope) before deciding what to render. The id is trimmed and lowercased first (tenant ids are lowercase slugs), so `ACME` resolves to tenant `acme`.
 
 It is **provider-agnostic**: it uses OIDC Discovery, so it works with any compliant IdP (Keycloak, Google, Azure AD, Okta, Auth0, Cognito, ...). You configure an **issuer URL** and a client id/secret; the manager resolves the authorize / token / end-session / JWKS endpoints from `${issuerUrl}/.well-known/openid-configuration`.
 
@@ -253,18 +252,48 @@ ${QOD_MGMT_PUBLIC_BASE_URL}/api/auth/oidc/callback
 ### Login URLs and scope
 
 - `/ui/` (no tenant) is the **system / superuser** login. Its mode follows `QOD_MGMT_IDENTITY_SOURCE`; in `oidc` it authenticates against the manager-wide issuer above. Only a superuser (`qodstate_user.tenant IS NULL`, kind admin) may complete it; a non-superuser is rejected and must sign in through their tenant.
-- `/ui/?tenant=<id>` follows **that tenant's** `authProvider`: a `db` tenant gets the password form, an OIDC tenant authenticates against that tenant's OIDC client. Either way it requires an admin grant for that tenant.
+- `/ui/?tenant=<id>` follows **that tenant's** `authProvider`: a `db` tenant gets the password form, an OIDC tenant authenticates against that tenant's OIDC client, whatever `QOD_MGMT_IDENTITY_SOURCE` says. Either way it requires an admin grant on a `qodstate_user` row of that tenant, and the session it opens is never a superuser's: an SSO identity whose rows are all in other tenants, or whose only row is a superuser's, is refused `403 not_provisioned` (the callback lands on `/ui/?error=not_provisioned`). Superusers sign in through the bare `/ui/`.
 
 ### Per-tenant OIDC
 
-A tenant authenticates against its own issuer, configured in `qodstate_tenant.authConfig` with these generic keys (set them via the tenant auth API / admin UI):
+A tenant authenticates against its own issuer. Set these on the tenant's **Auth Provider** page in the admin UI, with `qod tenant set-auth`, or through `POST /api/tenant/setAuth`; all but the client secret live in `qodstate_tenant.authConfig`, and a save replaces that whole map:
 
-| Key | Meaning |
-|---|---|
-| `issuerUrl` | the tenant's OIDC issuer (discovery base) |
-| `clientId` | the tenant's OIDC client id |
-| `clientSecretRef` | a secret reference (e.g. `env:ACME_CLIENT_SECRET`) resolved at runtime |
-| `scopes` | optional; defaults to `openid email profile` |
+| Key | Meaning | Who may set it |
+|---|---|---|
+| `issuerUrl` | the tenant's OIDC issuer (discovery base) | tenant admins and superusers |
+| `clientId` | the tenant's OIDC client id | tenant admins and superusers |
+| `clientSecret` | the client secret, write-only and stored beside `authConfig`, never inside it (`setTenantAuth` field `clientSecret`, MCP `set_tenant_auth` argument `client_secret`); no response returns it, only `clientSecretSet` | tenant admins and superusers |
+| `clientSecretRef` | a reference resolved from the manager's own environment (`env:NAME`), used when no `clientSecret` is stored | superusers only |
+| `scopes` | optional; defaults to `openid email profile` | tenant admins and superusers |
+
+The tenant's console sign-in is on once `issuerUrl`, `clientId` and a secret (`clientSecret` or `clientSecretRef`) are set, under either `QOD_MGMT_IDENTITY_SOURCE`; a tenant with an OIDC provider that lacks one of them answers `tenant_oidc_misconfigured`, and until it is complete only a superuser, through the bare `/ui/`, can open that tenant's console. Register `${QOD_MGMT_PUBLIC_BASE_URL}/api/auth/oidc/callback` as a redirect URI on the tenant's IdP client. The secret never needs to touch the command line:
+
+```bash
+# --client-secret-prompt asks for the secret twice, hidden; --client-secret-stdin
+# reads it from standard input; --clear-client-secret removes the stored one.
+qod tenant set-auth acme --auth-provider keycloak \
+  --auth-config issuerUrl=https://idp.acme.com/realms/acme \
+  --auth-config clientId=qod-acme \
+  --client-secret-prompt
+```
+
+**The secret follows its issuer.** The manager sends the client secret to the token endpoint of the issuer named in the same configuration, so a stored secret is bound to the issuer it was saved with, as the tenant OPA token is bound to its URL. A save that changes `issuerUrl` removes the stored `clientSecret` unless it supplies a new one, and drops a `clientSecretRef` it carries unless a superuser makes the save: a superuser may pair a reference with the new issuer in one write, while a tenant admin's carried reference is dropped. Without a secret for the new issuer, the tenant's console sign-in answers `tenant_oidc_misconfigured` until one is saved; supply it in the same save to switch issuers in one step. The admin UI warns before a save that would drop the secret, and before one that would leave the sign-in incomplete. With the issuer unchanged, a save that omits the secret keeps it, an empty value removes it, and a value made only of whitespace is refused (`400 invalid_client_secret`).
+
+**A secret reference requires a superuser.** A `clientSecretRef` directs the manager to read a value from its **own** environment and send it to the tenant's issuer, so only a superuser may add or change one: a tenant admin's write that does gets `403 superuser_required` and nothing is stored. A tenant admin may still save the other fields while carrying an existing reference unchanged under the same issuer; the admin UI shows it read-only. A superuser who pairs a reference with a new issuer sends that environment secret to it: confirm that the issuer is the tenant's own identity provider (the admin UI warns about it before the save). A tenant has one secret source: storing a `clientSecret` removes the reference, a superuser's new reference removes the stored `clientSecret`, and a write that supplies a value and adds or changes a reference is refused (`400 secret_conflict`). `authConfig` may not hold a `clientSecret` key (`400 invalid_auth_config`, on `tenant/create` too). A manifest export writes a stored secret as `***REDACTED***` (see [Manifest](./manifest.md)).
+
+> **Upgrading to 0.10.2: tenant SSO and passwords.** Tenant SSO no longer needs `QOD_MGMT_IDENTITY_SOURCE=oidc`. Before 0.10.2, `/api/auth/oidc/start` answered `404 auth_mode_disabled` under the default `db`, so an OIDC tenant's admins signed in with passwords; those logins now answer `400 sso_required`, and the admins sign in through the tenant's IdP at `/ui/?tenant=<id>`.
+
+> **Upgrading to 0.10.2: tenant SSO binds that tenant's rows only.** Before 0.10.2 a tenant's SSO matched the identity against the `qodstate_user` rows of every tenant and the superuser rows. It now matches that tenant's rows alone, so a superuser who holds no row of that tenant and signs in through its IdP gets `403 not_provisioned`: superusers sign in through the bare `/ui/`.
+
+> **Upgrading to 0.10.2: parked references.** Secret references saved before 0.10.2 are parked, because who saved them was not recorded. Changeset `0048` moves each tenant's `clientSecretRef` to `clientSecretRefUnconfirmed`, which nothing reads, so that tenant's console sign-in answers `tenant_oidc_misconfigured` until it is restored. Every boot logs an error line per parked tenant: the tenant, the parked reference, a request to confirm that the tenant's `issuerUrl` is its own identity provider (the secret is sent to it), and the restore command. A superuser restores the reference by saving it again:
+>
+> ```bash
+> qod tenant set-auth <tenant> --auth-provider <provider> \
+>   --auth-config issuerUrl=... --auth-config clientId=... \
+>   --auth-config clientSecretRef=<reference>
+> ```
+>
+> The save replaces the whole `authConfig`, so repeat the tenant's other keys (`scopes`, `baseUrl`, `realm`, ...) too. The line prints the reference inside the command only when it is made of letters, digits and `_ : . / = -`; for any other value the command shows `clientSecretRef=...`: read the full value with `qod --json tenant list`, check that it is meant for this tenant, and type it by hand. The tenant's admins can instead store the secret itself with `--client-secret-prompt`. The parked key goes with any save that carries a secret value or a reference, through any client (REST, MCP, the CLI or the admin UI), and with a save that changes the issuer URL or leaves the key out; a manifest import applies the same rule. That ends the error line, but a save that holds no secret source leaves the sign-in misconfigured until one is set.
 
 ### Logout
 

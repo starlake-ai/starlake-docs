@@ -16,7 +16,7 @@ The screenshots below are from a local demo deployment with the bootstrap TPC-H 
 The login screen takes a username, password, and an optional **Tenant ID**. The tenant field is the realm signal:
 
 - **Leave it blank** to log in as a system superuser. Credentials are validated against the manager's global auth providers (`quack-flightsql.auth.*`) and the matching `qodstate_user` row must have `tenant IS NULL`. This path (and the OIDC single sign-on login) is admin-only.
-- **Fill it in** (e.g. `t-02d0e86e`) to log in as a tenant user. Credentials are validated against THAT tenant's configured provider, and the matching `qodstate_user` row must have `tenant = <id>`. A tenant admin lands on the operator console scoped to that tenant; a regular (`kind=user`) principal with a database-backed password login lands on the [Profile page](#profile-page-regular-users) instead.
+- **Fill it in** (e.g. `t-02d0e86e`) to log in as a tenant user. Credentials are validated against THAT tenant's configured provider, and the matching `qodstate_user` row must have `tenant = <id>`. A tenant admin lands on the operator console scoped to that tenant; a regular (`kind=user`) principal with a database-backed password login lands on the [Profile page](#profile-page-regular-users) instead. A tenant whose sign-in is OIDC takes no password here: the form answers `sso_required`, and `/ui/?tenant=<id>` starts that tenant's single sign-on, which binds only that tenant's rows (an identity without one gets `not_provisioned`; superusers leave the field blank).
 
 There is no separate superuser checkbox; the field's presence is the only signal. Pre-existing scripts that called `/api/auth/login` with a `tenant` value for the bootstrap admin need to drop the field (or send an empty string) after upgrading.
 
@@ -111,7 +111,7 @@ What used to be the tabs of a tenant detail page are now separate sidebar pages 
 - **Databases** - create and manage the tenant's databases (tenant-dbs), with **Catalog** nested under it.
 - **Pools** - create pools bound to a database and operate them.
 - **Maintenance** and **Branches** - per-database [maintenance](#maintenance) and [branch review](#branches).
-- **Auth Provider** - the tenant's auth provider and its configuration.
+- **Auth Provider** - the tenant's auth provider and its configuration, including its console sign-in (issuer URL, client ID, scopes) and a write-only client secret that is never displayed: the page shows only whether one is set, an empty input keeps it, the **Remove secret** checkbox clears it, and the page warns before a save that changes the issuer URL (which removes the saved secret) and before one that would leave the sign-in incomplete (it needs an issuer URL, a client ID and a secret or secret reference; until then only a superuser, through the system login, can open the tenant's console). A secret reference (`clientSecretRef`, `env:NAME`) is editable by superusers only; tenant admins see it read-only and cannot add one.
 - **Access Control** - who decides data access for the tenant: standard QoD grants (mode `qod`, or the manager default) or the tenant's own OPA server (its URL, policy path, and a write-only bearer token that is never displayed).
 
 ![The Pools page](/img/ui/tenant-pools.png)

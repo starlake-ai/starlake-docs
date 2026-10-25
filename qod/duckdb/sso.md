@@ -23,7 +23,7 @@ QOD_AUTH_KEYCLOAK_CLIENT_ID=quack-client
 QOD_AUTH_KEYCLOAK_CLIENT_SECRET=client-secret
 ```
 
-For the admin UI, a separate provider-agnostic switch uses OIDC discovery: configure an issuer URL and a client id and secret, and the manager resolves the authorize, token and JWKS endpoints itself, so any compliant IdP works. Groups can be enriched from Google Workspace or read from token claims. SCIM 2.0 endpoints per tenant let Okta, Entra or Google provision and deprovision users and groups without anyone touching the gateway. Quack on Demand runs as a single Docker container on one node, or on Kubernetes for multi-host fleets.
+For the admin UI, a separate provider-agnostic sign-in uses OIDC discovery: configure an issuer URL and a client id and secret, manager-wide for the superuser console or per tenant for that tenant's admins (a tenant needs no manager-wide switch), and the manager resolves the authorize, token and JWKS endpoints itself, so any compliant IdP works. Groups can be enriched from Google Workspace or read from token claims. SCIM 2.0 endpoints per tenant let Okta, Entra or Google provision and deprovision users and groups without anyone touching the gateway. Quack on Demand runs as a single Docker container on one node, or on Kubernetes for multi-host fleets.
 
 ## Go deeper
 

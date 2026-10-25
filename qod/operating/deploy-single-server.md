@@ -514,18 +514,18 @@ export QOD_MGMT_PUBLIC_BASE_URL=https://qod.yourco.com
 
 Any discovery-capable IdP works (Keycloak, Google, Entra, Okta, Auth0). Register redirect URI `${QOD_MGMT_PUBLIC_BASE_URL}/api/auth/oidc/callback`.
 
-Per tenant, each tenant picks its own provider (`db`, `keycloak`, `google`, `azure`, `aws`):
+Per tenant, each tenant picks its own provider (`db`, `keycloak`, `google`, `azure`, `aws`). A tenant's SSO works whatever `QOD_MGMT_IDENTITY_SOURCE` is: the global block above only switches the bare `/ui/` (superuser console) to SSO, while `QOD_MGMT_PUBLIC_BASE_URL` builds the redirect URI for every scope.
 
 ```bash
 qod tenant set-auth acme --auth-provider keycloak \
   --auth-config issuerUrl=https://idp.acme.com/realms/acme \
   --auth-config clientId=qod-acme \
-  --auth-config clientSecretRef=env:ACME_CLIENT_SECRET
+  --client-secret-prompt
 ```
 
-Client secrets are passed as references (`env:NAME`), never literals.
+The client secret is stored write-only: `--client-secret-prompt` (or `--client-secret-stdin`) keeps it off the command line, no response or export shows it, and a later change of `issuerUrl` removes it until it is entered again. A superuser may instead point the tenant at the manager's environment with `--auth-config clientSecretRef=env:ACME_CLIENT_SECRET`; a tenant admin may not. See [Per-tenant OIDC](./auth-providers.md#per-tenant-oidc).
 
-**Authorization stays local**: the IdP only proves identity. A matching `qodstate_user` row (same username or email) must exist, and its local role/grants decide what the user may do; there is no just-in-time provisioning. Unknown SSO users get `403 not_provisioned`.
+**Authorization stays local**: the IdP only proves identity. A matching `qodstate_user` row (same username or email) must exist in the realm signed into, and its local role/grants decide what the user may do; there is no just-in-time provisioning. For a tenant's SSO that is a row of that tenant: a superuser row or another tenant's row with the same name does not count, and superusers sign in through the bare `/ui/`. Unknown SSO users get `403 not_provisioned`.
 
 ### 6.4 SCIM provisioning (optional, IdP-driven user lifecycle)
 
@@ -771,7 +771,7 @@ Step 1: point the tenant's login at the IdP (section 6.3):
 qod tenant set-auth acme --auth-provider keycloak \
   --auth-config issuerUrl=https://idp.example.com/realms/acme \
   --auth-config clientId=qod-acme \
-  --auth-config clientSecretRef=env:ACME_CLIENT_SECRET
+  --client-secret-prompt
 ```
 
 Step 2: enable the matching FlightSQL provider so SQL clients can present IdP bearer tokens (section 6.2), and restart the manager:
@@ -814,7 +814,7 @@ SHOW GRANTS FOR USER "alice@example.com";
 Rules of the road in this configuration:
 
 - **Do not manage membership by hand** (`ALTER GROUP ... ADD USER`): the SCIM connector is the owner and the next sync would fight your edits. Change team membership in the IdP.
-- There is no just-in-time provisioning: an SSO login without a matching provisioned account gets `403 not_provisioned`. The SCIM sync (or a pre-created user row) must exist first.
+- There is no just-in-time provisioning: an SSO login without a matching provisioned account in that tenant gets `403 not_provisioned` (an account of another tenant or a superuser account does not count). The SCIM sync (or a pre-created user row) must exist first.
 - Deactivating a user in the IdP propagates through SCIM and cuts both the UI login and the FlightSQL handshake.
 - BI tools that cannot do SSO natively get a bearer token from the browser token page (`/api/auth/sql-token/start`, section 6.2).
 
