@@ -525,7 +525,7 @@ qod tenant set-auth acme --auth-provider keycloak \
 
 The client secret is stored write-only: `--client-secret-prompt` (or `--client-secret-stdin`) keeps it off the command line, no response or export shows it, and a later change of `issuerUrl` removes it until it is entered again. A superuser may instead point the tenant at the manager's environment with `--auth-config clientSecretRef=env:ACME_CLIENT_SECRET`; a tenant admin may not. See [Per-tenant OIDC](./auth-providers.md#per-tenant-oidc).
 
-**Authorization stays local**: the IdP only proves identity. A matching `qodstate_user` row (same username or email) must exist in the realm signed into, and its local role/grants decide what the user may do; there is no just-in-time provisioning. For a tenant's SSO that is a row of that tenant: a superuser row or another tenant's row with the same name does not count, and superusers sign in through the bare `/ui/`. Unknown SSO users get `403 not_provisioned`.
+**Authorization stays local**: the IdP only proves identity. A matching `qodstate_user` row (the IdP's user name, or its email address when the IdP marks it verified) must exist in the realm signed into, and its local role/grants decide what the user may do; there is no just-in-time provisioning. For a tenant's SSO that is a row of that tenant: a superuser row or another tenant's row with the same name does not count, and superusers sign in through the bare `/ui/`. Unknown SSO users get `403 not_provisioned`.
 
 ### 6.4 SCIM provisioning (optional, IdP-driven user lifecycle)
 
