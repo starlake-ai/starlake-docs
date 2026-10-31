@@ -68,6 +68,17 @@ qod pool stop --tenant acme --db acme_sales --pool bi
 
 A graceful stop (no `--force`) drains in-flight statements before terminating nodes. `--force` terminates immediately. The same `--force` flag applies when `scale` shrinks a pool.
 
+How a graceful drain works (scale-down, stop, delete and suspend):
+
+- The nodes being removed are marked draining. New statements are no longer routed to them. A statement that was about to start on one is refused with a retryable answer and runs once on another node, on FlightSQL and on the native DuckDB front door alike.
+- The manager waits for the work already running on those nodes: FlightSQL statements, and native front-door statements until the client has read their result. An open native transaction (`BEGIN` on the front door) keeps its node until `COMMIT` or `ROLLBACK`.
+- The wait is bounded by `QOD_POOL_DRAIN_TIMEOUT_SEC` (default 20 s, below the CLI's 30 s request timeout). When it runs out, the nodes are stopped anyway. A front-door transaction still open on a stopped node gets "the transaction's node left the pool; ROLLBACK to continue", and a `COMMIT` there reports that nothing was committed.
+- A suspend waits only for statements in flight, not for open transactions: their `COMMIT` would wake the pool, which the suspend is holding.
+- While a pool drains, the leader's reconcile, autoscale and hibernation passes skip it and come back on a later tick, so other pools are not held up.
+- `QOD_DRAIN_TIMEOUT_SEC` (default 60 s) is a different setting: how long a manager shutting down waits for its in-flight statements.
+
+The drain counts the work of the manager that runs the teardown. Under HA it does not wait for statements another replica is serving on the same node, and REST or MCP previews and data diffs are not counted.
+
 A pool can also size itself: declare a `minNodes`/`maxNodes` band and the manager adds and removes read nodes with demand, within those bounds. See [Autoscaling pools](/qod/operating/autoscaling). A pool with a band refuses a manual `scale` outside it.
 
 ## Pending slots (fleet runtime)

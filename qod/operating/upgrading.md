@@ -71,6 +71,7 @@ The session secret no longer needs pinning: with `QOD_SESSION_JWT_SECRET` unset,
 - **The nodes' own S3 credentials sign only a database's own data path.** A superuser read of another bucket, or a trusted `initSql` or `sql` federation setup that read one with the node's keys, now finds no secret: register your own keys (`qod profile s3 add`) or create a scoped secret.
 - **Iceberg tables on S3 read with users' own S3 keys are read-only through QoD**, superusers included: a catalog that neither vends credentials nor has AWS credentials of its own is read with each user's keys, and a write fails with HTTP 403 at commit until upstream duckdb-iceberg signs its commits with connection secrets. See [Iceberg](./iceberg.md).
 - The spawn scripts refuse a DuckLake or duckdb-file node with no data path instead of defaulting to a developer path.
+- **A graceful scale-down, stop, delete or suspend now waits for the nodes' running work** before stopping them, on FlightSQL and the native front door, for up to `QOD_POOL_DRAIN_TIMEOUT_SEC` (default 20 s, new; the chart value is `poolDrainTimeoutSec`). Before, the nodes stopped at once and their statements failed. `QOD_DRAIN_TIMEOUT_SEC` now covers manager shutdown only. See [Pools](./pools-cohorts.md).
 
 ## What tenant users lose
 
