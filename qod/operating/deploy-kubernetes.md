@@ -45,7 +45,7 @@ Every pod receives the following labels:
 | `quack-node-id` | Unique node identifier; used as the pod name and the Service name. |
 | `quack-max-concurrent` | Maximum concurrent queries this node accepts. |
 
-Each pod runs `qod-node`, QoD's own executable on the official DuckDB library: the node image (`docker/quack-node`) ships it with its `libduckdb` under `/opt/qod-node` and carries no DuckDB CLI. The image must match the manager's release: nodes speak node protocol 5 with session handle v3, the image build fails on a binary of another protocol, and a pod running an earlier image refuses every handle, the health probe's included, so it stays unhealthy and is never routed to. After upgrading the manager, pull this release's node image and restart every node.
+Each pod runs `qod-node`, QoD's own executable on the official DuckDB library: the node image (`docker/quack-node`) ships it with its `libduckdb` under `/opt/qod-node` and carries no DuckDB CLI. The image must match the manager's release: nodes speak node protocol 6 with session handle v4, the image build fails on a binary of another protocol, and a pod running an earlier image refuses every handle, the health probe's included, so it stays unhealthy and is never routed to. After upgrading the manager, pull this release's node image and restart every node.
 
 ## Node secrets volume
 

@@ -15,9 +15,9 @@ Work through the steps in order. The sections after the checklist give the detai
 
 1. **Back up the control-plane database.** Liquibase changesets `0047` to `0055` run at boot, and `0055` drops the `qodstate_pool.lockdown` column the previous release reads. The migration is one-way.
 2. **Replace the static API key.** Mint personal access tokens for automation (`qod login`, then `qod auth pat create`), point MCP clients and SCIM connectors at them, then remove `QOD_API_KEY` from every environment, chart value and Compose file. A manager with a non-empty `QOD_API_KEY` refuses to boot. See [Static API key](#static-api-key).
-3. **Unset the removed authorization switches** everywhere: `QOD_ACL_ENABLED`, `QOD_ACL_FILTERED_METADATA`, `QOD_ACL_DIALECT` and `QOD_NODE_LOCKDOWN` (`qod setup --unset <NAME>` for a value the CLI stored). Boot refuses each of them, set to any value, empty included. Drop the Helm values `security.aclEnabled` and `security.nodeLockdown`: the chart no longer reads them.
+3. **Unset the removed authorization switches** everywhere: `QOD_ACL_ENABLED`, `QOD_ACL_FILTERED_METADATA`, `QOD_ACL_DIALECT` and `QOD_NODE_LOCKDOWN` (`qod setup --unset <NAME>` for a value the CLI stored), with their HOCON keys (`quack-flightsql.acl.*`, `quack-flightsql.nodeLockdown`). Boot refuses each of them in either form, set to any value, empty included. Drop the Helm values `security.aclEnabled` and `security.nodeLockdown` too: the chart no longer reads them, so they change nothing, but the same variables set through the chart's `env` are refused at boot like any other.
 4. **Grant tenant users what they read.** Enforcement can no longer be turned off, and per-pool lockdown is gone. A manager that ran with the ACL off must grant its users first (the built-in `qod_all_tables` role, `*.*.* ALL`, is what an omitted `--role` gives a new user). See [Access control model](./rbac-model.md).
-5. **On OPA tenants, update the policies** for the node's input: accesses carry `kind`, `columns` and `via`, the statement carries `locations`, and no input carries `statement.text`. Rego that does not handle `via` denies reads through a secure view. See [OPA tenants](#opa-tenants).
+5. **On OPA tenants, update the policies** for the node's input: accesses carry `kind`, `columns`, `via` and, for a DuckLake read across a rename, drop or replace of the table, `history`; the statement carries `locations`, and no input carries `statement.text`. Rego that does not handle `via` denies reads through a secure view. See [OPA tenants](#opa-tenants).
 6. **If users load files**, set `QOD_TENANT_FILES_ROOT`, and list in `QOD_USER_S3_ALLOWED_ENDPOINTS` any endpoint other than AWS that users' own S3 keys target. See [File access](#file-access).
 7. **Set the node callback address.** In fleet mode set `QOD_INTERNAL_URL` on every manager; on Kubernetes without the Helm chart set `QOD_POD_IP` from `status.podIP` (or `QOD_INTERNAL_URL`). Under HA, set `QOD_NODE_KEY_SECRET` to the same value on every replica, or leave it unset on all. See [Nodes](#nodes).
 
@@ -28,10 +28,10 @@ Work through the steps in order. The sections after the checklist give the detai
 
 **After upgrading**
 
-10. **Restart every node.** Nodes speak node protocol 5 with session handle v3; a node started by an earlier release, or an earlier node image, refuses every handle, stays unhealthy and is never routed to. On Kubernetes pull this release's node image.
+10. **Restart every node.** Nodes speak node protocol 6 with session handle v4; a node started by an earlier release, or an earlier node image, refuses every handle, stays unhealthy and is never routed to. On Kubernetes pull this release's node image.
 11. **Read the boot log.** Review the WARNs about untrusted `initSql` and `sql` federation sources (a superuser re-saves what should stay trusted), and the ERROR lines naming tenants whose sign-in `clientSecretRef` was parked (a superuser restores each one). See [Init SQL and federation](#init-sql-and-federation) and [Per-tenant OIDC](./auth-providers.md#per-tenant-oidc).
 12. **Rotate the manager's secrets if tenant admins are not fully trusted.** See [Security: rotate secrets](#security-rotate-secrets).
-13. **Tell tenant users what changed for them.** DuckDB's built-in listing views are refused to them (`pg_catalog.*`, `sqlite_master`, bare `SHOW` / `DESCRIBE`, `system.information_schema.*`); they keep `information_schema.*`, `SHOW TABLES` and `duckdb_*()`, filtered to their grants. Loading their own files now starts with `qod profile s3 add`. See [What tenant users lose](#what-tenant-users-lose).
+13. **Tell tenant users what changed for them.** DuckDB's built-in listing views are refused to them (`pg_catalog.*`, `sqlite_master`, bare `SHOW` / `DESCRIBE`, `system.information_schema.*`); they keep `information_schema.*`, `SHOW TABLES` and `duckdb_*()`, filtered to their grants. Loading their own files now starts with `qod profile s3 add`. See [What tenant users lose](#what-tenant-users-lose). Tell them too what they gain: they can recover a dropped table themselves, and read the change data of the tables they may read. See [What tenant users gain](#what-tenant-users-gain).
 
 ## Removed settings
 
@@ -69,7 +69,7 @@ The session secret no longer needs pinning: with `QOD_SESSION_JWT_SECRET` unset,
 - **Nodes call the manager back** for their verdicts, on the URL of the replica that minted the handle: `QOD_INTERNAL_URL`, else `http://<QOD_POD_IP>:<port>`, else the manager's bind address, else `http://127.0.0.1:<port>`. Boot prints it as `node decide URL: <url>` and refuses fleet mode without `QOD_INTERNAL_URL`, and Kubernetes with a loopback URL. With `networkPolicy.enabled`, the chart lets node pods reach the manager pods on TCP 20900. See [Fleet deployment](./deploy-fleet.md) and [Kubernetes deployment](./deploy-kubernetes.md).
 - **Extension settings are fixed at node start**: community and unsigned extensions and autoinstall are off. Turn one on with `QOD_NODE_ALLOW_COMMUNITY_EXTENSIONS`, `QOD_NODE_ALLOW_UNSIGNED_EXTENSIONS` or `QOD_NODE_AUTOINSTALL_KNOWN_EXTENSIONS`; install any other extension a statement needs at node start (`INSTALL <name>;` in a database or pool `initSql`).
 - **The nodes' own S3 credentials sign only a database's own data path.** A superuser read of another bucket, or a trusted `initSql` or `sql` federation setup that read one with the node's keys, now finds no secret: register your own keys (`qod profile s3 add`) or create a scoped secret.
-- **Iceberg tables on S3 are read-only through QoD for every principal**, superusers included, until upstream duckdb-iceberg signs its commits with connection secrets. See [Iceberg](./iceberg.md).
+- **Iceberg tables on S3 read with users' own S3 keys are read-only through QoD**, superusers included: a catalog that neither vends credentials nor has AWS credentials of its own is read with each user's keys, and a write fails with HTTP 403 at commit until upstream duckdb-iceberg signs its commits with connection secrets. See [Iceberg](./iceberg.md).
 - The spawn scripts refuse a DuckLake or duckdb-file node with no data path instead of defaulting to a developer path.
 
 ## What tenant users lose
@@ -86,6 +86,14 @@ They keep `information_schema.schemata` / `tables` / `columns` / `views`, `duckd
 
 Read-only federated catalogs now refuse writes, DDL, `ATTACH` and `DETACH` to superusers too. See [Access control model](./rbac-model.md) and [Federation](./federation.md).
 
+## What tenant users gain
+
+- **Recovering a dropped table themselves.** `UNDROP TABLE [schema.]t [AS new_name]` runs on both doors and in `qod sql`, as the caller: it needs a read grant on the table's last name, which no live table or view may hold, and DDL in the schema. It is part of the SQL admin dialect, so it needs `QOD_SQL_ADMIN_ENABLED` (on by default), and it is refused inside an open transaction. The same recovery is on the profile page ("Recover a dropped table"), `qod profile recoverable` / `qod profile undrop`, and the MCP tools `list_recoverable` / `undrop_table` with a regular user's PAT. See [Administer with SQL](../administration/sql-administration.md#recover-a-dropped-table).
+- **The change data of the tables they may read.** DuckLake's change feed (`ducklake_table_changes`, `ducklake_table_insertions`, `ducklake_table_deletions`, the table named by literals) is judged as a read of that table, so the data diff and branch change counts work for tenant users. It stays refused to a user with any column or row policy.
+- **History judged on the table as it is now.** A read at an earlier snapshot (time travel, the change feed, the data diff, branch counts, undrop) is judged by the table's DuckLake id: a renamed table as the table it is now, a replaced one as the same table, a dropped one on its last live name while no live table or view holds it. Users with column or row policies are refused all three. A dropped table read `AT (TIMESTAMP => ...)` can be refused where `AT (VERSION => n)` is not. See [Earlier snapshots and the change feed](./rbac-model.md#earlier-snapshots-and-the-change-feed).
+
+Requests that used to run as the manager's system caller now run as the requester: branch change counts (REST and MCP), a proposal's reply, and the restore dry run. A table the requester may not read has its branch counts flagged `countsUnavailable` (a dash in the admin UI) instead of a 0, and answers the restore dry run with `403 acl_denied`. The per-table counts of a stored merge summary are shown to superusers only. A personal access token's databases, pools, verb ceiling and branch-only scope now also bind undrop, restore, preview, data diff, the Iceberg preview and diff, and every branch endpoint, where a branch counts as its parent database.
+
 ## File access
 
 A tenant user reads or writes a file by path only through a file reader or `COPY`, and only:
@@ -97,7 +105,7 @@ A database's data folder is never reachable by its path. Keep tenant folders fre
 
 ## OPA tenants
 
-The `statement` rule is now asked only by the node, with the accesses' new `kind`, `columns` and `via` and the statement's `locations`. The gateway's parser-extracted input is no longer sent, no input carries `statement.text`, and `--send-statement-text` has no effect. `qod tenant opa-test --sql` now runs the statement through a node of a running pool, as the named tenant user, and returns the input the node would send OPA. OPA transport errors are no longer shown to tenants: they read "OPA unreachable or returned an error (see the manager log)", and the cause is in the manager's WARN line.
+The `statement` rule is now asked only by the node, with the accesses' new `kind`, `columns`, `via` and `history` and the statement's `locations`. `history` appears only on a DuckLake read at an earlier snapshot that crossed a change of the table (`renamed`, `dropped`, `replaced`); a policy that wants history kept to the current table can deny any access carrying it. The gateway's parser-extracted input is no longer sent, no input carries `statement.text`, and `--send-statement-text` has no effect. `qod tenant opa-test --sql` now runs the statement through a node of a running pool, as the named tenant user, and returns the input the node would send OPA. OPA transport errors are no longer shown to tenants: they read "OPA unreachable or returned an error (see the manager log)", and the cause is in the manager's WARN line.
 
 ## Init SQL and federation
 
