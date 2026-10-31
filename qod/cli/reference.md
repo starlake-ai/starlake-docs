@@ -189,7 +189,7 @@ judges them against that user's grants and column masking and row policies apply
 runs as the manager's system principal. `data-diff` and the restore dry run read DuckLake's change
 feed, which is refused to a user with any column or row policy; history reads are judged on the
 table as it is now (see
-[Earlier snapshots and the change feed](/qod/operating/rbac-model#earlier-snapshots-and-the-change-feed)).
+[Earlier snapshots and the change feed](../operating/rbac-model.md#earlier-snapshots-and-the-change-feed)).
 
 `schemas`, `tables`, `describe`, `history`, `preview` and `data-diff` also take `--iceberg ALIAS` to
 read an attached external Iceberg catalog instead of the database's DuckLake catalog. Snapshot ids

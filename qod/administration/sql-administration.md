@@ -31,7 +31,7 @@ user may run it, and it runs as them.
 The whole dialect sits behind `QOD_SQL_ADMIN_ENABLED` (default `true`). With
 the flag off, these statements are rejected exactly as they were before the
 feature existed. Admin SQL is available on the FlightSQL edge and the
-[native Quack front door](/qod/connecting/duckdb) only: statements arriving
+[native Quack front door](../connecting/duckdb.md) only: statements arriving
 through the MCP server or catalog preview paths are denied regardless of the
 flag.
 
@@ -224,7 +224,7 @@ ceiling apply to every undrop route, so a read-only token cannot recover.
 Regular users have the same recovery outside SQL: the profile page's
 **Recover a dropped table** card, `qod profile recoverable` /
 `qod profile undrop`, and the MCP tools `list_recoverable` / `undrop_table`
-with their own PAT. See [Profile page](/qod/operating/admin-ui#profile-page-regular-users).
+with their own PAT. See [Profile page](../operating/admin-ui.md#profile-page-regular-users).
 
 ### Introspection
 
