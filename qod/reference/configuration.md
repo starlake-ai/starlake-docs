@@ -20,14 +20,6 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-flightsql.sessionTtlSec` | `QOD_SESSION_TTL_SEC` | `3600` |  | Edge session TTL in seconds before a fresh handshake is forced. |
 | `quack-flightsql.resumeHoldTimeoutSec` | `PROXY_RESUME_HOLD_TIMEOUT_SEC` | `60` |  | Max seconds the edge holds a statement while a suspended pool cold-starts. |
 
-## `quack-flightsql.acl`
-
-| Key | Env var | Default | Sensitive | Description |
-| --- | --- | --- | --- | --- |
-| `quack-flightsql.acl.enabled` | `QOD_ACL_ENABLED` | `false` |  | Enable table-level RBAC (per-statement EffectiveSet check). |
-| `quack-flightsql.acl.dialect` | `QOD_ACL_DIALECT` | `duckdb` |  | Statement parser dialect for ACL extraction. |
-| `quack-flightsql.acl.filteredMetadata` | `QOD_ACL_FILTERED_METADATA` | `true` |  | Implicitly admit reads of the session catalog's information_schema (schemata/tables/columns/views) and filter the result rows to the principal's granted objects. false = the pre-0.6.7 grant-required posture. |
-
 ## `quack-flightsql.auth`
 
 | Key | Env var | Default | Sensitive | Description |
@@ -40,11 +32,11 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-flightsql.auth.database.systemQuery` | `QOD_AUTH_DB_SYSTEM_QUERY` | `SELECT password_hash, kind, enabled, must_change_password FROM qodstate_user WHERE tenant IS NULL AND username = ? LIMIT 1` |  | SQL template for AuthScope.System (empty tenant / superuser=true). MUST return the four mandatory columns (password_hash, kind, enabled, must_change_password) and accepts one ? placeholder for username; matches WHERE tenant IS NULL. |
 | `quack-flightsql.auth.database.tenantQuery` | `QOD_AUTH_DB_TENANT_QUERY` | `SELECT password_hash, kind, enabled, must_change_password FROM qodstate_user WHERE tenant = ? AND username = ? LIMIT 1` |  | SQL template for AuthScope.Tenant. MUST return the four mandatory columns (password_hash, kind, enabled, must_change_password) and accepts two ? placeholders in order: tenant, username. |
 | `quack-flightsql.auth.keycloak.enabled` | `QOD_AUTH_KEYCLOAK_ENABLED` | `false` |  | Enable the Keycloak OIDC bearer provider. |
-| `quack-flightsql.auth.keycloak.baseUrl` | `QOD_AUTH_KEYCLOAK_BASE_URL` | `https://keycloak.example.com` |  | Keycloak base URL (e.g. https://keycloak.example.com). |
+| `quack-flightsql.auth.keycloak.baseUrl` | `QOD_AUTH_KEYCLOAK_BASE_URL` | `https://keycloak.example.com` |  | Keycloak base URL (e.g. https&#58;//keycloak.example.com). |
 | `quack-flightsql.auth.keycloak.realm` | `QOD_AUTH_KEYCLOAK_REALM` | `quack` |  | Keycloak realm name. |
 | `quack-flightsql.auth.keycloak.clientId` | `QOD_AUTH_KEYCLOAK_CLIENT_ID` | _(unset)_ |  | Keycloak client ID for ROPC. |
 | `quack-flightsql.auth.keycloak.clientSecret` | `QOD_AUTH_KEYCLOAK_CLIENT_SECRET` | `***` | yes | Keycloak client secret. |
-| `quack-flightsql.auth.keycloak.issuer` | `QOD_AUTH_KEYCLOAK_ISSUER` | _(unset)_ |  | Override for the expected token issuer (the `iss` claim the bearer validator requires). Leave empty to derive it from baseUrl + realm. Set it when Keycloak's browser-facing issuer (KC_HOSTNAME_URL) differs from the in-cluster baseUrl used to fetch JWKS: tokens minted via an ingress carry iss=https://host/auth/realms/&lt;realm> while the manager fetches JWKS in-cluster. JWKS is always derived from baseUrl, not this value. |
+| `quack-flightsql.auth.keycloak.issuer` | `QOD_AUTH_KEYCLOAK_ISSUER` | _(unset)_ |  | Override for the expected token issuer (the `iss` claim the bearer validator requires). Leave empty to derive it from baseUrl + realm. Set it when Keycloak's browser-facing issuer (KC_HOSTNAME_URL) differs from the in-cluster baseUrl used to fetch JWKS: tokens minted via an ingress carry iss=https&#58;//host/auth/realms/&lt;realm> while the manager fetches JWKS in-cluster. JWKS is always derived from baseUrl, not this value. |
 | `quack-flightsql.auth.google.enabled` | `QOD_AUTH_GOOGLE_ENABLED` | `false` |  | Enable the Google OIDC bearer provider. |
 | `quack-flightsql.auth.google.clientId` | `QOD_AUTH_GOOGLE_CLIENT_ID` | _(unset)_ |  | Google OAuth client ID. |
 | `quack-flightsql.auth.google.clientSecret` | `QOD_AUTH_GOOGLE_CLIENT_SECRET` | `***` | yes | Google OAuth client secret. |
@@ -101,7 +93,6 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | --- | --- | --- | --- | --- |
 | `quack-on-demand.host` | `QOD_ON_DEMAND_HOST` | `0.0.0.0` |  | Manager REST bind address (0.0.0.0 to listen on all interfaces). |
 | `quack-on-demand.port` | `QOD_ON_DEMAND_PORT` | `20900` |  | Manager REST + admin UI port. |
-| `quack-on-demand.apiKey` | `QOD_API_KEY` | `***` | yes | Static admin API key sent as X-API-Key. Unset or empty: outside HA a random key is generated at boot and printed to the console; under HA the static-key arm stays disabled and /api accepts only session and PAT credentials (never open). |
 | `quack-on-demand.runtimeType` | `QOD_RUNTIME_TYPE` | `local` |  | Quack node runtime backend: 'local' (child processes), 'kubernetes' (pods) or 'fleet' (one node per server joined through qod fleet join). |
 | `quack-on-demand.minPort` | `QOD_MIN_PORT` | `21900` |  | Lower bound of the port range LocalQuackBackend allocates child nodes from. |
 | `quack-on-demand.maxPort` | `QOD_MAX_PORT` | `22500` |  | Upper bound of the port range LocalQuackBackend allocates child nodes from. |
@@ -113,7 +104,7 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.drainTimeoutSec` | `QOD_DRAIN_TIMEOUT_SEC` | `60` |  | Seconds to wait for in-flight statements during graceful pool shutdown. |
 | `quack-on-demand.healthCheckIntervalSec` | `QOD_HEALTH_CHECK_INTERVAL_SEC` | `5` |  | Seconds between supervisor health checks against child nodes. |
 | `quack-on-demand.reconcileIntervalSec` | `QOD_RECONCILE_INTERVAL_SEC` | `30` |  | Seconds between supervisor reconcile passes that respawn dead nodes. 0 disables the periodic loop (reconcile still runs once at boot). |
-| `quack-on-demand.publicBaseUrl` | `QOD_PUBLIC_BASE_URL` | _(unset)_ |  | Externally visible base URL (e.g. https://qod.example.com) used to build password-reset links mailed to users. When empty the link is host-relative (/ui/reset-password?...) and Main logs a boot warning. |
+| `quack-on-demand.publicBaseUrl` | `QOD_PUBLIC_BASE_URL` | _(unset)_ |  | Externally visible base URL (e.g. https&#58;//qod.example.com) used to build password-reset links mailed to users. When empty the link is host-relative (/ui/reset-password?...) and Main logs a boot warning. |
 | `quack-on-demand.requireEncryption` | `QOD_REQUIRE_ENCRYPTION` | `false` |  | Refuse `database/create` unless the caller asks for encryption at rest. Gates creates only: existing databases are untouched, so turning this on never bricks a running deployment. |
 | `quack-on-demand.sessionIdleTtlSec` | `QOD_SESSION_IDLE_TTL_SEC` | `28800` |  | UI session idle TTL in seconds. A session unused for this long is dropped on the next access; each successful access slides the window. Manager restart still invalidates everything (sessions are heap-only). |
 
@@ -130,16 +121,16 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | Key | Env var | Default | Sensitive | Description |
 | --- | --- | --- | --- | --- |
 | `quack-on-demand.auth.management.identitySource` | `QOD_MGMT_IDENTITY_SOURCE` | `db` |  | System-scope (bare /ui/) admin-UI login mode: 'db' (password form) or 'oidc' (SSO). Per-tenant login mode is read from the tenant's authProvider, not this key. |
-| `quack-on-demand.auth.management.sessionJwtSecret` | `QOD_SESSION_JWT_SECRET` | `***` | yes | HS256 secret used to sign UI session JWTs. Pin a stable value (>= 32 chars) to make sessions survive manager restart and to share session state across replicas. Empty = autogenerate a fresh 32-byte secret at boot, printed to the console (sessions die on restart; HA refuses to boot). |
+| `quack-on-demand.auth.management.sessionJwtSecret` | `QOD_SESSION_JWT_SECRET` | `***` | yes | HS256 secret used to sign UI session JWTs and password-reset links. Empty (the default) = the control plane's: generated once by the first boot, stored in qodstate_boot_secret and read by every restart and every HA replica, so sessions survive restarts. A set value (>= 32 chars) wins and is never stored; set one when another service must verify the sessions (the Starflow pairing). |
 | `quack-on-demand.auth.management.sessionCookieSecure` | `QOD_SESSION_COOKIE_SECURE` | `auto` |  | Whether the qod_session cookie carries the `Secure` flag. Accepts 'auto' (default, derives from the request's X-Forwarded-Proto -- https=Secure, http or absent=not Secure), 'true' (force Secure regardless of request scheme; use behind a TLS ingress that strips X-Forwarded-Proto), or 'false' (force not Secure). |
-| `quack-on-demand.auth.management.sessionCookiePath` | `QOD_SESSION_COOKIE_PATH` | `/api` |  | Path attribute on the qod_session cookie. Default '/api'. Override when the manager sits behind a path-rewriting reverse proxy: the value must match the BROWSER-visible URL prefix, not the backend's. E.g. proxy at https://platform/quack/api/* -> QOD_SESSION_COOKIE_PATH=/quack/api. |
-| `quack-on-demand.auth.management.publicBaseUrl` | `QOD_MGMT_PUBLIC_BASE_URL` | _(unset)_ |  | Externally visible manager base URL (e.g. https://qod.example.com). Used to build OIDC redirect_uri and post_logout_redirect_uri for admin-UI SSO. When empty, falls back to http://localhost on the manager's REST port (http://localhost:20900 by default); set it for any non-localhost deploy. |
-| `quack-on-demand.auth.management.oidc.issuerUrl` | `QOD_MGMT_OIDC_ISSUER_URL` | _(unset)_ |  | OIDC issuer URL for admin-UI SSO (system scope), e.g. https://accounts.google.com or http://keycloak:8080/auth/realms/qod. Discovery reads $&#123;issuerUrl&#125;/.well-known/openid-configuration. Empty disables system-scope SSO. |
+| `quack-on-demand.auth.management.sessionCookiePath` | `QOD_SESSION_COOKIE_PATH` | `/api` |  | Path attribute on the qod_session cookie. Default '/api'. Override when the manager sits behind a path-rewriting reverse proxy: the value must match the BROWSER-visible URL prefix, not the backend's. E.g. proxy at https&#58;//platform/quack/api/* -> QOD_SESSION_COOKIE_PATH=/quack/api. |
+| `quack-on-demand.auth.management.publicBaseUrl` | `QOD_MGMT_PUBLIC_BASE_URL` | _(unset)_ |  | Externally visible manager base URL (e.g. https&#58;//qod.example.com). Used to build OIDC redirect_uri and post_logout_redirect_uri for admin-UI SSO. When empty, falls back to http&#58;//localhost on the manager's REST port (http&#58;//localhost:20900 by default); set it for any non-localhost deploy. |
+| `quack-on-demand.auth.management.oidc.issuerUrl` | `QOD_MGMT_OIDC_ISSUER_URL` | _(unset)_ |  | OIDC issuer URL for admin-UI SSO (system scope), e.g. https&#58;//accounts.google.com or http&#58;//keycloak:8080/auth/realms/qod. Discovery reads $&#123;issuerUrl&#125;/.well-known/openid-configuration. Empty disables system-scope SSO. |
 | `quack-on-demand.auth.management.oidc.clientId` | `QOD_MGMT_OIDC_CLIENT_ID` | _(unset)_ |  | OIDC client id for admin-UI SSO (system scope). |
 | `quack-on-demand.auth.management.oidc.clientSecret` | `QOD_MGMT_OIDC_CLIENT_SECRET` | `***` | yes | OIDC client secret for admin-UI SSO (system scope). |
 | `quack-on-demand.auth.management.oidc.scopes` | `QOD_MGMT_OIDC_SCOPES` | `openid email profile` |  | OIDC scopes requested for admin-UI SSO. Default 'openid email profile'. |
 | `quack-on-demand.auth.management.slEnabled` | `SL_ENABLED` | `false` |  | Enable the Starlake SSO integration (menu link, ticket endpoints, logout callback) |
-| `quack-on-demand.auth.management.slUrl` | `SL_URL` | _(unset)_ |  | Starlake base URL for the SSO handoff and logout callback, e.g. https://starlake.example.com |
+| `quack-on-demand.auth.management.slUrl` | `SL_URL` | _(unset)_ |  | Starlake base URL for the SSO handoff and logout callback, e.g. https&#58;//starlake.example.com |
 | `quack-on-demand.auth.lockout.enabled` | `QOD_AUTH_LOCKOUT_ENABLED` | `false` |  | Lock a database-backed user out after maxFailures consecutive bad passwords. Requires SMTP to be configured (quack-on-demand.smtp.host) so a locked-out user has a self-service reset path; Main refuses to boot otherwise. |
 | `quack-on-demand.auth.lockout.maxFailures` | `QOD_AUTH_LOCKOUT_MAX_FAILURES` | `10` |  | Consecutive failed logins before a database-backed user is locked out. |
 
@@ -299,6 +290,30 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.metrics.gcp.projectId` | `QOD_METRICS_GCP_PROJECT_ID` | _(unset)_ |  | GCP project ID when metrics.sink=gcp. |
 | `quack-on-demand.metrics.gcp.stepSeconds` | `QOD_METRICS_GCP_STEP_SEC` | `60` |  | GCP Cloud Monitoring publish step in seconds. |
 
+## `quack-on-demand.nodeAuthz`
+
+| Key | Env var | Default | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `quack-on-demand.nodeAuthz.keySecret` | `QOD_NODE_KEY_SECRET` | `***` | yes | Secret every node key derives from (>= 32 characters). Unset: one value generated by the first boot and kept in the control-plane database, shared by every replica. Changing it means restarting every node. |
+| `quack-on-demand.nodeAuthz.internalUrl` | `QOD_INTERNAL_URL` | _(unset)_ |  | URL nodes reach this replica on, carried in every session handle: nodes call it for their statements' verdicts (plain http). Default `http://<QOD_POD_IP>:<manager port>` when the pod IP is set, else `http://<QOD_ON_DEMAND_HOST>:<manager port>` when the manager listens on one specific address, else `http://127.0.0.1:<manager port>`. Required in fleet mode (this replica's own address, one per replica, never a load balancer); never a loopback URL on Kubernetes. |
+| `quack-on-demand.nodeAuthz.podIp` | `QOD_POD_IP` | _(unset)_ |  | This replica's pod IP; the Helm chart sets it from the downward API. With QOD_INTERNAL_URL unset, nodes reach this replica on `http://<pod IP>:<manager port>`, so the replica that minted a handle, not the Service, answers its node. |
+| `quack-on-demand.nodeAuthz.handleContextsMax` | `QOD_AUTHZ_HANDLE_CONTEXTS_MAX` | `200000` |  | How many session handle contexts this replica keeps for its nodes' verdict and credential calls (at least 1000). Each is kept 360 s whatever the statement's duration, so this caps the replica's sustained tenant statements at about this / 360 per second (about 555 at the default); past it a statement can be refused with 'authorization context expired; retry'. Watch cache_evictions_total&#123;cache="qod_minted_handles"&#125;. |
+
+## `quack-on-demand.nodeAuthzLimits`
+
+| Key | Env var | Default | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `quack-on-demand.nodeAuthzLimits.decideTimeoutMs` | `QOD_AUTHZ_DECIDE_TIMEOUT_MS` | `2000` |  | How long a node waits for one verdict from the manager, connect to last byte, in ms (1 to 60000). A slower answer refuses the statement, as retryable when it is a single statement. Applies at each node's next start. |
+| `quack-on-demand.nodeAuthzLimits.cacheEntries` | `QOD_AUTHZ_CACHE_ENTRIES` | `10000` |  | How many plan verdicts a node caches (0 to 10000000; 0 caches none). Applies at each node's next start. |
+
+## `quack-on-demand.nodeExtensions`
+
+| Key | Env var | Default | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `quack-on-demand.nodeExtensions.allowCommunity` | `QOD_NODE_ALLOW_COMMUNITY_EXTENSIONS` | `false` |  | Let nodes load community extensions (allow_community_extensions). Off by default; a pool or database initSql that installs a community extension needs it. Applies at each node's next start. |
+| `quack-on-demand.nodeExtensions.allowUnsigned` | `QOD_NODE_ALLOW_UNSIGNED_EXTENSIONS` | `false` |  | Let nodes load extensions with a missing or invalid signature (allow_unsigned_extensions). Off by default. Applies at each node's next start. |
+| `quack-on-demand.nodeExtensions.autoinstallKnown` | `QOD_NODE_AUTOINSTALL_KNOWN_EXTENSIONS` | `false` |  | Let nodes download a known extension the first time a statement needs it (autoinstall_known_extensions). Off by default: nodes install what QoD's own setup needs explicitly. Applies at each node's next start. |
+
 ## `quack-on-demand.pat`
 
 | Key | Env var | Default | Sensitive | Description |
@@ -336,4 +351,16 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.telemetry.rollupIntervalSec` | `QOD_ROLLUP_INTERVAL_SEC` | `300` |  | Seconds between rollup computation passes that aggregate raw statement history into rollup buckets. |
 | `quack-on-demand.telemetry.usageRetentionDays` | `QOD_USAGE_RETENTION_DAYS` | `400` |  | Days to keep daily rollup buckets (the usage-accounting ledger) before the periodic purge removes them. 400 covers a full billing year. |
 | `quack-on-demand.telemetry.auditSink` | `QOD_AUDIT_SINK` | `none` |  | Extra destination for every audit and statement event, on top of the store: none \| stdout (one JSON line per event, tagged qodEvent=audit\|statement, for a log shipper; SQL literals, engine error text and unauthenticated login names are redacted). Requires store=postgres. Lines dropped under stdout backpressure count in qod_journal_dropped_total&#123;table=stdout&#125;. |
+
+## `quack-on-demand.tenantFiles`
+
+| Key | Env var | Default | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `quack-on-demand.tenantFiles.root` | `QOD_TENANT_FILES_ROOT` | _(unset)_ |  | Absolute folder under which tenant admins may authorize local folders, one subfolder per tenant id (&lt;root>/&lt;tenant>/...). Unset: no local folder can be authorized, and non-superusers reach no local file. Must be a real path on the nodes. |
+
+## `quack-on-demand.userS3`
+
+| Key | Env var | Default | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `quack-on-demand.userS3.allowedEndpoints` | `QOD_USER_S3_ALLOWED_ENDPOINTS` | _(unset)_ |  | S3-compatible endpoints users may name for their own S3 credentials, comma separated: `host[:port]` (TLS) or `http://host[:port]` (plain HTTP). Empty: AWS's own endpoint only. |
 
