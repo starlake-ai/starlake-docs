@@ -23,7 +23,7 @@ It serves two wires from that one endpoint: [Arrow Flight SQL](https://arrow.apa
 
 ## What it does
 
-Clients speak Arrow Flight SQL or the native Quack protocol to the gateway. Either way, it authenticates the connection, authorizes every statement against a role-based access model, classifies it read or write, and routes it to the least-loaded DuckDB node that can serve it (on object-store pools, biased toward a node that already has the query's tables cached). The nodes read and write Parquet through shared DuckLake catalogs, so they present one consistent view and a pool can scale out across many of them.
+Clients speak Arrow Flight SQL or the native Quack protocol to the gateway. Either way, it authenticates the connection, classifies every statement read or write, and routes it to the least-loaded DuckDB node that can serve it (on object-store pools, biased toward a node that already has the query's tables cached). The node authorizes the statement before running it: it judges the plan DuckDB bound (the tables, views, columns, functions and files it reaches) against the user's grants, or the tenant's OPA policy, with a verdict from the manager. The nodes read and write Parquet through shared DuckLake catalogs, so they present one consistent view and a pool can scale out across many of them.
 
 The two wires are two front doors to the same gateway, not two products: same tenants, same users, same per-statement ACL, column masking and row filters, same router, same audit log. Only the wire differs.
 
@@ -38,7 +38,7 @@ DuckDB is excellent for fast analytics, and DuckLake gives it a durable, object-
 Reach for Quack on Demand when you want to:
 
 - **Serve many users or applications** from shared DuckDB/DuckLake data through one governed endpoint, instead of handing out database files.
-- **Enforce access control** on every query: role-based, per-table permissions with tenant isolation, applied before a statement touches a node.
+- **Enforce access control** on every query: role-based permissions on tables, columns and files with tenant isolation, decided inside the engine on what DuckDB resolved, before the statement runs.
 - **Scale horizontally**: spread read and write traffic across a pool of DuckDB nodes over a single shared catalog, with least-loaded routing (cache-aware on object-store pools) and retry on failure.
 - **Isolate tenants**: keep each tenant's databases, users, and compute separate, with its own auth provider.
 - **Federate external sources** (Postgres, S3 / Iceberg, anything DuckDB can attach) behind the same SQL surface and the same access model.
@@ -61,7 +61,7 @@ It is the wrong tool when:
 | --- | --- |
 | Client protocols | Arrow Flight SQL (`:31338`) and DuckDB's native Quack protocol (`:9494`), one identity and policy model behind both |
 | Multi-tenancy | Tenants own databases (DuckLake catalogs) and pools of DuckDB nodes |
-| Access control | Authentication (database, JWT, OIDC) plus role-based, per-statement table ACL |
+| Access control | Authentication (database, JWT, OIDC) plus role-based, per-statement access control enforced in every node |
 | Routing | Statement classification, least-loaded node selection (cache-aware on object-store pools), transaction pinning, retry-once |
 | Storage | DuckLake catalogs over a filesystem or S3-compatible object store |
 | Federation | Attach external catalogs (Postgres, S3/Iceberg) under the same ACL |

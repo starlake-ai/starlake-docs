@@ -39,7 +39,7 @@ Google does not support ROPC; Google users must authenticate via Bearer token.
 - Azure AD OIDC - JWKS-based validation. Enabled via `QOD_AUTH_AZURE_ENABLED=true`.
 - AWS Cognito - JWKS-based validation. Enabled via `QOD_AUTH_AWS_ENABLED=true`.
 
-Each chain is tried in the order listed. The first provider that returns a valid `AuthenticatedProfile` wins; the others are not consulted. If a chain has no configured providers and a credential of that type arrives, the chain returns an error immediately.
+Each chain is tried in the order listed. The first provider that returns a valid `AuthenticatedProfile` wins; the others are not consulted. If a chain has no configured providers and a credential of that type arrives, the chain returns an error immediately. At least one provider must be configured across both chains: see [No provider, no boot](#no-provider-no-boot).
 
 ## Passing credentials
 
@@ -111,18 +111,18 @@ On a successful handshake the edge mints a random UUID as a session peer ID and 
 
 The session is cached for `sessionTtlSec` seconds (env `QOD_SESSION_TTL_SEC`, default `3600`). After the TTL expires the peer ID is evicted. The next RPC from that client arrives as an unknown Bearer, and the edge forces a full re-handshake through the auth chain.
 
-The TTL bounds the window during which a revoked credential or a rotated token remains effective after the next policy change.
+Authorization is not frozen at the handshake. A revoked grant, a disabled or deleted user, or a lost pool grant takes effect on the session's next statement (inside an open native Quack transaction too, which it ends), and a re-grant restores the session without a reconnect; a control-plane outage during that check is a retryable `UNAVAILABLE`. A session's prepared statements are dropped when it ends, and one left unused for the TTL answers "no such prepared statement", so the client prepares again.
 
 ### Management plane (UI + REST)
 
-On a successful `/api/auth/login` the manager mints a **JWT** (HS256, signed with `QOD_SESSION_JWT_SECRET`) carrying `{sub, tenant, role, superuser, manageableTenants, jti, iat, exp}`. The token is delivered two ways:
+On a successful `/api/auth/login` the manager mints a **JWT** (HS256, signed with the session secret, see below) carrying `{sub, tenant, role, superuser, manageableTenants, jti, iat, exp}`. The token is delivered two ways:
 
 - as an `HttpOnly Secure SameSite=Lax` cookie (`qod_session`) set by the response - the browser auto-attaches it on subsequent same-origin `/api/*` requests. JavaScript cannot read it; XSS payloads cannot exfiltrate it.
-- as the `token` field in the JSON body - for CLI / static-key callers that send it via the `X-API-Key` header.
+- as the `token` field in the JSON body - for the CLI and scripts, which send it in the `X-API-Key` header (the header keeps its name; there is no static API key).
 
-The `apiKeyGuard` middleware admits a request when EITHER path matches a verified JWT. Verification is stateless (signature + `exp` check); manager restart does not invalidate sessions as long as the JWT secret stays pinned, which makes horizontal scale-out possible.
+The `apiKeyGuard` middleware admits a request when either path carries a verified JWT, or when `X-API-Key` carries a live personal access token. Nothing else is a credential: every REST, MCP and SCIM call is a session or a PAT, attributed to a user. Verification is stateless (signature + `exp` check); manager restart does not invalidate sessions, and every HA replica verifies the others' tokens, because they all sign with the same secret.
 
-The JWT `exp` is **absolute** (8h from mint by default, env `QOD_SESSION_IDLE_TTL_SEC`); there is no sliding-window refresh. Revocation works against a small in-process jti denylist that survives only the current process - for a hard kill of all sessions, rotate `QOD_SESSION_JWT_SECRET`.
+The JWT `exp` is **absolute** (8h from mint by default, env `QOD_SESSION_IDLE_TTL_SEC`); there is no sliding-window refresh. Revocation works against a small in-process jti denylist that survives only the current process - for a hard kill of all sessions, rotate the session secret (below).
 
 Cookie attributes are configurable:
 
@@ -132,7 +132,9 @@ Cookie attributes are configurable:
   - `false`: force not `Secure`. Use for stunnel-style local TLS termination where you want to opt out of derivation.
 - `QOD_SESSION_COOKIE_PATH` (default `/api`) - override behind a path-rewriting reverse proxy to match the browser-visible URL prefix.
 
-When `QOD_SESSION_JWT_SECRET` is unset, the manager generates a fresh random secret at every boot and prints it to the console. Sessions then die on restart, and HA refuses to boot (replicas cannot verify each other's tokens). Pin a stable random value (32+ chars) for production.
+The session secret is `QOD_SESSION_JWT_SECRET` when it is set (never written to the database). When it is unset, the first boot generates one and stores it in the control-plane database (`qodstate_boot_secret`, row `session_jwt`); every later boot and every HA replica reads the same row, so sessions survive restarts with no setting at all. Boot prints one line naming the source, never the value: `session secret: from QOD_SESSION_JWT_SECRET (...)`, `session secret: generated and stored in the control plane ...` or `session secret: stored in the control plane ...`. To rotate the stored secret, run `DELETE FROM qodstate_boot_secret WHERE name = 'session_jwt'` and restart every replica; to rotate a pinned one, change the variable on every replica. Either way every session and outstanding password-reset link ends.
+
+Trust boundary: with the stored secret, anyone who can read the control-plane database (a `pg_dump` backup, a snapshot, a read replica, a SELECT-only role) can forge a superuser session. Protect backups and replicas like the secret itself, or pin `QOD_SESSION_JWT_SECRET` from an external secret store, in which case nothing is persisted and backups never carry it.
 
 ## Management plane (REST and UI)
 
@@ -153,11 +155,11 @@ A tenant's own SSO (`/ui/?tenant=<id>`) resolves its grants this way whatever `i
 
 So does a password login answered by the manager-wide Keycloak or Azure password grant, under either `identitySource`. With one of them enabled, a `db` tenant's password form accepts that IdP's passwords as well as the database's (the chain tries the grant whenever the database check fails), and such a login signs in as the QoD user of that tenant with the same user name as the IdP account (the token's `preferred_username`; the lookup is never retried with the email, and a token without `preferred_username` is named by its email only when the IdP marks it verified, as described above), with that row's rights only. A login naming a `db` tenant reads that tenant's rows only: an admin row opens the operator console, a `kind=user` row the [Profile page](./admin-ui.md#profile-page-regular-users), and no row at all is `403 not_provisioned`, whatever role claim the IdP issues and even when a superuser of the same name exists. A login without a tenant reads the rows the user name holds in any realm: a superuser row makes a superuser session, admin rows of tenants a multi-tenant admin session. Because the user name picks the row, the IdP's user names must be assigned by an administrator: an IdP realm that lets people choose their own user name lets them sign in as any QoD user of that name, the seeded superusers `admin@localhost.local` and `admin` included. This holds on the data plane too: a FlightSQL or native Quack front door handshake binds the row its token's `preferred_username` names, a superuser row on a `superuser=true` handshake (a Keycloak realm with "email as username" and self-registration lets a registrant choose `admin@localhost.local`).
 
-> **Upgrading to 0.10.2: IdP password logins need a `qodstate_user` row.** Before 0.10.2 a password login answered by the Keycloak or Azure password grant took its role from the IdP's claim, for a `db` tenant's login form and for the login without a tenant under the default `identitySource=db`: an `admin` claim opened a superuser session with no `qodstate_user` row at all. It now needs a row in the realm it names, found by the IdP's user name (`preferred_username`; a row of the tenant for a tenant login; a superuser row or tenant admin rows without a tenant). Before upgrading, create the rows of the people who rely on such a login (`qod user create`).
+> **Upgrading to 0.11.0: IdP password logins need a `qodstate_user` row.** Before 0.11.0 a password login answered by the Keycloak or Azure password grant took its role from the IdP's claim, for a `db` tenant's login form and for the login without a tenant under the default `identitySource=db`: an `admin` claim opened a superuser session with no `qodstate_user` row at all. It now needs a row in the realm it names, found by the IdP's user name (`preferred_username`; a row of the tenant for a tenant login; a superuser row or tenant admin rows without a tenant). Before upgrading, create the rows of the people who rely on such a login (`qod user create`).
 
-> **Upgrading to 0.10.2: an email counts only when the IdP verified it.** Before 0.10.2 the email claim was always tried when the user name matched no row, and a user name that was itself the email claim (a token without `preferred_username`) always bound its row. Both now need the token's `email_verified` claim to be true, on a single sign-on and on an IdP password login alike; a login whose name is an unverified email is refused `403 not_provisioned`, and the single sign-on email fallback is skipped. The same holds on FlightSQL and the native Quack front door, where such a handshake is now refused as unauthenticated. This is breaking for a token that carries an `email` claim but no `preferred_username` and no true `email_verified` (a token with neither claim is named by its subject and is unaffected): have the tokens carry `preferred_username` (and name the rows by it) or `email_verified: true`. The two setups most likely to hit it:
+> **Upgrading to 0.11.0: an email counts only when the IdP verified it.** Before 0.11.0 the email claim was always tried when the user name matched no row, and a user name that was itself the email claim (a token without `preferred_username`) always bound its row. Both now need the token's `email_verified` claim to be true, on a single sign-on and on an IdP password login alike; a login whose name is an unverified email is refused `403 not_provisioned`, and the single sign-on email fallback is skipped. The same holds on FlightSQL and the native Quack front door, where such a handshake is now refused as unauthenticated. This is breaking for a token that carries an `email` claim but no `preferred_username` and no true `email_verified` (a token with neither claim is named by its subject and is unaffected): have the tokens carry `preferred_username` (and name the rows by it) or `email_verified: true`. The two setups most likely to hit it:
 >
-> - an operator-run [external JWT](./auth-providers.md) signer (`JWT_SECRET_KEY` / `JWT_PUBLIC_KEY_PATH`), used on the data plane only, so its naming changes for the first time in 0.10.2, whose tokens name users by `email`: add `preferred_username`, or `email_verified: true`, to the tokens it mints;
+> - an operator-run [external JWT](./auth-providers.md) signer (`JWT_SECRET_KEY` / `JWT_PUBLIC_KEY_PATH`), used on the data plane only, so its naming changes for the first time in 0.11.0, whose tokens name users by `email`: add `preferred_username`, or `email_verified: true`, to the tokens it mints;
 > - Azure AD (Entra ID), which never sends `email_verified`: a v1 access token carries no `preferred_username`, so one named by its `email` claim is always refused. Issue v2 tokens (`accessTokenAcceptedVersion: 2` in the app registration's manifest), which carry `preferred_username`.
 
 ### Multi-tenant scope
@@ -192,7 +194,7 @@ Two cross-cutting refinements that the column structure above does not show:
 
 Recommended combinations:
 
-- Local dev or bootstrap: `database.enabled=true`, no OIDC, `identitySource=db`. The seeded `admin@localhost.local / admin` flow works out of the box.
+- Local dev or bootstrap: `database.enabled=true`, no OIDC, `identitySource=db`. The seeded `admin@localhost.local` signs in with the password chosen on the first boot.
 - Production with an IdP, strict OIDC management: `database.enabled=false`, OIDC enabled, `identitySource=oidc`. Every login goes through the IdP and the manager controls authorization via `qodstate_user`.
 - Production with IdP and DB break-glass for edge clients: `database.enabled=true`, OIDC enabled, `identitySource=oidc`. JDBC clients can still hit FlightSQL with DB credentials, but management login is forced through the IdP.
 
@@ -208,16 +210,10 @@ When set, the edge substitutes the per-tenant authenticator into the bearer chai
 
 Tenants that have NOT set `clientId` keep using the global block - adoption is incremental.
 
-## Running without providers (development only)
+## No provider, no boot
 
-If all provider chains are empty - no `database`, no JWT keys, no OIDC providers enabled - the edge logs a startup warning:
+There is no unauthenticated mode. The manager refuses to boot when the FlightSQL edge and the native Quack front door would have no authenticator (`QOD_AUTH_DB_ENABLED=false` and no Keycloak, Azure, Google, AWS or external JWT provider), with an error that starts "the FlightSQL edge and the Quack front door have no authenticator" and names what to set: `QOD_AUTH_DB_ENABLED=true`, a Keycloak or Azure password backend (`QOD_AUTH_KEYCLOAK_ENABLED`, `QOD_AUTH_AZURE_ENABLED`), or a bearer provider (`JWT_SECRET_KEY` or `JWT_PUBLIC_KEY_PATH`, `QOD_AUTH_GOOGLE_ENABLED`, `QOD_AUTH_AWS_ENABLED`). System-scope OIDC (`QOD_MGMT_OIDC_*`) signs in to the admin UI and REST only and adds no FlightSQL provider, so it does not count. The manager also refuses to boot when nothing could create a management session: no password backend and no system-scope OIDC sign-in (`QOD_MGMT_IDENTITY_SOURCE=oidc` with `QOD_MGMT_OIDC_ISSUER_URL` and `QOD_MGMT_OIDC_CLIENT_ID`). Both checks read the configuration alone and run before the manager binds a listener or touches its database.
 
-```
-FlightSQL edge listening on ... (auth: OPEN (trust-the-client; configure auth.* in application.conf for prod))
-```
-
-In this mode the edge skips credential validation entirely and trusts whatever username the client supplies in the Basic header. A session peer ID is still minted and the `(tenant, pool, user)` tuple is still resolved from headers.
-
-This fallback exists for local development when standing up a Postgres instance just for auth is inconvenient. Never use it in any shared or production environment. Enable at least the `database` provider (`QOD_AUTH_DB_ENABLED=true`, which is the default) before exposing the edge to any network.
+The handshake fails closed as well: with no provider configured, the FlightSQL edge and the Quack front door refuse every connection, superusers included ("no authenticator is configured on this manager: every connection is refused").
 
 For all configuration keys and their defaults see [/reference/configuration](/qod/reference/configuration).

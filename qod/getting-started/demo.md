@@ -140,7 +140,7 @@ The matrix below is also pinned as `BootstrapDemoEffectiveSpec` in the test suit
 | Statement | Decision | Why |
 |---|---|---|
 | `SELECT * FROM customer` | **Allowed** | `tenant_admin` `*.*.* ALL` covers everything in acme |
-| `SELECT * FROM globex_tpcds.tpcds1.store_sales` | **Denied** | catalog `*` is tenant-scoped; does not reach a sibling tenant's catalog |
+| `SELECT * FROM globex_tpcds.tpcds1.store_sales` | **Denied** | a wildcard catalog covers the pool's own catalog only; it does not reach a sibling tenant's catalog |
 
 ### `carol` (globex analyst + cross-tenant federation reader)
 
@@ -154,13 +154,13 @@ The matrix below is also pinned as `BootstrapDemoEffectiveSpec` in the test suit
 
 | Statement | Decision | Why |
 |---|---|---|
-| `SELECT * FROM acme_pg.tpch1.customer` | **Denied** | `tenantCatalogs` enumerates tenant-dbs only, not federated aliases. `*.*.* ALL` does NOT reach `acme_pg`; an explicit named grant would be required. |
+| `SELECT * FROM acme_pg.tpch1.customer` | **Denied** | A wildcard grant (`*.*.* ALL`) never covers a federated catalog: `acme_pg` must be granted by its alias. |
 
 ### `root` (superuser, no tenant)
 
 | Statement | Decision | Why |
 |---|---|---|
-| `SELECT * FROM globex_tpcds.tpcds1.store_sales` | **Allowed** | superuser bypass; no per-statement check |
+| `SELECT * FROM globex_tpcds.tpcds1.store_sales` | **Allowed** | superuser: no grant check (the node still applies its local refusals) |
 
 ## Logging in
 
@@ -189,7 +189,7 @@ Replace `tenant`, `pool`, `username`, `password` with the personas from the tabl
 ## What to try next
 
 - Walk through the [Access control model](/qod/operating/rbac-model) with concrete tenants in front of you.
-- Add a new role to `globex.cross_tenant_analyst` via the [Administering access](/qod/operating/rbac-admin) page and watch carol's effective set widen on the next handshake.
+- Add a new role to `globex.cross_tenant_analyst` via the [Administering access](/qod/operating/rbac-admin) page and watch carol's access widen on her next statement, with no reconnect.
 - Read [Federation](/qod/operating/federation) to see how `acme_pg`'s `setupSql` is composed and how secrets are resolved.
 - Strip the demo out: run without any `LOAD_TPC*` var, get an empty manager, build your own tenants via REST/UI.
 

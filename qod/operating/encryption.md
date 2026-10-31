@@ -92,13 +92,14 @@ not that none exists: to get the stronger property, turn it on before you create
 
 ## Kubernetes
 
-Node credentials reach a pod through a per-pool Kubernetes Secret rather than the pod's plain
-environment, so they no longer appear in `kubectl get pod -o yaml`. This covers the encryption key
-and the control-plane password, the latter because it opens the catalog holding a DuckLake
-database's per-file keys.
+Node credentials reach a pod through a per-pool Kubernetes Secret, delivered as files of the pod's
+read-only secrets volume, never as environment variables, so they do not appear in
+`kubectl get pod -o yaml`. This covers the encryption key and the control-plane password, the
+latter because it opens the catalog holding a DuckLake database's per-file keys. See
+[Kubernetes deployment](deploy-kubernetes.md#node-secrets-volume).
 
-**When upgrading:** pods created by an earlier manager keep the old shape and are not migrated in
-place. Restart every node after upgrading, for example by scaling each pool down and back up.
+**When upgrading:** pods created by an earlier manager are not migrated in place. Restart every
+node after upgrading, for example by scaling each pool down and back up.
 
 ## Verifying it worked
 

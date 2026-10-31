@@ -27,7 +27,7 @@ The script requires `PG_HOST` and `PG_PASSWORD`. Key options:
 | `QUACK_PORT` | `9494` | Host port for the native Quack front door (DuckDB `ATTACH`) |
 | `TLS` | `false` | Enable FlightSQL TLS inside the container |
 | `ADMIN_PASSWORD` | `admin` | Admin login password, used on the first boot only (`QOD_ADMIN_PASSWORD` also works and wins). Rotate it afterwards with `qod auth change-password`. |
-| `API_KEY` | unset | REST `X-API-Key` static key |
+| `AUTH` | `true` | Database password auth for FlightSQL and the admin login. Only `true` is accepted: with `false` the manager would have no FlightSQL authenticator and refuse to boot, so the script refuses first. |
 | `BUILD` | `0` | Set to `1` to build the image from the local Dockerfile instead of pulling |
 
 To pin a version or use the latest snapshot:
@@ -41,7 +41,7 @@ QOD_VERSION=latest-snapshot PG_HOST=... PG_PASSWORD=*** ./scripts/docker/run-doc
 
 ## Native jar (`qod start`)
 
-`qod start` runs a real manager on your machine against your own Postgres, with no repository checkout: it downloads the release jar from GitHub Releases (verified against the published sha256), self-installs the DuckDB CLI + `libduckdb` at the pinned ABI, and launches QoD with the right settings.
+`qod start` runs a real manager on your machine against your own Postgres, with no repository checkout: it downloads the release jar from GitHub Releases (verified against the published sha256), self-installs the DuckDB CLI + `libduckdb` at the pinned ABI, and launches QoD with the right settings. Every node runs `qod-node`, QoD's own executable on the official DuckDB library: the jar bundles it for Linux and macOS (x86_64, aarch64) and installs it beside the `libduckdb` it loaded, and `QOD_NODE_BIN` points the manager at another build. The manager refuses to boot without one, or on one built for another node protocol or DuckDB release.
 
 ### Prerequisites
 
@@ -94,7 +94,7 @@ command (`QOD_PG_HOST=db QOD_PG_PASSWORD=... uvx qod@latest start`). That is wha
 the prompts:
 
 ```bash
-uvx qod@latest setup                  # Postgres coordinates, admin creds, API key, auth/TLS
+uvx qod@latest setup                  # Postgres coordinates, admin username, auth/TLS
 uvx qod@latest start                  # now works bare, in any terminal, from anywhere
 ```
 
@@ -103,7 +103,7 @@ completion, `--show` to inspect with secrets redacted). A real shell export
 still overrides any stored value on a given run, and the self-contained
 `qod serve --demo` (and its deprecated alias `qod start --demo`) deliberately ignores the stored config.
 
-On first run against a freshly-provisioned Postgres, Liquibase applies the control-plane schema. The admin UI is at `http://localhost:20900/ui/`; log in as `admin` with password `admin` (change this before any exposure beyond localhost -- see [Configuration model](#configuration-model) below).
+On first run against a freshly-provisioned Postgres, Liquibase applies the control-plane schema. The admin UI is at `http://localhost:20900/ui/`; log in as `admin` with the password the first `qod start` asked for (it is set on the first boot only; see [Configuration model](#configuration-model) below).
 
 The FlightSQL edge listens on `localhost:31338` with TLS on by default, and the native Quack front door (for DuckDB clients) on `localhost:9494` with TLS off by default. Durable state (the self-signed certs, and the default DuckLake data path unless `QOD_DUCKLAKE_DATA_PATH` is set) lives under the platform user data dir (`~/.local/share/qod` on Linux, `~/Library/Application Support/qod` on macOS).
 
@@ -113,7 +113,7 @@ To stop the manager and its quack nodes, either press Ctrl-C in the terminal run
 qod stop
 ```
 
-Both paths SIGTERM the manager and every node, wait up to `FORCE_AFTER` seconds (default 10), then escalate to SIGKILL, so no orphaned duckdb node processes are left holding ports.
+Both paths SIGTERM the manager and every node, wait up to `FORCE_AFTER` seconds (default 10), then escalate to SIGKILL, so no orphaned node processes are left holding ports.
 
 #### Seeding the demo dataset for a quick smoke test
 
@@ -147,7 +147,7 @@ NUKE=1 DEMO=minimal LOAD_TPCH=1 qod start
 Windows support is **experimental**. The `qod` launcher needs release **0.3.8 or later** (older releases predate the `demo`/`start` subcommand support and are refused).
 :::
 
-The manager runs natively on Windows - no WSL, no Docker. `pip install qod` installs the same `qod.exe` entry point, and `qod serve --demo` / `qod serve` / `qod start` work as on Linux/macOS: Java 21 is auto-provisioned when missing, DuckDB (CLI + `duckdb.dll`) is self-installed, and Quack nodes are spawned through the bundled PowerShell mirror of the node-spawn script.
+The manager runs natively on Windows - no WSL, no Docker. `pip install qod` installs the same `qod.exe` entry point, and `qod serve --demo` / `qod serve` / `qod start` work as on Linux/macOS: Java 21 is auto-provisioned when missing, DuckDB (CLI + `duckdb.dll`) is self-installed, and Quack nodes are spawned through the bundled PowerShell mirror of the node-spawn script. The node executable, `qod-node-windows-<arch>.exe`, is too large to bundle in the jar: `qod start` and `qod serve` download the one of the manager's release (sha256-checked, cached under `qod-node/<release>/`) and set `QOD_NODE_BIN`.
 
 ```powershell
 pip install qod
@@ -159,14 +159,9 @@ qod start
 
 **Current Windows gaps:** `qod stop` is not implemented (kill the java process with `taskkill /PID <pid> /T`), and the `LOAD_*` benchmark seeders are bash-only through `qod start` (it warns and skips them; run the PowerShell loaders `scripts\load-*-dbgen.ps1` from a checkout instead).
 
-**Client path.** Two ways the manager talks to the Quack nodes:
+**Client path.** The manager talks to its nodes through the native client `quackwire.dll` only (there is no embedded JDBC fallback). The jar bundles it for `windows-x86_64` and `windows-aarch64` and loads the one for the JVM's own `os.arch`, so a Windows on ARM host (e.g. Parallels on Apple Silicon) needs an ARM64 Java runtime; a platform with no bundled binary, or a native that cannot load, refuses to boot with a message naming the expected file.
 
-- **Native wire (default, fastest)** needs `native\windows-x86_64\quackwire.dll` bundled in the assembly. `quackwire.dll` is bundled automatically whenever `libquackwire\binaries\windows-x86_64\quackwire.dll` exists in the checkout (it does in a normal clone - all 5 platforms are vendored). No env flag needed; see below to build it yourself.
-- **Embedded DuckDB (JDBC), no native build** - set `$env:QOD_NATIVE_CLIENT = 'false'`. The DuckDB JDBC driver ships its own Windows native, so this works with any assembly jar out of the box (slower; serialized). Good for a first run.
-
-On **Windows on ARM** (e.g. Parallels on Apple Silicon), DuckDB is provisioned as native `windows-arm64`, but the bundled `quackwire.dll` is x86_64-only and cannot load in an arm64 Java runtime. The manager detects this at boot and falls back to the embedded client automatically (a `WARN` is logged); no configuration needed.
-
-**Building the Windows native (`quackwire.dll`), optional.** Requires MSVC (Visual Studio Build Tools) + CMake + `sbt`. Assemble a `DUCKDB_HOME` with `duckdb.lib` plus the full `duckdb/` include tree (see `.github/workflows/quackwire.yml`, step "Install libduckdb v1.5.6 (Windows)"), then:
+**Building the Windows native (`quackwire.dll`), optional.** Requires MSVC (Visual Studio Build Tools) + CMake + `sbt`. Assemble a `DUCKDB_HOME` with `duckdb.lib` plus the full `duckdb/` include tree (see `.github/workflows/quackwire.yml`, step `Install libduckdb v${{ env.DUCKDB_VERSION }} (Windows)`), then:
 
 ```powershell
 $env:DUCKDB_HOME = 'C:\path\to\duckdb-home'
@@ -217,10 +212,8 @@ Every scalar in `application.conf` accepts a matching `QOD_*` environment variab
 |---|---|---|
 | Admin password | `QOD_ADMIN_PASSWORD` | none for the jar (no admin is seeded until you set it on the first boot); `admin` under the Docker launchers |
 | Postgres password | `QOD_PG_PASSWORD` | `azizam` |
-| REST API key | `QOD_API_KEY` | unset (random key generated each boot) |
-| Session JWT secret | `QOD_SESSION_JWT_SECRET` | unset (random secret generated each boot) |
 
-Setting `QOD_API_KEY` to a secret string requires that value in the `X-API-Key` header on static-key REST calls (session and PAT credentials work regardless). When `QOD_API_KEY` or `QOD_SESSION_JWT_SECRET` is unset, the manager generates a random value at boot and prints it to the console in a banner; the values change on every restart, so pin both env vars for production (sessions and API-key callers otherwise die with the process).
+There is no static REST API key: every REST, MCP and SCIM caller is a `qod login` session or a personal access token (`qod auth pat create`), and a manager with a non-empty `QOD_API_KEY` refuses to boot. The session signing secret needs no pinning either: when `QOD_SESSION_JWT_SECRET` is unset, the first boot generates one and stores it in the control-plane database, so sessions survive restarts and every HA replica shares it (boot logs `session secret: ...` naming the source, never the value). Pin it from an external secret store when control-plane backups or replicas are less trusted than the manager, since a read of that database otherwise yields a key that forges sessions.
 
 Other commonly used variables:
 
@@ -231,11 +224,15 @@ Other commonly used variables:
 | FlightSQL TLS on/off | `PROXY_TLS_ENABLED` | `true` |
 | Native Quack front door port | `QOD_QUACK_PORT` | `9494` |
 | Native Quack front door TLS on/off | `QOD_QUACK_TLS_ENABLED` | `false` |
-| State backend | `QOD_STATE_STORAGE` | `postgres` |
 | Postgres host | `QOD_PG_HOST` | `localhost` |
 | Postgres user | `QOD_PG_USER` | `postgres` |
 | Control-plane database | `QOD_PG_DBNAME` | `qod` |
 | Admin usernames | `QOD_ADMIN_USERNAME` | `admin@localhost.local,admin` |
-| Enable per-statement RBAC | `QOD_ACL_ENABLED` | `false` |
+| Folder under which tenants authorize local file folders | `QOD_TENANT_FILES_ROOT` | unset (no local folder can be authorized) |
+| S3 endpoints users' own keys may target | `QOD_USER_S3_ALLOWED_ENDPOINTS` | unset (AWS only) |
+
+Per-statement authorization is always on: every node judges each tenant statement against the user's grants (or the tenant's OPA policy), and the former `QOD_ACL_ENABLED`, `QOD_ACL_FILTERED_METADATA`, `QOD_ACL_DIALECT` and `QOD_NODE_LOCKDOWN` switches make the manager refuse to boot. See [Upgrading to 0.11.0](../operating/upgrading.md).
+
+Extension settings are fixed when a node starts: `allow_community_extensions`, `allow_unsigned_extensions` and `autoinstall_known_extensions` are false on every node, before its database opens, so no init SQL or session can turn them on. Set `QOD_NODE_ALLOW_COMMUNITY_EXTENSIONS`, `QOD_NODE_ALLOW_UNSIGNED_EXTENSIONS` or `QOD_NODE_AUTOINSTALL_KNOWN_EXTENSIONS` to `true` on the manager to allow one (it applies at each node's next start), and install an extension a statement needs at node start with `INSTALL <name>;` in a database or pool `initSql` rather than relying on DuckDB downloading it.
 
 For the full list of configuration keys, see the [Configuration reference](/qod/reference/configuration).

@@ -50,7 +50,7 @@ QOD_ADMIN_PASSWORD='change-me' uvx qod@latest serve ./sales.duckdb  # set the ad
 
 One command provisions a tenant, a database, and a pool around the target, then prints the JDBC / ADBC / ODBC strings. The control plane runs on a bundled **persistent** embedded Postgres under your user data dir: restart and everything is still there, and re-running adds a second database beside the first instead of replacing it.
 
-Unlike `--demo`, this keeps the normal secure posture: TLS on, database auth on, ACL on, and an admin password you choose on the first run: prompted on a terminal, or taken from `QOD_ADMIN_PASSWORD` (without either, a non-interactive first run refuses to start). It is never stored, a later `QOD_ADMIN_PASSWORD` does not change it, and `qod admin reset-password` recovers it. An existing `.duckdb` file is attached read-write and served by a single node; parquet and CSV targets become views (`read_parquet` / `read_csv`), so nothing is copied or converted.
+Unlike `--demo`, this keeps the normal secure posture: TLS on, database auth on, and an admin password you choose on the first run: prompted on a terminal, or taken from `QOD_ADMIN_PASSWORD` (without either, a non-interactive first run refuses to start). It is never stored, a later `QOD_ADMIN_PASSWORD` does not change it, and `qod admin reset-password` recovers it. An existing `.duckdb` file is attached read-write and served by a single node; parquet and CSV targets become views (`read_parquet` / `read_csv`), so nothing is copied or converted.
 
 ### Which command do I want?
 

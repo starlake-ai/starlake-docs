@@ -23,16 +23,16 @@ This is the single-node / evaluation / small-team shape. For production, point t
 
 ## How nodes are spawned
 
-`LocalQuackBackend` spawns each DuckDB Quack node by forking a child process via `scripts/spawn-quack-node.sh`. The manager controls the full lifecycle: it allocates a port from the configured range, generates a random authentication token, sets the metastore environment variables, and hands those to the script. When the manager stops (SIGTERM or `qod stop`), it sends SIGTERM to every tracked child and waits up to 5 seconds per process before issuing SIGKILL.
+`LocalQuackBackend` spawns each Quack node by forking a child process via `scripts/spawn-quack-node.sh`, which runs `qod-node`: QoD's own executable on the official DuckDB release library, not the DuckDB CLI. The jar bundles `qod-node` for Linux and macOS (x86_64, aarch64) and installs it beside the `libduckdb` it loaded; `QOD_NODE_BIN` points the manager at another build, and on Windows `qod start` / `qod serve` download `qod-node-windows-<arch>.exe` and set it. The manager refuses to boot without a `qod-node`, or on one whose `--build-info` names another node protocol or DuckDB release. The manager controls the full lifecycle: it allocates a port from the configured range, generates a random authentication token and the node's authorization key, sets the metastore environment variables, and hands those to the script. When the manager stops (SIGTERM or `qod stop`), it sends SIGTERM to every tracked child and waits up to 5 seconds per process before issuing SIGKILL.
 
 **Port allocation.** The manager maintains a `PortAllocator` bounded by `minPort` and `maxPort` (defaults: 21900 to 22500). Ports are leased on spawn and released on stop. At most `maxNodesTotal` (default: 50) child nodes may be alive at the same time across all pools.
 
 **Do not run `scripts/spawn-quack-node.sh` directly.** The supervisor owns port allocation, token generation, and the metastore environment contract. Manual invocations bypass all of that, leak ports into the allocator's range, and produce orphan processes that cause silent "Authentication failed" errors at query time.
 
-**Orphan cleanup.** A stale listener squatting the node port range makes the next spawn on that port fail. `qod stop` sweeps spawn scripts and leftover duckdb children; to clear orphans by hand:
+**Orphan cleanup.** A stale listener squatting the node port range makes the next spawn on that port fail. `qod stop` stops the manager's spawn scripts and their `qod-node` children; to clear one manager's orphans by hand from a checkout:
 
 ```bash
-pkill -f 'quack_serve|spawn-quack-node'
+./scripts/kill-quack-nodes.sh --port 20900   # the nodes of the manager on that REST port
 ```
 
 The spawn script path can be overridden via `QOD_SPAWN_SCRIPT` when the script is installed outside the repository (for example under `/opt/...` in a container image).
@@ -48,12 +48,11 @@ The spawn script reads the following variables:
 | `pgHost` | Hostname of the Postgres server used by DuckLake as its catalog store. |
 | `pgPort` | Port of the Postgres server (default `5432`). |
 | `pgUser` | Postgres login user (default `postgres`). |
-| `pgPassword` | Postgres password for `pgUser`. |
 | `dbName` | Postgres database that holds the DuckLake catalog metadata. Also used as the DuckDB catalog name. |
 | `schemaName` | DuckLake schema inside `dbName` where tables are registered. Must differ from `dbName` to avoid ambiguous two-part identifiers in DuckDB. |
-| `dataPath` | Local or object-store path where DuckLake writes Parquet data files. Accepts `s3://`, `az://`, and `abfss://` URIs for remote storage. |
+| `dataPath` | Local or object-store path where DuckLake writes Parquet data files. Accepts `s3://`, `az://`, and `abfss://` URIs for remote storage. Required for `ducklake` and `duckdb-file` nodes: the script refuses to start one without it (`fatal: kind=<kind> needs a dataPath, ...`). |
 
-In addition the supervisor injects two internal variables that the spawn script receives as positional arguments: the TCP port the node must listen on, and a 256-bit URL-safe base64 bearer token used to authenticate the manager's HTTP requests to that node. Neither appears in `application.conf`; they are generated fresh for each spawn.
+The script receives the TCP port the node must listen on as its first argument, and the manager's marker (`<rest-port>-<boot id>`, so stopping one manager never touches another's nodes) as its second. Secrets never travel in the environment or on the command line, where a node user with SQL could read them back: `pgPassword`, the database's encryption key, the federation and object-store SQL, the tenant's init SQL, the 256-bit bearer token the manager presents to the node, and the node's authorization key `QOD_NODE_AUTHZ_KEY` arrive as one file per key in a private directory named by `QOD_SECRETS_DIR` (mode 0700, files 0600), which is deleted right after the node reads it (the node id, `QOD_NODE_ID`, is not a secret and stays in the environment). The node key is derived from the node-key secret (`QOD_NODE_KEY_SECRET`, or the value the first boot stored in the control plane).
 
 The `kind` variable is also required. It selects the catalog mode: `ducklake` (DuckLake catalog backed by Postgres), `duckdb-file` (standalone `.duckdb` file), or `memory` (no persistent catalog; useful for federation-only pools).
 
@@ -68,6 +67,8 @@ The `kind` variable is also required. It selects the catalog mode: `ducklake` (D
 | `QOD_MAX_PORT` | `22500` | Upper bound of the child node port range. |
 | `QOD_MAX_NODES_TOTAL` | `50` | Hard cap on simultaneous child node processes. |
 | `QOD_SPAWN_SCRIPT` | `./scripts/spawn-quack-node.sh` | Path to the node spawn script. |
+| `QOD_NODE_BIN` | the bundled `qod-node` | The `qod-node` executable nodes run. |
+| `QOD_TENANT_FILES_ROOT` | unset | Folder under which tenants may authorize local file folders for their users (`<root>/<tenant id>/...`). Unset, no local folder can be authorized. |
 | `QOD_PG_HOST` | `localhost` | Postgres host for the control plane and default metastore. |
 | `QOD_PG_PASSWORD` | `azizam` | Postgres password. Rotate before any non-local exposure. |
 | `QOD_DUCKLAKE_DATA_PATH` | `./ducklake/tpch` | Default data path propagated to spawned nodes. |

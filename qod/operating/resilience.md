@@ -25,7 +25,7 @@ When the manager process exits and a supervisor restarts it (systemd, Kubernetes
 
 3. **Reconciliation.** `PoolSupervisor.reconcile()` compares the restored desired state against what the runtime backend reports as alive (PID + socket check for local, pod `Ready` condition for Kubernetes) and respawns any nodes that should be present but are not. The method is idempotent. Drained pools (zero distribution) are left alone. Beyond this boot pass, `reconcile()` then runs on a background fiber every `reconcileIntervalSec` (default 30 s, env `QOD_RECONCILE_INTERVAL_SEC`; set 0 to disable the loop and keep the boot-only behavior), so a node that dies while the manager is up is respawned on the next tick rather than staying dead until the next restart.
 
-4. **Bootstrap re-seed.** `Main.scala` re-runs the bootstrap sequence on every start. Each step is idempotent: the named tenant/tenant-db/pool are skipped when they already exist, the admin user upsert re-hashes the password, and the backfill of each tenant's [built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups) is a no-op on re-entry.
+4. **Bootstrap re-seed.** `Main.scala` re-runs the bootstrap sequence on every start. Each step is idempotent: the named tenant/tenant-db/pool are skipped when they already exist, the admin user is inserted only when its row is missing (an existing password is never rewritten), and the backfill of each tenant's [built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups) is a no-op on re-entry.
 
 Typical cold-boot time on a development machine: roughly 5 s process start plus 1 s Liquibase schema diff plus 1 s reconcile plus about 3 s per respawned node. A 3-node pool is back in service in approximately 15 s. A first-ever boot adds another 1-2 s per tenant-db for `CREATE DATABASE` and DuckLake metadata table initialization.
 
@@ -34,6 +34,8 @@ Typical cold-boot time on a development machine: roughly 5 s process start plus 
 `HealthProbe` runs a background fiber that pings each node's `/ping` endpoint on a fixed interval. The default interval is 5 seconds (`healthCheckIntervalSec = 5` in `application.conf`, overridable via `QOD_HEALTH_CHECK_INTERVAL_SEC`). Each tick updates the `NodeLoadTracker`'s `healthy` flag for the node. The router's `pick()` method excludes nodes where `healthy = false`.
 
 When the ping function throws, the probe catches the exception and marks the node unhealthy rather than terminating the loop.
+
+The probe also checks that the node enforces authorization. Its own statement carries a session handle for the manager's system principal, signed with the node's key, and a second, handle-less `SELECT 1` must be refused: a node that runs it does not enforce (a node started by an earlier release, or a `qod-node` of another node protocol) and is marked unhealthy and never routed to. A node whose key derives from another node-key secret (an HA replica with a different `QOD_NODE_KEY_SECRET`) refuses the handles, and the health loop names that cause.
 
 The first successful probe per node also runs `CREATE SCHEMA IF NOT EXISTS <db>.<schema>` so the pool's default schema exists before `FlightSqlRouter.wrapWithDefaultSchema` ever prepends a `USE` statement to client queries. Subsequent probes revert to plain `SELECT 1`.
 
@@ -56,6 +58,7 @@ There is no transparent replay. quack-on-demand does not buffer or re-execute th
 
 **Durable (survives restart):**
 - All control-plane state: tenants, tenant-databases, pools, nodes, users, roles, groups, permissions. These live in Postgres `qodstate_*` tables and are restored by `PoolSupervisor.restore()` on every boot.
+- Admin UI and CLI sessions and personal access tokens. Sessions are JWTs signed with `QOD_SESSION_JWT_SECRET` or, when it is unset, with the secret the first boot stored in `qodstate_boot_secret`, so they stay valid across restarts and on every HA replica.
 - Pool node topology. Kubernetes pods are adopted; local processes are respawned to match the stored desired state.
 
 **Lost on every restart:**
@@ -66,7 +69,6 @@ There is no transparent replay. quack-on-demand does not buffer or re-execute th
 | Per-node EWMA latency and total served | `NodeLoadTracker` | Routing load data resets to zero. Traffic distributes evenly until the EWMA converges over the next few seconds of live traffic. |
 | Per-node latency histogram (p50/p95/p99) | `NodeLoadTracker` latency ring (256-sample window) | UI latency widgets reset to zero. |
 | FlightSQL sessions and session pins | `SessionRegistry` | Every client must reconnect. Any open transaction is implicitly rolled back at the Quack node level. |
-| Admin UI session tokens | `SessionTokenStore` | Admin UI users must log in again. The static `QOD_API_KEY` continues to work. |
 | Cache-aware routing directory | `PlacementDirectory`, `LocalityTracker`, `RoutingRefsCache` (per-manager, in-memory) | Table-to-node placement hints reset to empty; one pass of live traffic rebuilds them. Routing falls back to least-loaded until the directory repopulates. In HA mode each replica keeps its own directory (no cross-replica coordination): divergence is by design, worst case a table warm on two nodes of a pool (benign redundancy over immutable files). |
 
 All of these recover through re-population from live traffic. None cause incorrect behavior; they only create gaps in operator-visible signal during and immediately after a restart.
@@ -81,6 +83,7 @@ All of these recover through re-population from live traffic. None cause incorre
 | Postgres down for minutes | Same as above | Manager enters degraded state: established FlightSQL sessions keep flowing but `createPool`, `createTenantDb`, and RBAC CRUD all fail. New connections cannot rebuild the `EffectiveSet` and bounce at handshake. | Existing FlightSQL traffic continues. | Same |
 | Manager host loss (Kubernetes node evict) | kubelet | New pod scheduled; cold restart sequence runs on a different host. | Same as manager crash. Set `terminationGracePeriodSeconds` to at least 30 s. | - |
 | Network partition between manager and a node | `HealthProbe` flips `healthy = false` after one tick | Node excluded from `Router.pick()`. | Sessions pinned to that node are invalidated on next statement. Outside-transaction statements retry once on a different node. | - |
+| A node cannot reach the replica that minted its session (replica restarted, down, or unreachable from the node) | The node's verdict call times out (`QOD_AUTHZ_DECIDE_TIMEOUT_MS`, default 2000) | The node refuses the statement with `QoD: authorization unavailable, retry`. | A single statement is retryable (FlightSQL `UNAVAILABLE`); a multi-statement submission is not (`INVALID_ARGUMENT`), since the statements before the refused one may have run. Cached verdicts (60 s) keep serving repeated statements. | - |
 | Network partition between manager and all nodes | All nodes flip `healthy = false` | Every routing decision returns `Unavailable("no node compatible")`. FlightSQL responses become errors. | Total query outage until partition heals. The manager process itself does not crash. | - |
 | FlightSQL edge crash (`FlightProducerImpl` exception) | The wrapping `IO` returns `Left(throwable)` | `Main.scala` logs the error and parks on `IO.never`. The process stays up but FlightSQL is dead. | Admin UI and `/metrics` continue working. FlightSQL is silently down. | Should exit non-zero so the supervisor restarts (no issue yet) |
 | Disk full on manager host | Logback `RollingFileAppender` drops writes; the manager may OOM | Manager eventually crashes. | Same as manager crash. | - |
@@ -90,7 +93,7 @@ All of these recover through re-population from live traffic. None cause incorre
 
 ## Operational guidance
 
-If you are running the default single-manager mode in production (one manager plus Postgres), the guidance below applies. For zero-downtime rolling deploys and replica-crash tolerance, enable opt-in HA on Kubernetes (`QOD_HA_ENABLED=true`, `replicaCount > 1`) or on the fleet runtime (`QOD_HA_ENABLED=true` on every manager); the same process-supervisor and probe guidance then applies to each replica. Exception: the release that renames `qodstate_user.role` to `kind` cannot be rolled; stop every replica, then start them all on the new version (see [Upgrading to the built-in RBAC release](/qod/operating/rbac-model#upgrading-to-the-built-in-rbac-release)).
+If you are running the default single-manager mode in production (one manager plus Postgres), the guidance below applies. For zero-downtime rolling deploys and replica-crash tolerance, enable opt-in HA on Kubernetes (`QOD_HA_ENABLED=true`, `replicaCount > 1`) or on the fleet runtime (`QOD_HA_ENABLED=true` on every manager); the same process-supervisor and probe guidance then applies to each replica. Exceptions: the release that renames `qodstate_user.role` to `kind` cannot be rolled; stop every replica, then start them all on the new version (see [Upgrading to the built-in RBAC release](/qod/operating/rbac-model#upgrading-to-the-built-in-rbac-release)). Neither can 0.11.0, whose migration `0055` drops a column the previous release reads: scale to one replica or use a `Recreate` rollout, and restart every node afterwards (see [Upgrading to 0.11.0](./upgrading.md)).
 
 - **Run under a process supervisor** that restarts the manager on exit: systemd with `Restart=always`, a Kubernetes `Deployment` with `restartPolicy: Always` (the default), or Docker with `restart: unless-stopped`.
 

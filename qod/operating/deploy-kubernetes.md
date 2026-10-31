@@ -45,33 +45,29 @@ Every pod receives the following labels:
 | `quack-node-id` | Unique node identifier; used as the pod name and the Service name. |
 | `quack-max-concurrent` | Maximum concurrent queries this node accepts. |
 
-On manager restart, the `discoverExisting` pass lists all pods matching the `podLabel` and reconstructs the in-memory node registry from these labels. The per-node bearer token survives the restart: the manager writes a Secret `qod-token-${nodeId}` alongside each pod and references it via `env.valueFrom.secretKeyRef`. `discoverExisting` reads the Secret back into the token cache, so adopted pods continue to serve queries without a forced pool respawn. The token Secret is deleted alongside the pod on stop.
+Each pod runs `qod-node`, QoD's own executable on the official DuckDB library: the node image (`docker/quack-node`) ships it with its `libduckdb` under `/opt/qod-node` and carries no DuckDB CLI. The image must match the manager's release: nodes speak node protocol 5 with session handle v3, the image build fails on a binary of another protocol, and a pod running an earlier image refuses every handle, the health probe's included, so it stays unhealthy and is never routed to. After upgrading the manager, pull this release's node image and restart every node.
 
-## Federation Secret
+## Node secrets volume
 
-When a pool's `extraSetupSql` is non-empty (i.e. federated sources are registered against the pool's tenant-db), the manager writes a per-pool Secret `qod-fedsql-${tenant}-${tenantDb}-${pool}` (tenant-db underscores hyphenized for RFC-1123) and injects it into every pod via `env.valueFrom.secretKeyRef` so `spawn-quack-node.sh` reads `$extraSetupSql` from the env. The bearer never appears in `kubectl describe pod` output. The Secret is garbage-collected when the last pod of the pool stops; rotation is "update the Secret, restart the pods" (kubelet does not re-inject env values into a running container).
+No secret reaches a node pod as an environment variable or a `secretKeyRef`: a node user with SQL could read its own process environment back. Every Secret below is delivered as files of one read-only projected volume, `qod-node-secrets` (mode 0400, mounted at `/var/run/qod-secrets`, the pod's `QOD_SECRETS_DIR`), and kubelet will not start a pod whose volume references a missing Secret, so the manager creates them all before the pod.
 
-## Node credentials Secret
+- **Per-pod token Secret** `qod-token-${nodeId}`: the bearer the manager presents on calls to that pod, the node's authorization key `QOD_NODE_AUTHZ_KEY` (see [Node keys and verdict calls](#node-keys-and-verdict-calls)) and its id `QOD_NODE_ID`. On manager restart, the `discoverExisting` pass lists all pods matching the `podLabel`, reconstructs the in-memory node registry from their labels and reads each token Secret back, so adopted pods keep serving without a forced pool respawn. The token Secret is deleted alongside the pod on stop.
+- **Per-pool init Secret** `qod-fedsql-${tenant}-${tenantDb}-${pool}` (tenant-db underscores hyphenized for RFC-1123): the pool's resolved federation SQL and the database's and pool's own `initSql`, each under a key that records whether a superuser or a tenant admin wrote it, so a pod started for a trusted text never reads a later untrusted one as trusted. Rotation is "update the Secret, restart the pods".
+- **Per-pool node credentials Secret** `qod-nodeenv-${tenant}-${tenantDb}-${pool}` (all three segments hyphenized for RFC-1123): the sensitive `metastore` values, the control-plane password and the `encryptionKey` of an encrypted DuckDB file database (see [Encryption at rest](encryption.md)), plus the manager's own object-store credentials below. The control-plane password travels this way deliberately, not only the encryption key: it opens the catalog holding an encrypted DuckLake database's per-file keys, so protecting one without the other would achieve nothing.
+- **Per-pod object-store Secret** `qod-store-${nodeId}`, when the database carries its own `objectStore` settings.
 
-Sensitive values from a database's `metastore` reach pods through a per-pool Secret
-`qod-nodeenv-${tenant}-${tenantDb}-${pool}` (all three segments hyphenized for RFC-1123) injected
-via `env.valueFrom.secretKeyRef`, rather than as plain environment variables. Two values travel
-this way: the control-plane password, and the `encryptionKey` of an encrypted DuckDB file database
-(see [Encryption at rest](encryption.md)). Neither appears in `kubectl get pod -o yaml`. The Secret
-is created before the pod, garbage-collected when the last pod of the pool stops, and is separate
-from the federation Secret above.
+The per-pool Secrets are garbage-collected when the last pod of the pool stops. The mounted files stay readable inside the pod by a principal with unrestricted SQL (a superuser), so give `postgres.user` a dedicated non-superuser role (the chart requires it and has no default).
 
-The control-plane password travels this way deliberately, not only the encryption key: it opens the
-catalog holding an encrypted DuckLake database's per-file keys, so protecting one without the other
-would achieve nothing.
+## Node keys and verdict calls
 
-**Upgrading from a release before this change:** pods created by an earlier manager carry the old
-plain-environment shape and are not migrated in place. Restart every node after upgrading, for
-example by scaling each pool down and back up.
+Before every statement it sends a node, the manager installs a session handle naming the principal, signed with that node's own key; the node refuses any statement on a connection with no current principal, and judges every statement of a user who is not a superuser on the plan DuckDB bound, asking the replica that minted the handle for a verdict. Two consequences for a Kubernetes deployment:
+
+- **Node keys.** Each node's key derives from one node-key secret: `QOD_NODE_KEY_SECRET` (at least 32 characters, else boot refuses) when set, else a value the first boot generates and stores in the control-plane database (`qodstate_node_authz`), shared by every replica. Under HA set it the same on every replica, or leave it unset on all. Changing it, or deleting the stored row, means restarting every node. Unless it is set, whoever can read the control-plane database (backups, dumps, read replicas) can mint a handle for any principal: protect that database accordingly, or pin `QOD_NODE_KEY_SECRET` from an external secret store.
+- **Nodes call the manager back.** Each handle carries the URL of the replica that minted it (`QOD_INTERNAL_URL`), which defaults to `http://<QOD_POD_IP>:20900`. The Helm chart sets `QOD_POD_IP` from the downward API (`status.podIP`) and refuses `env.QOD_POD_IP`, and `env.QOD_INTERNAL_URL` with more than one replica, since one shared URL would send every verdict call to a single replica. A hand-written manifest must set `QOD_POD_IP` from `status.podIP`, or `QOD_INTERNAL_URL`: the manager refuses to boot on Kubernetes with a loopback decide URL. Boot prints `node decide URL: <url>`. With `networkPolicy.enabled`, the chart's policies let node pods reach the manager pods on TCP 20900 whatever `networkPolicy.ingressFrom` says, in the release namespace only.
 
 ## Object-store credentials
 
-The manager forwards object-store credentials from its own environment into every spawned node pod. This mirrors what the local backend receives for free through process environment inheritance.
+The manager forwards object-store credentials from its own environment into every spawned node pod, as files of the node credentials Secret above. They sign only each database's own data path: the node's S3 secret is scoped to that path (and its branches), so a read of any other bucket finds no secret. Users who load their own files register S3 keys of their own (`qod profile s3 add`), and superusers do the same or create a scoped secret.
 
 The following variables are forwarded when present on the manager pod:
 
@@ -110,7 +106,7 @@ Top-level keys in `values.yaml`:
 | Key | Description |
 |-----|-------------|
 | `image` | Manager container image repository, tag, and pull policy. |
-| `replicaCount` | Number of manager replicas. Keep at `1` until leader election is supported. |
+| `replicaCount` | Number of manager replicas; above `1` turns on HA (active-active replicas with a Postgres advisory-lock leader). |
 | `nameOverride` / `fullnameOverride` | Override rendered resource names. |
 | `serviceAccount` | Service account creation and annotations for the manager pod. |
 | `rbac` | Controls creation of the Role and RoleBinding for Kubernetes API access. |
@@ -119,27 +115,32 @@ Top-level keys in `values.yaml`:
 | `resources` | CPU and memory requests/limits for the manager container. Node pods are sized per pool via `pool/setResources`; see [Pools and cohorts](/qod/operating/pools-cohorts). |
 | `nodeSelector` / `tolerations` / `affinity` | Manager pod scheduling constraints. |
 | `priorityClassName` | Priority class for the manager pod. |
-| `terminationGracePeriodSeconds` | Grace period (default 60 s) to allow in-flight FlightSQL statements to finish. |
+| `drainTimeoutSec` | Seconds the manager waits for in-flight statements before shutting down (default 60); the pod's `terminationGracePeriodSeconds` is derived as this plus 15. |
 | `service` | Services for the REST/UI listener (`rest`), the FlightSQL edge (`flightsql`) and the native Quack front door (`quack`, port 9494), each with `type`, `port`, and `annotations`. |
 | `quack` | The native Quack front door DuckDB clients `ATTACH` to: `enabled` (default `true`) and `tls.enabled` (default `false`; the DuckDB client only speaks plain HTTP to loopback hosts, so enable TLS or front the port with an Ingress before exposing it). With `replicaCount > 1` the balancer in front must be session-sticky. See [DuckDB (native Quack)](/qod/connecting/duckdb). |
 | `ingress` | Ingress for the REST/UI; FlightSQL (gRPC) is not covered here. |
 | `probes` | Liveness and readiness probe tuning. |
 | `serviceMonitor` | Prometheus Operator ServiceMonitor toggle. |
 | `pdb` | PodDisruptionBudget (only useful when `replicaCount > 1`). |
-| `postgres` | External Postgres connection details and secret references. |
-| `quackNode` | Image for the Quack node pods the manager spawns, and TLS toggle for node-to-manager traffic. |
+| `networkPolicy` | Opt-in NetworkPolicies for the manager and node pods; node pods always reach the manager on 20900 for their verdict calls. |
+| `postgres` | External Postgres connection details and secret references. `postgres.user` is required and has no default: use a non-superuser role with `CREATEDB`. |
+| `quackNode` | Image for the Quack node pods the manager spawns; empty resolves to `starlakeai/quack-on-demand-node:<appVersion>`, the node image released with the manager. |
 | `storage` | `dataPath` for the DuckLake catalog parquet files. |
 | `s3` | S3-compatible object-store credentials forwarded to node pods, with inline or existing-Secret options. |
-| `admin` | Initial admin credentials seeded at startup. |
-| `apiKey` | Optional static API key for the `/api/*` admin endpoints. |
+| `admin` | Admin credentials seeded on first boot only. `admin.password` or `admin.existingSecret` is required, since nobody could log in without an admin. There is no static API key: the chart fails on an `apiKey` value, and automation uses personal access tokens (`qod auth pat create`). |
+| `sessionJwtSecret` / `existingSessionJwtSecret` | Optional session signing key at any replica count. Left empty, the first manager generates one and stores it in the control-plane database, which every restart and replica reads. |
 | `flightsql` | FlightSQL TLS configuration (auto-generated cert by default). |
 | `auth` | OIDC provider configuration (Keycloak off by default). |
 | `metrics` | Metrics sink selection (`prometheus`, `aws`, `azure`, `gcp`, or `none`). |
-| `bootstrap` | Idempotent startup bootstrap for a starter tenant and pool. |
-| `env` | Arbitrary extra environment variables passed to the manager pod. |
+| `loadTpc` | `enabled: true` imports the bundled demo manifest (acme and globex tenants) at startup. |
+| `env` | Arbitrary extra environment variables passed to the manager pod, for knobs the chart does not model (for example `QOD_NODE_ALLOW_COMMUNITY_EXTENSIONS`, `QOD_TENANT_FILES_ROOT`, `QOD_NODE_KEY_SECRET`). |
 | `extraVolumes` / `extraVolumeMounts` | Additional volumes and mounts (for cert secrets, custom config, etc.). |
 | `imagePullSecrets` | Image pull secrets for private registries. |
 
 ## Node placement
 
 Per-pool node placement using cohorts (nodeSelector and tolerations) is supported on the Kubernetes backend and is documented in the Pools guide.
+
+## Upgrading
+
+Pods created by an earlier manager are not migrated in place, and a 0.11.0 manager never routes to them. After upgrading, pull this release's node image and restart every node, for example by scaling each pool down and back up. Under HA, upgrade every replica together (scale to one replica, or use a `Recreate` rollout): the 0.11.0 schema migration drops a column the previous release reads. See [Upgrading to 0.11.0](./upgrading.md).

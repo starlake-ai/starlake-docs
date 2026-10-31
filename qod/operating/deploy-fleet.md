@@ -39,7 +39,7 @@ A fleet is a set of servers that joined by running `qod fleet join`. Joining mea
 ## Prerequisites
 
 - **Linux or macOS servers, or Docker containers.** `qod fleet join` is not available on Windows yet. To run servers (and the manager) as containers, see [Run servers as Docker containers](#run-servers-as-docker-containers).
-- **The `qod` CLI on every server** (`pip install qod`, or run it through `uvx qod fleet join ...`). The join process provisions a `duckdb` binary into its cache on first start; pass `--duckdb-bin /path/to/duckdb` to use one you installed yourself.
+- **The `qod` CLI on every server** (`pip install qod`, or run it through `uvx qod fleet join ...`). The node runs `qod-node`, QoD's own executable, which the qod wheel bundles; the join process installs it in its cache beside the pinned `libduckdb` on first start. Pass `--qod-node-bin /path/to/qod-node` to use another build. The join process refuses (exit 2) a binary built for another node protocol, so upgrade `qod` on every server together with the manager.
 - **Shared object storage for every DuckLake data path.** A node can land on any server, so every database's `dataPath` must be an object-store URL (`s3://...`, `gs://...`, `az://...`) reachable from all servers. A local path would only exist on one of them. [Managed storage](managed-storage.md) satisfies this by construction.
 - **The metastore PostgreSQL reachable from every server.** Nodes attach their DuckLake catalog directly, so each server must reach the Postgres host and port of every database it may serve.
 - **A private network between managers and servers** (VPC, VLAN, WireGuard). The manager talks to nodes over plain HTTP; see [Security](#security).
@@ -47,12 +47,13 @@ A fleet is a set of servers that joined by running `qod fleet join`. Joining mea
 
 ## Configure the manager
 
-Set `QOD_RUNTIME_TYPE=fleet` and a join token. Everything else has a working default.
+Set `QOD_RUNTIME_TYPE=fleet`, a join token and this manager's internal URL. Everything else has a working default.
 
 | Key | Env var | Default | Meaning |
 |---|---|---|---|
 | `quack-on-demand.runtimeType` | `QOD_RUNTIME_TYPE` | `local` | Set to `fleet`. |
 | `quack-on-demand.fleet.joinToken` | `QOD_FLEET_JOIN_TOKEN` | (none) | Shared secret every fleet heartbeat carries. Required: the manager refuses to boot in fleet mode without it. |
+| `quack-on-demand.nodeAuthz.internalUrl` | `QOD_INTERNAL_URL` | (none in fleet mode) | This manager's own plain `http://` address on the servers' private network, which nodes call for their authorization verdicts (`http://10.0.3.2:20900`). Required: the manager refuses to boot in fleet mode without it. Under HA, one per replica, never a load balancer: each node calls the replica that minted its session handle. Boot prints `node decide URL: <url>`. |
 | `quack-on-demand.fleet.heartbeatSec` | `QOD_FLEET_HEARTBEAT_SEC` | `5` | Heartbeat interval. The manager returns it in every reply, so every server follows this one setting. |
 | `quack-on-demand.fleet.heartbeatTimeoutSec` | `QOD_FLEET_HEARTBEAT_TIMEOUT_SEC` | `30` | Silence beyond this marks a server `unreachable`. Must be greater than `heartbeatSec`. |
 | `quack-on-demand.fleet.reassignAfterSec` | `QOD_FLEET_REASSIGN_AFTER_SEC` | `600` | Silence beyond this marks a server `dead` and moves its node to a free server. `0` moves it as soon as the server is unreachable, `-1` never moves it. Otherwise must be at least `heartbeatTimeoutSec`. |
@@ -66,7 +67,7 @@ Set `QOD_RUNTIME_TYPE=fleet` and a join token. Everything else has a working def
 
 Invalid combinations (a timeout not above the heartbeat, an unknown `ephemeral` value, a malformed CIDR) are refused at boot with a message naming the key.
 
-The usual production settings still apply: pin `QOD_API_KEY` and `QOD_SESSION_JWT_SECRET`, point `QOD_PG_*` at your control-plane Postgres, and follow [Hardening](hardening.md). See the [Configuration reference](/qod/reference/configuration) for every key.
+The usual production settings still apply: point `QOD_PG_*` at your control-plane Postgres, and follow [Hardening](hardening.md). Under HA, set `QOD_NODE_KEY_SECRET` (at least 32 characters) to the same value on every replica, or leave it unset on all: each node's key derives from it, or from the value the first boot stored in the control plane. See the [Configuration reference](/qod/reference/configuration) for every key.
 
 ## Join a server
 
@@ -89,13 +90,13 @@ The first heartbeat is the join. The server appears in `qod fleet servers` a few
 | `--advertise-host` | env `QOD_FLEET_ADVERTISE_HOST`, else the first non-loopback IPv4 | Address the manager dials to reach the node. Set it explicitly on hosts with more than one network interface. |
 | `--bind-host` | env `QOD_FLEET_BIND_HOST`, else the advertise host | Interface the node listens on. `0.0.0.0` listens on every interface. |
 | `--node-port` | env `QOD_FLEET_NODE_PORT`, else `21900` | Port the node listens on. |
-| `--duckdb-bin` | provisioned into the qod cache | DuckDB executable to run the node with. The server reports that binary's version. |
+| `--qod-node-bin` | the one qod bundles, installed in the qod cache | `qod-node` executable the node runs. It must speak the manager's node protocol. |
 | `--state-dir` | the qod cache | Where the node pidfile lives. |
 | `--insecure` | off | Accept a plain `http://` manager URL. |
 
 **Pick the advertise host deliberately.** On a host with a management interface and a data interface, the default guess can pick the wrong one, silently. The join process logs its choice at start (`advertise host 10.0.3.17 ... override with --advertise-host / --bind-host if this is not the data interface`); check that line, or always pass `--advertise-host`. Because `--bind-host` defaults to the advertise host, the node never listens on the management interface by accident.
 
-The join process restarts its node itself when DuckDB crashes, backing off from 5 seconds to 5 minutes between attempts; the manager only sees the state reports. A node crash is never a scheduling event.
+The join process restarts its node itself when it crashes, backing off from 5 seconds to 5 minutes between attempts; the manager only sees the state reports. A node crash is never a scheduling event.
 
 ### Join approval
 
@@ -220,7 +221,7 @@ sudo launchctl bootstrap system /Library/LaunchDaemons/ai.starlake.qod-fleet-joi
 
 ### What the node inherits from the join process
 
-The node does not inherit the join process's whole environment: the join process holds the join token, and a node runs tenant SQL. It receives only `PATH`, `HOME`, `TMPDIR`, `LANG`, `LC_ALL`, `TZ`, `USER`, `LOGNAME`, `SHELL`, the proxy variables (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` and their lowercase forms), `DUCKDB_BIN`, `QOD_APP_HOME`, the object-storage settings `QOD_S3_*` and `QOD_AZURE_*`, plus the assignment the manager sends.
+The node does not inherit the join process's whole environment: the join process holds the join token, and a node runs tenant SQL. It receives only `PATH`, `HOME`, `TMPDIR`, `LANG`, `LC_ALL`, `TZ`, `USER`, `LOGNAME`, `SHELL`, the proxy variables (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` and their lowercase forms), the object-storage settings `QOD_S3_*` and `QOD_AZURE_*`, plus the assignment the manager sends. The assignment's secrets (the database credentials, the node token, the node's authorization key `QOD_NODE_AUTHZ_KEY`, and the tenant's init SQL with its trust) reach the node as files of a private directory the node deletes after reading, never as environment variables.
 
 Metastore connection settings that a server needs go on the join process's unit and are passed through:
 
@@ -235,7 +236,7 @@ Anything else exported on the join process never reaches a node.
 
 ## Run servers as Docker containers
 
-The manager and the servers can all be containers. Each server is one container from `starlakeai/quack-on-demand-worker`, an image that bundles DuckDB (same version as the manager) and runs `qod fleet join` as a non-root user:
+The manager and the servers can all be containers. Each server is one container from `starlakeai/quack-on-demand-worker`, an image that bundles `qod-node` and its `libduckdb` (same release as the manager) and runs `qod fleet join` as a non-root user:
 
 ```bash
 docker run -d --name qod-worker --restart unless-stopped --stop-timeout 70 \
@@ -279,7 +280,7 @@ docker compose -f docker-compose.yml -f docker-compose.fleet.yml --profile seawe
 qod fleet servers    # fleet-worker-1 and fleet-worker-2, approved
 ```
 
-The manager runs maintenance and merge nodes itself (`QOD_FLEET_EPHEMERAL=local`), and the workers publish ports `21901` and `21902`. Docker Compose 2.24 or later is required. See [Docker Compose](deploy-docker.md) for the base stack.
+The manager runs maintenance and merge nodes itself (`QOD_FLEET_EPHEMERAL=local`), nodes call it back at `QOD_INTERNAL_URL=http://host.docker.internal:20900`, and the workers publish ports `21901` and `21902`. Docker Compose 2.24 or later is required. See [Docker Compose](deploy-docker.md) for the base stack.
 
 ## How scheduling works
 
@@ -327,7 +328,7 @@ A node whose DuckDB process keeps crashing on a healthy server is not moved: the
 
 ## Operate the fleet
 
-The fleet commands are superuser-only (superuser session or the static API key), because the fleet is shared by every tenant. They answer `400 fleet_disabled` when the manager does not run the fleet runtime.
+The fleet commands are superuser-only (a superuser session or a superuser's personal access token), because the fleet is shared by every tenant. They answer `400 fleet_disabled` when the manager does not run the fleet runtime.
 
 ```bash
 qod fleet servers           # every server: liveness, approval, capacity, the node it runs
@@ -409,7 +410,7 @@ qod pool set-resources --tenant acme --db acme_sales --pool bi --cpu 2 --memory 
 Two ways to size for this:
 
 - Keep one spare server per maintenance run or merge you expect to run at the same time.
-- Set `QOD_FLEET_EPHEMERAL=local` to run these nodes on the manager host instead, on the local port range, at no fleet cost. This needs a `duckdb` binary on the manager host (`DUCKDB_BIN` or `PATH`); the manager refuses to boot without one.
+- Set `QOD_FLEET_EPHEMERAL=local` to run these nodes on the manager host instead, on the local port range, at no fleet cost. This needs a `qod-node` on the manager host: the jar bundles one for Linux and macOS, and `QOD_NODE_BIN` names another; the manager refuses to boot without one.
 
 ## Security
 
@@ -423,7 +424,7 @@ Two ways to size for this:
 
 **A known server name cannot be taken over.** A heartbeat for an existing name from a different address or port is refused unless that server is drained, so a machine holding the token cannot impersonate an idle server either. When a drained server does change address, its approval is reset and the new address is judged again, so the move cannot carry an approval to a different machine. Copying an approved server's name, host and port exactly does not help either: the approval is [bound to the source address](#approval-is-bound-to-the-address-it-was-given-to) it was granted to, and a heartbeat from anywhere else is refused (`409 source_change_refused`) unless that address is itself inside `QOD_FLEET_AUTO_APPROVE`. The residual exposure is a machine that shares the approved server's source address (same NAT, or an unlisted proxy), and anything inside the auto-approve networks, which you trust by listing them.
 
-**The manager-to-node hop is plain HTTP**, carrying the node token and result rows. That is true in every runtime; in local and Kubernetes modes the hop stays on one host or one cluster network, in fleet mode it crosses whatever sits between managers and servers. Fleet mode therefore requires a private network between them, and nodes bind only the advertised interface. Do not route this traffic over the internet.
+**The manager-to-node hop is plain HTTP**, carrying the node token, result rows, and users' own S3 keys (signed, not encrypted). The node-to-manager hop, the nodes' verdict calls to `QOD_INTERNAL_URL`, is plain HTTP too. That is true in every runtime; in local and Kubernetes modes the hop stays on one host or one cluster network, in fleet mode it crosses whatever sits between managers and servers. Fleet mode therefore requires a private network between them, and nodes bind only the advertised interface. Do not route this traffic over the internet.
 
 The server-to-manager hop carries the assignments, so the join process insists on HTTPS (see [Prerequisites](#prerequisites)).
 

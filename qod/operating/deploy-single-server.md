@@ -21,7 +21,7 @@ The two external dependencies QoD needs (Postgres and an S3-compatible store) ar
 | Component | Where it runs | Role |
 |---|---|---|
 | QoD manager | The server (one JVM process) | REST control plane + admin UI on `:20900`, FlightSQL edge on `:31338`, native Quack front door on `:9494` (DuckDB `ATTACH`) |
-| Quack nodes | The server, spawned as local subprocesses (`runtimeType = "local"`) | DuckDB engines executing user SQL |
+| Quack nodes | The server, spawned as local subprocesses (`runtimeType = "local"`) | `qod-node` processes (DuckDB engines) executing user SQL and authorizing each statement |
 | Control-plane state | Existing PostgreSQL (database `qod`) | Tenants, pools, users, RBAC, audit, statement history |
 | DuckLake metastore | Existing PostgreSQL (one database per tenant-db, `<tenant>_<name>`) | Table/snapshot metadata |
 | Data files | Existing rustfs, via its S3 API (`s3://...`) | Parquet data written by DuckLake |
@@ -33,12 +33,12 @@ graph TD
   browser["Browser<br/>admin UI"]
   subgraph server["the server"]
     direction TB
-    manager["<b>QoD manager, one JVM</b><br/>edge: auth, ACL, routing<br/>control plane, admin UI"]
+    manager["<b>QoD manager, one JVM</b><br/>edge: auth, routing, verdicts<br/>control plane, admin UI"]
     subgraph pool["pool, local subprocesses"]
       direction LR
-      n1["node 1<br/>DuckDB"]
-      n2["node 2<br/>DuckDB"]
-      n3["node 3<br/>DuckDB"]
+      n1["node 1<br/>qod-node"]
+      n2["node 2<br/>qod-node"]
+      n3["node 3<br/>qod-node"]
     end
     manager -->|"routes each statement"| n1
     manager --> n2
@@ -71,7 +71,7 @@ export QOD_MANAGED_STORE_URL_STYLE=path
 ```
 
    Important: the rustfs bucket used as the managed root must have **versioning OFF**, otherwise deleted data is never really purged.
-4. **Enable security before exposing anything**: `QOD_ACL_ENABLED=true` (enforce grants), rotate the admin password with `qod auth change-password` (`QOD_ADMIN_PASSWORD` only sets it on the first boot), keep TLS on the FlightSQL edge, set `QOD_API_KEY` or rely on login sessions for `/api`.
+4. **Secure it before exposing anything**: grants are always enforced (every node judges each tenant statement), so grant users what they read; rotate the admin password with `qod auth change-password` (`QOD_ADMIN_PASSWORD` only sets it on the first boot); keep TLS on the FlightSQL edge. `/api` takes `qod login` sessions and personal access tokens (`qod auth pat create`) only: there is no static API key, and a manager with `QOD_API_KEY` set refuses to boot.
 
 ### 0.1 The complete environment for this deployment
 
@@ -93,8 +93,9 @@ export QOD_S3_URL_STYLE=path      # path style for rustfs/MinIO (vhost is for AW
 export QOD_S3_USE_SSL=false       # true if rustfs is behind TLS
 
 # --- Security ---
-export QOD_ACL_ENABLED=true
-export QOD_ADMIN_PASSWORD='<strong password>'
+export QOD_ADMIN_PASSWORD='<strong password>'   # first boot only
+# Optional: let tenants authorize local file folders for their users
+# export QOD_TENANT_FILES_ROOT=/srv/qod/tenant-files
 
 # --- Manager JVM heap (no default is set otherwise; never give it more than 2g) ---
 export JAVA_OPTS=-Xmx2g
@@ -106,6 +107,7 @@ rustfs caveats to respect:
 - **Versioning OFF** on any bucket used by the managed store, otherwise purges leave invisible billed versions behind.
 - Keep one Postgres metastore database per storage location: the DuckLake catalog persists the absolute data path on first write, so re-pointing an existing metastore at a different path breaks.
 - If the site uses an HTTP proxy, add rustfs and Postgres hosts to `NO_PROXY`, or DuckDB's S3 writes route through the proxy and fail.
+- The `QOD_S3_*` keys sign only the databases' own data paths. A user who reads or writes other files on rustfs registers S3 keys of their own (`qod profile s3 add s3://<bucket>/<prefix> --access-key-id ... --secret-prompt --endpoint http://rustfs.internal:9000 --url-style path`), and rustfs's endpoint must then be listed in `QOD_USER_S3_ALLOWED_ENDPOINTS` (empty allows AWS only), e.g. `http://rustfs.internal:9000`.
 
 ### 0.2 Boot and verify
 
@@ -133,7 +135,7 @@ Notes:
 
 QoD is a multi-tenant SQL gateway built exactly for this:
 
-- Users connect concurrently with their own credentials, over Arrow Flight SQL (`:31338`) or DuckDB's native Quack protocol (`:9494`); both land in the same authentication, ACL and routing path.
+- Users connect concurrently with their own credentials, over Arrow Flight SQL (`:31338`) or DuckDB's native Quack protocol (`:9494`); both land in the same authentication and routing path, and the node that runs a statement authorizes it first.
 - The manager routes each statement to a node (DuckDB process) in the target pool using least-loaded routing (cache-aware placement on object-store pools), so concurrent statements spread across nodes.
 - A single node also executes multiple statements simultaneously: sessions share the node's `threads` and `memory_limit` budgets, and the per-pool `maxConcurrentPerNode` cap (default unbounded) bounds how many stack up on one node.
 
@@ -142,7 +144,7 @@ graph LR
   alice["alice"]
   bob["bob"]
   carol["carol"]
-  edge["edge :31338<br/>auth, ACL"]
+  edge["edge :31338<br/>auth"]
   router["router<br/>least-loaded,<br/>cache-aware"]
   n1["node 1<br/>inFlight 2"]
   n2["node 2<br/>inFlight 1 &#8592; next"]
@@ -168,7 +170,7 @@ graph LR
 | PostgreSQL | 16+; the QoD Postgres user needs `CREATEDB` (one database is auto-created per tenant-db) |
 | OS | Linux or macOS; Windows native is experimental (PowerShell scripts), Docker on Windows requires WSL2 |
 
-Everything else is provisioned by `qod start` itself: a Temurin 21 JRE when no 21+ JVM is present (`JAVA_BIN` forces a specific one) and the pinned DuckDB build (a system `duckdb` on PATH is deliberately ignored to avoid ABI mismatches).
+Everything else is provisioned by `qod start` itself: a Temurin 21 JRE when no 21+ JVM is present (`JAVA_BIN` forces a specific one) and the pinned DuckDB build (a system `duckdb` on PATH is deliberately ignored to avoid ABI mismatches). The nodes run `qod-node`, which the jar bundles for Linux and macOS.
 
 ### 2.2 Hardware guidance
 
@@ -203,6 +205,7 @@ Rules:
 - `threads`: per-node CPU share; keep close to the 1 vCPU : 4 GiB ratio.
 - `temp_directory`: fast local disk, never the object store.
 - Never put credentials in `initSql` (it is stored unredacted); engine settings only.
+- Written by a superuser (as here), `initSql` runs as written. One a tenant admin writes keeps only `SET` / `RESET` of 15 resource and session settings to a literal (`memory_limit`, `threads`, `timezone`, ..., not `temp_directory`), read-only PRAGMAs and `INSTALL` / `LOAD` of allowlisted extensions; the rest is refused at write time (`400 init_sql_refused`).
 - Editing a database's `initSql` restarts its nodes immediately; pool `initSql` applies on the next node spawn.
 
 ### 3.2 Worked example: 64 vCPU / 256 GiB server
@@ -441,7 +444,7 @@ export QOD_ADMIN_USERNAME=admin@yourco.com   # default: admin@localhost.local,ad
 export QOD_ADMIN_PASSWORD='<strong password>' # first boot only; no default (nothing is seeded without it)
 ```
 
-The admin row is re-seeded at every boot, so changing the env var and restarting rotates the credential. Create users with `qod user create --tenant acme --username alice --password ... --role analyst --group qod_no_pools`, via REST `/api/user/create`, or via SQL `CREATE USER` (section 5). Name the roles and groups explicitly: left out, they default to the built-ins `qod_all_tables` / `qod_all_pools` (full access to every table and pool of the tenant); see [Built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups). `--kind admin` (default `user`) grants management rights only. Optional account lockout: `QOD_AUTH_LOCKOUT_ENABLED=true` (requires SMTP: `QOD_SMTP_HOST` etc., plus `QOD_PUBLIC_BASE_URL` for the reset link).
+The admin row is seeded only when it is missing, so a later `QOD_ADMIN_PASSWORD` changes nothing: rotate with `qod auth change-password`, or recover with `qod admin reset-password`. Create users with `qod user create --tenant acme --username alice --password ... --role analyst --group qod_no_pools`, via REST `/api/user/create`, or via SQL `CREATE USER` (section 5). Name the roles and groups explicitly: left out, they default to the built-ins `qod_all_tables` / `qod_all_pools` (full access to every table and pool of the tenant); see [Built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups). `--kind admin` (default `user`) grants management rights only. Optional account lockout: `QOD_AUTH_LOCKOUT_ENABLED=true` (requires SMTP: `QOD_SMTP_HOST` etc., plus `QOD_PUBLIC_BASE_URL` for the reset link).
 
 ### 6.2 OIDC on the FlightSQL data plane
 
@@ -535,7 +538,7 @@ Point Okta / Entra / Google Workspace SCIM connectors at:
 https://<manager>/api/scim/v2/<tenant>
 ```
 
-with `Authorization: Bearer <QOD_API_KEY or a tenant-admin PAT>`. Users and groups are then created, updated, and deactivated from the IdP; deactivation cuts both the UI login and the FlightSQL handshake. SCIM-provisioned users receive random passwords and are expected to sign in via the tenant's SSO.
+with `Authorization: Bearer <a tenant-admin PAT>` (`qod auth pat create`, pinned to that tenant). Users and groups are then created, updated, and deactivated from the IdP; deactivation cuts both the UI login and the FlightSQL handshake. SCIM-provisioned users receive random passwords and are expected to sign in via the tenant's SSO.
 
 ---
 
@@ -636,7 +639,6 @@ export QOD_S3_REGION=us-east-1
 export QOD_S3_URL_STYLE=path           # path style for rustfs
 export QOD_S3_USE_SSL=false            # true if rustfs is behind TLS
 
-export QOD_ACL_ENABLED=true            # enforce grants from day one
 export QOD_ADMIN_PASSWORD='<strong admin password>'
 export JAVA_OPTS=-Xmx2g                # manager heap; never more than 2g (section 2.2)
 
@@ -834,9 +836,7 @@ It reports throughput, success rate, and p50/p95/p99 latency. For a stress run, 
 
 - **No global statement timeout.** A runaway query is not cut off by the gateway. Mitigate with per-node memory limits, `statement/kill` + `node/restart` for incidents, and `stmtTimeoutMs`-scoped PATs for agent workloads.
 - **No cross-node query fan-out**: one statement, one node.
-- Session-cache revocation lag: a demoted/revoked principal keeps its already-open FlightSQL context until the session TTL (default 1 h) expires.
 - Local backend caps: max 50 child nodes (`QOD_MAX_NODES_TOTAL`), node ports from 21900 to 22500.
-- Keep the default native client (`QOD_NATIVE_CLIENT=true`); the embedded fallback serializes all queries through one process-wide lock and is throughput-capped.
 - The manager runs as a single process in this deployment mode; nodes keep serving in-flight work if it restarts, and reconcile respawns state on the next boot.
 
 ## Related pages
