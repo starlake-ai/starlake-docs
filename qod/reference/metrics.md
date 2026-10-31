@@ -43,6 +43,45 @@ Emitted per finished [managed-maintenance](/qod/operating/maintenance) run. Thes
 | `qod_maint_snapshots_expired_total` | counter | `tenant`, `tenant_db` | Snapshots expired (pinned snapshots are skipped, never counted here). |
 | `qod_maint_duration_seconds` | timer | `tenant`, `tenant_db` | End-to-end run duration, including maintenance-node spawn time. |
 
+## Authorization metrics
+
+Every tenant statement is authorized on its node: the node asks the manager replica that minted its session handle for a verdict, caches it, and refuses what no grant (or the tenant's OPA policy) covers. See [Access control model](../operating/rbac-model.md). Dry runs (`qod tenant opa-test --sql`) are not counted.
+
+Decisions taken by this replica's decide endpoint (`POST /api/internal/authz/decide`):
+
+| Metric | Type | Labels | Meaning |
+|---|---|---|---|
+| `qod_authz_decisions_total` | counter | `tenant`, `kind`, `outcome`, `mode` | Decisions answered to nodes. `kind` is `plan` (a statement judged on the plan DuckDB bound) or `screen` (the check quack's authorization callback asks for); `outcome` is `allow`, `refuse` or `unavailable`; `mode` is `qod` (grants) or `opa` (the tenant's OPA). A rising `unavailable` rate means decisions could not be had in time, which users see as `QoD: authorization unavailable, retry`. |
+| `qod_authz_decide_duration_ms` | summary | `kind` | Time to take one decision, in milliseconds, with fixed buckets from 0.5 to 5000. Prometheus exports `_bucket`, `_count`, `_sum` and `_max`. A grant decision takes well under a millisecond; an OPA tenant's runs up to its OPA timeout. |
+
+Per-node counters, read from each node's `system.main.qod_authz_stats()` by the health probe and exported on Prometheus scrapes by the HA leader only (a single manager always leads), so `sum by (node)` is not multiplied by the replica count. A node that leaves the pool loses its series.
+
+| Metric | Type | Labels | Meaning |
+|---|---|---|---|
+| `qod_node_authz_plan_cache_hits_total` | counter | `tenant`, `pool`, `node` | Plan verdicts served from the node's verdict cache. |
+| `qod_node_authz_plan_cache_misses_total` | counter | `tenant`, `pool`, `node` | Plan verdicts not in the cache, each followed by a decide call. |
+| `qod_node_authz_decide_calls_total` | counter | `tenant`, `pool`, `node` | Calls the node made to the manager for a verdict. |
+| `qod_node_authz_decide_unavailable_total` | counter | `tenant`, `pool`, `node` | Calls that got no verdict in time (replica down, restarted or unreachable from the node). |
+| `qod_node_authz_decide_refused_total` | counter | `tenant`, `pool`, `node` | Calls answered with a refusal. |
+| `qod_node_authz_local_refusals_total` | counter | `tenant`, `pool`, `node` | Statements the node refused on its own while planning them, without a verdict from the manager (for example a statement shape it cannot describe). |
+| `qod_node_authz_screen_calls_total` | counter | `tenant`, `pool`, `node` | Screen checks the node ran for quack's authorization callback. |
+| `qod_node_authz_verdict_cache_evictions_total` | counter | `tenant`, `pool`, `node` | Verdicts evicted from a full cache. Sustained growth means `QOD_AUTHZ_CACHE_ENTRIES` is too small for the working set. |
+| `qod_node_authz_verdict_cache_size` | gauge | `tenant`, `pool`, `node` | Verdicts currently cached on the node. |
+| `qod_node_authz_credential_sets_size` | gauge | `tenant`, `pool`, `node` | Users' own S3 credential sets currently held by the node. |
+
+## Cache metrics
+
+Each replica registers its own bounded caches through Micrometer's Caffeine binder, so a sum across replicas is the fleet's total. The `cache` label is one of `qod_minted_handles` (session handle contexts this replica minted), `qod_issued_handles` (handles whose users' S3 keys a node may fetch), `qod_dry_run_results` (OPA dry-run inputs), `qod_effective_sets` (resolved grants per principal) and `qod_opa_decisions` (registered only while `QOD_OPA_CACHE_TTL_SEC` is above zero).
+
+| Metric | Type | Labels | Meaning |
+|---|---|---|---|
+| `cache_size` | gauge | `cache` | Entries currently held. |
+| `cache_gets_total` | counter | `cache`, `result` | Lookups, `result` = `hit` or `miss`. |
+| `cache_evictions_total` | counter | `cache` | Entries evicted to stay under the bound. A rising `cache_evictions_total{cache="qod_minted_handles"}` means the replica mints more handles than `QOD_AUTHZ_HANDLE_CONTEXTS_MAX` keeps: raise it. |
+| `qod_cache_capacity` | gauge | `cache` | The configured bound, to chart how full each cache is. |
+
+Micrometer's binder also exports its other standard `cache_*` series (puts, eviction weight) under the same `cache` label.
+
 ## DuckDB engine metrics
 
 Scraped from each node's DuckDB engine (`duckdb_memory()`, `duckdb_temporary_files()`) by the background health probe, one extra round-trip per node per `QOD_HEALTH_CHECK_INTERVAL_SEC` tick. A node that has never been scraped successfully publishes no row (rather than a misleading zero); a failed scrape keeps the previous sample until the next tick.

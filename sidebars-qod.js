@@ -64,6 +64,7 @@ const sidebars = {
             'operating/encryption',
             'operating/hardening',
             'operating/resilience',
+            'operating/upgrading',
           ],
         },
         {

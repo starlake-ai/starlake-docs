@@ -88,6 +88,18 @@ When this counter climbs, check Postgres write latency and the journal queue dep
 
 The counter stays at zero when `QOD_TELEMETRY_STORE=none` because not recording is intentional, not a drop.
 
+## Authorization health
+
+Nodes authorize every tenant statement by asking the manager replica that minted the session for a verdict (see [Access control model](./rbac-model.md)). Three signals show whether that path is healthy; the series are listed under [Authorization metrics](../reference/metrics.md#authorization-metrics):
+
+- `qod_authz_decisions_total{outcome="unavailable"}` and `qod_node_authz_decide_unavailable_total`: nodes could not get a verdict in time, and users read `QoD: authorization unavailable, retry`. Check that nodes reach the replica's `QOD_INTERNAL_URL` (boot prints it as `node decide URL: <url>`), and, on an OPA tenant, that its OPA server answers. The OPA error itself is only in the manager log, on the WARN line `OPA <connect|statement> error for tenant=<id>: ...`.
+- `qod_authz_decide_duration_ms`: decision latency per `kind`. Grant decisions take well under a millisecond; a high tail usually comes from OPA tenants.
+- `cache_evictions_total{cache="qod_minted_handles"}`: the replica mints more session handles than `QOD_AUTHZ_HANDLE_CONTEXTS_MAX` keeps (each is kept 360 s, so the default 200000 caps a replica at about 555 tenant statements per second; past it a statement can be refused with `authorization context expired; retry`). Raise it when this rises.
+
+The `qod_node_authz_*` per-node counters are exported by the HA leader only, so they are not multiplied by the replica count. The bundled Grafana dashboards have no authorization row yet: chart these series in your own panels.
+
+The health probe also checks that each node enforces: it sends a statement with no session handle, and a node that runs it is marked unhealthy and never routed to. A node started by a release before 0.11.0 refuses every session handle and stays unhealthy until it is restarted (see [Upgrading to 0.11.0](./upgrading.md)).
+
 ## Metrics vs. the usage ledger
 
 `statements_total` and `statement_duration_seconds` (both tagged `tenant`, `pool`, `status`) are the real-time, in-process view of statement activity: they increment on every completed statement and are exported at the Prometheus scrape interval or cloud-push cadence. They answer questions like "what is the current QPS per tenant?" but do not persist across process restarts.
