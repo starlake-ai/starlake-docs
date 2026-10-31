@@ -25,11 +25,15 @@ tenant that owns the pool the connection is bound to. Regular users receive
 `PERMISSION_DENIED admin_required`. Everything resolves within the session's
 tenant; there is no cross-tenant addressing, superusers included.
 
+The one exception is [`UNDROP TABLE`](#recover-a-dropped-table): any signed-in
+user may run it, and it runs as them.
+
 The whole dialect sits behind `QOD_SQL_ADMIN_ENABLED` (default `true`). With
 the flag off, these statements are rejected exactly as they were before the
-feature existed. Admin SQL is available on the FlightSQL edge only: statements
-arriving through the MCP server or catalog preview paths are denied regardless
-of the flag.
+feature existed. Admin SQL is available on the FlightSQL edge and the
+[native Quack front door](/qod/connecting/duckdb) only: statements arriving
+through the MCP server or catalog preview paths are denied regardless of the
+flag.
 
 ## Statements by family
 
@@ -182,6 +186,46 @@ edge's DEBUG statement logging redacts recognized admin statements. Prefer
 plain (non-prepared) statements for admin SQL; the prepared path works but
 advertises a generic schema at prepare time.
 
+### Recover a dropped table
+
+```sql
+UNDROP TABLE main.orders;                  -- under its last name
+UNDROP TABLE main.orders AS orders_back;   -- under a new name
+UNDROP TABLE orders;                       -- the database's default schema
+```
+
+`UNDROP TABLE [schema.]t [AS new_name]` recovers a dropped table of the
+session's DuckLake database. Unlike the rest of the dialect it is not an admin
+statement: any signed-in user may run it, on either door and from `qod sql`,
+and it runs **as the caller**. The manager finds the table's last live
+snapshot and runs `CREATE TABLE ... AS SELECT * FROM ... AT (VERSION => n)` on
+a connection of its own, so the node judges it like a statement the caller
+typed: it needs a read grant on the table's last name, which no live table or
+view may hold, and DDL in the schema. Names compare without case, as DuckDB
+resolves them, and must be plain names (no quotes, separators or whitespace).
+
+The answers are plain words:
+
+| Situation | Answer |
+|---|---|
+| Recovered | `table main.orders restored as main.orders_back from snapshot <n>` |
+| No dropped table of that name | `there is no dropped table main.orders` |
+| The name (or the `AS` name) is taken | `a table or view main.orders exists; use UNDROP TABLE main.orders AS <new name>` |
+| The node refuses the read or the create | `not permitted: ...` |
+| Its last live snapshot was expired | `main.orders is no longer recoverable: ...` |
+| Inside an open transaction | `UNDROP TABLE cannot run inside a transaction: its recovery commits on its own; COMMIT or ROLLBACK first` |
+
+It is refused inside a transaction because its recovery commits on its own
+connection, which the client's `ROLLBACK` could not undo. Once a dropped
+table's name is reused by a live table or view, only a superuser can recover
+it, through `qod catalog undrop` (which also takes `--from-snapshot`). A personal access token's databases, pools and verb
+ceiling apply to every undrop route, so a read-only token cannot recover.
+
+Regular users have the same recovery outside SQL: the profile page's
+**Recover a dropped table** card, `qod profile recoverable` /
+`qod profile undrop`, and the MCP tools `list_recoverable` / `undrop_table`
+with their own PAT. See [Profile page](/qod/operating/admin-ui#profile-page-regular-users).
+
 ### Introspection
 
 ```sql
@@ -207,6 +251,7 @@ and roles reached through groups), naming the granting role on each row.
   `SHOW "users"`. `users` is the likeliest real-world collision.
 - **Not transactional.** Admin statements are control-plane writes; a
   surrounding `BEGIN` on the data connection does not cover them.
+  `UNDROP TABLE` is refused inside one.
 - **Session staleness.** Authorization is evaluated against the principal
   snapshot taken at connection handshake. A demoted admin keeps dialect
   authority on an already-bound connection until the session context expires

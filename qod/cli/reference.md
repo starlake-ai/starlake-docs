@@ -170,8 +170,8 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | `qod catalog preview` | Preview table rows, optionally as of a snapshot/tag/timestamp. |
 | `qod catalog data-diff` | Row-level diff of a table between two snapshot selectors. |
 | `qod catalog schema-diff` | Schema diff of a table between two snapshot selectors. |
-| `qod catalog recoverable` | Dropped tables still recoverable via undrop. |
-| `qod catalog undrop` | Recover a dropped table, optionally under a different name. |
+| `qod catalog recoverable` | Dropped tables still recoverable via undrop (admins; regular users use `qod profile recoverable`). |
+| `qod catalog undrop` | Recover a dropped table, optionally under a different name or `--from-snapshot` (admins; regular users use `qod profile undrop` or `UNDROP TABLE`). |
 | `qod catalog restore` | Roll a live table back to a prior snapshot or tag, as a new forward snapshot. |
 
 ```bash
@@ -262,6 +262,8 @@ are then strings, `describe` is current-only (no `--as-of*`), `preview` refuses 
 | `qod profile usage` | Your own daily statement counts. |
 | `qod profile statements` | Your own most recent statements. |
 | `qod profile pools` | The pools you may connect to (the FlightSQL handshake's own decision, narrowed by a PAT's scope). |
+| `qod profile recoverable` | The dropped tables of one of your own databases (`--db`, `--limit`, default 50) that you may recover: the name is free and your grants cover a read of it. |
+| `qod profile undrop` | Recover one of them as you: `--db`, `--schema`, `--table`, optional `--as-name`. Needs a read grant on the table's last name and DDL in the schema. |
 | `qod profile s3 list\|add\|remove` | Your own S3 keys, each under an `s3://` scope your statements reach files with. `add SCOPE --access-key-id ...` takes the secret from `--secret-stdin` or `--secret-prompt` (never argv), optional `--session-token-stdin` / `--session-token-prompt`, `--region`, `--endpoint`, `--url-style`. |
 
 ## config

@@ -44,6 +44,8 @@ What a tenant user (not a superuser) cannot run, whatever the grants:
 
 See [Hardening](../operating/hardening.md#node-enforcement-always-on) for the full list.
 
+Reading a DuckLake table at an earlier snapshot (`AT (VERSION => n)`, `AT (TIMESTAMP => ...)`) or through its change feed (`ducklake_table_changes`, `_insertions`, `_deletions`, the table named by literals) is a read of the table as it is now, by its DuckLake id: see [Earlier snapshots and the change feed](../operating/rbac-model.md#earlier-snapshots-and-the-change-feed). A dropped table comes back with `UNDROP TABLE [schema.]t [AS new_name]`, which any user may run outside a transaction, as themselves: see [Recover a dropped table](../administration/sql-administration.md#recover-a-dropped-table).
+
 ## Querying federated catalogs
 
 If the database has federated sources attached, their catalogs appear under their aliases, and you query them like any other table with a three-part `alias.schema.table` reference (for example `SELECT * FROM fedpg.public.orders`). For a principal holding row or column policies, the three-part form is the only accepted one: a two-part reference whose first part is a federation alias is denied as ambiguous (see [Table name resolution](/qod/administration/access-control#table-name-resolution)). Access is governed by the same grants: reads need an `RO` (SQL `SELECT`) grant naming the federated alias, since a wildcard catalog grant never covers it, and writes need an `RW` (or `DDL`, or `ALL`) grant, exactly as for a native table. A source marked read-only refuses writes to everyone, superusers included; Iceberg sources are read-only by default, free-form `sql` sources are not. Setting up federated sources is covered in [Federation](/qod/operating/federation).
