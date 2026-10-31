@@ -7,7 +7,7 @@ keywords: ["manifest", "backup", "restore", "yaml", "configuration"]
 
 The config manifest is the entire control-plane configuration serialized as one YAML document: every tenant, database, pool, federated source, role, group, user, and grant. Export it to back up or version-control your configuration, then import it to restore, clone an environment, or apply a reviewed change. The manifest holds configuration only; it does not contain table data or the DuckLake catalogs.
 
-Manifest export and import are cross-tenant operations and are **restricted to superusers**. A tenant-scoped session is rejected with `403 superuser_required`; a static `QOD_API_KEY` caller is admitted. The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a superuser session, or `QOD_API_KEY` is set for CI scripts.
+Manifest export and import are cross-tenant operations and are **restricted to superusers**. A tenant-scoped session or PAT is rejected with `403 superuser_required`; a superuser's session or PAT is admitted. The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a superuser session, or `QOD_TOKEN` holds a personal access token for CI scripts.
 
 ## Export
 
@@ -31,8 +31,9 @@ exportedFrom:
 The document mirrors the object hierarchy:
 
 - `tenants[]` - each with its `authProvider` / `authConfig`, and nested:
-  - `tenantDbs[]` - `kind`, `metastore`, `dataPath`, `objectStore`, `defaultDatabase`, `defaultSchema`, and nested `federatedSources[]` (with their `secrets[]`).
-  - `pools[]` - `tenantDb`, `roleDistribution`, `maxConcurrentPerNode`, `disabled`, and optional `cohorts[]` placement.
+  - `tenantDbs[]` - `kind`, `metastore`, `dataPath`, `objectStore`, `defaultDatabase`, `defaultSchema`, `initSql` with its `initSqlTrusted` flag, and nested `federatedSources[]` (with their `secrets[]`).
+  - `pools[]` - `tenantDb`, `roleDistribution`, `maxConcurrentPerNode`, `disabled`, `initSql` with its `initSqlTrusted` flag, and optional `cohorts[]` placement. A `lockdown` field in a manifest exported by an earlier release is ignored on import.
+  - `locations[]` - the tenant's authorized local folders (each a `location`), exported only when the tenant has some. On import, a tenant without `locations` keeps its stored folders; a present list (an empty one included) becomes exactly the tenant's folders.
   - `identities[]` - external identity mappings for the tenant.
 - `roles[]` - each `(tenant, name)` with its `permissions[]` (catalog/schema/table/verb).
 - `groups[]` - each `(tenant, name)` with its assigned `roles[]`.
@@ -114,6 +115,10 @@ manifest import: tenant-db 'acme_lake' federated source 'sales_lake' changes sou
 Before re-applying an old manifest, check it against a current export for any `federatedSources`
 entry whose `sourceType` has moved backwards, and grep the import for that line afterwards.
 
+`initSqlTrusted` records who wrote a database's or pool's init SQL: `true` for a superuser or the manager (runs as written), `false` for a tenant admin (runs under the [initSql allowlist](./tenants-databases.md#init-sql-trust)). A hand-written manifest that leaves it out is a superuser's own text and imports trusted, except that a row whose init SQL the manifest leaves unchanged keeps its stored flag.
+
+Users' own S3 credentials are never in a manifest: after an import into another deployment, each user registers them again (`qod profile s3 add`).
+
 ### Passwords and secrets on import
 
 - A user with a `passwordHash` value has it applied **verbatim** (no re-hashing): this is the field an export populates, so a round-trip restores the exact credential the user had at export time.
@@ -121,7 +126,7 @@ entry whose `sourceType` has moved backwards, and grep the import for that line 
 - A federated secret left as `value: "***REDACTED***"` (and no `externalRef`) reuses the existing stored value. This is why a redacted export re-imports without re-typing credentials.
 - A tenant's `acl.opaToken` left as `***REDACTED***` reuses the stored token while `opaUrl` is unchanged; with a changed `opaUrl`, or no stored token, the import is refused. A tenant without an `acl` block keeps its stored ACL.
 - A tenant's `clientSecret` left as `***REDACTED***` reuses the stored secret while `authConfig.issuerUrl` is unchanged; with a changed issuer, or no stored secret, the import is refused, naming the tenant. Any other value is stored as given (a value made only of whitespace is refused). A tenant without `clientSecret`, or with `""`, stores none: a hand-written manifest that leaves it out removes a stored secret. A tenant that carries both a `clientSecret` and an `authConfig.clientSecretRef`, or an `authConfig` holding a `clientSecret` key, is refused; a `clientSecretRef` alone imports as written, whatever the issuer, because a manifest import is a superuser's.
-- A manifest exported before 0.10.2 carries its tenants' `clientSecretRef` values as active settings, and importing it after the upgrade stores them as they are, without the review that the upgrade asks of a superuser for the references it parked (see [Per-tenant OIDC](./auth-providers.md#per-tenant-oidc)): check those references before importing such a manifest. The `clientSecretRefUnconfirmed` key that the upgrade parks follows the rule of a `tenant/setAuth` save: an import keeps it only when the tenant still holds it, the manifest carries it unchanged, the tenant ends up with no secret source and `authConfig.issuerUrl` is unchanged; into a manager that does not hold it, the key is dropped (its value stays in the manifest file).
+- A manifest exported before 0.11.0 carries its tenants' `clientSecretRef` values as active settings, and importing it after the upgrade stores them as they are, without the review that the upgrade asks of a superuser for the references it parked (see [Per-tenant OIDC](./auth-providers.md#per-tenant-oidc)): check those references before importing such a manifest. The `clientSecretRefUnconfirmed` key that the upgrade parks follows the rule of a `tenant/setAuth` save: an import keeps it only when the tenant still holds it, the manifest carries it unchanged, the tenant ends up with no secret source and `authConfig.issuerUrl` is unchanged; into a manager that does not hold it, the key is dropped (its value stays in the manifest file).
 
 ## Typical workflows
 

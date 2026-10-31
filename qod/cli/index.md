@@ -25,7 +25,7 @@ pip install ./cli
 
 Both routes install the `qod` console script on `$PATH`.
 
-**Windows.** The same `pip install qod` installs a `qod.exe` entry point; there is no separate Windows package. The profile file lives at `%APPDATA%\qod\config.toml` instead of the Linux/macOS XDG path, and the interactive `qod sql` REPL gets line editing and history from `pyreadline3` (installed automatically as a Windows-only dependency).
+**Windows.** The same `pip install qod` installs a `qod.exe` entry point; there is no separate Windows package. The profile file lives at `~/.qod/config.toml` as on every platform, and the interactive `qod sql` REPL gets line editing and history from `pyreadline3` (installed automatically as a Windows-only dependency).
 
 ## Login and profiles
 
@@ -35,9 +35,9 @@ qod login --url http://localhost:20900 --username admin
 
 Against the demo bootstrap this prompts for the `admin` / `admin` dev password (the password is always a prompt, never a flag, so it never lands in shell history). A successful login mints a session and writes it to the active profile together with the FlightSQL edge settings the manager reports back (host, port, TLS) - one `qod login` configures both the REST plane and the SQL plane in one shot.
 
-Profiles are named sections of a TOML file at a platform config directory: `~/.config/qod/config.toml` on Linux, `~/Library/Application Support/qod/config.toml` on macOS, `%APPDATA%\qod\config.toml` on Windows (override the whole path with `QOD_CONFIG_FILE`). The file is written with mode `0600` because it can hold a session token and, opt-in, a SQL password. The default profile is named `default`; switch profiles with `--profile prod` (a top-level flag, before the noun) or the `QOD_PROFILE` environment variable, so one machine can hold a `default` profile against a local dev manager and a `prod` profile against a real deployment without either clobbering the other. `qod config profiles` lists the profiles the file holds and marks the active one; `qod config use <name>` makes a profile the sticky default so you can drop the flag.
+Profiles are named sections of a TOML file at `~/.qod/config.toml` on every platform (override the whole path with `QOD_CONFIG_FILE`; a file left at the former platform config directory is moved there on first use). The file is written with mode `0600` because it can hold a session token and, opt-in, a SQL password. The default profile is named `default`; switch profiles with `--profile prod` (a top-level flag, before the noun) or the `QOD_PROFILE` environment variable, so one machine can hold a `default` profile against a local dev manager and a `prod` profile against a real deployment without either clobbering the other. `qod config profiles` lists the profiles the file holds and marks the active one; `qod config use <name>` makes a profile the sticky default so you can drop the flag.
 
-For non-interactive callers such as CI, skip `qod login` entirely and set `QOD_API_KEY` to the manager's static REST key - every command resolves credentials the same way, so a static key works everywhere a session token would.
+The CLI has one REST credential, `token`, sent as `X-API-Key`: the session `qod login` writes, or a personal access token. For non-interactive callers such as CI, either set `QOD_TOKEN` to a personal access token an admin minted once (`qod auth pat create`), or run `qod login --password-stdin` inside the job (the password on the first line of stdin, never in a flag or an env var). There is no static API key: a 401 from the CLI says "run qod login, or set QOD_TOKEN to a personal access token".
 
 ## Settings resolution
 
@@ -51,14 +51,14 @@ Every setting resolves in this order, highest priority first:
 | Setting | Env var | Notes |
 |---|---|---|
 | `manager_url` | `QOD_MANAGER_URL` | REST plane base URL. |
-| `api_key` | `QOD_API_KEY` | Static API key; wins over `token` when both are set. |
-| `token` | `QOD_TOKEN` | Session JWT, normally written by `qod login`, not set by hand. |
+| `token` | `QOD_TOKEN` | The only REST credential: the session JWT `qod login` writes, or a personal access token set by hand. |
 | `edge_host` | `QOD_HOST` | FlightSQL edge host. |
 | `edge_port` | `QOD_PORT` | FlightSQL edge port. |
 | `edge_tls` | `QOD_TLS` | TLS to the edge. |
 | `edge_tls_verify` | `QOD_TLS_VERIFY` | Verify the edge TLS cert; off by default since the edge ships a self-signed cert. |
 | `tenant` | `QOD_TENANT` | Default tenant for `qod sql`. |
 | `pool` | `QOD_POOL` | Default pool for `qod sql`. |
+| `branch` | `QOD_BRANCH` | Branch `qod sql` targets (sent as the FlightSQL `branch` header). |
 | `sql_user` | `QOD_USER` | FlightSQL username; set by `qod login`. |
 | `sql_password` | `QOD_PASSWORD` | FlightSQL password; opt-in storage, prompted when unset. |
 | `superuser` | `QOD_SUPERUSER` | Send the superuser call header on `qod sql`. |

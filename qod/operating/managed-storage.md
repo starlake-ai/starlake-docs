@@ -41,7 +41,7 @@ qod database create --tenant acme --name sales --kind ducklake --managed-storage
 
 ```bash
 curl -sS -X POST "$MGR/api/database/create" \
-  -H "X-API-Key: $QOD_API_KEY" -H 'Content-Type: application/json' \
+  -H "X-API-Key: $QOD_TOKEN" -H 'Content-Type: application/json' \
   -d '{"tenant":"acme","name":"sales","kind":"ducklake","managedStorage":true}'
 ```
 
@@ -84,7 +84,7 @@ qod database delete --tenant acme --name acme_sales --purge-managed-data
 
 ```bash
 curl -sS -X POST "$MGR/api/database/delete" \
-  -H "X-API-Key: $QOD_API_KEY" -H 'Content-Type: application/json' \
+  -H "X-API-Key: $QOD_TOKEN" -H 'Content-Type: application/json' \
   -d '{"tenant":"acme","name":"acme_sales","purgeManagedData":true}'
 ```
 
@@ -114,7 +114,7 @@ With several manager replicas starting together, they all probe the store and ra
 
 ### Isolation posture: shared credential, prefix by convention
 
-All managed databases share the operator credential. Isolation between tenants' managed data is prefix-by-convention, enforced by QoD's node configuration (the per-database `CREATE SECRET` scoped to that database's own `dataPath`) plus [per-pool lockdown](/qod/operating/hardening), not by store-level ACLs. A principal who can run arbitrary configuration statements on a node with those credentials is not confined by the bucket itself. Keep node lockdown on for managed deployments, and treat the operator credential as a manager-level secret.
+All managed databases share the operator credential. Isolation between tenants' managed data is prefix-by-convention, enforced by QoD's node configuration (the per-database `CREATE SECRET` scoped to that database's own `dataPath` and its branches) plus the node's own authorization, not by store-level ACLs. Every node decides each tenant statement: a non-superuser cannot create or drop secrets, change the `s3_*` settings, or `ATTACH`, and no tenant user reaches a database's data folder by its path, any tenant's included (`QoD: <path> is a database data folder`). The operator credential signs only a database's own data path: a user who reads other `s3://` locations does so with keys of their own (`qod profile s3 add`). A superuser, who can run arbitrary configuration statements on a node, is not confined by the bucket itself, so treat the operator credential as a manager-level secret.
 
 Per-database credential minting (per-database keys issued by the store's admin API or by IAM) is the designed follow-up; it would change only which credentials land in a database's `objectStore`, not the prefix layout or the lifecycle above.
 

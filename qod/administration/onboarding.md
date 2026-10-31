@@ -31,9 +31,9 @@ This page walks an administrator through the complete golden path: from signing 
 qod login --url http://localhost:20900 --username admin
 ```
 
-`qod login` prompts for the password (never a command-line flag), mints a session, and stores it in the active profile - every subsequent `qod` command reuses it. CI scripts can set `QOD_API_KEY` instead of logging in.
+`qod login` prompts for the password (never a command-line flag), mints a session, and stores it in the active profile - every subsequent `qod` command reuses it. CI scripts set `QOD_TOKEN` to a personal access token instead, or run `qod login --password-stdin` with the password on the first line of stdin.
 
-**Verify:** The top-right pill shows the signed-in user and their role. In no-auth dev mode the pill reads `anonymous / no-auth`.
+**Verify:** The user pill shows the signed-in user and their role.
 
 **Related:**
 

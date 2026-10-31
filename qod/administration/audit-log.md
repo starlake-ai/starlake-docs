@@ -14,8 +14,8 @@ Events fall into four families:
 | Family | Meaning |
 |---|---|
 | `control-plane` | Mutating REST operations: tenant, database, pool, user, role, group, membership, node, and federation changes |
-| `auth` | Login successes, login failures, logouts, session revocations, and rejected API keys |
-| `data-denial` | SQL statements blocked by the ACL validator at the FlightSQL edge |
+| `auth` | Login successes, login failures, logouts, session revocations, and requests with no valid credential |
+| `data-denial` | SQL statements the node refused (`QoD: ...`), on the FlightSQL edge or the native Quack front door |
 | `data-write` | DDL and DML statements that completed successfully at the FlightSQL edge |
 
 Read statements (`SELECT`, `SHOW`, `EXPLAIN` without DML) are not audited. They belong to statement history, which is a separate subsystem.
@@ -32,7 +32,7 @@ The `action` field is a dotted string. The full set of values emitted by the cur
 | `auth.login.failure` | Failed login (bad credentials, expired, or unknown user) |
 | `auth.logout` | Session logout |
 | `auth.revoke` | Explicit session revocation |
-| `auth.api-key.failure` | Rejected `X-API-Key` header; rate-limited to one event per source IP per minute |
+| `auth.api-key.failure` | Request on `/api` with no valid credential (no live session or PAT in `X-API-Key` or the session cookie); rate-limited to one event per source IP per minute |
 | `auth.admin.required` | Valid non-admin session denied on an admin endpoint; rate-limited to one event per user per minute |
 | `auth.pat.create` | Personal access token minted (target is the token id, detail carries its name) |
 | `auth.pat.revoke` | Personal access token revoked (`denied` outcome on an unknown or foreign id) |
@@ -46,6 +46,10 @@ The `action` field is a dotted string. The full set of values emitted by the cur
 | `tenant.delete` | Tenant deleted |
 | `tenant.auth.update` | Tenant auth provider updated |
 | `tenant.setDisabled` | Tenant enabled or disabled |
+| `tenant.acl.update` | Tenant access-control mode or OPA settings updated |
+| `tenant.opa.test` | OPA dry run (`qod tenant opa-test`) |
+| `tenant.location.add` | Authorized local folder added to a tenant |
+| `tenant.location.remove` | Authorized local folder removed from a tenant |
 | `database.create` | Tenant-db created |
 | `database.update` | Tenant-db updated |
 | `database.delete` | Tenant-db deleted |
@@ -60,6 +64,7 @@ The `action` field is a dotted string. The full set of values emitted by the cur
 | `pool.delete` | Pool deleted |
 | `pool.setDisabled` | Pool enabled or disabled (create-disabled toggle) |
 | `pool.setResources` | Pool CPU or memory limits updated |
+| `pool.setInitSql` | Pool init SQL replaced |
 | `pool.setPodTemplate` | Pool pod template updated (superuser only) |
 | `pool.permission.grant` | Pool permission granted to a role |
 | `pool.permission.revoke` | Pool permission revoked from a role |
@@ -71,6 +76,8 @@ The `action` field is a dotted string. The full set of values emitted by the cur
 | `user.create` | User created |
 | `user.update` | User updated |
 | `user.delete` | User deleted |
+| `user.s3.add` | A user registered an S3 credential of their own (the scope and credential id are recorded, never a key, secret or token) |
+| `user.s3.remove` | An S3 credential removed, by its user or an admin |
 | `role.create` | Role created |
 | `role.delete` | Role deleted |
 | `role.permission.grant` | Table permission granted on a role |
@@ -106,7 +113,7 @@ The `action` field is a dotted string. The full set of values emitted by the cur
 
 | Action | Description |
 |---|---|
-| `sql.denied` | Statement blocked by the ACL validator; detail includes the denied table and missing verb |
+| `sql.denied` | Statement refused by the node (family `data-denial`); detail carries the sql (capped at 500 chars) and the refusal reason (`QoD: ...`) |
 | `sql.write` | DML statement completed; detail includes sql text (capped at 500 chars) and durationMs |
 | `sql.ddl` | DDL statement completed; detail includes sql text (capped at 500 chars) and durationMs |
 
@@ -118,7 +125,7 @@ Every row in `qodstate_audit` carries:
 |---|---|---|
 | `ts` | ISO-8601 timestamp | Event time |
 | `family` | `control-plane`, `auth`, `data-denial`, `data-write` | Coarse grouping |
-| `actor` | username | `anonymous` for unauthenticated 401s; `static-key` for API-key callers that cannot be resolved to a user |
+| `actor` | username | `anonymous` for unauthenticated 401s; every authenticated call is attributed to its user (a session or a PAT's owner) |
 | `actor_realm` | `system`, `tenant` | Superuser sessions are `system` |
 | `tenant` | tenant id or null | Null for tenant-less events (see below) |
 | `action` | dotted verb (see taxonomy above) | |
@@ -133,7 +140,6 @@ Access to `GET /api/audit/list` follows the same scope rules as every other RBAC
 
 - **Superusers** see all rows, including rows where `tenant` is null. The `tenant` filter returns only that tenant's rows (null-tenant rows are not included when a tenant filter is set). Use `noTenant=true` to select only the null-tenant rows.
 - **Tenant admins** see only rows whose `tenant` equals one of their administrable tenants. Rows with `tenant IS NULL` are not visible to tenant admins. The `noTenant` parameter is ignored for tenant admins.
-- **Static-key callers** are treated as superusers.
 
 Rows with `tenant IS NULL` represent events with no tenant scope: anonymous authentication failures, node operations that span tenants, and manifest imports. These are exclusively visible to superusers so tenant admins cannot infer deployment topology from them.
 
@@ -181,7 +187,7 @@ The `postgres` and `none` values are the only accepted values for `QOD_TELEMETRY
 
 ## Querying the audit log with the CLI
 
-The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_API_KEY` is set for CI scripts.
+The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_TOKEN` holds a personal access token for CI scripts.
 
 ```bash
 # List the 50 most recent control-plane events (default limit)
@@ -205,8 +211,8 @@ qod audit actions
 | Parameter | Description |
 |---|---|
 | `family` | Filter by event family (`control-plane`, `auth`, `data-denial`, `data-write`) |
-| `tenant` | Filter by tenant id. Superusers and static-key callers: returns exactly that tenant's rows (null-tenant rows not included). Tenant admins: narrows within their manageable tenants; a tenant outside their set silently falls back to all manageable rows. |
-| `noTenant` | Set to `true` to return only rows with no tenant scope (superusers and static-key callers only; ignored for tenant admins). Wins over `tenant` when both are supplied: if `noTenant=true` and `?tenant=x` are both present, only null-tenant rows are returned. |
+| `tenant` | Filter by tenant id. Superusers: returns exactly that tenant's rows (null-tenant rows not included). Tenant admins: narrows within their manageable tenants; a tenant outside their set silently falls back to all manageable rows. |
+| `noTenant` | Set to `true` to return only rows with no tenant scope (superusers only; ignored for tenant admins). Wins over `tenant` when both are supplied: if `noTenant=true` and `?tenant=x` are both present, only null-tenant rows are returned. |
 | `actor` | Filter by actor username (exact match) |
 | `action` | Filter by action string (exact match, e.g. `auth.login.failure`) |
 | `q` | Substring match on `target` and `action` |

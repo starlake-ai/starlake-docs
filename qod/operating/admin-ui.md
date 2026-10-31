@@ -20,7 +20,7 @@ The login screen takes a username, password, and an optional **Tenant ID**. The 
 
 There is no separate superuser checkbox; the field's presence is the only signal. Pre-existing scripts that called `/api/auth/login` with a `tenant` value for the bootstrap admin need to drop the field (or send an empty string) after upgrading.
 
-When the server has no auth providers configured (the no-auth dev mode), the login screen is skipped and the session is a synthetic anonymous superuser. The signed-in user and role appear in the user pill at the bottom of the sidebar; the no-auth mode shows `anonymous / no-auth`.
+The UI always shows a login: a manager on which nothing could create a session refuses to boot, so there is no no-auth mode. The signed-in user and role appear in the user pill at the bottom of the sidebar.
 
 ![The Quack on Demand admin login screen](/img/ui/login.png)
 
@@ -28,9 +28,9 @@ For how credentials are validated and how to wire an external provider, see [Aut
 
 ## Profile page (regular users)
 
-A tenant-scoped `kind=user` principal signing in with a database-backed password login (not OIDC, not the blank/superuser login) lands on a stripped-down Profile page (`/ui/settings/profile`) instead of the operator console. Their sidebar has no tenant switcher and holds only **Settings > Profile**, **Workbench** when the [Starlake integration](#workbench) is configured, and **Sign out**; no operator route is even mounted, and any other URL lands back on the profile. The page lets them change their own password (username, tenant, and role are read-only) and view their own access statistics - their usage and recent statements, the same data the [Usage](#usage) and [Statements](#statements) pages show an admin, scoped to just that user.
+A tenant-scoped `kind=user` principal signing in with a database-backed password login (not OIDC, not the blank/superuser login) lands on a stripped-down Profile page (`/ui/settings/profile`) instead of the operator console. Their sidebar has no tenant switcher and holds only **Settings > Profile**, **Workbench** when the [Starlake integration](#workbench) is configured, and **Sign out**; no operator route is even mounted, and any other URL lands back on the profile. The page lets them change their own password (username, tenant, and role are read-only), view their own access statistics (their usage and recent statements, the same data the [Usage](#usage) and [Statements](#statements) pages show an admin, scoped to just that user), manage their personal access tokens, and register their own **S3 credentials**: each an `s3://` scope (a bucket or a prefix) with an access key id, a write-only secret and optional session token, region, endpoint and URL style. Their statements reach an `s3://` location only under a scope they hold keys for, signed with those keys; a database's data folder is never reachable this way. Saving a scope they already hold replaces its keys.
 
-The server enforces this independently of the UI: such a session's REST calls are demoted to a fixed allowlist (`whoami`, `logout`, `/api/profile/usage`, `/api/profile/statements`) and answer `403 admin_required` on everything else, so a deep link to an operator page 403s on its first fetch rather than leaking data. The `qod profile usage` / `qod profile statements` CLI commands hit the same two endpoints.
+The server enforces this independently of the UI: such a session's REST calls are demoted to a fixed allowlist (`whoami`, `logout`, `/api/profile/usage`, `/api/profile/statements`, `/api/profile/pools`, `/api/profile/s3/{list,add,remove}` and the user's own `/api/auth/pat/*`) and answer `403 admin_required` on everything else, so a deep link to an operator page 403s on its first fetch rather than leaking data. The `qod profile usage`, `statements`, `pools` and `s3` CLI commands hit the same endpoints.
 
 ## Navigation
 
@@ -112,7 +112,7 @@ What used to be the tabs of a tenant detail page are now separate sidebar pages 
 - **Pools** - create pools bound to a database and operate them.
 - **Maintenance** and **Branches** - per-database [maintenance](#maintenance) and [branch review](#branches).
 - **Auth Provider** - the tenant's auth provider and its configuration, including its console sign-in (issuer URL, client ID, scopes) and a write-only client secret that is never displayed: the page shows only whether one is set, an empty input keeps it, the **Remove secret** checkbox clears it, and the page warns before a save that changes the issuer URL (which removes the saved secret) and before one that would leave the sign-in incomplete (it needs an issuer URL, a client ID and a secret or secret reference; until then only a superuser, through the system login, can open the tenant's console). A secret reference (`clientSecretRef`, `env:NAME`) is editable by superusers only; tenant admins see it read-only and cannot add one.
-- **Access Control** - who decides data access for the tenant: standard QoD grants (mode `qod`, or the manager default) or the tenant's own OPA server (its URL, policy path, and a write-only bearer token that is never displayed).
+- **Access Control** - who decides data access for the tenant: standard QoD grants (mode `qod`, or the manager default) or the tenant's own OPA server (its URL, policy path, and a write-only bearer token that is never displayed). The page also lists the tenant's **Authorized folders**: the local folders under `<QOD_TENANT_FILES_ROOT>/<tenant id>/` that its non-superuser users may read and write files in, with add and remove actions. A database's data folder stays unreachable whatever is listed; S3 access is per user (their own keys, on the profile page).
 
 ![The Pools page](/img/ui/tenant-pools.png)
 
@@ -122,7 +122,7 @@ The **Databases** page lists the tenant's databases with a kind badge (`ducklake
 
 ![The Databases page](/img/ui/databases.png)
 
-Clicking a database name opens its **edit form**: default database and schema, init SQL, and the metastore and object-store maps as `key=value` lines. The kind is immutable. Editing the metastore, object store, or init SQL restarts all the database's nodes immediately (in-flight statements on them fail); the form warns about this, and the save button changes to **Save and restart nodes** when such a field is dirty. `pgPassword` is kept unless a new value is supplied (sending one rotates it). The form also carries the **Delete database** action.
+Clicking a database name opens its **edit form**: default database and schema, init SQL, and the metastore and object-store maps as `key=value` lines. A tenant admin's init SQL runs under the [initSql allowlist](./tenants-databases.md#init-sql-trust); the form says whether the stored text was written by a superuser (runs as written) or a tenant admin (runs under the allowlist), the list marks the latter `init SQL: allowlisted`, and a save the manager could not check shows its `initSqlWarning`. The kind is immutable. Editing the metastore, object store, or init SQL restarts all the database's nodes immediately (in-flight statements on them fail); the form warns about this, and the save button changes to **Save and restart nodes** when such a field is dirty. `pgPassword` is kept unless a new value is supplied (sending one rotates it). The form also carries the **Delete database** action.
 
 Clicking **Federation** opens the federated-source panel, where DuckDB `ATTACH` / extension catalogs are registered (with their secrets) and injected at session start. See [Federation](/qod/operating/federation).
 
@@ -141,9 +141,10 @@ The pool detail page has tabs for **Nodes**, **Connections**, **Storage**, and *
 - **Scale** opens a modal with the target role distribution (WriteOnly / ReadOnly / Dual counts; the target size is their sum) and, when scaling down, a **Force** checkbox that skips the graceful drain (outstanding queries fail).
 - **Suspend** is a menu with three ways to zero nodes: **Hibernate** (nodes stop, the role distribution is kept, and the first query wakes the pool automatically), **Drain** (finish routing, then stop; stays down), and **Kill** (stop immediately; outstanding queries fail; stays down). A hibernated pool shows a **Hibernated** badge and the menu is replaced by a **Wake** button.
 - **Delete** (the trash button) removes the pool from the registry after stopping it.
-- Superusers also get the pool's **Lockdown** override selector (`inherit | on | off`), described in [Hardening](/qod/operating/hardening).
 
 ![The pool Suspend menu with Hibernate, Drain, and Kill](/img/ui/pool-detail-suspend-menu.png)
+
+Below the actions, an **Init SQL** editor replaces the pool's init SQL (`POST /api/pool/setInitSql`; an empty text clears it). Edits take effect at the next node spawn, and a tenant admin's text runs under the same allowlist as a database's.
 
 The **Nodes** tab shows the per-node table with role, host, and port, plus per-pool **CPU limit** and **Memory limit** editors (checkbox + slider, with a **Save** button; a note reminds that node restarts apply resource changes and that sizing is Kubernetes-only) and a per-node **Max concurrent** input (0 = unlimited, saved on blur). Superusers get the same **Quarantine** / **Restart** actions as on the Dashboard.
 
@@ -195,7 +196,7 @@ In fleet mode the **Pools** page also shows an `N pending` badge next to the nod
 
 The RBAC console is the **Users & Access Controls** group of the sidebar: three separate pages, each working on the tenant picked in the [tenant switcher](#tenant-switcher). Under a tenant, **Users** lists that tenant's users; under **All tenants** it lists every user, superusers included, and a superuser gets a **Superusers only** checkbox that narrows the list to rows with `tenant IS NULL`. **Groups** and **Roles** need one tenant and are greyed out under All tenants. For a tenant whose auth provider is an external OIDC IdP, the Users page notes that accounts authenticate against the IdP, the rows are pre-provisioned shells that carry roles, groups, and pool grants, and password edits are disabled.
 
-- **Users** - create users, set their account kind (admin or user), and assign roles, groups, and pool grants. The create form's **Roles** and **Groups** checkbox dropdowns list the tenant's roles and groups (built-ins first), start preselected on `qod_all_tables` and `qod_all_pools` (full access to every table and pool of the tenant), and must each keep at least one entry; they are disabled for a superuser, who takes no memberships.
+- **Users** - create users, set their account kind (admin or user), and assign roles, groups, and pool grants. A user's expanded row also shows their **S3 credentials** (scope, access key id, region, endpoint; never the secret), which an admin can remove but never add. The create form's **Roles** and **Groups** checkbox dropdowns list the tenant's roles and groups (built-ins first), start preselected on `qod_all_tables` and `qod_all_pools` (full access to every table and pool of the tenant), and must each keep at least one entry; they are disabled for a superuser, who takes no memberships.
 - **Groups** - define groups and the roles they carry.
 - **Roles** - define roles and their table permissions.
 
@@ -262,7 +263,7 @@ silently restoring over the intervening write. The same flow is available from t
 
 #### Row preview
 
-The table detail page carries a **Preview** section that fetches a sample of live rows from the table. The preview executes through the same FlightSQL pipeline as production data traffic: pool access-control lists apply (a user without SELECT on the table is denied), row-level and column-level security policies are enforced, and reads route only to ReadOnly/Dual nodes to avoid load on write-capable pool members. Every preview is recorded in the audit log. The preview is bounded (default 100 rows, configurable via the UI) and labeled with the snapshot it reflects ("current" or the snapshot id) so the operator knows the exact version being examined.
+The table detail page carries a **Preview** section that fetches a sample of live rows from the table. The preview executes through the same FlightSQL pipeline as production data traffic, as the signed-in user: the handshake's pool gate applies, the node judges the read against that user's grants (a user without a read grant on the table is denied), row-level and column-level security policies are enforced, and reads route only to ReadOnly/Dual nodes to avoid load on write-capable pool members. Every preview is recorded in the audit log. The preview is bounded (default 100 rows, configurable via the UI) and labeled with the snapshot it reflects ("current" or the snapshot id) so the operator knows the exact version being examined.
 
 #### Schema diff
 

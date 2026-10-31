@@ -13,7 +13,7 @@ Branching applies to `ducklake` databases only, and a branch cannot itself be br
 
 Creating a branch clones the database's DuckLake catalog at the Postgres level: every `ducklake_*` metadata table is copied into a new database under one repeatable-read transaction, so the copy is a consistent snapshot even while the parent is being written. No Parquet is copied. The clone's file references are rewritten to the parent's absolute locations, and its data path points at a sibling prefix, `<parent prefix>__br_<id>/`, so new files written on the branch land there and nowhere else.
 
-The clone is registered as a tenant-db of its own (`<parent>__br_<id>`), served by one pool (`__br_<id>`, a single dual node) that attaches the catalog under the **parent's** catalog name. That is what makes a branch transparent to clients: the same SQL, grants, row and column policies, and unqualified table names apply on the branch exactly as they do on main. The branch pool inherits the parent's pool sizing, lockdown and idle-hibernation settings, so an idle branch scales to zero and wakes on its next statement.
+The clone is registered as a tenant-db of its own (`<parent>__br_<id>`), served by one pool (`__br_<id>`, a single dual node) that attaches the catalog under the **parent's** catalog name. That is what makes a branch transparent to clients: the same SQL, grants, row and column policies, and unqualified table names apply on the branch exactly as they do on main. The branch pool inherits the parent's pool sizing and idle-hibernation settings, so an idle branch scales to zero and wakes on its next statement.
 
 The fork snapshot is recorded per branch and pinned: [managed maintenance](/qod/operating/maintenance) on the parent never expires it, so the files the branch reads in place stay put. Branch catalogs are never maintained themselves, and a database with live branches cannot be deleted.
 
@@ -22,7 +22,7 @@ The fork snapshot is recorded per branch and pinned: [managed maintenance](/qod/
 | Step | Who | What happens |
 |---|---|---|
 | create | anyone who can connect to a pool of the database | Clone at head, start the branch pool, start the TTL |
-| write | the same principal, targeting the branch | Ordinary SQL through FlightSQL or MCP; ACL, RLS and CLS apply |
+| write | the same principal, targeting the branch | Ordinary SQL through FlightSQL or MCP; the node judges it against the principal's grants, and RLS and CLS apply |
 | changes and diff | anyone with access | Touched tables classified as created, dropped, recreated, modified or altered, with row counts; conflicts against main; row-level diff per table |
 | propose | the branch owner or any principal with access | Records a merge request carrying the change set and conflicts as of now |
 | merge | a tenant admin **other than the proposer**, not through a branch-only token | Fast-forward onto main, one snapshot, tagged, branch torn down |
@@ -61,7 +61,7 @@ qod auth pat create --name agent --branch-only --database acme_tpch
 
 `INSERT`, `UPDATE`, `DELETE` and DDL on the live database are then refused with `write_requires_branch`; reads are unchanged, writes on any branch work, and every child token inherits the flag. A branch-only token cannot merge either, not even over REST where the merge endpoint exists: it gets 403 `branch_only_token`. Combined with the absence of a merge tool on MCP, the agent can only ever propose. This gate applies to MCP and REST callers; the raw FlightSQL wire has no token concept.
 
-The branch endpoints (create, changes, propose, merge, discard) act as the caller's own principal. A credential that resolves to no live session, PAT or the static key, such as a session that expired mid-request, is refused with 401 before the branch service runs.
+The branch endpoints (create, changes, propose, merge, discard) act as the caller's own principal. A credential that resolves to no live session or PAT, such as a session that expired mid-request, is refused with 401 before the branch service runs.
 
 ## From the CLI
 

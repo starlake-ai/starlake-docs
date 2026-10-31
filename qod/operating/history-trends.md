@@ -19,7 +19,7 @@ Every statement that completes the FlightSQL execute path is recorded:
 | `tenant` | Tenant id |
 | `pool` | Pool key |
 | `username` | The authenticated user |
-| `status` | `ok`, `denied`, `transient`, `permanent`, `no-node`, `no-pool`, `pin-lost` |
+| `status` | `ok`, `denied` (the node refused it: `QoD: ...`), `transient`, `permanent`, `no-node`, `no-pool`, `pin-lost` |
 | `sql` | SQL text, capped at 500 characters |
 | `durationMs` | Wall-clock duration from receive to completion |
 | `nodeId` | The node that executed the statement |
@@ -56,7 +56,6 @@ Access to both history endpoints follows the same scope rules as the audit log:
 
 - **Superusers** see all rows and all tenants.
 - **Tenant admins** see only their own tenant's rows. Specifying a different `tenant` in the query is silently overridden to their own tenant; no cross-tenant existence is leaked via differential error codes.
-- **Static-key callers** are treated as superusers.
 
 ## Retention
 
@@ -90,7 +89,7 @@ The `postgres` and `none` values are the only accepted values for `QOD_TELEMETRY
 
 ## Querying statements with the CLI
 
-The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_API_KEY` is set for CI scripts.
+The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_TOKEN` holds a personal access token for CI scripts.
 
 ```bash
 # Most recent 50 statements for tenant acme (default limit)

@@ -136,19 +136,19 @@ A BI pool that needs one writer at all times, one reader at the quiet baseline, 
 ```bash
 # Create the pool at its baseline size with the band declared
 curl -sS -X POST http://localhost:20900/api/pool/create \
-  -H "X-API-Key: $QOD_API_KEY" -H 'Content-Type: application/json' \
+  -H "X-API-Key: $QOD_TOKEN" -H 'Content-Type: application/json' \
   -d '{"tenant":"acme","tenantDb":"acme_sales","pool":"bi","size":2,
        "roleDistribution":{"writeonly":1,"readonly":1,"dual":0},
        "minNodes":2,"maxNodes":6}'
 
 # Widen the ceiling later
 curl -sS -X POST http://localhost:20900/api/pool/setAutoscale \
-  -H "X-API-Key: $QOD_API_KEY" -H 'Content-Type: application/json' \
+  -H "X-API-Key: $QOD_TOKEN" -H 'Content-Type: application/json' \
   -d '{"tenant":"acme","tenantDb":"acme_sales","pool":"bi","minNodes":2,"maxNodes":8}'
 
 # Clear the band: omit both bounds. The pool keeps its current size, fixed.
 curl -sS -X POST http://localhost:20900/api/pool/setAutoscale \
-  -H "X-API-Key: $QOD_API_KEY" -H 'Content-Type: application/json' \
+  -H "X-API-Key: $QOD_TOKEN" -H 'Content-Type: application/json' \
   -d '{"tenant":"acme","tenantDb":"acme_sales","pool":"bi"}'
 ```
 

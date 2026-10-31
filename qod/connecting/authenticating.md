@@ -39,9 +39,9 @@ jdbc:arrow-flight-sql://host:31338/?tenant=tpch&pool=sales
 jdbc:arrow-flight-sql://host:31338/?tenant=tpch&pool=sales&superuser=true
 ```
 
-## No-auth mode
+## No authenticator, no boot
 
-When the server has no auth providers configured, the edge runs in a v1 "trust the client" mode: it accepts the Basic username as-is (with a loud startup warning) and the admin UI skips its login screen. This is for local development only; never expose the edge without a provider configured.
+There is no trust-the-client mode. A manager with no FlightSQL authenticator (`QOD_AUTH_DB_ENABLED=false` and no Keycloak, Azure, Google, AWS or external JWT provider) refuses to boot, naming what to set; system-scope OIDC (`QOD_MGMT_OIDC_*`) signs in to the admin UI and REST only and does not count. Were a handshake ever to reach an edge with no provider, it is refused, superusers included. The admin UI always shows a login.
 
 ## TLS
 
@@ -54,8 +54,8 @@ To remove the skip-verify flag, install a CA-signed certificate and point the ed
 
 ## Relationship to the REST session
 
-The username/password you use here is the same credential set the admin UI accepts, but the mechanisms are separate: the UI mints a session token for `/api/*` calls, while the edge authenticates each Flight connection with Basic or JWT. A REST `X-API-Key` or UI session token is not a Flight credential.
+The username/password you use here is the same credential set the admin UI accepts, but the mechanisms are separate: the UI mints a session token for `/api/*` calls, while the edge authenticates each Flight connection with Basic or JWT. A REST credential (a UI or CLI session token, or a PAT, sent as `X-API-Key`) is not a Flight credential.
 
 Personal access tokens (`qod_pat_...`) are a third credential: they authenticate the [MCP server](/qod/connecting/mcp) for AI agents, and on `/api/*` a PAT in the `X-API-Key` header is accepted wherever its owner's session would be - though a token minted with a narrower scope carries only that scope, not the owner's full reach (see [Scoped tokens and delegation](/qod/connecting/mcp#scoped-tokens-and-delegation)). The Flight edge does not accept PATs.
 
-The REST endpoints that run SQL on a node for you (catalog preview and data diff, undrop, restore, and the Iceberg preview and diff) run each statement as the credential's principal: a UI or CLI session as its user, a PAT as its owner with the token's own restriction (pools, `maxRows`, branch-only), so the ACL, column masking and row policies apply exactly as on a query over the edge, and a denied table answers `403 acl_denied`. Only the static `X-API-Key` runs as the system caller. A token that resolves to no live session, PAT or the static key is refused with `401 unauthorized` before any statement runs; the branch endpoints apply the same rule. Two internal steps still run as the system caller and return aggregate change counts only: the restore dry run and the branch change counter.
+The REST endpoints that run SQL on a node for you (catalog preview and data diff, undrop, restore, and the Iceberg preview and diff) run each statement as the credential's principal: a UI or CLI session as its user, a PAT as its owner with the token's own restriction (pools, `maxRows`, branch-only). They pass the FlightSQL handshake's gate first (tenant and pool kill switches, user registered and enabled, pool access), then the node judges each statement against that user's grants, column masking and row policies exactly as on a query over the edge, and a denied table answers `403 acl_denied`. A superuser known only through OIDC, with no `qodstate_user` row, is refused there, as on FlightSQL. A token that resolves to no live session or PAT is refused with `401 unauthorized` before any statement runs; the branch endpoints apply the same rule. Two internal steps run as the manager's own system principal and return aggregate change counts only: the restore dry run and the branch change counter.

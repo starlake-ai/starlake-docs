@@ -13,9 +13,9 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 
 | Command | Purpose |
 |---|---|
-| `qod login` | Mint a session, store it and the edge settings in the active profile. |
+| `qod login` | Mint a session, store it and the edge settings in the active profile. The password is prompted, or read from the first line of stdin with `--password-stdin` (CI). |
 | `qod logout` | Revoke the current session token. |
-| `qod whoami` | Verify the current session. |
+| `qod whoami` | Verify the current credential: a session, or a PAT (its owner's identity and the token's scope). |
 | `qod auth mode` | Show the auth mode (db or oidc) the manager expects. |
 | `qod auth change-password` | Change your own password (works pre-login; prompts for current and new). |
 | `qod auth forgot-password` | Request a password-reset link (always answers 200; account existence stays hidden). |
@@ -36,6 +36,9 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | `qod tenant delete` | Delete a tenant (must have no pools). |
 | `qod tenant set-disabled` | Enable or disable a tenant. |
 | `qod tenant set-auth` | Change a tenant's auth provider/config (`--auth-provider`, repeatable `--auth-config KEY=VALUE`). The write-only OIDC client secret never goes on argv: `--client-secret-prompt` (hidden, asked twice) or `--client-secret-stdin`; `--clear-client-secret` removes it (at most one of the three). Adding or changing a `clientSecretRef` needs a superuser. |
+| `qod tenant set-acl` | Choose the tenant's data-access authorization: `--mode qod\|opa`, `--opa-url`, `--opa-policy-path`, write-only `--opa-token`. `--send-statement-text` is kept for compatibility and has no effect. |
+| `qod tenant opa-test` | Dry-run an OPA decision for `--user` on `--pool`: pool access, or with `--sql` one statement run on a node of the running pool as that user and judged, never executed. Prints the input the node sends OPA (accesses with `kind`, `columns` and `via`, `locations`; never the SQL text) and the decision. Refusals: `409 pool_not_running` (it never wakes a pool), `400 single_statement_required`, `opa_mode_required`, `refused_before_opa` (a superuser), `nothing_to_authorize`, and `503 authz_unavailable` when the node cannot reach the manager. An OPA it cannot reach shows a non-superuser only "OPA unreachable or returned an error (see the manager log)". |
+| `qod tenant location list\|add\|remove` | The local folders the tenant's users may read and write files in: an absolute folder under `<QOD_TENANT_FILES_ROOT>/<tenant id>/` (superusers and the tenant's admins). |
 
 ## database
 
@@ -43,7 +46,7 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 |---|---|
 | `qod database list` | List databases for a tenant. |
 | `qod database create` | Create a tenant database. |
-| `qod database update` | Update a tenant database's metastore/object-store/init settings. |
+| `qod database update` | Update a tenant database's metastore/object-store/init settings. A tenant admin's `--init-sql` runs under an allowlist; a superuser re-saving it trusts it. |
 | `qod database delete` | Delete a tenant database. |
 
 ## pool
@@ -51,18 +54,18 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | Command | Purpose |
 |---|---|
 | `qod pool list` | List pools. |
-| `qod pool create` | Create a pool. |
+| `qod pool create` | Create a pool (`--init-sql` follows the database's initSql rule). |
 | `qod pool scale` | Change a pool's target size and role distribution. |
 | `qod pool stop` | Stop a pool's nodes. |
 | `qod pool delete` | Delete a pool. |
 | `qod pool set-disabled` | Enable or disable a pool. |
+| `qod pool set-init-sql` | Set or clear (`--init-sql ''`) the SQL the pool's nodes run at start; a tenant admin's holds only allowlisted SETs, read-only PRAGMAs and `INSTALL` / `LOAD` of allowlisted extensions. Takes effect at the next node start. |
 | `qod pool set-autoscale` | Set or clear a pool's autoscale band (omit both bounds to clear). |
 | `qod pool set-resources` | Set CPU/memory for a pool's nodes (pod request and limit on Kubernetes, DuckDB `threads` / `memory_limit` on a fleet). |
 | `qod pool set-pod-template` | Set the Kubernetes pod template YAML for a pool. |
 | `qod pool suspend` | Scale the pool to zero, keeping its distribution; wakes on the next query. |
 | `qod pool resume` | Wake a suspended pool (respawn to its stored distribution). |
 | `qod pool status` | One pool's live status: nodes, suspended/disabled flags, resources. |
-| `qod pool set-lockdown` | Per-pool node-lockdown override (`--lockdown inherit\|on\|off`; `inherit` follows the global `QOD_NODE_LOCKDOWN`). Superuser only. |
 
 ## pool permission
 
@@ -98,6 +101,7 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | `qod user update` | Update a user's tenant, password, kind (`--kind`), or email; `--no-enabled` locks the account, `--enabled` unlocks. |
 | `qod user delete` | Delete a user. |
 | `qod user effective` | Closure of roles, groups, table permissions, and pool grants. |
+| `qod user s3 list\|remove` | A user's own S3 credentials as an admin sees them (secrets never shown); only the user adds them, with `qod profile s3 add`. |
 
 ## role
 
@@ -179,8 +183,9 @@ dry run first and prints the change summary, then prompts to confirm before writ
 snapshot (skip the prompt with `--yes`, or stop after the preview with `--dry-run`). Requires an
 ALL grant, or DDL plus RO/RW, on the table. For dropped tables, use `qod catalog undrop` instead.
 `restore`, `undrop`, `preview` and `data-diff` run their statements as the caller: a session as its
-user, a PAT as its owner with the token's restriction, so the ACL, column masking and row policies
-apply; only the static API key runs as the system caller.
+user, a PAT as its owner with the token's restriction, so the node judges them against that user's
+grants and column masking and row policies apply. None of them runs as the manager's system
+principal.
 
 `schemas`, `tables`, `describe`, `history`, `preview` and `data-diff` also take `--iceberg ALIAS` to
 read an attached external Iceberg catalog instead of the database's DuckLake catalog. Snapshot ids
@@ -252,6 +257,8 @@ are then strings, `describe` is current-only (no `--as-of*`), `preview` refuses 
 |---|---|
 | `qod profile usage` | Your own daily statement counts. |
 | `qod profile statements` | Your own most recent statements. |
+| `qod profile pools` | The pools you may connect to (the FlightSQL handshake's own decision, narrowed by a PAT's scope). |
+| `qod profile s3 list\|add\|remove` | Your own S3 keys, each under an `s3://` scope your statements reach files with. `add SCOPE --access-key-id ...` takes the secret from `--secret-stdin` or `--secret-prompt` (never argv), optional `--session-token-stdin` / `--session-token-prompt`, `--region`, `--endpoint`, `--url-style`. |
 
 ## config
 
@@ -268,7 +275,7 @@ The admin commands are superuser only; the manager must run the [fleet runtime](
 
 | Command | Purpose |
 |---|---|
-| `qod fleet join` | Join this server (Linux, macOS) to a fleet and run the node the manager assigns: `--manager URL`, join token from `QOD_FLEET_JOIN_TOKEN` (or `--join-token`, visible in `ps`), `--name`, `--advertise-host`, `--bind-host`, `--node-port` (default 21900; each also read from `QOD_FLEET_NAME` / `QOD_FLEET_ADVERTISE_HOST` / `QOD_FLEET_BIND_HOST` / `QOD_FLEET_NODE_PORT`), `--duckdb-bin`, `--state-dir`, `--insecure` (allow an `http://` manager URL). Long-running, meant for systemd or launchd; see [Fleet deployment](/qod/operating/deploy-fleet#join-a-server). |
+| `qod fleet join` | Join this server (Linux, macOS) to a fleet and run the node the manager assigns: `--manager URL`, join token from `QOD_FLEET_JOIN_TOKEN` (or `--join-token`, visible in `ps`), `--name`, `--advertise-host`, `--bind-host`, `--node-port` (default 21900; each also read from `QOD_FLEET_NAME` / `QOD_FLEET_ADVERTISE_HOST` / `QOD_FLEET_BIND_HOST` / `QOD_FLEET_NODE_PORT`), `--qod-node-bin` (default: the qod-node the wheel bundles), `--state-dir`, `--insecure` (allow an `http://` manager URL). Long-running, meant for systemd or launchd; see [Fleet deployment](/qod/operating/deploy-fleet#join-a-server). |
 | `qod fleet servers` | List joined servers with liveness (`reachable` / `unreachable` / `dead`), approval (`approved` / `pending`) and heartbeat source address, capacity, and the node each runs. |
 | `qod fleet approve NAME` | Let a server that joined from outside `QOD_FLEET_AUTO_APPROVE` take nodes ([join approval](/qod/operating/deploy-fleet#join-approval)). |
 | `qod fleet drain NAME` | Stop scheduling onto a server and move its node elsewhere (or leave the slot pending). |
@@ -295,8 +302,10 @@ Local boot and teardown; the full walkthrough is on the [manager jar page](/qod/
 | Command | Purpose |
 |---|---|
 | `qod start` | Run a manager against your Postgres (release jar auto-downloaded; `--version` picks the release, `--jar` runs a local build, `--demo` the self-contained demo). |
+| `qod serve` | Boot a persistent gateway over your own data (a `.duckdb` file, a parquet/csv directory, an object-store prefix) on an embedded Postgres, or the self-contained demo with `--demo`. The manager provisions the tenant, database and pool itself at boot (add-only: it never updates or deletes an existing one), so later boots need no credential. |
 | `qod stop` | Stop a running manager and its quack nodes. |
-| `qod status` | Show whether a manager is running and what it is serving. |
-| `qod setup` | Persist the env vars `qod start` reads (Postgres coordinates, admin credentials, API key) so it runs bare afterwards. |
+| `qod admin reset-password` | Set a new superuser password straight in the control-plane database, clearing its lockout (works with the manager down). `--username` targets one superuser and re-enables it if disabled, reviving its personal access tokens; without it every configured admin name is reset and a disabled one stays disabled. |
+| `qod status` | Show whether a manager is running and what it is serving (pools need a `qod login` session or `QOD_TOKEN`). |
+| `qod setup` | Persist the env vars `qod start` reads (Postgres coordinates, auth and TLS toggles, any `QOD_*` / `PROXY_*` var) so it runs bare afterwards; `--unset NAME` removes a stored one. |
 
 `qod <noun> <verb> --help` prints every flag for any command above.

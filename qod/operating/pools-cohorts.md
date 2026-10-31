@@ -7,7 +7,7 @@ keywords: ["duckdb pools", "scaling", "cohorts", "node placement"]
 
 A pool is a set of DuckDB Quack nodes bound to one database (tenant-db). It is the object clients connect to, and the unit the gateway routes statements across. This page covers creating, sizing, scaling, and stopping pools, the node role distribution that drives routing, and cohort-based node placement on Kubernetes.
 
-Provision the tenant and database first (see "Tenants and databases"). For how pool access governs database access, see the [Access control model](/qod/operating/rbac-model). The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_API_KEY` is set for CI scripts.
+Provision the tenant and database first (see "Tenants and databases"). For how pool access governs database access, see the [Access control model](/qod/operating/rbac-model). The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_TOKEN` holds a personal access token for CI scripts.
 
 ## Node roles and the role distribution
 
@@ -42,6 +42,7 @@ qod pool create --tenant acme --db acme_sales --pool bi --size 3 \
 | `cohorts` | `[]` | Optional Kubernetes placement plan (see below). Empty schedules every node with no constraint. |
 | `minNodes` / `maxNodes` | unset | Optional [autoscale band](/qod/operating/autoscaling). Set both or neither; when set, the pool sizes itself within those bounds. Cannot be combined with `cohorts`. |
 | `disabled` | `false` | When true the pool is spawned warm but the edge rejects fresh handshakes until it is enabled. |
+| `initSql` | empty | SQL the pool's nodes run at start, after the catalog attach. A tenant admin's runs under the [initSql allowlist](./tenants-databases.md#init-sql-trust); change it later with `qod pool set-init-sql` (`POST /api/pool/setInitSql`), effective at the next node spawn. |
 
 The pool inherits its metastore (Postgres connection and data path) from the tenant-db; you do not pass storage config on `pool/create`.
 

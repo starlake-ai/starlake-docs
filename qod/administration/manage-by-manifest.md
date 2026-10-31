@@ -41,7 +41,7 @@ The fields `exportedAt` (an ISO-8601 instant) and `exportedFrom` (`{managerVersi
 
 **Steps (UI):** open **Config** -> **Manifest** -> **Download YAML**.
 
-**CLI equivalent** (with the [qod CLI](/qod/cli/); `qod login` must have stored a session, or set `QOD_API_KEY`)
+**CLI equivalent** (with the [qod CLI](/qod/cli/); `qod login` must have stored a session, or set `QOD_TOKEN` to a personal access token)
 
 ```bash
 qod manifest export --out manifest.yaml

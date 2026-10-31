@@ -153,10 +153,11 @@ qod node statements --limit 20
 
 | Symptom | Likely cause | Where to look |
 |---|---|---|
-| `/api/*` returns 401 | `QOD_API_KEY` is set but the request header is missing or wrong | Pass `X-API-Key: <key>` (or `QOD_API_KEY`) or run `qod login`; check env var on manager startup |
+| `/api/*` returns 401 (the CLI adds "run qod login, or set QOD_TOKEN to a personal access token") | No valid credential on the call: none sent, an expired or revoked session or PAT, or a former static API key | Run `qod login`, or set `QOD_TOKEN` to a personal access token (`X-API-Key: <token>` on raw REST calls) |
+| Manager refuses to boot naming `QOD_API_KEY`, `QOD_ACL_ENABLED`, `QOD_ACL_FILTERED_METADATA`, `QOD_ACL_DIALECT` or `QOD_NODE_LOCKDOWN` | The setting was removed in 0.11.0 | Unset it everywhere (`qod setup --unset <NAME>` for a persisted one); see [Upgrading to 0.11.0](../operating/upgrading.md) |
 | `no node with role READONLY or DUAL` | All nodes flipped unhealthy (port unreachable) | Run `pgrep -fl spawn-quack-node`; if 0 processes, run `qod pool stop` then `qod pool scale` to respawn |
-| `access denied: missing RO grant on ...` | ACL is enabled and the user has no matching role-permission grant | Add the grant via `qod role permission grant` or the Users screen; or set `QOD_ACL_ENABLED=false` for dev |
-| `session expired; please reconnect` | Bearer token is not recognized (manager restarted, clearing the in-process denylist and session store) | Run `qod login` again or pass Basic credentials; the static `QOD_API_KEY` continues to work after a restart |
+| `QoD: user:<name> lacks grants on ...` naming the table (FlightSQL `UNAUTHORIZED`) | The node refused the statement: the user has no matching role-permission grant. Enforcement is always on | Add the grant via `qod role permission grant` or the Users screen |
+| `QoD: authorization unavailable, retry` (FlightSQL `UNAVAILABLE`) | The node could not get a verdict in time from the manager replica that minted the session (restarted, down, or unreachable from the node) | Retry the statement; if it persists, check that nodes reach the URL boot prints as `node decide URL: ...` |
 | `Could not connect to server` for `http://127.0.0.1:21NNN/quack` | Quack child process died after the manager restarted (local mode does not adopt survivors) | Wait for the next reconcile tick (default 30 s) to respawn; or run `qod pool stop` then `qod pool scale` immediately |
 | Manager hangs at startup after `BaseAllocator` log line, the manager process pegged at 100% CPU | `INSTALL quack` is blocked by a corporate proxy; DuckDB silently retries fetching the extension | Pass `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` to the manager process; see the README "Behind a corporate proxy" section |
 

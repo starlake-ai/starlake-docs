@@ -14,12 +14,7 @@ MCP gives an agent tools on the manager; the [operator skill](/qod/connecting/ag
 
 ## Authentication
 
-`/mcp` accepts exactly two credentials in the `Authorization: Bearer <token>` header:
-
-| Credential | Principal |
-|---|---|
-| Personal access token (`qod_pat_...`) | The owning user, with that user's live tenant, role, and grants - narrowed by any scope minted onto the token |
-| The static API key (`QOD_API_KEY`) | Superuser-equivalent; only when the key is set non-empty |
+`/mcp` accepts exactly one credential: a personal access token (`qod_pat_...`) in the `Authorization: Bearer <token>` header. The principal is the owning user, with that user's live tenant, kind and grants, narrowed by any scope minted onto the token.
 
 Session JWTs, passwords, and missing headers are all 401. `/mcp` never admits unauthenticated requests.
 
@@ -30,7 +25,7 @@ qod auth pat create --name claude-code
 # the token is printed ONCE; store it now
 ```
 
-By default a PAT carries its owner's full permissions; the scope flags described under [Scoped tokens and delegation](#scoped-tokens-and-delegation) can mint it narrower. A token can be revoked at any time (`qod auth pat revoke --id <id>`, or the profile page); revoking cascades to every token minted from it. A revoked or expired token stays visible in the listing until you discard it with `qod auth pat delete --id <id>` (or the profile page's Delete button); a live token must be revoked before it can be deleted. Tenant-scoped principals get their tenant inferred from the PAT owner; superuser and static-key callers pass an explicit `tenant` argument on tools that need one.
+By default a PAT carries its owner's full permissions; the scope flags described under [Scoped tokens and delegation](#scoped-tokens-and-delegation) can mint it narrower. A token can be revoked at any time (`qod auth pat revoke --id <id>`, or the profile page); revoking cascades to every token minted from it. A revoked or expired token stays visible in the listing until you discard it with `qod auth pat delete --id <id>` (or the profile page's Delete button); a live token must be revoked before it can be deleted. Tenant-scoped principals get their tenant inferred from the PAT owner; a superuser's PAT passes an explicit `tenant` argument on tools that need one.
 
 ## Scoped tokens and delegation
 
@@ -88,6 +83,8 @@ Claude Desktop or any client that takes a JSON server entry:
 | `table_history` | `database`, `schema`, `table`, `limit?`, `iceberg?` | Snapshot history with change verbs |
 | `list_snapshots` | `database`, `limit?` | Snapshots and tags, for time-travel queries (`AT (VERSION => n)`) |
 | `my_usage` | none | Own usage counters and recent statements (PAT principals only) |
+| `list_my_s3_credentials` | none | Your own S3 credentials (scope, access key id, region, endpoint); the secret and the session token are never returned |
+| `remove_my_s3_credential` | `id` | Removes one of your S3 credentials; your statements stop reaching its scope at once |
 | `create_branch` | `database`, `name`, `ttl_hours?` | A writable zero-copy branch of the database (see [Branching](/qod/operating/branching)) |
 | `list_branches` | `database`, `include_terminal?` | Live branches, or every branch with `include_terminal` |
 | `branch_changes` | `database`, `branch`, `counts?` | Touched tables with kind and row counts, conflicts against main, merge verdict |
@@ -97,7 +94,9 @@ Claude Desktop or any client that takes a JSON server entry:
 
 The `branch` argument on `run_sql`, `list_tables` and `describe_table` routes the call to that branch's own pool and catalog; `database` stays the parent name so token scopes keep applying. The `iceberg` argument on `describe_table` and `table_history` names an attached [Iceberg source](/qod/operating/iceberg#browsing-a-catalog); the schema and table are then read inside that catalog. It goes through the same admin-only gate as the REST views, so it needs an admin principal, and Iceberg snapshot ids come back as strings (time travel with `run_sql` and `AT (VERSION => <id>)`). `describe_table` returns the current table detail and files, plus a sample run as the caller that is dropped rather than failing the call when it cannot run. There is deliberately no merge tool: merging is a human action through the admin console, the CLI or REST, by a principal other than the proposer. A token minted with `branch_only` is refused any write on the live database (`write_requires_branch`) while reads and branch writes work as granted.
 
-`run_sql` executes through the same in-process path as the FlightSQL edge: statement validation (ACL), classification, routing, then the node. RBAC verbs decide whether writes are allowed, RLS/CLS apply, and suspended pools wake on the first statement exactly as they do for FlightSQL clients. Results are capped server-side by `QOD_MCP_MAX_ROWS` (default 500); the tool's `max_rows` argument can only lower the cap, and truncated results carry `truncated: true` so the agent aggregates or filters instead of paginating blindly.
+There is deliberately no tool that adds an S3 credential: a secret must not pass through an agent's context. Users add their keys with `qod profile s3 add` or the profile page.
+
+`run_sql` executes through the same in-process path as the FlightSQL edge and goes through the FlightSQL handshake's gate first (tenant and pool kill switches, user registered and enabled, pool access). It runs as the PAT owner's principal, never as the manager's system principal, and the node judges each statement against that user's grants (or the tenant's OPA policy), so RBAC verbs decide whether writes are allowed, RLS/CLS apply, and suspended pools wake on the first statement exactly as they do for FlightSQL clients. Results are capped server-side by `QOD_MCP_MAX_ROWS` (default 500); the tool's `max_rows` argument can only lower the cap, and truncated results carry `truncated: true` so the agent aggregates or filters instead of paginating blindly.
 
 ## Tools: admin tier (admin or superuser principals)
 
@@ -111,18 +110,19 @@ The `branch` argument on `run_sql`, `list_tables` and `describe_table` routes th
 | `run_maintenance`, `maintenance_runs` | Trigger and inspect managed maintenance |
 | `create_pool`, `stop_pool`, `delete_pool` | Pool lifecycle |
 | `set_pool_autoscale`, `set_pool_resources`, `set_pool_pod_template`, `set_pool_disabled`, `set_node_max_concurrent` | Pool settings; band and quota refusals surface as tool errors |
-| `set_pool_lockdown` | Node-lockdown override (`inherit`, `on`, `off`); superuser only |
+| `set_pool_init_sql` | Replace a pool's init SQL (empty clears it), effective at the next node start; a tenant admin's text runs under the [initSql allowlist](../operating/tenants-databases.md#init-sql-trust) and a refused statement answers `init_sql_refused` |
 | `create_tag`, `protect_tag`, `delete_tag` | Deleting a protected tag is refused; there is no unprotect tool, so a protected tag stays protected over MCP |
-| `restore_snapshot`, `undrop_table`, `list_recoverable` | Restore and undrop run as the PAT's owner with the token's restriction, so the ACL applies and a table the owner cannot write answers `acl_denied`; the restore `dry_run` reports aggregate change counts only |
+| `restore_snapshot`, `undrop_table`, `list_recoverable` | Restore and undrop run as the PAT's owner with the token's restriction, so the node judges each statement against the owner's grants and a table the owner cannot write answers `acl_denied`; the restore `dry_run` reports aggregate change counts only |
 | `get_maintenance_policy`, `upsert_maintenance_policy`, `delete_maintenance_policy` | Managed maintenance policies |
 | `list_tenants`, `create_tenant`, `delete_tenant`, `set_tenant_disabled`, `set_tenant_auth`, `set_tenant_acl` | Tenant lifecycle and settings; `delete_tenant` is refused while the tenant still has pools |
+| `list_tenant_locations`, `add_tenant_location`, `remove_tenant_location` | The local folders a tenant's users may read and write files in (an absolute folder under `<QOD_TENANT_FILES_ROOT>/<tenant id>/`) |
 | `list_databases_admin`, `create_database`, `update_database`, `delete_database`, `metastore_defaults` | Database (tenant-db) lifecycle; `delete_database` with `purge_managed_data` also drops manager-provisioned storage |
 | `list_users`, `create_user`, `update_user`, `delete_user`, `user_effective_permissions` | Users (see [User creation over MCP](#user-creation-over-mcp)) |
 | `list_roles`, `create_role`, `delete_role`, `list_role_permissions`, `grant_role_permission`, `revoke_role_permission` | Roles and their table permissions |
 | `list_column_policies`, `create_column_policy`, `update_column_policy`, `delete_column_policy`, `list_row_policies`, `create_row_policy`, `update_row_policy`, `delete_row_policy` | Column masking and row filters on a role |
 | `list_groups`, `create_group`, `delete_group`, `add_membership`, `remove_membership`, `list_group_role_memberships` | Groups and user, group and role memberships |
 | `list_pool_permissions`, `grant_pool_permission`, `revoke_pool_permission` | Pool access grants |
-| `list_federated_sources`, `upsert_federated_source`, `delete_federated_source`, `set_federated_secret`, `delete_federated_secret` | Federated sources and their secrets; refused with `federation_disabled` when federation is not enabled |
+| `list_federated_sources`, `upsert_federated_source`, `delete_federated_source`, `set_federated_secret`, `delete_federated_secret` | Federated sources and their secrets; refused with `federation_disabled` when federation is not enabled. A source of type `sql` is superuser only (`superuser_required`) |
 | `create_pat`, `list_pats`, `revoke_pat`, `delete_pat` | Self-scoped: a token mints, lists, revokes and deletes only within its own subtree, and a child's scope can only narrow (see [Scoped tokens and delegation](#scoped-tokens-and-delegation)); the token value is returned once |
 | `manifest_export`, `manifest_import` | Control-plane manifest round-trip; `manifest_import` is superuser only |
 | `get_config` | The manager's configuration registry; superuser only |
@@ -134,7 +134,7 @@ Built-in roles and groups keep their protection over MCP: a tool call that would
 
 `create_user` takes `username`, `password`, `tenant` (omitting it creates a superuser, which only a superuser credential may do), `kind` (`user` by default, or `admin`: management rights, not an RBAC role), optional `email` and `must_change_password`, and the arrays `roles` and `groups` (role and group names in the tenant). An omitted array defaults to the built-in `qod_all_tables` / `qod_all_pools`, giving the user full access to every table and pool of the tenant; an empty array is refused, and so is an unknown name or either array on a superuser. `update_user` takes `id` plus any of `password`, `kind`, `email`, `must_change_password`, `enabled`. See [Built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups).
 
-`tools/list` is computed per principal: a PAT owned by a `kind=user` account sees the data tier only; a tenant admin sees both tiers scoped to their tenant; superuser and static-key callers see both cross-tenant. `tools/call` re-checks the tier server-side. Tool calls land in the audit trail as the acting user.
+`tools/list` is computed per principal: a PAT owned by a `kind=user` account sees the data tier only; a tenant admin sees both tiers scoped to their tenant; a superuser's PAT sees both cross-tenant. `tools/call` re-checks the tier server-side. Tool calls land in the audit trail as the acting user.
 
 ## Not available over MCP
 
@@ -143,6 +143,7 @@ The admin tier covers nearly every REST mutation. A small set of operations has 
 - Interactive authentication flows: login, logout, password change, forgot and reset password, SSO and OIDC callbacks, SQL-token exchange
 - Branch merge: merging is a human action by a principal other than the proposer (admin console, CLI or REST)
 - The OPA policy dry run (`qod tenant opa-test`), a diagnostic for policy authors
+- Adding an S3 credential (`qod profile s3 add`), so a secret never passes through an agent, and an admin's view of a user's S3 credentials (`qod user s3`)
 - Fleet server management (join, heartbeat, approve, drain, remove)
 - The SCIM 2.0 provisioning endpoints, which are the identity provider's wire protocol
 - Tag unprotect: once protected, a tag cannot be unprotected or deleted over MCP
@@ -151,7 +152,7 @@ Tool exposure does not bypass authorization: every tool runs through the same ha
 
 ## Errors
 
-Protocol failures (bad token, malformed JSON-RPC, unknown method) come back as HTTP 401 or JSON-RPC error objects. Everything that happens inside a tool (an ACL denial, a SQL error, an `outside_band` refusal, a "pool is resuming" timeout) returns a normal `tools/call` result with `isError: true` and a message written for the agent to act on. Internal exceptions are sanitized to a generic message with a correlation id in the server log.
+Protocol failures (bad token, malformed JSON-RPC, unknown method) come back as HTTP 401 or JSON-RPC error objects. Everything that happens inside a tool (a node's `QoD: ...` refusal, a SQL error, an `outside_band` refusal, a "pool is resuming" timeout) returns a normal `tools/call` result with `isError: true` and a message written for the agent to act on. Internal exceptions are sanitized to a generic message with a correlation id in the server log.
 
 ## Configuration
 
@@ -165,6 +166,6 @@ Statement execution inherits the edge's existing timeouts.
 ## Troubleshooting
 
 - **401 on every call**: the bearer is not a live PAT (revoked, expired, owner disabled) or is a session JWT, which `/mcp` refuses by design. Mint a fresh PAT.
-- **A tool is missing from `tools/list`**: the credential's tier does not include it; admin tools need an admin-owned PAT or the static key.
-- **`run_sql`, `restore_snapshot` or `undrop_table` returns an ACL error**: the message names the table and missing verb; grant the owning role `RO`/`RW`/`DDL` as needed. These tools run as the PAT's owner, never as a superuser, so an admin-owned PAT still needs the table grants.
+- **A tool is missing from `tools/list`**: the credential's tier does not include it; admin tools need a PAT owned by an admin or a superuser (and not minted with `--drop-admin`).
+- **`run_sql`, `restore_snapshot` or `undrop_table` returns `QoD: ...`**: the node refused the statement for the PAT's owner; the reason names what it refused. Grant the owning role `RO`/`RW`/`DDL` as needed. `QoD: authorization unavailable, retry` means the node could not get a verdict from the manager in time: retry. These tools run as the PAT's owner, never as a superuser, so an admin-owned PAT still needs the table grants.
 - **"pool is resuming"**: the target pool was suspended and is waking; retry in a few seconds.

@@ -21,7 +21,7 @@ Provision them in that order: tenant first, then a database under it, then a poo
 
 ## Authenticating with the CLI
 
-Every `/api/*` call needs a credential. The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_API_KEY` is set for CI scripts. These endpoints are mounted only in `postgres` state-storage mode (the default).
+Every `/api/*` call needs a credential. The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_TOKEN` holds a personal access token for CI scripts. These endpoints are mounted only in `postgres` state-storage mode (the default).
 
 ## Tenants
 
@@ -62,6 +62,32 @@ qod tenant set-auth acme --auth-provider db
 qod tenant delete acme
 ```
 
+### Authorized folders and users' own S3 keys
+
+A tenant user reads or writes a file by path only through a file reader (`read_parquet`, `read_csv`, ...) or `COPY`, and only where it is theirs to reach. The node resolves the path and refuses anything else (`QoD: <url> is outside the tenant's authorized locations`). Superusers are not limited by these rules.
+
+- **Local folders** the tenant authorized. A superuser or one of the tenant's admins adds an absolute folder under `<QOD_TENANT_FILES_ROOT>/<tenant id>/`; with `QOD_TENANT_FILES_ROOT` unset (the default) no local folder can be authorized. Nodes on Windows admit no local folder.
+
+  ```bash
+  qod tenant location add acme /srv/qod-files/acme/incoming/
+  qod tenant location list acme
+  qod tenant location remove acme <id from list>
+  ```
+
+  Refusals: `400 invalid_location` (an `s3://` location, a relative path, an empty, `.` or `..` segment, `%`, a glob character or a backslash), `400 outside_tenant_files_root`, `400 tenant_files_root_unset`, `409 location_exists`. REST: `POST /api/tenant/location/{list,add,remove}`; the admin UI lists them on the tenant's **Access Control** page.
+- **`s3://` scopes the user holds keys for.** S3 is per user, never per tenant: each user registers keys of their own for a bucket or a prefix, and the node signs that user's requests with them only. A tenant admin lists and removes their users' keys (`qod user s3 list|remove`, the user's row in the admin UI) but never adds one.
+
+  ```bash
+  # The secret comes from stdin (or --secret-prompt), never from the command line
+  qod profile s3 add s3://acme-etl/ --access-key-id AKIA... --secret-stdin --region eu-west-3 < key.secret
+  qod profile s3 list
+  qod profile s3 remove <id from list>
+  ```
+
+  `--session-token-stdin` / `--session-token-prompt` add temporary credentials; `--endpoint host[:port]` (`http://` for plain HTTP) and `--url-style path|vhost` target an S3-compatible store, which the operator must list in `QOD_USER_S3_ALLOWED_ENDPOINTS` (empty: AWS only). A scope already held is replaced. Refusals: `400 invalid_scope`, `400 credential_required`, `400 invalid_credential`, `400 invalid_endpoint`, `400 endpoint_not_allowed`, `400 scope_in_data_folder`, `400 too_many_credentials` (32 per user). REST: `POST /api/profile/s3/{list,add,remove}` for the user, `POST /api/user/s3/{list,remove}` for an admin. The secrets are write-only and never in a manifest.
+
+A database's data folder, any tenant's, is never reachable by its path (`QoD: <path> is a database data folder`). Users' keys are stored in plaintext in the control-plane database and travel to the nodes signed but not encrypted: protect the control-plane backups accordingly and keep manager-to-node traffic on a private network. Keep tenant folders free of symbolic links (copy files in with `rsync -rt`, not `rsync -a`): a link below an authorized folder can lead out of it through a glob or a `COPY` with `PARTITION_BY`, `PER_THREAD_OUTPUT` or `OVERWRITE`, into any tenant's data folder.
+
 ## Databases (tenant-dbs)
 
 A database is created under an existing tenant. The `name` you pass is a suffix; the manager composes the real Postgres database name as `${tenant}_${suffix}` and provisions that database on the shared server. For example, `tenant=acme`, `name=sales` yields the database `acme_sales`.
@@ -85,7 +111,7 @@ qod database create --tenant acme --name sales --kind ducklake \
 
 ### Per-database object-store credentials
 
-`objectStore` authenticates this database's own bucket, separately from the manager-wide `QOD_S3_*` / `QOD_AZURE_*` / `QOD_GCS_*` defaults. Setting it (via `qod database create --object-store KEY=VALUE` / `--object-store` on update, or the object-store fields in the admin UI's database edit form) authors a `CREATE SECRET` scoped to that database's `dataPath`, so this database's bucket authenticates with its own keys while every other database keeps using the global default secret (DuckDB resolves the most specific scope per path). Leaving `objectStore` empty falls back to the global env credentials, unchanged - this is the back-compat path for every deployment that only ever used one set of keys.
+`objectStore` authenticates this database's own bucket, separately from the manager-wide `QOD_S3_*` / `QOD_AZURE_*` / `QOD_GCS_*` defaults. Setting it (via `qod database create --object-store KEY=VALUE` / `--object-store` on update, or the object-store fields in the admin UI's database edit form) authors a `CREATE SECRET` scoped to that database's `dataPath`, so this database's bucket authenticates with its own keys. Leaving `objectStore` empty falls back to the global env credentials, also scoped to the database's own data path: neither set signs a request outside it, so a statement that reads another bucket uses the reading user's own keys (see [Authorized folders and users' own S3 keys](#authorized-folders-and-users-own-s3-keys)).
 
 Provider-specific keys, matched by the `dataPath` scheme:
 
@@ -95,7 +121,7 @@ Provider-specific keys, matched by the `dataPath` scheme:
 | GCS (HMAC) | `gs://` | `gcs_hmac_key_id`, `gcs_hmac_secret` |
 | Azure | `az://`, `azure://`, `abfss://` | `azure_account`, `azure_account_key` |
 
-The credentials never appear inlined in a pod spec: on Kubernetes the manager writes them into a per-node Secret (`qod-store-${nodeId}`) and injects it via `env.valueFrom.secretKeyRef`, mirroring the per-pod token and federation secrets; `kubectl describe pod` shows the ref, never the values. On the local backend they ride the node's process environment, same as the other spawn-time SQL blocks. GET/list responses redact the secret-valued keys (`s3_secret_access_key`, `azure_account_key`, `gcs_hmac_secret`, alongside `pgPassword`).
+The credentials never appear in a node's environment or command line: on Kubernetes the manager writes them into a per-node Secret (`qod-store-${nodeId}`) mounted as a file of the pod's read-only secrets volume, mirroring the per-pod token and federation secrets; on the local and fleet backends they arrive as owner-only files in a private secrets directory deleted right after the node reads them. GET/list responses redact the secret-valued keys (`s3_secret_access_key`, `azure_account_key`, `gcs_hmac_secret`, alongside `pgPassword`).
 
 This per-db secret is authored only for `kind=ducklake` databases (both spawn scripts install it right before the DuckLake `ATTACH`). A `duckdb-file` database does not get a per-db object-store secret even when its `dataPath` is a remote URI - that spawn arm does not install `httpfs`/`azure` at all today, so a remote `duckdb-file` dataPath is not a supported combination yet, independent of this feature.
 
@@ -111,6 +137,23 @@ The alternative to bringing your own bucket: with `quack-on-demand.managedObject
 a `ducklake` database, the file itself for a `duckdb-file` database. It is chosen at create time
 and cannot be changed later in either direction, so decide before you create. `kind=memory` cannot
 be encrypted. See [Encryption at rest](/qod/operating/encryption).
+
+### Init SQL trust
+
+A database's `initSql` (and a pool's, `qod pool set-init-sql`) is SQL each node runs at start. Who wrote it decides how it runs:
+
+- written by a superuser, or by the manager itself (`qod serve`, a manifest import, a branch copying its parent): runs as written;
+- written by a tenant admin: runs statement by statement under an allowlist, and every other statement is skipped (the node log names its position, never its text). The allowlist is `SET` / `RESET` to a literal of `calendar`, `checkpoint_threshold`, `default_collation`, `default_null_order`, `default_order`, `errors_as_json`, `max_memory`, `max_temp_directory_size`, `memory_limit`, `ordered_aggregate_threshold`, `preserve_insertion_order`, `threads`, `timezone`, `wal_autocheckpoint`, `worker_threads`; a read-only `PRAGMA` with literal arguments; and `INSTALL` / `LOAD` by bare name of `avro`, `aws`, `azure`, `delta`, `ducklake`, `encodings`, `excel`, `fts`, `httpfs`, `iceberg`, `icu`, `inet`, `json`, `mysql_scanner`, `parquet`, `postgres_scanner`, `spatial`, `sqlite_scanner`, `tpcds`, `tpch`, `vss`.
+
+A tenant admin's write holding anything else is refused up front with `400 init_sql_refused`, naming each refused statement's position and reason. Where the manager has no local node binary to check with (Kubernetes, or fleet without `QOD_FLEET_EPHEMERAL=local`), the write is accepted and the response carries an `initSqlWarning`. A tenant admin's text holds at most 64 KiB, and no initSql may contain `qod:untrusted-`. Database and pool responses carry `initSqlTrusted`, and so do manifests.
+
+```bash
+# A superuser re-saving a text unchanged trusts it again (restart the nodes afterwards)
+qod database update --tenant acme --name acme_tpch --init-sql "SET memory_limit = '8GB';"
+qod pool set-init-sql --tenant acme --db acme_tpch --pool bi --init-sql "SET threads = 4;"
+```
+
+Upgrading to 0.11.0 marks every non-empty initSql not written by `qod serve` untrusted, and boot WARNs once per database or pool that would lose statements; see [Upgrading to 0.11.0](./upgrading.md).
 
 ### List and delete
 

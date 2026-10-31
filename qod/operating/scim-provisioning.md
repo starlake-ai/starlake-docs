@@ -20,7 +20,7 @@ https://<manager>/api/scim/v2/<tenant>
 
 ## Authentication
 
-The IdP connector authenticates with `Authorization: Bearer <token>`, where the token is the static `QOD_API_KEY` or a personal access token. Bearer is accepted on the `/api/scim/` prefix only; nothing else on `/api` takes it. The usual `X-API-Key` header and session cookie also work, but IdP connectors send Bearer, so a PAT is the recommended credential: it can be revoked independently of the static key.
+The IdP connector authenticates with `Authorization: Bearer <token>`, where the token is a tenant-admin personal access token: log in as an admin of that tenant, mint it once with `qod auth pat create --name scim-okta` (it is printed once), and paste it into the connector. A tenant-scoped token can only touch its own tenant, and it can be revoked at any time without touching anyone's password. Bearer is accepted on the `/api/scim/` prefix only; nothing else on `/api` takes it. The usual `X-API-Key` header and session cookie also work, but IdP connectors send Bearer. There is no static API key.
 
 ```bash
 curl -s https://manager.example.com/api/scim/v2/acme/Users \

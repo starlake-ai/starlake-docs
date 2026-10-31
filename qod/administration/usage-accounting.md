@@ -22,7 +22,7 @@ A few caveats apply before using these numbers for billing:
 
 ## API
 
-`GET /api/usage` returns aggregated daily rollup data over a requested period. The endpoint requires authentication (either the `X-API-Key` header or a `qod_session` cookie from the admin UI). The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_API_KEY` is set for CI scripts.
+`GET /api/usage` returns aggregated daily rollup data over a requested period. The endpoint requires authentication (a session or personal access token in the `X-API-Key` header, or the `qod_session` cookie from the admin UI). The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_TOKEN` holds a personal access token for CI scripts.
 
 ```bash
 # Month-to-date usage per tenant (defaults: current calendar month UTC, group-by=tenant)
@@ -84,7 +84,7 @@ Invalid ISO-8601 values for `from` or `to` return `400 invalid_time`.
 | `groups[].username` | string or null | Username; null when `groupBy` is not `user` |
 | `groups[].statements` | integer | Total statements in the period |
 | `groups[].errors` | integer | Statements whose status is not `ok` or `denied` (transient, permanent, no-node, no-pool, pin-lost) |
-| `groups[].denied` | integer | Statements whose status is `denied` (blocked by the ACL validator) |
+| `groups[].denied` | integer | Statements whose status is `denied` (refused by the node: `QoD: ...`) |
 | `groups[].engineMs` | integer | Summed execution time in milliseconds |
 | `groups[].days` | array | Per-day breakdown, one entry per UTC day bucket with non-zero statements |
 | `groups[].days[].day` | string | Day bucket start as ISO-8601 UTC instant |
@@ -138,7 +138,7 @@ Rows and bytes transferred are not metered. Metering them would require counting
 
 The scoping rules mirror the statement history endpoints:
 
-- **Superusers** and static-key callers see all tenants. The `tenant` and `pool` filter parameters work as passed.
+- **Superusers** see all tenants. The `tenant` and `pool` filter parameters work as passed.
 - **Tenant admins** are pinned to their manageable tenants. A `?tenant=` parameter is accepted but silently intersected with the admin's own tenants; specifying another tenant's name does not return an error and does not reveal its existence.
 
 ## The `none` off switch

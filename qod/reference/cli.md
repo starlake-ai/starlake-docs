@@ -26,7 +26,7 @@ The `manifest export` / `manifest import` subcommands operate on the Postgres co
 
 ### `qod start`
 
-Boots the manager from the release uber-jar (downloaded from GitHub Releases and sha256-verified, or `--jar <path>`) with TLS cert auto-generation and the DuckDB CLI + `libduckdb` self-installed at the pinned ABI. A Java 21+ is picked up from `JAVA_HOME`/`PATH` or auto-provisioned (Temurin 21, cached). Postgres is assumed reachable at `QOD_PG_HOST`/`QOD_PG_PORT`.
+Boots the manager from the release uber-jar (downloaded from GitHub Releases and sha256-verified, or `--jar <path>`) with TLS cert auto-generation and the DuckDB CLI + `libduckdb` self-installed at the pinned ABI. Nodes run `qod-node`, which the jar bundles for Linux and macOS; on Windows `qod start` downloads the release's `qod-node-windows-<arch>.exe` and sets `QOD_NODE_BIN`. A Java 21+ is picked up from `JAVA_HOME`/`PATH` or auto-provisioned (Temurin 21, cached). Postgres is assumed reachable at `QOD_PG_HOST`/`QOD_PG_PORT`.
 
 | Env var | Default | Effect |
 |---|---|---|
@@ -51,13 +51,14 @@ NUKE=1 LOAD_TPCH=1 LOAD_TPCDS=10 qod start         # both, independent SFs
 NUKE=1 DEMO=minimal LOAD_TPCH=1 qod start          # single-DuckDB profile: acme, 1 dual node
 qod stop                     # SIGTERM, wait, then SIGKILL (FORCE_AFTER seconds)
 # Ctrl-C in the qod start terminal runs the same teardown as qod stop
-
 ```
+
+`qod start` and `qod serve` refuse to launch while `QOD_API_KEY` is set in the shell or stored in the profile's `[start]` table: the manager no longer accepts a static API key and would refuse to boot. The error names where the value is (`unset QOD_API_KEY`, or `qod setup --unset QOD_API_KEY --non-interactive`). Automation uses a personal access token in `QOD_TOKEN` or `qod login --password-stdin`.
 
 ### `qod setup`
 
-Persists the env vars `qod start` reads (Postgres coordinates, admin
-credentials, the static API key, the auth/TLS toggles, and any other
+Persists the env vars `qod start` reads (Postgres coordinates, the admin
+user name, the auth/TLS toggles, and any other
 `QOD_*`/`PROXY_*` var via `--set`) into the CLI config file, under a
 `[start]` table next to the connection profiles (same file, mode 0600,
 `QOD_CONFIG_FILE` overrides the path). Run it once and `qod start` works
@@ -68,8 +69,12 @@ qod setup                                    # guided prompts on a terminal
 qod setup --pg-host db.internal --pg-password s3cr3t --no-tls --non-interactive
 qod setup --set QOD_MIN_PORT=21900           # any other QOD_*/PROXY_* var
 qod setup --show                             # inspect stored values (secrets redacted)
-qod setup --unset QOD_API_KEY --non-interactive
+qod setup --unset QOD_API_KEY --non-interactive   # remove a value left by an older release
 ```
+
+The admin password is never stored: the first `qod start` prompts for it.
+`qod setup --no-auth` (`QOD_AUTH_DB_ENABLED=false`) warns that the manager
+then refuses to boot unless another authenticator is configured.
 
 Precedence at `qod start` time is file < real process env, so a shell
 `export QOD_PG_HOST=...` still wins over the stored value. Input checks run
@@ -93,8 +98,8 @@ manager URL. Reports the manager (`/health`: alive plus pool and node
 counts), readiness (`/ready`: 503 until Postgres is reachable), the
 FlightSQL edge coordinates and whether that port answers, local manager
 pids on this machine (same port discovery `qod stop` uses), per-pool
-healthy/total node detail when you are logged in (omitted silently when
-not), and the stored `qod setup` config summary. Exits 1 when the manager
+healthy/total node detail when a `qod login` session or `QOD_TOKEN` can list
+pools (omitted silently when not), and the stored `qod setup` config summary. Exits 1 when the manager
 is unreachable, so scripts can gate on it:
 
 ```bash
@@ -122,5 +127,5 @@ Runs a single manager container against an external Postgres (requires `PG_HOST`
 - `load-tpch-dbgen.sh` - seed TPC-H into the `acme_tpch` tenant-db (invoked by the boot scripts via `LOAD_TPCH` or the legacy `LOAD_TPC`, or run directly inside a running container).
 - `load-tpcds-dbgen.sh` - seed TPC-DS into the `globex_tpcds` tenant-db (invoked by the boot scripts via `LOAD_TPCDS` or the legacy `LOAD_TPC`, or run directly inside a running container).
 - `load-ssb-dbgen.sh` - derive the SSB star schema from TPC-H dbgen into schema `ssb1` of the `acme_tpch` tenant-db (invoked by the boot scripts via `LOAD_SSB` or the legacy `LOAD_TPC`, or run directly inside a running container).
-- `spawn-quack-node.sh` - spawns one Quack node. Invoked by `LocalQuackBackend` with the right port, token, and metastore contract; do not run it directly.
+- `spawn-quack-node.sh` - spawns one Quack node. Invoked by `LocalQuackBackend` with the right port, manager marker, secret files and metastore contract; it runs `qod-node`, never the DuckDB CLI. Do not run it directly.
 - `tpch-load-test/tpch-load-test.py` - the bundled ADBC `tpch-load-test`, usable as a one-shot client. Cycles a curated TPC-H or TPC-DS mix; switch via `--workload tpch` (default) / `--workload tpcds`. See [Connecting clients](/qod/connecting/clients).

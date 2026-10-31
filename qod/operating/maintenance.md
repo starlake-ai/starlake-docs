@@ -50,7 +50,7 @@ Policies are hierarchical: a `table` scope overrides a `schema` scope overrides 
 | `orphanMinAgeDays` | 1 | Never delete orphan files younger than this. |
 | `cron` | `0 3 * * *` | Cadence fallback (5-field subset: `*`, integers, `*/n`; UTC). |
 
-Manage policies from the **Maintenance** page (see the [admin UI guide](/qod/operating/admin-ui#maintenance)) or with the CLI (`qod login` must have stored a session, or set `QOD_API_KEY`):
+Manage policies from the **Maintenance** page (see the [admin UI guide](/qod/operating/admin-ui#maintenance)) or with the CLI (`qod login` must have stored a session, or set `QOD_TOKEN` to a personal access token):
 
 ```bash
 # Enable maintenance on a database with a 14-day horizon

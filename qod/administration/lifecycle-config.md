@@ -15,7 +15,8 @@ Attach external catalogs, rotate secrets, back up and restore configuration, and
 
 - The tenant and database already exist. See [Tenants and databases](/qod/operating/tenants-databases).
 - The target external system is reachable from the Quack nodes at startup time.
-- `qod login` has stored a session (CI scripts can use `QOD_API_KEY` instead). The manager runs at `http://localhost:20900` (the default dev address; adjust the host and port for other environments).
+- A source of type `sql` (free-form `setupSql`, as in this playbook) needs a superuser: a tenant admin's create or change answers `403 superuser_required`, on every path. Tenant admins register typed sources (Postgres, MySQL, Iceberg REST) instead; see [Federation](/qod/operating/federation). Every `{{secret.NAME}}` in a `sql` template must sit inside a plain single-quoted literal, as `PASSWORD '{{secret.PG_PWD}}'` does below, or the save answers `400 invalid_federated_source`.
+- `qod login` has stored a session (CI scripts can set `QOD_TOKEN` to a personal access token instead). The manager runs at `http://localhost:20900` (the default dev address; adjust the host and port for other environments).
 
 **Steps (UI)**:
 
