@@ -137,10 +137,9 @@ Once `awsCredentials` is set:
   bucket; a bare `s3://` is refused.
 
 The scope is mandatory because of how DuckDB picks an S3 secret for a path: the longest matching
-scope wins, and a tie is broken by secret name, alphabetically. An unscoped `qod_ice_<alias>` would
-tie with the node's own unscoped storage secret `quack_s3` and win (`qod` sorts before `qua`), so
-it would sign every S3 read, the database's own data included. Scoped to the catalog's buckets, it
-signs only those paths and every other path keeps its secret.
+scope wins. An unscoped `qod_ice_<alias>` would match every S3 path, so it would sign any S3 read
+no narrower secret covers, with the catalog's keys. Scoped to the catalog's buckets, it signs only
+those paths and every other path keeps its secret.
 
 Setting any AWS field without `awsCredentials` is refused rather than silently dropped, and so is an
 AWS field on a mode that does not sign with AWS. A source stored without AWS fields renders exactly
@@ -154,6 +153,20 @@ The admin UI's federation form shows the same hint under the Warehouse field for
 The AWS fields are available on every surface that declares a source: REST (inside `config`),
 `qod federation create --aws-*`, the MCP tool `upsert_federated_source` and the admin UI form, which
 offers the credentials as "static keys", "credential chain" or "node default" (no AWS fields).
+
+With no AWS fields and a catalog that does not vend credentials, the nodes have no key of their
+own for the warehouse: since 0.11.0 a node's own S3 keys sign only its database's data path. Each
+user then reads the catalog's tables with the S3 keys they registered themselves
+(`qod profile s3 add`, see [Hardening](hardening.md#files-and-s3)). The raw files of a warehouse
+bucket are not data folders QoD knows: a user holding keys for it can read them directly.
+
+:::caution Iceberg tables on S3 are read-only through QoD
+DuckDB's Iceberg extension (v2.0.0) commits its manifest files without connection secrets, while the
+nodes hold users' S3 keys as connection secrets of each user's connection. A write to an Iceberg
+table on S3 therefore fails with HTTP 403 at commit, for every principal, superusers included,
+until upstream duckdb-iceberg signs its commits with connection secrets. Write with the warehouse's
+own tooling meanwhile.
+:::
 
 ### Alias rules
 
@@ -265,47 +278,38 @@ stays writable.
 Read-only is enforced in two layers.
 
 1. **In the engine.** `READ_ONLY` goes onto the `ATTACH` QoD renders, so DuckDB itself refuses the
-   write, above the extension and below SQL parsing:
+   write, above the extension:
 
    ```
    Cannot execute statement of type "INSERT" on database "sales_lake" which is attached in read-only mode!
    ```
 
-2. **At the edge.** `CatalogWriteScreen` runs in the statement pipeline, right after the ACL gate,
-   on the FlightSQL edge and the native Quack front door alike. It parses each statement and denies
-   any write or DDL it resolves against a read-only alias.
+2. **On the node, per statement.** Every node judges each statement on the plan DuckDB bound, and
+   refuses any write, DDL, `ATTACH` or `DETACH` against a read-only alias to every principal,
+   superusers included. This layer is also the only enforcement for `sql` sources, whose `ATTACH`
+   text QoD does not author. Not covered: a superuser's raw passthrough (`postgres_execute`,
+   `postgres_query`, `mysql_*`), a maintenance function taking a catalog name, an `ATTACH` of the
+   same source under another alias, and `CHECKPOINT` / `VACUUM`, all superuser-only.
 
-The second layer is defence in depth, not the primary gate. The primary gate is still the RBAC
-graph: a principal with no `RW` or `DDL` grant on `sales_lake.*.*` cannot write there whatever this
-flag says. The edge screen is also the **only** enforcement available for `sql` sources, whose
-`ATTACH` text QoD does not author.
-
-A denied write names the catalog:
+Grants still apply on top: a principal with no `RW` or `DDL` grant on `sales_lake.*.*` cannot write
+there whatever this flag says (and a wildcard `*.*.*` grant never covers a federated catalog). A
+write the read-only flag refuses names the catalog:
 
 ```
-catalog 'sales_lake' is read-only on this deployment (write target: sales_lake.main.orders)
+QoD: catalog sales_lake is read-only
 ```
 
-:::caution The edge screen fails closed pool-wide
-While **any** source on a database is read-only, every write on that pool must be fully parseable
-and fully qualified, or it is refused. This includes writes against other, writable, attached
-catalogs: `INSERT INTO other_db.orders VALUES (1)` is refused as unresolvable, because the parser
-cannot tell a catalog head from a schema head in a two-part name. Statements the parser has no arm
-for at all (`ATTACH`, `DETACH`, `CREATE SECRET`, `COPY`, `GRANT`) are refused pool-wide for the
-same reason, as are `PREPARE` and `EXECUTE`. This is intended fail-closed behaviour, but expect it
-pool-wide before flipping the flag on one source.
-:::
-
-**Flipping the flag does not change running nodes.** The engine-level layer binds at `ATTACH`, so
-it takes effect for nodes spawned after the change. The edge screen picks the new value up within
-about 60 seconds. So `false` to `true` briefly leaves only the edge screen standing, and `true` to
-`false` leaves the catalog engine-read-only, with raw DuckDB read-only-mode errors rather than the
-screen's message, until the pool recycles. Recycle the pool to make either direction whole.
+**Flipping the flag does not change running nodes' `ATTACH`.** The engine-level layer binds at
+`ATTACH`, so it takes effect for nodes spawned after the change, while the node-side check picks the
+new value up on the next statement. So `false` to `true` takes effect at once, and `true` to `false`
+leaves the catalog engine-read-only, with raw DuckDB read-only-mode errors, until the pool recycles.
+Recycle the pool to make that direction whole.
 
 ## Attach failures, and how they surface
 
-A failed `ATTACH` **does not stop a node booting**. The node's init SQL is piped into DuckDB
-without bail, so the error goes to the node's stderr and startup continues to `quack_serve`. The
+A failed `ATTACH` **does not stop a node booting**. The node runs its init SQL statement by
+statement and carries on past a failing one, so the error goes to the node's log and startup
+continues to `quack_serve`. The
 node then passes its health probe and is routed to like any other, with the catalog simply absent.
 The only symptom a user sees is `Catalog 'sales_lake' does not exist`, which reads as a typo rather
 than as a rotated secret or an unreachable catalog.
@@ -351,12 +355,13 @@ get the collision check the REST path applies.
 
 Iceberg tables go through the same pipeline as DuckLake tables and need no special grants. A role
 permission on `sales_lake.main.orders`, or on `sales_lake.*.*`, authorizes exactly as it would for
-a native table, with the same `RO` / `RW` / `DDL` verbs. See
+a native table, with the same `RO` / `RW` / `DDL` verbs. A wildcard catalog grant (`*.*.*`) does
+not cover the alias: name it. See
 [Granting access to federated tables](federation.md#granting-access-to-federated-tables).
 
-Three-part references (`alias.schema.table`) resolve because the alias is in the parser's
-attached-catalog set. A two-part reference whose first part is an attached catalog is denied as
-ambiguous; see
+The node judges references as DuckDB binds them, so `alias.schema.table` and a two-part name headed
+by the alias both resolve to the catalog's tables. For a principal holding row or column policies,
+a two-part reference whose first part is an attached catalog is denied as ambiguous; see
 [Table name resolution](/qod/administration/access-control#table-name-resolution).
 
 ## Browsing a catalog
@@ -400,8 +405,8 @@ database (`404 catalog_not_found` otherwise).
 
 Namespaces, tables, table detail and history are metadata reads that the manager runs itself on a
 live read node of the database's pool. The preview and the diff read table data, so they run **as
-the caller**, through the same pipeline as a normal query: the ACL, column masking and row policies
-apply. A personal access token runs as its owner with the token's own restriction, and its
+the caller**, through the same pipeline as a normal query: the node's grant check, column masking
+and row policies apply. A personal access token runs as its owner with the token's own restriction, and its
 `maxRows` caps the preview and diff page. Every preview and diff is audited; the metadata reads are
 audited only when `QOD_AUDIT_CATALOG_READS` is on.
 
@@ -470,7 +475,8 @@ is covered in the same page under
 - **No branching on Iceberg.** [Branching](branching.md) is DuckLake-only. Branch, propose and
   merge are written against DuckLake catalog tables and have no Iceberg-native implementation.
 - **A catalog is required to write.** Only attached REST catalogs are writable; scanning raw
-  storage cannot commit new table metadata.
+  storage cannot commit new table metadata. Tables on S3 are read-only through QoD for now (see
+  [AWS credentials](#aws-credentials-sigv4-glue-and-s3-tables)).
 - **The management views are read-only.** There is no restore, undrop or tagging on an Iceberg
   table; see [Browsing a catalog](#browsing-a-catalog).
 - **Running or hosting a catalog is out of scope**, as are non-REST catalogs (Hive, Hadoop, JDBC),
@@ -484,12 +490,13 @@ is covered in the same page under
 | `400 invalid_federated_source` on create, naming a placeholder | `clientSecret` or `token` was given a literal value | Store it as a secret and pass `{{secret.NAME}}` |
 | `400` naming `authType / endpointType` | Both were set, or neither | Set exactly one |
 | `400` naming `awsScope` or `awsRegion` | `awsCredentials` is set without a scope, or without a region the manager can use | Add `--aws-scope s3://bucket/`, and `--aws-region` for `sigv4` / `glue` |
-| `Could not find a valid storage secret` or `... does not have a region` in `attachStatus` | An AWS-signed catalog has no AWS fields, so it signs with the node's default S3 secret | Set `awsCredentials`, `awsRegion` and `awsScope` on the source, then recycle the pool |
+| `Could not find a valid storage secret` or `... does not have a region` in `attachStatus` | An AWS-signed catalog has no AWS fields, and the nodes hold no S3 key of their own outside the data path | Set `awsCredentials`, `awsRegion` and `awsScope` on the source, then recycle the pool |
+| An `INSERT` into an Iceberg table on S3 fails with HTTP 403 at commit | DuckDB's Iceberg extension commits without connection secrets | Expected: Iceberg tables on S3 are read-only through QoD for every principal; write with the warehouse's own tooling |
+| A user's read fails with no S3 secret for the warehouse | The catalog vends no credentials and has no AWS fields, and the user registered no S3 keys covering the warehouse | The user runs `qod profile s3 add` for the warehouse prefix, or set the source's AWS fields |
 | `400 alias '...' is reserved` | The alias collides with the database's own catalog, a sibling source, or `memory` / `system` / `temp` | Rename the source's alias |
 | Client sees `Catalog 'x' does not exist`, pool looks healthy | The `ATTACH` failed at node spawn | Read `attachStatus` on the source and `catalogAttachFailures` on the node for the real DuckDB error |
 | `attachStatus` stuck on a collision message | The alias equals the database's own catalog alias, written through a manifest import | Rename the source's alias; it can never attach |
 | `Could not get token from ...` | OAuth2 credentials rotated or revoked, or the token endpoint is unreachable | Update the secret, then wait for the next probe to re-attach, or recycle the pool |
-| A write against a writable catalog is refused as unresolvable | Another source on the same database is read-only, so the edge screen fails closed pool-wide | Fully qualify the write as `catalog.schema.table`, or clear the read-only flag and recycle |
 | Writes still refused after clearing the read-only flag | `READ_ONLY` is on the running nodes' `ATTACH` | Recycle the pool |
 | `400 unsupported_for_iceberg` from a catalog view | The table is Iceberg format v1, or the preview named a tag | Upgrade the table to format v2; select a snapshot by id or time |
 | `413 diff_too_large` | A snapshot of the diff has more data files than `QOD_CATALOG_ICEBERG_DIFF_MAX_FILES` | Diff closer snapshots, or raise the limit |

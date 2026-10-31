@@ -7,7 +7,7 @@ keywords: ["duckdb attach", "quack protocol", "duckdb client server", "duckdb re
 ---
 
 Besides Arrow Flight SQL, the manager serves DuckDB's own **Quack** protocol on a dedicated
-listener (default port `9494`). Any DuckDB that carries the `quack` extension, the CLI, the
+listener (default port `9494`). Any DuckDB 2.0 that carries the `quack` extension, the CLI, the
 Python package, an embedded DuckDB, attaches the gateway as a database with no driver in
 between, and can join the attached catalog with its local tables in one query.
 
@@ -25,8 +25,8 @@ SELECT * FROM quack_query('quack:qod.example.com:9494', 'SELECT count(*) FROM tp
 ```
 
 What applies is exactly what applies to a FlightSQL client: the same handshake gates (tenant
-scope, pool grant), per-statement [routing](/qod/concepts/routing) across the pool, the
-[ACL](/qod/operating/rbac-model), column masking and row filters, metadata filtering, lockdown,
+scope, pool grant), per-statement [routing](/qod/concepts/routing) across the pool, the nodes'
+[grant check](../operating/rbac-model.md), column masking and row filters, metadata filtering,
 author stamping, statement history, the [audit log](/qod/administration/audit-log) (origin
 `quack`), kill, and scale-to-zero wake-up. The manager relays each statement to a node and
 hands the node's result back to the client byte for byte; it never re-encodes data.
@@ -81,14 +81,24 @@ options (`disable_ssl := true` on `quack_query`). See [TLS](/qod/operating/tls) 
   transaction (`SET`, temp tables) does not carry over between statements.
 - **Transactions.** `BEGIN; ...; COMMIT` from a DuckDB client runs on one node connection, so a
   client transaction is a real transaction on one node (the Flight edge only pins the node; see
-  [Sessions and transactions](/qod/concepts/sessions-transactions)).
-- **Writes.** `INSERT INTO qod.<schema>.<table> ...` from local data is authorized as a write on
-  that table before any row reaches a node, and is author-stamped like a FlightSQL write.
-- **Denials** answer inside DuckDB's error text with the manager's own wording:
-  `access denied: no grant on ...`.
+  [Sessions and transactions](/qod/concepts/sessions-transactions)). A transaction that cannot go
+  on is ended rather than moved: a statement refused inside it (a grant revoked mid-transaction
+  included), or its node leaving the pool (scale down, failure, restart), answers
+  `transaction aborted: <reason>; ROLLBACK to continue` for that statement and every later one
+  until the client's `ROLLBACK`.
+- **Writes.** `INSERT INTO qod.<schema>.<table> ...` from local data is judged by the node as a
+  write on that table, and is author-stamped like a FlightSQL write. Reading the client's local
+  table this way (`scan_data_from_quack_client`) works only on this wire, scoped to the client's
+  own connection; the same statement sent over FlightSQL is refused, superusers included.
+- **Denials** answer inside DuckDB's error text with the node's refusal, which reads
+  `QoD: <reason>` (for example `Permission Error: QoD: user:alice lacks grants on ...`). A
+  statement refused because no verdict could be had in time reads
+  `QoD: authorization unavailable, retry` and can be retried.
 - **Catalog browsing.** The client bootstraps its catalog view with `information_schema` and
-  `duckdb_tables()` queries; with filtered metadata on, a user only sees the objects they hold a
-  grant on.
+  `duckdb_tables()` queries, which are always filtered: a user only sees the objects they hold a
+  grant on. DuckDB's unfiltered listing views (`pg_catalog.*`, `sqlite_master`, bare `SHOW` /
+  `DESCRIBE`, `system.information_schema.*`) are refused to every user who is not a superuser;
+  `SHOW TABLES` and `DESCRIBE <table>` of a granted table keep working.
 
 ## Operations
 

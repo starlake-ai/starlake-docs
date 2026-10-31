@@ -6,7 +6,7 @@ description: "Grant a team read access to DuckDB tables, add row filters and col
 keywords: ["duckdb access control", "duckdb acl", "grant", "revoke", "row-level security", "column masking", "rbac"]
 ---
 
-Access control is **off by default** (`acl.enabled=false`). Set `QOD_ACL_ENABLED=true` to enforce it. When ACL is on, every FlightSQL statement is matched against the caller's effective permission set before execution. The model - roles, groups, verbs, and wildcards - is described in [Access control model](/qod/operating/rbac-model).
+Access control is **always on**. Every statement, through any door, is decided by the node that runs it against the caller's effective permission set before it executes; since 0.11.0 there is no switch to turn this off (see [Upgrading to 0.11.0](../operating/upgrading.md)). The model - roles, groups, verbs, and wildcards - is described in [Access control model](/qod/operating/rbac-model).
 
 Everything on this page, plus user management, can also be done with plain SQL from any connected client (`CREATE ROLE`, `GRANT SELECT ON ... TO ROLE ...`, row and column policies, pool grants, `CREATE USER` / `ALTER USER ... PASSWORD` / `DROP USER`): see [Administer with SQL](/qod/administration/sql-administration).
 
@@ -60,7 +60,7 @@ users:
 
 **CLI equivalent:**
 
-The examples below assume `qod login` has stored a session (see [the CLI section](/qod/cli/)); CI scripts can use `QOD_API_KEY` instead. The six steps below mirror the UI flow exactly. Surrogate ids (`<roleId>`, `<groupId>`, etc.) are returned by each create call; capture them with the `--json` flag.
+The examples below assume `qod login` has stored a session (see [the CLI section](/qod/cli/)); CI scripts set `QOD_TOKEN` to a personal access token instead. The six steps below mirror the UI flow exactly. Surrogate ids (`<roleId>`, `<groupId>`, etc.) are returned by each create call; capture them with the `--json` flag.
 
 ```bash
 # 1. Create a role
@@ -107,6 +107,8 @@ The permission graph is: user -> roles (direct), user -> groups -> roles (via gr
    - `RW` for DML (INSERT, UPDATE, DELETE, MERGE, TRUNCATE) - it also covers reads on the same table
    - `DDL` for schema changes (CREATE, DROP, ALTER)
    - `ALL` to cover every verb at once
+
+   `ALTER TABLE ... ADD COLUMN ... DEFAULT <expr>` needs both `RW` and `DDL` (or `ALL`): it is judged as an ADD COLUMN and an UPDATE.
 3. Save. The verbs are collapsed to `Read`, `Write`, or `Ddl` at enforcement time; see [Access control model](/qod/operating/rbac-model) for the exact mapping.
 
 **Manifest (YAML)**
@@ -140,15 +142,15 @@ Replace `verb` with `DDL` for schema changes as needed. Omitting `catalog`/`sche
 
 ## Table name resolution
 
-When ACL is on, a two-part name `schema.table` resolves against the session's default catalog (ANSI semantics): `tpch1.customer` works when the pool's database is `acme_tpch` and a grant covers `acme_tpch.tpch1.customer`.
+The node judges the plan DuckDB bound, so a name is checked exactly as DuckDB resolved it: `tpch1.customer` is `acme_tpch.tpch1.customer` when the pool's database is `acme_tpch`, and a two-part name whose first part is an attached catalog (`acme_tpch.customer`) is that catalog's default-schema table, judged as such.
 
-DuckDB's runtime, however, tries a catalog interpretation of the first part first. So when the first part of a two-part name matches a possibly-attached catalog - the tenant-db itself, any federation alias (enabled or disabled), or the DuckDB built-ins `memory` / `system` / `temp` - the engine would bind it catalog-first while the ACL check just resolved it schema-first. Rather than guessing, the validator denies such names as ambiguous:
+One exception holds for a principal who carries [column or row policies](/qod/operating/rbac-model#column-level-policies). The rewriters that enforce those policies read SQL text, schema-first, while DuckDB binds a two-part name catalog-first when the first part matches a possibly-attached catalog (the tenant-db itself, any federation alias, enabled or disabled, or the built-ins `memory` / `system` / `temp`). Rather than guessing, the gateway denies such names as ambiguous for policy holders:
 
 ```
 access denied: ambiguous two-part name 'acme_tpch.customer': 'acme_tpch' is an attached catalog; qualify fully as 'acme_tpch.<schema>.<table>'
 ```
 
-Write the full three-part form (`catalog.schema.table`, e.g. `acme_tpch.tpch1.customer`) to proceed. This denial fails closed and is unconditional: no wildcard grant, including `*.*.* ALL`, admits an ambiguous reference.
+Write the full three-part form (`catalog.schema.table`, e.g. `acme_tpch.tpch1.customer`) to proceed. For a policy holder the same guard also denies a quoted name holding a dot, a `query()` / `query_table()` call, and a batch that moves the schema or search path; no wildcard grant admits them.
 
 After **deleting** a federated source, recycle the pool: running nodes keep the deleted alias attached until they exit, while the ambiguity guard no longer covers it. See [Federation](/qod/operating/federation).
 
@@ -167,7 +169,7 @@ After **deleting** a federated source, recycle the pool: running nodes keep the 
 3. To remove a role from a group: open **Groups**, edit the group, and delete the role assignment.
 4. To delete a role permission entirely: open **Roles**, edit the role, and delete the permission row.
 
-**Effect on active sessions:** `invalidateEffectiveCache()` is called on every RBAC mutation in `PoolSupervisor`. This drops the entire in-process EffectiveSet cache immediately, so the revoked grant takes effect on the **next handshake** - there is no TTL window to wait for.
+**Effect on active sessions:** every RBAC mutation moves the tenant's policy version, so open FlightSQL and native sessions resolve their grants again before their **next statement**, without a reconnect; an open native transaction the revoke affects is ended (`transaction aborted: <reason>; ROLLBACK to continue`). Verdicts cached on the nodes are dropped with the old version, so there is no TTL window to wait for.
 
 **Manifest (YAML):** Declaratively, remove the entry from its parent's nested list (a `permissions` entry on the role, or a role/group/grant on the user) and re-import; nested collections are replaced to match the file, so the omitted entry is deleted. Top-level roles, groups, and users are upsert-only, so this prunes grants, not whole roles. See [Manage by manifest](/qod/administration/manage-by-manifest).
 
@@ -209,7 +211,7 @@ qod pool permission list --tenant acme
 
 **Steps (CLI - two-realm diff):**
 
-Run the same query twice: once as the tenant user (policy enforced) and once as the bootstrap superuser (policy bypassed). Diff the outputs to see exactly what the ACL, column policy, or row policy filtered or masked.
+Run the same query twice: once as the tenant user (policy enforced) and once as the bootstrap superuser (policy bypassed). Diff the outputs to see exactly what the grants, column policy, or row policy filtered or masked.
 
 ```bash
 # Query as a tenant user (Basic auth + tenant/pool routing headers).
@@ -229,7 +231,7 @@ scripts/bench/adbc.sh --url grpc+tls://localhost:31338 \
 
 Note: `scripts/bench/adbc.sh` is a CLI tool, not a REST call. It speaks the FlightSQL wire protocol over gRPC. On first run it provisions an ADBC Python venv under `${QOD_ADBC_VENV:-$HOME/.cache/qod-adbc/venv}`; set `PIP_PROXY` if you are behind a proxy.
 
-**Verify:** The diff between the two outputs should match the intended policy - the tenant user's result should contain only the rows and columns the grant allows. If the outputs are identical, check that `QOD_ACL_ENABLED=true` is set; ACL is off by default.
+**Verify:** The diff between the two outputs should match the intended policy - the tenant user's result should contain only the rows and columns the grant allows. If the outputs are identical, check the user's memberships: a user created without explicit roles holds `qod_all_tables` (`*.*.* ALL`). A statement no grant covers is refused with `QoD: user:<name> lacks grants on ...`.
 
 **Related:**
 - [Access control model](/qod/operating/rbac-model) - how the effective set is resolved

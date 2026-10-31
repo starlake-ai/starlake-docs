@@ -26,7 +26,7 @@ Isolation is enforced at three layers, not by a single guard:
 
 1. **Physical separation.** Each tenant-db is its own Postgres database with its own DuckLake catalog and its own data path. Two tenants' data never shares a database or a catalog, so there is no path for one tenant's query to reach another's storage.
 2. **Connection (pool-access gate).** At handshake the gateway resolves the requested pool to its tenant-db and checks that the principal's effective pools include it. A principal with no pool grant reaching a tenant-db cannot open a session against it at all.
-3. **Statement (ACL catalog scoping).** The per-statement ACL catalog `*` wildcard is scoped to the session's tenant: a tenant admin holding `*.*.* ALL` matches only catalogs in their own tenant, never a sibling tenant's. Reaching another tenant's catalog requires naming it literally, which is the deliberate cross-tenant grant path.
+3. **Statement (node-side check).** Each node attaches only its own pool's database and federated sources, and decides every statement against the caller's grants on what DuckDB resolved. The catalog `*` wildcard is scoped to the session's tenant: a tenant admin holding `*.*.* ALL` matches only catalogs in their own tenant, never a sibling tenant's (and never a federated catalog, which is granted by its alias). A database's data folder, any tenant's, is never reachable by its path, and a tenant user's files are signed with that user's own S3 keys.
 
 Together these mean a tenant-scoped principal is confined to their tenant's databases by storage layout, by who may connect, and by what statements are authorized.
 
@@ -34,7 +34,7 @@ Every tenant is created with four protected [built-in roles and groups](/qod/ope
 
 ## Superusers
 
-A superuser (`qodstate_user.tenant IS NULL`) is the one principal that is not tenant-scoped. Superusers bypass both the pool-access gate and the per-statement ACL gate, so they can connect to any pool in any tenant and run any statement. The bootstrap admin is a superuser, and only superusers can create other superusers. Manifest export and import, which span every tenant, are superuser-only for the same reason; see [Manifest backup and restore](/qod/operating/manifest).
+A superuser (`qodstate_user.tenant IS NULL`) is the one principal that is not tenant-scoped. Superusers bypass both the pool-access gate and the per-statement grant check, so they can connect to any pool in any tenant and run any statement (a [read-only federated catalog](/qod/operating/federation) still refuses their writes). The bootstrap admin is a superuser, and only superusers can create other superusers. Manifest export and import, which span every tenant, are superuser-only for the same reason; see [Manifest backup and restore](/qod/operating/manifest).
 
 ## What scopes to a tenant
 

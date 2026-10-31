@@ -6,9 +6,9 @@ description: "The role-based access control model enforced on every DuckDB state
 keywords: ["duckdb rbac", "duckdb access control", "row-level security", "column masking", "duckdb acl", "permissions"]
 ---
 
-This page describes the role-based access control (RBAC) model enforced by quack-on-demand at the FlightSQL edge. It covers the data model, how effective permissions are computed at connection time, what the per-statement gate checks, and where superusers fit. For step-by-step instructions on creating users, roles, groups, and grants, see the "Administering access" page, or [Administer with SQL](/qod/administration/sql-administration) to do the same from any connected SQL client.
+This page describes the role-based access control (RBAC) model quack-on-demand enforces on every statement, whichever door it arrives through (FlightSQL, the native Quack front door, MCP or a REST endpoint that runs SQL). It covers the data model, how effective permissions are computed, what the node checks on each statement, and where superusers fit. For step-by-step instructions on creating users, roles, groups, and grants, see the "Administering access" page, or [Administer with SQL](/qod/administration/sql-administration) to do the same from any connected SQL client.
 
-ACL enforcement is disabled by default. Set `QOD_ACL_ENABLED=true` to enforce it. The rest of this page assumes enforcement is on.
+Enforcement is always on. Since 0.11.0 the node that runs a statement decides it, on the plan DuckDB bound, and there is no switch to turn it off: `QOD_ACL_ENABLED`, `QOD_ACL_FILTERED_METADATA` and `QOD_ACL_DIALECT` were removed, and a manager that still sets one refuses to start (see [Upgrading to 0.11.0](./upgrading.md)).
 
 ## Pools and databases
 
@@ -67,7 +67,7 @@ Creating a tenant user (REST, CLI, MCP, SQL `CREATE USER`, or the admin UI) take
 
 ## The EffectiveSet
 
-At handshake time the gateway computes a closed permission set for the connecting user and pins it on the `ConnectionContext` (keyed by peer ID). Every subsequent statement on that connection reads this cached snapshot without any further database queries.
+At handshake time the gateway computes a closed permission set for the connecting user and binds it to the session. Every statement runs under that set, resolved again first when the tenant's policy version has moved (see [Revocation and the policy version](#revocation-and-the-policy-version)).
 
 The closure is defined as:
 
@@ -84,22 +84,28 @@ Where:
 - `roles(g)` are resolved from the in-memory `RbacResolver` cache, which mirrors all `qodstate_group_role` edges for the tenant without loading user-bound state.
 - `permissions(r)` are the `qodstate_role_permission` rows for each effective role, also served from the in-memory cache.
 
-The `RbacResolver` holds the schema-bounded slice of the graph (roles, groups, role permissions, group-role edges, group-scoped pool permissions). Its memory footprint is bounded by tenant cardinality, not by the number of users. User-bound state (user-role and user-group edges) is intentionally excluded from the cache and fetched per-handshake so user revocations take effect on the next connection.
+The `RbacResolver` holds the schema-bounded slice of the graph (roles, groups, role permissions, group-role edges, group-scoped pool permissions). Its memory footprint is bounded by tenant cardinality, not by the number of users. User-bound state (user-role and user-group edges) is intentionally excluded from the cache and fetched when a set is resolved.
 
-The full `EffectiveSet` is also cached in `PoolSupervisor` with a 60s TTL keyed by `(userId, jwtRoles.hashCode, jwtGroups.hashCode)` - under load the same user + claims tuple repeats every few seconds, so the cache collapses N handshakes' worth of work into one. Every RBAC mutator (`createRole`, `grantRolePermission`, `addUserRole`, `addGroupRole`, `grantPoolPermission`, etc.) calls `invalidateEffectiveCache()`, so a freshly-granted role takes effect on the next handshake regardless of the TTL.
+The full `EffectiveSet` is also cached in `PoolSupervisor` with a 60s TTL keyed by `(userId, jwtRoles.hashCode, jwtGroups.hashCode)` - under load the same user + claims tuple repeats every few seconds, so the cache collapses N handshakes' worth of work into one. Every RBAC mutator (`createRole`, `grantRolePermission`, `addUserRole`, `addGroupRole`, `grantPoolPermission`, etc.) calls `invalidateEffectiveCache()`, so a freshly-granted role takes effect on the next statement regardless of the TTL.
 
-The handshake produces an `AuthorizedHandshake` that carries the resolved `PoolKey`, the matched user row, and the full `EffectiveSet`. The edge server stores this on the connection and reads it for every subsequent ACL gate evaluation.
+The handshake produces an `AuthorizedHandshake` that carries the resolved `PoolKey`, the matched user row, and the full `EffectiveSet`. The gateway keeps it with the session; the column and row rewriters read it, and so does the replica that answers the node's verdict requests.
+
+### Revocation and the policy version
+
+Every tenant carries a policy version (`qodstate_tenant.policy_version`), bumped by any change to its users, roles, role permissions, groups, memberships, pool permissions, row and column policies, ACL mode, OPA settings, authorized folders and users' S3 keys; a change to any database's data folder moves every tenant's version. Before a statement runs, a session whose tenant moved past the version its set was resolved under runs the handshake's gates again. A revoke therefore reaches open FlightSQL and native sessions on their next statement (inside an open native transaction too, which it ends: `transaction aborted: <reason>; ROLLBACK to continue`), and a re-grant restores them without a reconnect. A user disabled, deleted or removed from the pool is refused on the next statement; a control-plane outage during that check is a retryable `UNAVAILABLE`.
 
 ## Superusers
 
 A user with `tenant IS NULL` in `qodstate_user` is a superuser. Superusers bypass both gates:
 
 - The pool-access gate at handshake (they may connect to any pool in any tenant).
-- The per-statement ACL gate (every statement is allowed without checking `effective_perms`).
+- The per-statement gate: the node still describes their statements (the audit log gets the real objects) but allows them without checking `effective_perms`.
+
+A few mechanism rules still bind superusers: writes, DDL, `ATTACH` and `DETACH` against a [read-only federated catalog](./federation.md) are refused to every principal, and so is changing the optimizer and Quack authorization settings (`QoD: <name> cannot be changed`).
 
 The superuser flag is purely the absence of a tenant value. The bootstrap admin seeded at startup is a superuser. Only superusers can create other superusers; the API enforces this constraint at the application layer.
 
-User names confer nothing. A tenant user may be called `superuser` and is still an ordinary tenant user: statements the manager runs on a caller's behalf (the catalog preview, data diff, undrop and restore endpoints, and the MCP tools that run SQL) bypass the ACL, column masking and row policies only for a real superuser (`tenant IS NULL`), the static API key and the manager's own internal steps, never because of a name. Everyone else, including a PAT, runs as their own principal with these gates applied; see [Relationship to the REST session](/qod/connecting/authenticating#relationship-to-the-rest-session).
+User names confer nothing. A tenant user may be called `superuser` and is still an ordinary tenant user: statements the manager runs on a caller's behalf (the catalog preview, data diff, undrop and restore endpoints, and the MCP tools that run SQL) bypass the grant check, column masking and row policies only for a real superuser (`tenant IS NULL`, through a superuser session or a PAT a superuser owns) and the manager's own internal steps, never because of a name. Everyone else, including a PAT, runs as their own principal with these gates applied, after the same handshake gates as FlightSQL (tenant and pool kill switches, user registered and enabled, pool access); see [Relationship to the REST session](/qod/connecting/authenticating#relationship-to-the-rest-session).
 
 A superuser logs in via the system auth realm: on the UI the **Tenant ID** field is left blank; on FlightSQL the URL carries `?superuser=true` alongside the routing `tenant=X&pool=Y` params. The tenant-realm path looks up `qodstate_user WHERE tenant = ?` and never matches a `tenant IS NULL` row, so a superuser cannot accidentally be authenticated through the tenant realm. See [Authentication](/qod/operating/authentication) for the realm-selection mechanics.
 
@@ -109,7 +115,7 @@ Each `qodstate_role_permission` row grants one verb on one table triple to a rol
 
 ### Verbs
 
-The SQL parser collapses every table touch into one of three access classes - `Read`, `Write`, `Ddl` - and a grant verb is matched against that class. The grant vocabulary is the four values below; storing granular SQL verbs would be misleading because the validator only distinguishes these three classes anyway.
+The node describes every object a statement touches with the access DuckDB resolved for it (`read`, `insert`, `update`, `delete`, `create`, `drop`, `alter`), and the verdict collapses each into one of three access classes: `read` is `Read`; `insert`, `update` and `delete` are `Write`; `create`, `drop` and `alter` are `Ddl`. A grant verb is matched against that class. The grant vocabulary is the four values below.
 
 | Grant verb | Covers (access class) |
 |---|---|
@@ -118,7 +124,7 @@ The SQL parser collapses every table touch into one of three access classes - `R
 | `DDL` | `Ddl` only (CREATE / DROP / ALTER on the matched tables). |
 | `ALL` | `Read`, `Write`, and `Ddl` on the matched tables. |
 
-`RW` is the only multi-class grant: it bundles `Read` so that a data worker who can write to a table can also read it, which matches every real-world DML workload. DDL is intentionally separate because CREATE / DROP / ALTER are higher-privilege.
+`RW` is the only multi-class grant: it bundles `Read` so that a data worker who can write to a table can also read it, which matches every real-world DML workload. DDL is intentionally separate because CREATE / DROP / ALTER are higher-privilege. One statement can need both: `ALTER TABLE ... ADD COLUMN ... DEFAULT <expr>` is judged as DuckDB runs it, an ADD COLUMN and an UPDATE, so it needs `ALL` (or `RW` and `DDL`) on the table. A schema-wide access (`CREATE`, `DROP` or `ALTER SCHEMA`) needs a grant whose table part is `*`.
 
 ### Wildcards
 
@@ -126,7 +132,7 @@ Each of the three name parts (catalog, schema, table) may be the literal string 
 
 Matching is case-insensitive for literal values and exact for `*`.
 
-The catalog `*` wildcard is scoped to the session's tenant: it matches only catalogs that belong to the connecting principal's tenant. A tenant admin holding `*.*.* ALL` therefore cannot reach a sibling tenant's catalog. To grant cross-tenant access deliberately, name the other catalog explicitly (for example `otherdb.*.* ALL`), which bypasses the tenant-scoped wildcard via the literal-match path.
+The catalog `*` wildcard is scoped to the session's tenant: it matches the tenant's own databases and the catalog the pool's node attaches its database as (`memory` on a memory database's own pool, or a custom alias such as a `qod serve` `.duckdb` file's stem). A tenant admin holding `*.*.* ALL` therefore cannot reach a sibling tenant's catalog. **A wildcard catalog never covers a federated catalog**: grant a [federated source](./federation.md) by its alias (`pgsrc.public.* RO`). A literal catalog name always matches through the literal path.
 
 ### How a grant covers a table access
 
@@ -141,27 +147,32 @@ If any access in the statement is not covered, the whole statement is denied.
 
 ## Statement coverage
 
-The parser extracts table accesses from each statement and the gate checks every one. Unqualified table names are filled in from the pool's default catalog and schema before the check.
+The node judges the plan DuckDB bound, not the SQL text, so names are resolved exactly as DuckDB resolves them (search path, `USE`, attached catalogs) and every object a view, macro or `query()` hides is in the plan. Each object access must be covered; if any is not, the whole statement is refused with `QoD: user:<name> lacks grants on <catalog.schema.table>:<access>`.
 
-### Read queries (SELECT)
+### Reads, writes and DDL
 
-`SELECT`, `WITH`, and `VALUES` are walked across the full AST: FROM clauses, JOINs, subqueries in WHERE/SELECT/HAVING, set operations (UNION/INTERSECT/EXCEPT), and CTE bodies. Every table is a `Read` access and must be covered by an `RO`, `RW`, or `ALL` grant.
+Every table or view a statement reads (FROM clauses, JOINs, subqueries, CTEs, set operations, `RETURNING`) is a `Read` access and needs `RO`, `RW` or `ALL`. The target of INSERT, UPDATE, DELETE or MERGE is a `Write` access and needs `RW` or `ALL`; holding `RW` on the target alone is not enough to read from a different source table. The target of CREATE, DROP or ALTER is a `Ddl` access and needs `DDL` or `ALL`; a `CREATE TABLE ... AS SELECT` source still needs its own read grant.
 
-### Writes (INSERT / UPDATE / DELETE / MERGE / TRUNCATE)
+### Views
 
-The write target is extracted as a `Write` access; any read source (for example the `SELECT` in `INSERT ... SELECT`, or an `UPDATE ... FROM` source) is extracted as a `Read` access. The target must be covered by an `RW` or `ALL` grant. Each source is a `Read` access and can be covered by `RO`, `RW`, or `ALL` on that source - holding `RW` on the target alone is not enough to read from a different source table.
+- A **plain view** runs with its reader's rights: the reader needs a grant on what the view reads, not on the view itself.
+- A **secure view** runs with its owner's rights: a read grant on the view covers what it reads. Only superusers create secure views, written fully qualified over base tables, built-ins and other secure views. Any secure view is refused for as long as the session holds a temporary view, macro or type, a `SET VARIABLE` variable, a changed session setting other than `schema` / `search_path`, or a search path other than its default (`QoD: statement uses a secure view while the session ...`). A client that sets `TimeZone` on connect loses secure views for that session.
 
-### DDL (CREATE / DROP / ALTER)
+### Functions, settings and statement types
 
-The DDL target is extracted as a `Ddl` access; a `CREATE TABLE ... AS SELECT` also yields a `Read` access for its source. A `Ddl` access is covered by a `DDL` or `ALL` grant; the source still needs `RO`/`RW`/`ALL` independently.
+Every function and setting a statement calls must be classified. A function the classification does not list (a misspelled one included) reads `QoD: function <name> is not classified`; so does a macro a superuser created, until it is called as `system.main.<name>` or classified. A view, generated column, column default, CHECK constraint or trigger that calls such a function, a user macro, or a `query()` with a computed argument makes its table or view unreadable (or unwritable) for tenant users, and so do views nested more than 16 deep. Literal `query('<sql>')` and `query_table('<name>')` are admitted and judged on what they bind. `SET` / `RESET` of a session setting (`TimeZone`, `search_path`, `schema`, `SET VARIABLE`, ...) is admitted; node-wide, credential and I/O settings are superuser-only (see [Hardening](./hardening.md#node-enforcement-always-on)). `BEGIN`, `COMMIT`, `ROLLBACK` and `USE` need no grant.
 
-### Control-flow statements
+Tenant users are always refused, whatever their grants: `CREATE MACRO`, trigger DDL, `CREATE` / `DROP SECRET`, `ATTACH`, `IMPORT` / `EXPORT DATABASE`, `CONNECT`, extension `INSTALL` / `LOAD`, `DESCRIBE (<query>)` / `SUMMARIZE (<query>)`, a PRAGMA off a read-only list, `current_setting()`, `pg_get_viewdef`, `duckdb_memory()`, and the catalog-wide listings nothing filters yet (`duckdb_constraints()`, `duckdb_indexes()`, `duckdb_sequences()`, `duckdb_triggers()`, `duckdb_types()`, `duckdb_functions()`, `duckdb_dependencies()`). A plan the node cannot describe is refused to every principal (`statement uses <X>, which QoD does not support`); there is no `*.*.* ALL` escape.
 
-`BEGIN`, `START`, `COMMIT`, `END`, `ROLLBACK`, `ABORT`, `SET`, `USE`, `SHOW`, and `EXPLAIN` (without an inner DML) carry no table references and are admitted unconditionally - they do not require any grant.
+### Catalog listings
 
-### Unparseable statements
+A tenant user's catalog listings are always narrowed to the objects they are granted: `information_schema.schemata`, `tables`, `columns` and `views`, named so in the statement itself, and `duckdb_schemas()`, `duckdb_tables()`, `duckdb_views()` and `duckdb_columns()`. Each grant is pinned to the catalog it covers, so a grant on `lake.main.*` does not list another attached catalog's `main`, a grant naming a federated catalog (`pgsrc.public.*`) lists that catalog's objects, and a wildcard catalog lists the pool's own catalog only. An `RO` grant on `information_schema` gives a principal unfiltered listings.
 
-If a statement fails to parse, it is denied unless the principal holds a `*.*.* ALL` grant (a conservative fallback so an unrecognized statement cannot slip through).
+DuckDB's other built-in listing views are refused to every non-superuser, however they are named or nested (bare, `pg_catalog.` or `system.`, in a subquery, a CTE, a `query()` string or a view body): `pg_catalog`'s views (`pg_tables`, `pg_views`, `pg_attribute`, ...), `sqlite_master`, the parenless `duckdb_tables` / `duckdb_views`, `system.information_schema.*`, bare `SHOW` and `DESCRIBE`, `SHOW TABLES FROM ...`, `SHOW SCHEMAS`, `SHOW DATABASES` and `SHOW VARIABLES` (`SELECT * FROM duckdb_variables()` lists the session's variables instead). A grant covering them, `*.*.*` included, does not admit them. The gateway answers a top-level `SHOW TABLES` / `SHOW ALL TABLES`, `DESCRIBE <table>`, `SHOW <table>`, `PRAGMA table_info('<table>')` and `SUMMARIZE <table>` from the filtered listings plus a read of the object, so they need a read grant on it (DESCRIBE's `key` and table_info's `pk` come back NULL; on an OPA tenant these answers are empty and SUMMARIZE is refused).
+
+### Files
+
+A tenant user reads or writes a file by path only through a file reader or `COPY`, and only under an S3 scope they registered keys of their own for, or a local folder their tenant authorized; never a database data folder. A `COPY t FROM` is a write to `t`, a `COPY ... TO` reads what its query reads. A location computed from constants (`read_csv('s3://b/in/' || strftime(today(), '%Y%m%d') || '.csv')`) is evaluated by the node as the user and judged as the literal it yields. See [Hardening](./hardening.md#files-and-s3).
 
 ## Column-level policies
 
@@ -186,10 +197,7 @@ Policies live in `qodstate_role_column_policy` (one row per `(role, catalog, sch
 ```
 client SQL
    │
-   ▼  table-level ACL (per the gates above)              ─── unchanged
-   │     returns Allowed at the (role, table) level
-   │
-   ▼  ColumnPolicyRewriter                                ─── new
+   ▼  ColumnPolicyRewriter (at the gateway)
    │     - parses the SQL via JSqlParser
    │     - walks every PlainSelect reachable (projections,
    │       WHERE / HAVING, subqueries, CTE bodies, UNION arms)
@@ -198,12 +206,13 @@ client SQL
    │         · `deny` → refuses the query (403)
    │         · `mask` → replaces the reference with `transform_sql`
    │
-   ▼  adapter sends the rewritten SQL to the Quack node
+   ▼  adapter sends the rewritten SQL to the node, which decides
+      the table access on the plan DuckDB binds for it
 ```
 
-The rewriter only runs for SELECT-shaped statements; DML and DDL pass through unchanged (the table-level ACL has already gated whether the user can write to the target). Statements that fail to parse are passed through unmodified - DuckDB returns the syntax error to the client, just as it does today.
+The rewriter only runs for SELECT-shaped statements; DML and DDL pass through unchanged (the node decides whether the user can write to the target). Statements that fail to parse are passed through unmodified - DuckDB returns the syntax error to the client, just as it does today.
 
-Superusers bypass the rewriter, matching the bypass behaviour of the table-level ACL.
+Superusers bypass the rewriter, matching their bypass of the grant check.
 
 ### Column-level security guarantees
 
@@ -286,11 +295,11 @@ A failed validation returns `400 invalid_policy` with the violated rule named in
 
 ### SELECT * expansion
 
-When the user issues `SELECT *` (or `SELECT t.*`), the rewriter reads the column list from the DuckLake catalog and expands the star to a literal projection BEFORE applying policies. Operators see the same number of columns the table actually has, with masked columns rewritten in place. When the catalog cannot enumerate the table (federated source temporarily unreachable, etc.), the rewriter passes the original `*` through - table-level ACL still decided whether the user could read the table in the first place. A `column_policy_catalog_lookups_total{result=error}` metric surfaces this case for operators.
+When the user issues `SELECT *` (or `SELECT t.*`), the rewriter reads the column list from the DuckLake catalog and expands the star to a literal projection BEFORE applying policies. Operators see the same number of columns the table actually has, with masked columns rewritten in place. When the catalog cannot enumerate the table (federated source temporarily unreachable, etc.), the rewriter passes the original `*` through - the node still decides whether the user can read the table in the first place. A `column_policy_catalog_lookups_total{result=error}` metric surfaces this case for operators.
 
 ### Effective policies and caching
 
-Column policies join the `RolePermission` and pool-permission rows in the per-user `EffectiveSet`. The same 60-second `PoolSupervisor` cache covers them, and the same mutator-invalidation contract applies: `createColumnPolicy`, `updateColumnPolicy`, and `deleteColumnPolicy` each call `invalidateEffectiveCache()`, so a freshly-authored policy takes effect on the next handshake regardless of the TTL.
+Column policies join the `RolePermission` and pool-permission rows in the per-user `EffectiveSet`. The same 60-second `PoolSupervisor` cache covers them, and the same mutator-invalidation contract applies: `createColumnPolicy`, `updateColumnPolicy`, and `deleteColumnPolicy` each call `invalidateEffectiveCache()`, so a freshly-authored policy takes effect on the next statement regardless of the TTL.
 
 Per-statement cost is in-memory only: a small AST walk + per-column lookup against the cached `EffectiveSet.columnPolicies` list. No Postgres traffic on the hot path.
 
@@ -345,8 +354,6 @@ The row rewriter runs *after* the column rewriter, so the two compose with row f
 ```
 client SQL
    │
-   ▼  table-level ACL                                    ─── unchanged
-   │
    ▼  ColumnPolicyRewriter (masking / deny)              ─── outer
    │
    ▼  RowPolicyRewriter                                  ─── inner
@@ -356,7 +363,8 @@ client SQL
    │     - for each table with a matching policy, replaces it with
    │         (SELECT * FROM <table> WHERE <predicate>) <alias>
    │
-   ▼  adapter sends the rewritten SQL to the Quack node
+   ▼  adapter sends the rewritten SQL to the node, which decides
+      the table access
 ```
 
 Pushing the predicate onto the **base relation** (rather than wrapping the whole query in an outer `WHERE`) is what keeps the filter correct under joins (each table filters independently), aggregation (rows are dropped *before* `GROUP BY`), `LIMIT`/`DISTINCT`/set operations (filtering happens before they apply), and projections that do not select the predicate's columns. It also means the filter runs on the *true* (unmasked) values, so a row policy keyed on a column that a column policy masks still filters correctly. This matches the semantics of Postgres RLS and Snowflake row-access policies, where the predicate is a property of the table scan.
@@ -406,7 +414,7 @@ Typical predicates:
 
 ### Combining policies
 
-A principal sees a row if **any** matching policy admits it: predicates are combined with `OR` (permissive union). When role A filters `customer` by `region = 'eu'` and role B filters it by `tier = 'gold'`, a user holding both sees `WHERE (region = 'eu') OR (tier = 'gold')`. This makes additional roles strictly *widen* visibility, matching the additive nature of the rest of the RBAC model. A table with no matching policy for the principal is left unfiltered (table-level ACL already decided whether the principal may read it at all).
+A principal sees a row if **any** matching policy admits it: predicates are combined with `OR` (permissive union). When role A filters `customer` by `region = 'eu'` and role B filters it by `tier = 'gold'`, a user holding both sees `WHERE (region = 'eu') OR (tier = 'gold')`. This makes additional roles strictly *widen* visibility, matching the additive nature of the rest of the RBAC model. A table with no matching policy for the principal is left unfiltered (the node decides whether the principal may read it at all).
 
 ### Interaction with column-level security
 
@@ -414,7 +422,7 @@ When both features are on, the row filter is injected inside the column rewrite,
 
 ### Effective policies and caching
 
-Row policies join column policies and the `RolePermission` / pool-permission rows in the per-user `EffectiveSet.rowPolicies`. The same 60-second `PoolSupervisor` cache covers them, and the same mutator-invalidation contract applies: `createRowPolicy`, `updateRowPolicy`, and `deleteRowPolicy` each call `invalidateEffectiveCache()`, so a freshly-authored policy takes effect on the next handshake regardless of the TTL. Per-statement cost is in-memory only: an AST table-walk plus per-table lookup against the cached list - no Postgres traffic on the hot path.
+Row policies join column policies and the `RolePermission` / pool-permission rows in the per-user `EffectiveSet.rowPolicies`. The same 60-second `PoolSupervisor` cache covers them, and the same mutator-invalidation contract applies: `createRowPolicy`, `updateRowPolicy`, and `deleteRowPolicy` each call `invalidateEffectiveCache()`, so a freshly-authored policy takes effect on the next statement regardless of the TTL. Per-statement cost is in-memory only: an AST table-walk plus per-table lookup against the cached list - no Postgres traffic on the hot path.
 
 ### Observability
 
@@ -437,7 +445,7 @@ Row policies are administered the same way as column policies: via REST endpoint
 
 ## The two gates
 
-Every FlightSQL request passes through two sequential gates.
+Every statement, through any door, passes two gates.
 
 ### Gate 1: handshake (pool-access)
 
@@ -446,37 +454,32 @@ This is the database-access gate. Because each pool is bound to exactly one tena
 1. Authenticates the credential (database bcrypt check, JWT validation, or OIDC; see the authentication page for details).
 2. Resolves the user in `qodstate_user`.
 3. Checks that the user's `effective_pools` covers the requested pool (or that `pool_id IS NULL` grants tenant-wide access).
-4. Computes and caches the `EffectiveSet` on the `ConnectionContext`.
+4. Computes the `EffectiveSet` and binds it to the session.
 
-If the user's effective pools do not include the requested pool, the handshake is rejected before any SQL is processed. Superusers skip step 3.
+If the user's effective pools do not include the requested pool, the handshake is rejected before any SQL is processed. Superusers skip step 3. The REST endpoints and MCP tools that run SQL go through the same gate as their caller.
 
-### Gate 2: per-statement (ACL)
+### Gate 2: per-statement, on the node
 
-For every SQL statement sent over an established connection, `PostgresAclValidator` reads the `EffectiveSet` cached at handshake time and applies the rules described in the "Statement coverage" section above. No Postgres round-trip is made per statement.
+Before each statement it sends a node, the manager installs a session handle on the node connection: a token naming the principal, the node, the pool, the policy version, a single-use nonce and a 60-second expiry, signed with that node's own key. The node (`qod-node`) refuses any statement on a connection with no current principal. For a principal who is not a superuser it describes the bound plan (objects with their access and columns, functions, settings, files) and asks the manager replica that minted the handle for a verdict. That replica applies the rules above against the session's `EffectiveSet` (or asks the tenant's OPA) and returns a signed allow or refuse.
 
-### The `acl.enabled` switch
+- Verdicts are cached on the node for 60 seconds (an OPA tenant's for its OPA cache TTL) per principal, policy version and plan, and dropped as soon as the tenant's policy version moves. Sessions of one user with the same grants share verdicts; bearer-token sessions share them only within one token.
+- Cost: a plan the node has not judged costs one call to the replica, about 0.7 to 0.9 ms; a fresh FlightSQL query makes two (its schema probe and the statement), about 1.4 ms end to end on one host. A cached verdict adds about 0.3 ms per statement.
+- A refusal is a permission error: FlightSQL `UNAUTHORIZED`, reason `access denied: Permission Error: QoD: ...`, statement history status `denied`, a `data-denial` audit event.
+- When no verdict can be had in time (the replica restarted, is down or unreachable from the node), the statement reads `QoD: authorization unavailable, retry`. A single statement is retryable (FlightSQL `UNAVAILABLE`); a multi-statement submission is not (`INVALID_ARGUMENT`, since the statements before the refused one may have run).
 
-Both gates are always active for pool access. The per-statement ACL gate is guarded by:
+The node-side limits are `QOD_AUTHZ_DECIDE_TIMEOUT_MS` (1 to 60000) and `QOD_AUTHZ_CACHE_ENTRIES` (0 to 10000000), forwarded to every node; the decision metrics are on the [metrics reference](/qod/reference/metrics).
 
-```
-quack-flightsql.acl.enabled = false   # default
-```
+## Delegating to OPA
 
-Environment variable: `QOD_ACL_ENABLED=true`.
+A tenant can hand its data-access decisions to its own Open Policy Agent server (`qod tenant set-acl <tenant> --mode opa --opa-url ...`; manager defaults `QOD_ACL_MODE`, `QOD_OPA_URL`, `QOD_OPA_TIMEOUT_MS`, `QOD_OPA_CACHE_TTL_SEC`). QoD grant tables are then ignored for that tenant; memberships are still sent as identity. Pool access is asked at handshake (rule `connect`); table and file access is asked by the node's verdict pipeline (rule `statement`) on what DuckDB resolved. The `statement` input carries `client.edge` `node`, each access with `catalog`, `schema`, `table`, `verb`, `kind` (`table`, `view`, `secure_view`, `schema`, ...), the `columns` read and `via` (the outermost secure view the access is read through, `null` otherwise), and the statement's `locations` (each file with its `access`, `location` and admitting `scope`). No input carries `statement.text` (`--send-statement-text` has no effect). **Existing Rego must handle `via`**, or reads through a secure view are judged as reads of the underlying table and denied.
 
-When `acl.enabled` is false, an allow-all validator replaces `PostgresAclValidator` and all statements pass gate 2 without table-ref checking. Pool-access checking (gate 1) is not affected by this flag.
+Only a literal `result.allow == true` allows. An OPA outage is `UNAVAILABLE` ("OPA unreachable or returned an error (see the manager log)"), never a permission error; the cause is only in the manager's WARN line. Everything QoD always refuses is refused before OPA is asked, and the catalog listings stay narrowed by QoD grants, so an OPA tenant with no QoD grants sees empty listings.
 
-The SQL parser dialect is configured by:
-
-```
-quack-flightsql.acl.dialect = "duckdb"   # default, only option wired today
-```
-
-Environment variable: `QOD_ACL_DIALECT`.
+Dry-run a decision with `qod tenant opa-test <tenant> --pool <pool> --user <user>` (the `connect` rule) or with `--sql "<statement>"`: the statement then runs through a node of the pool as that user, is judged and never executed, and the command prints the exact input the node sent OPA and OPA's answer. It needs a running pool and never wakes one (`409 pool_not_running`), one statement (`400 single_statement_required`), an OPA tenant (`400 opa_mode_required`) and a tenant user (a superuser, or a statement QoD refuses first, is `400 refused_before_opa`); a statement with nothing to authorize is `400 nothing_to_authorize`, and a node that cannot reach the manager is `503 authz_unavailable`.
 
 ## Worked examples
 
-These scenarios show how the entities, the EffectiveSet, and the two gates combine in practice. Each one lists the setup as entities plus grants, then the resulting allow/deny decision for representative statements. The grant notation `verb on catalog.schema.table` is one `qodstate_role_permission` row. For the REST and UI steps to create these, see the "Administering access" page; this section is about understanding the outcomes. All examples assume `QOD_ACL_ENABLED=true`. The users, roles, groups, and grants shown match the bundled demo manifest at `src/main/resources/bootstrap-demo.yaml`, which is imported automatically when `LOAD_TPC=N` is set.
+These scenarios show how the entities, the EffectiveSet, and the two gates combine in practice. Each one lists the setup as entities plus grants, then the resulting allow/deny decision for representative statements. The grant notation `verb on catalog.schema.table` is one `qodstate_role_permission` row. For the REST and UI steps to create these, see the "Administering access" page; this section is about understanding the outcomes. The users, roles, groups, and grants shown match the bundled demo manifest at `src/main/resources/bootstrap-demo.yaml`, which is imported automatically when `LOAD_TPC=N` is set.
 
 ### Read-only analyst
 
@@ -546,9 +549,9 @@ Results, connecting to pool `bi`:
 |---|---|---|
 | `SELECT * FROM customer` | Allowed | Resolves to `acme_tpch.tpch1.customer`; `ALL` covers `Read` and `*` matches any catalog within tenant `acme`. |
 | `CREATE TABLE tpch1.new_table (id INT)` | Allowed | `ALL` covers `Ddl`; the wildcard matches `acme_tpch`. |
-| `SELECT * FROM globex_tpcds.tpcds1.store_sales` | Denied | `globex_tpcds` belongs to tenant `globex`, not `acme`; the catalog `*` wildcard is scoped to the session's tenant and does not match it. |
+| `SELECT * FROM globex_tpcds.tpcds1.store_sales` | Denied | `globex_tpcds` belongs to tenant `globex`, not `acme`; the catalog `*` wildcard is scoped to the session's tenant and does not match it (and the `bi` pool's nodes do not attach it at all). |
 
-To grant access to `globex_tpcds` deliberately, name it literally in a separate permission: `RO on globex_tpcds.*.*`. That bypasses the tenant-scoped wildcard through the literal-match path. Contrast with a superuser (`tenant IS NULL`), who skips the per-statement gate entirely and needs no such explicit grant.
+The same scoping keeps the wildcard off a federated catalog the pool attaches: to let the admin read one, grant it by its alias (`RO on pgsrc.*.*`). Contrast with a superuser (`tenant IS NULL`), whose statements the node allows without a grant check.
 
 ### Pool gate versus statement gate
 
@@ -565,7 +568,7 @@ Results:
 
 | Action | Decision | Why |
 |---|---|---|
-| Connect to pool `bi`, then `SELECT * FROM customer` | Allowed | Gate 1 admits the pool; gate 2 admits the read (`acme_tpch.tpch1.customer` covered by `RO`). |
+| Connect to pool `bi`, then `SELECT * FROM customer` | Allowed | Gate 1 admits the pool; the node's verdict admits the read (`acme_tpch.tpch1.customer` covered by `RO`). |
 | Connect to pool `etl` | Denied at handshake | Gate 1: `alice`'s effective pools do not include `etl`. No SQL is ever evaluated. |
 
 A pool permission with a null `pool_id` would admit `alice` to every pool in tenant `acme`, collapsing the two rows above into one tenant-wide grant.

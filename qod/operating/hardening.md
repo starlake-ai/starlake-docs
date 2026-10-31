@@ -5,12 +5,12 @@ description: "Security hardening checklist for exposing a DuckDB gateway to untr
 keywords: ["duckdb security", "hardening", "production security"]
 ---
 
-Quack on Demand runs tenant-supplied SQL on shared infrastructure. The defaults
-are tuned for first-run smoke tests, not for exposing the gateway to untrusted
-tenants. This page collects the isolation controls you turn on before that: node
-lockdown, pod security, network policy, and catalog-reader bounding. All of them
-are opt-in or defaulted-safe, and none change behavior for a single-tenant local
-deployment.
+Quack on Demand runs tenant-supplied SQL on shared infrastructure. Since 0.11.0
+the nodes enforce what tenant SQL may reach on every pool, with no switch to turn
+it off. This page describes that enforcement and collects the controls you add
+before exposing the gateway to untrusted tenants: pod security, network policy,
+the secrets nodes are keyed with, and catalog-reader bounding. None of them change
+behavior for a superuser on a single-tenant local deployment.
 
 Read this alongside [TLS](tls.md) (encrypt the FlightSQL edge),
 [Encryption at rest](encryption.md) (encrypt the stored data),
@@ -28,73 +28,152 @@ code and need a hard boundary, put each tenant in its own Kubernetes namespace
 and consider a sandboxed runtime (gVisor, Kata); the controls below are
 defense-in-depth layered under that, not a substitute for it.
 
-## Node lockdown
+## Node enforcement (always on)
 
-Node lockdown stops tenant SQL from touching the machine the node runs on. It has
-two layers behind one switch.
+Every node runs `qod-node`, which judges each statement of a user who is not a
+superuser on the plan DuckDB bound for it, before it runs. It asks the manager
+replica that opened the session for a verdict, and that replica answers from the
+tenant's grants (or its [OPA policy](rbac-model.md#delegating-to-opa)), the
+function and setting classification and the file rules. Nothing else checks:
+the gateway's own statement screens and table check are gone. There is no ACL
+switch and no per-pool lockdown any more: `QOD_ACL_ENABLED`,
+`QOD_ACL_FILTERED_METADATA`, `QOD_ACL_DIALECT` and `QOD_NODE_LOCKDOWN` set to any
+value make the manager refuse to start, naming the variable to unset (see
+[Upgrading to 0.11.0](./upgrading.md)). How grants are matched is in the
+[access control model](rbac-model.md).
 
-Enable it with the environment variable:
+Whatever the tenant's mode and grants (`*.*.* ALL` included), a caller who is not
+a superuser is refused, on every pool:
 
-```bash
-QOD_NODE_LOCKDOWN=true
-```
+- **DuckLake catalog internals**: the metadata catalog `__ducklake_metadata_<alias>`
+  (it holds the per-file encryption keys), `ducklake_list_files` and
+  `ducklake_commit`. A user may still create a plain view over it, but every read
+  through that view by anyone but a superuser is refused: a plain view runs with
+  its reader's rights.
+- **Node-wide settings and node control**: any `SET` / `RESET` / `PRAGMA` of a
+  setting not classified as a session setting (`threads`, `memory_limit`,
+  `temp_directory`, checkpoint, WAL, logging and profiling knobs, every `quack_*`,
+  `debug_*` and `verify_*`), any `SET GLOBAL`, `CHECKPOINT`, and node-control calls
+  such as `quack_serve` or `enable_logging`. Set resources at node start instead,
+  in a database or pool `initSql` or with `qod pool set-resources`.
+- **Credentials and I/O settings**: `CREATE` / `DROP SECRET` in any storage,
+  `ATTACH`, `IMPORT` / `EXPORT DATABASE`, and `SET` / `RESET` of the `s3_*`,
+  secret, certificate, proxy, HTTP client and cache settings,
+  `file_search_path` and `home_directory`.
+- **Extensions**: `INSTALL`, `FORCE INSTALL`, `UPDATE EXTENSIONS` and `LOAD`, by
+  bare name included. Install and load extensions at node start, in an `initSql`.
+- **Node-state introspection**: `duckdb_secrets()`, `which_secret()`,
+  `duckdb_settings()`, `current_setting()` of any setting, the logs,
+  `duckdb_memory()`, `duckdb_temporary_files()`, `duckdb_databases()`,
+  `duckdb_extensions()` and `pragma_storage_info`.
+- **Definitions that run with another's rights**: `CREATE MACRO`, trigger DDL
+  (tenant admins included) and secure views, plus `pg_get_viewdef` (it would print
+  every view's SQL).
+- **Anything unclassified**: a function or setting the classification does not
+  list (`QoD: function <name> is not classified`, a misspelled name included), and
+  a plan shape the node cannot describe.
 
-(config key `quack-flightsql.nodeLockdown.enabled`, default `false`). One flag
-drives both layers; the manager logs `node lockdown: enabled` at boot.
+Refusals read `QoD: <reason>` and are permission errors: FlightSQL
+`UNAUTHORIZED`, statement history status `denied`, and a `data-denial` event in
+the [audit log](../administration/audit-log.md). A statement refused because no
+verdict could be had in time reads `QoD: authorization unavailable, retry` and is
+retryable. Superusers and the manager's own work are not decided, but a few
+mechanism rules hold for every principal: `SET` / `RESET` of
+`disabled_optimizers`, `enable_optimizer`, `debug_disable_optimizer`,
+`quack_authentication_function` and `quack_authorization_function`
+(`QoD: <name> cannot be changed`), and writes to a
+[read-only federated catalog](federation.md).
 
-**Edge layer (statement screen).** Before a statement is routed, the edge denies
-these for non-superuser sessions and audits them as denials:
+Verify the posture as a tenant user: `SELECT * FROM read_text('/etc/passwd')`,
+`ATTACH ':memory:' AS x` and `SET autoinstall_known_extensions = true` are refused
+(`QoD: ...`), while ordinary queries on granted tables still work.
 
-- `ATTACH` / `DETACH` (no attaching arbitrary databases).
-- `INSTALL` / `LOAD` (no pulling extensions at query time).
-- `SET` / `RESET` / `PRAGMA` against protected settings (`disabled_filesystems`,
-  the `allow_*_extensions` and `autoinstall/autoload` knobs,
-  `enable_external_access`, `lock_configuration`, `temp_directory`,
-  `extension_directory`, `secret_directory`, and the rest of the lockdown set).
-  Benign session settings such as `SET memory_limit` and `SET threads` stay
-  allowed.
-- Local-file reads: `read_text`, `read_blob`, `read_csv`, `read_parquet`,
-  `read_json` and friends, `glob`, `getenv`, plus `COPY ... FROM/TO '<path>'` and
-  bare-path `FROM '<file>'` replacement scans. Object-store URL literals
-  (`s3://`, `gs://`, `az://`, `r2://`, `http://`, `https://`) stay allowed, so
-  reading remote data through `httpfs` still works; reading node-local paths does
-  not.
+### Files and S3
 
-Denied statements return a `lockdown: ...` error and appear in the
-[audit log](../administration/audit-log.md). Superuser sessions bypass the edge
-screen (operators use the REST surface, not raw node SQL).
+A tenant user, `*.*.* ALL` included, reads or writes a file by path only through
+a file reader or `COPY`, and only under:
 
-**Engine layer (settings).** Before a node starts serving, Quack on Demand runs
-a lockdown block that disables the settings a tenant could otherwise use to pull
-in untrusted code: `SET autoinstall_known_extensions = false` (no fetching
-extensions over the network), `SET allow_community_extensions = false`, and
-`SET allow_unsigned_extensions = false`. When the tenant-db data path is an
-object store, it also sets `SET disabled_filesystems = 'LocalFileSystem'`, so the
-engine itself refuses every local-file read. These are the enforcement layer
-underneath the edge screen: even a statement the edge parser does not recognize
-cannot install or load untrusted code, and on object-store deployments cannot
-read the local filesystem.
+- an `s3://` scope the user registered S3 keys of their own for (`qod profile s3
+  add <scope> --access-key-id ... --secret-stdin`, or the profile page). The node
+  signs that user's requests with those keys only, as secrets of that user's own
+  connection. An endpoint other than AWS must be listed in
+  `QOD_USER_S3_ALLOWED_ENDPOINTS` (empty, the default, means AWS only). A tenant
+  admin can list and remove their users' keys (`qod user s3 list|remove`) but
+  never add one;
+- a local folder the tenant authorized (`qod tenant location add <tenant>
+  <folder>`), which must be absolute and under
+  `<QOD_TENANT_FILES_ROOT>/<tenant id>/`. With `QOD_TENANT_FILES_ROOT` unset, the
+  default, no local folder can be authorized. Nodes on Windows admit none.
 
-The block deliberately does not use `SET lock_configuration = true` and does not
-disable `autoload_known_extensions`: the node's query server needs to autoload
-its signed built-in extensions to handle connections, and freezing configuration
-outright makes nodes unable to serve. It is not a gap: the edge screen already
-denies every protected-setting `SET`/`RESET`/`PRAGMA` for tenant sessions, so a
-tenant cannot re-enable any of the disabled values in the first place.
+A database's data folder, any tenant's, is never reachable by its path, and any
+other scheme (`http(s)`, `gs`, `az`, `r2`) is refused. A file named in a table
+position (`FROM 'x.parquet'`) is "table not found" for a tenant user: use the
+reader function.
 
-**Local vs object-store data paths.** With an **object-store** data path both
-layers hold: the engine `disabled_filesystems` restriction blocks local-file
-access outright. With a **local** data path the engine must keep the filesystem
-enabled (the DuckLake data lives there), so the edge screen is the guard, and it
-is best-effort: it covers the common
-`read_*` / `COPY` / bare-path `FROM` forms, but exotic quoting (dollar-quoted or
-identifier-quoted paths) can still reach a local file. **For any multi-tenant or
-untrusted deployment, use an object-store data path** so the engine layer is the
-hard guard.
+**Keep tenant folders free of symbolic links**, including those an upload
+preserves (`rsync -a`, some SFTP clients). The node resolves a path's deepest
+existing folder, links included, but does not judge links below it: through a
+glob segment or a `COPY` with `PARTITION_BY`, `PER_THREAD_OUTPUT` or `OVERWRITE`,
+a link inside an authorized folder can lead out of it, into any tenant's data
+folder too, and a `COPY ... OVERWRITE` then deletes files under the link's target.
+Users cannot create links with SQL.
 
-Lockdown is a per-deployment switch, not per-tenant. Turn it on wherever tenants
-are untrusted; leave it off for a trusted single-tenant install where local-file
-reads and `ATTACH` are legitimate.
+Users' S3 keys are stored in plaintext in the control-plane database
+(`qodstate_user_s3_credential`) and travel to the nodes signed, not encrypted:
+protect its backups and replicas accordingly, and keep manager-to-node traffic on
+a private network.
+
+### The nodes' own credentials
+
+Nodes open with DuckDB's external file cache and HTTP metadata cache off (both are
+shared across connections), turn `aws_default_credentials` off, and reset the S3
+settings httpfs copies from `AWS_*` / `DUCKDB_S3_*` environment variables. The
+data path's secret is scoped to the data path and its branches. The manager's
+`QOD_S3_*` keys (or the instance's credential chain) therefore sign only a
+database's own data path: a superuser reading another bucket registers keys too
+(`qod profile s3 add`) or creates a scoped secret, and an `initSql` that reads
+other buckets needs its own `CREATE SECRET`.
+
+### Extension settings
+
+`allow_community_extensions`, `allow_unsigned_extensions` and
+`autoinstall_known_extensions` are false on every node, set before its database
+opens, so no `initSql` or session can turn them on. An operator who needs one sets
+`QOD_NODE_ALLOW_COMMUNITY_EXTENSIONS`, `QOD_NODE_ALLOW_UNSIGNED_EXTENSIONS` or
+`QOD_NODE_AUTOINSTALL_KNOWN_EXTENSIONS` to `true` on the manager (the Helm chart
+has no value for them: use its `env`); it applies at each node's next start. With
+autoinstall off, a statement that relied on DuckDB downloading a known extension
+fails until the extension is installed at node start (`INSTALL <name>;` in a
+database or pool `initSql`). Nodes install httpfs and avro themselves, before the
+database's `initSql`.
+
+### Init SQL written by tenant admins
+
+A database's or pool's `initSql` written by a superuser (or by the manager: `qod
+serve`, a manifest import, a branch) runs as written. One written by a tenant admin
+runs under an allowlist: `SET` / `RESET` of a short list of resource and
+session-default settings to a literal (`memory_limit`, `threads`, `timezone`, ...),
+read-only PRAGMAs, and `INSTALL` / `LOAD` by bare name of a list of DuckDB
+extensions. Every other statement is skipped, and the write is refused up front
+with `400 init_sql_refused` where the manager can check it. Responses carry
+`initSqlTrusted`. Likewise, `sql` [federation sources](federation.md), whose
+`setupSql` is free-form, are superuser-only.
+
+### Node keys and the decide URL
+
+Every statement a node runs carries a session handle naming its principal, signed
+with that node's own key, which derives from the node-key secret:
+`QOD_NODE_KEY_SECRET` when set (at least 32 characters), else a value the first
+boot generates and stores in the control-plane database. Unless you pin
+`QOD_NODE_KEY_SECRET` from an external secret store, whoever can read that
+database (backups, dumps, read replicas) can mint a handle for any principal on
+any node: protect it like the secret itself. Under HA set it to the same value on
+every replica, or leave it unset on all. Changing it means restarting every node.
+
+Nodes call the replica that minted a handle back at `QOD_INTERNAL_URL` for their
+verdicts (boot prints `node decide URL: <url>`). See the
+[configuration reference](/qod/reference/configuration) for its defaults; fleet
+mode requires it set.
 
 ## Pod security context (Kubernetes)
 
@@ -133,10 +212,15 @@ When enabled you get default-deny ingress and egress with only the necessary
 holes:
 
 - **Node pods:** ingress only from manager pods on the node port range; egress to
-  DNS, the control-plane Postgres, and the object store. A tenant node cannot
-  reach the rest of the cluster or the internet beyond those.
-- **Manager:** ingress on the REST/UI port (20900) and the FlightSQL edge (31338);
-  egress to node pods, Postgres, DNS, and optionally SMTP.
+  the manager pods on TCP 20900 (each statement's authorization verdict), DNS,
+  the control-plane Postgres, and the object store. A tenant node cannot reach the
+  rest of the cluster or the internet beyond those.
+- **Manager:** ingress on the REST/UI port (20900) and the FlightSQL edge (31338)
+  from `ingressFrom`, plus 20900 from the node pods whatever `ingressFrom` says
+  (the whole REST port: a network policy cannot filter by path); egress to node
+  pods, Postgres, DNS, and optionally SMTP.
+
+The rules match the release namespace only.
 
 Tune the reachable targets through the values block:
 
@@ -189,14 +273,18 @@ deployments.
 
 For a gateway exposed to tenants you do not fully trust:
 
-- `QOD_NODE_LOCKDOWN=true`, with an **object-store data path** so both lockdown
-  layers hold.
-- `QOD_ACL_ENABLED=true` ([RBAC](rbac-model.md)) so table access is scoped.
-- TLS on the edge ([TLS](tls.md)) and a real `QOD_API_KEY` /
-  `QOD_SESSION_JWT_SECRET` ([Authentication](authentication.md)).
+- Grant tenant users only what they need ([RBAC](rbac-model.md)): enforcement is
+  always on, but a user created without explicit roles gets the permissive
+  built-ins.
+- Leave `QOD_TENANT_FILES_ROOT` unset unless users load local files, keep the
+  tenant folders free of symbolic links, and list in
+  `QOD_USER_S3_ALLOWED_ENDPOINTS` only the S3 endpoints you trust.
+- Keep the extension settings at their defaults.
+- TLS on the edge ([TLS](tls.md)), a pinned `QOD_SESSION_JWT_SECRET`
+  ([Authentication](authentication.md)) and a pinned `QOD_NODE_KEY_SECRET`, both
+  from an external secret store when control-plane backups are less trusted than
+  the manager. Automation uses personal access tokens: the static API key is gone.
+- Keep manager-to-node traffic on a private network.
 - On Kubernetes: `networkPolicy.enabled=true` with real CIDRs, the default pod
   security context left on, and one namespace per tenant if you need hard
   isolation.
-
-Leave all of this off for a trusted single-tenant local install, where the
-defaults keep first-run smoke tests frictionless.

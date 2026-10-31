@@ -15,8 +15,9 @@ DuckDB is an embedded analytical engine: it runs inside your process, trusts who
 | A server other machines can reach | No listener | Arrow Flight SQL on `:31338` and native Quack on `:9494` |
 | Users and passwords | None | Built-in accounts, JWT, OAuth and OIDC providers |
 | Single sign-on | None | Keycloak, Google, Azure AD and Cognito for SQL clients; any OIDC IdP including Okta for the admin UI; SCIM |
-| Grants, row filters, column masks | None | Roles, table verbs, row-level policies, column masking |
-| Several teams on one deployment | One file, one process | Tenants, databases and pools, isolated at the edge |
+| Grants, row filters, column masks | None | Roles, table verbs, row-level policies, column masking, checked on each node against what DuckDB resolved |
+| File access per user | The process reads any file it can open | Each user's own S3 keys and the folders their tenant authorized |
+| Several teams on one deployment | One file, one process | Tenants, databases and pools, isolated at the edge and on each node |
 | JDBC, ODBC, ADBC drivers | Local bindings only | Standard Flight SQL drivers for BI tools and notebooks |
 | More than one machine | One process | Pools of DuckDB nodes that scale out and suspend to zero |
 

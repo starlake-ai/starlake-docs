@@ -1,11 +1,11 @@
 ---
 title: "DuckDB access control: roles, grants, row and column security"
 sidebar_label: Access control
-description: "Add users, roles, grants, row-level security and column masking to DuckDB. Quack on Demand checks every statement against an ACL before it runs."
+description: "Add users, roles, grants, row-level security and column masking to DuckDB. Quack on Demand checks every statement against the caller's grants before it runs."
 keywords: [duckdb access control, duckdb acl, duckdb rbac, duckdb row-level security, duckdb column masking, duckdb permissions, duckdb grant, ducklake access control]
 ---
 
-DuckDB has no users and no `GRANT`: whoever can open the file reads every table. Quack on Demand puts a gateway in front of DuckDB that authenticates each connection and checks every statement against roles, table grants, row policies and column masks before it reaches a node.
+DuckDB has no users and no `GRANT`: whoever can open the file reads every table. Quack on Demand puts a gateway in front of DuckDB that authenticates each connection, applies row policies and column masks, and runs each statement on a node that checks it against the caller's roles and table grants before it executes.
 
 ## The problem
 
@@ -13,7 +13,7 @@ An embedded engine trusts its process. That is fine for one analyst and breaks t
 
 ## How Quack on Demand does it
 
-Set `QOD_ACL_ENABLED=true` and every statement, whether it arrives over Arrow Flight SQL, DuckDB's native Quack protocol, the MCP server or an admin endpoint that previews, diffs, restores or undrops a table, is matched against the caller's effective permission set. A personal access token runs as its owner, narrowed by the token's own scope. Only a real [superuser](/qod/operating/rbac-model#superusers) (an account with no tenant, signed in through the system realm) skips the check; a tenant user named `superuser` gets no special treatment. Roles bundle table verbs (`RO`, `RW`, `DDL`, `ALL`) on `catalog.schema.table` triples with wildcards. Groups collect roles and pool grants. A user reaches permissions directly or through their groups, and admission to a pool is what admits them to that pool's database. Row policies rewrite a matching `SELECT` with a filter, and column policies mask or deny a column before the SQL reaches DuckDB.
+Every statement, whether it arrives over Arrow Flight SQL, DuckDB's native Quack protocol, the MCP server or an admin endpoint that previews, diffs, restores or undrops a table, is matched against the caller's effective permission set; there is no switch to turn this off. The check runs inside the node, on the plan DuckDB bound: the tables, views and columns the statement reads or writes, the functions and settings it calls and the files it names, so a view, a macro or a `query()` string cannot hide a table from it. Files are reachable only under S3 keys the user registered or folders the tenant authorized. A personal access token runs as its owner, narrowed by the token's own scope. Only a real [superuser](/qod/operating/rbac-model#superusers) (an account with no tenant, signed in through the system realm) skips the check; a tenant user named `superuser` gets no special treatment. Roles bundle table verbs (`RO`, `RW`, `DDL`, `ALL`) on `catalog.schema.table` triples with wildcards. Groups collect roles and pool grants. A user reaches permissions directly or through their groups, and admission to a pool is what admits them to that pool's database. Row policies rewrite a matching `SELECT` with a filter, and column policies mask or deny a column before the SQL reaches DuckDB.
 
 Every tenant also carries four protected [built-ins](/qod/operating/rbac-model#built-in-roles-and-groups): the roles `qod_all_tables` and `qod_no_tables` and the groups `qod_all_pools` and `qod_no_pools`. A user created without naming roles and groups joins `qod_all_tables` and `qod_all_pools`, which give full access to the tenant; name the roles and groups at creation (`CREATE USER bob PASSWORD '...' ROLES analyst GROUPS finance`) to start narrower.
 

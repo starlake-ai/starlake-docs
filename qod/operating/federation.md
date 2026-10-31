@@ -9,7 +9,7 @@ Federation attaches external catalogs (Postgres, MySQL, S3/Iceberg, or anything 
 
 A source is one of two types. A **`sql`** source is the free-form kind this page describes: you write the `ATTACH` yourself. An **`iceberg_rest`** source is typed, declared as fields rather than SQL, and has its own page: see [External Iceberg catalogs](iceberg.md). Everything below about secrets, grants, lifecycle and manifests applies to both.
 
-Provision the tenant and database first (see "Tenants and databases"). The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_API_KEY` is set for CI scripts.
+Provision the tenant and database first (see "Tenants and databases"). The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_TOKEN` holds a personal access token for CI scripts.
 
 :::note DB argument uses the full database name
 The `qod federation` commands' `DB` argument (and the underlying `/api/tenants/{tenant}/tenant-dbs/{tenantDb}/federated-sources` REST path) take the **full** database name `${tenant}_${suffix}` (for example `acme_fed`), not the suffix you passed to `qod database create` (`fed`).
@@ -30,6 +30,8 @@ This creates the database `acme_fed` with no persistent DuckLake catalog; sessio
 
 A source is an alias plus the `setupSql` that DuckDB runs at node startup to install the extension, create any secret, and `ATTACH` the catalog.
 
+**`sql` sources are superuser-only.** Their `setupSql` is free-form and runs on the nodes with the manager's rights, so creating or changing a `sql` source answers `403 superuser_required` to a tenant admin on every path (REST, MCP, CLI, manifest import). Typed sources (Postgres, MySQL, Iceberg REST) stay open to tenant admins.
+
 ```bash
 qod federation create acme acme_fed --alias fedpg --description "Prod warehouse Postgres" \
   --setup-sql "INSTALL postgres; LOAD postgres; CREATE OR REPLACE SECRET fedpg_sec (TYPE POSTGRES, HOST 'pg.prod', PORT 5432, DATABASE 'warehouse', USER 'svc_qod', PASSWORD '{{secret.PG_PWD}}'); ATTACH '' AS {{alias}} (TYPE POSTGRES, SECRET fedpg_sec, READ_ONLY);"
@@ -38,9 +40,11 @@ qod federation create acme acme_fed --alias fedpg --description "Prod warehouse 
 The request body fields are `alias`, `setupSql`, optional `description`, and `disabled` (default false). Two placeholders are substituted before the SQL runs on a node:
 
 - `{{alias}}` becomes the source's `alias`.
-- `{{secret.NAME}}` becomes the resolved value of the secret named `NAME` (see below).
+- `{{secret.NAME}}` becomes the resolved value of the secret named `NAME` (see below). Every secret placeholder must sit inside a plain single-quoted literal (`PASSWORD '{{secret.PG_PWD}}'`), where its value stays a value: a save otherwise answers `400 invalid_federated_source` naming the placeholder, and so does an escape string `E'...'`, dollar quoting or a `$` outside a literal.
 
-A `sql` source is writable by default. To make it read-only, include `READ_ONLY` in the `ATTACH`, which DuckDB enforces at attach time, or set the source's `readOnly` flag (REST `"readOnly": true`), which the edge enforces on every statement; see [Read-only](iceberg.md#read-only) for how the flag works. Neither depends on the ACL.
+The nodes' own S3 keys sign only a database's data path, so a `setupSql` that reads another bucket needs its own `CREATE SECRET`.
+
+A `sql` source is writable by default. To make it read-only, include `READ_ONLY` in the `ATTACH`, which DuckDB enforces at attach time, or set the source's `readOnly` flag (REST `"readOnly": true`), which every node enforces on every statement, for every principal, superusers included; see [Read-only](iceberg.md#read-only) for how the flag works. Neither depends on grants.
 
 List, fetch, and delete sources:
 
@@ -85,24 +89,22 @@ The substitution that splices a resolved value into `setupSql` is SQL-quote-safe
 
 ## Granting access to federated tables
 
-Federated tables are governed by the same RBAC graph as native tables. A `qodstate_role_permission` row on the federated alias (for example `SELECT` on `fedpg.public.orders`) grants access exactly as it would for a DuckLake table. Use the grant flow on the "Administering access" page, naming the federated alias as the catalog. The mechanics are described in the [Access control model](/qod/operating/rbac-model).
+Federated tables are governed by the same RBAC graph as native tables. A `qodstate_role_permission` row on the federated alias (for example `RO`, or SQL `SELECT`, on `fedpg.public.orders`) grants access exactly as it would for a DuckLake table. Use the grant flow on the "Administering access" page, naming the federated alias as the catalog. The mechanics are described in the [Access control model](/qod/operating/rbac-model).
 
-Two specifics for federation:
+Specifics for federation:
 
-- Reads are authorized by a `SELECT` grant on the alias like any other table.
-- Writes (INSERT / UPDATE / DELETE, and DDL) are authorized the same way: an `RW`, `DDL` or `ALL` grant on the alias allows them exactly as it would on a DuckLake table. There is no blanket rule that denies writes to a federated catalog.
-- The source's read-only setting is the only thing that refuses a write whatever the grants say: the source's `readOnly` flag, or `READ_ONLY` on a hand-written `ATTACH`. `iceberg_rest` sources are read-only by default; `sql` sources, and every source created before the flag existed, are writable by default.
-
-:::caution ACL is off by default
-`acl.enabled` defaults to `false` (`QOD_ACL_ENABLED`). With the ACL off there are no grant checks at all, so a writable federated source accepts writes from anyone who can connect to the database, and only the read-only setting stops them. Mark sources read-only unless writes through QoD are intended, and enable the ACL before exposing a deployment.
-:::
+- **A wildcard catalog never covers a federated catalog.** `*.*.*` (the built-in `qod_all_tables` included) covers the pool's own catalog only; grant a federated catalog by its alias (`fedpg.*.*`). A grant naming the alias also lists that catalog's objects in `information_schema`, `duckdb_tables()` and the FlightSQL catalog calls.
+- Reads are authorized by an `RO` grant on the alias like any other table.
+- Writes (INSERT / UPDATE / DELETE, and DDL) are authorized the same way: an `RW`, `DDL` or `ALL` grant on the alias allows them exactly as it would on a DuckLake table.
+- The source's read-only setting refuses a write whatever the grants say: the source's `readOnly` flag, or `READ_ONLY` on a hand-written `ATTACH`. A read-only catalog refuses writes, DDL, `ATTACH` and `DETACH` to every principal, superusers included (`QoD: catalog <alias> is read-only`); a change to the flag applies on the next statement. Not covered: a superuser's raw passthrough (`postgres_execute`, `postgres_query`, `mysql_*`), a maintenance function taking a catalog name, an `ATTACH` of the same source under another alias, and `CHECKPOINT` / `VACUUM`, all superuser-only. `iceberg_rest` sources are read-only by default; `sql` sources, and every source created before the flag existed, are writable by default.
 
 ## Lifecycle
 
 - **Edits take effect on the next node spawn.** Creating, editing, or disabling a source changes the catalog blob that every node spawned *after* the change receives: idle-timeout replacements, manual restarts, scale-up additions, and pool recreation. Nodes already running keep their attached catalogs until they exit, so recycle the pool to apply a change immediately.
-- **A source that fails at node startup does not stop the node.** The node's init SQL is piped into DuckDB without bail, so a `setupSql` error (extension missing, bad credentials, DNS failure) goes to the node's stderr and startup continues. The node then passes its health probe and serves every other catalog normally, with this one simply absent, and a client sees `catalog '<alias>' does not exist` rather than the real cause. For `iceberg_rest` sources the manager detects, reports and retries this; see [Attach failures](iceberg.md#attach-failures-and-how-they-surface). For `sql` sources the node's stderr is the record.
-- **Disabled sources** are filtered out when the catalog blob is assembled; there is no live `DETACH` of running nodes. A disabled source's alias stays in the ACL ambiguity guard (see [Table name resolution](/qod/administration/access-control#table-name-resolution)) because already-running nodes keep it attached until the pool recycles.
-- **Recycle the pool right after deleting a source.** Deleting a source removes its alias from the ACL ambiguity guard (the guard's attached-catalog set is rebuilt from the control plane, cached for about 60 seconds), but running nodes keep the catalog attached until they exit. In that window the ambiguity guard no longer covers the alias while the engine still binds it catalog-first, so recycle the pool to close the gap.
+- **A source that fails at node startup does not stop the node.** The node runs its init SQL statement by statement and carries on past a failing one, so a `setupSql` error (extension missing, bad credentials, DNS failure) goes to the node's log (without DuckDB's `LINE n:` excerpt, since init SQL can carry credentials) and startup continues. The node then passes its health probe and serves every other catalog normally, with this one simply absent, and a client sees `catalog '<alias>' does not exist` rather than the real cause. For `iceberg_rest` sources the manager detects, reports and retries this; see [Attach failures](iceberg.md#attach-failures-and-how-they-surface). For `sql` sources the node's log is the record.
+- **Disabled sources** are filtered out when the catalog blob is assembled; there is no live `DETACH` of running nodes. A disabled source's alias stays in the ambiguity guard that applies to principals holding row or column policies (see [Table name resolution](/qod/administration/access-control#table-name-resolution)) because already-running nodes keep it attached until the pool recycles.
+- **Recycle the pool right after deleting a source.** Deleting a source removes its alias from that ambiguity guard on the next statement, but running nodes keep the catalog attached until they exit. In that window the guard no longer covers the alias while the engine still binds it catalog-first, so recycle the pool to close the gap.
+- **Upgrading `sql` sources to 0.11.0.** Existing `sql` sources keep running; boot WARNs once per source whose author is unknown (a superuser re-saves it unchanged, or deletes it). A template stored before keeps an unquoted placeholder only when its value is a plain token (letters, digits, `_`, `.`, `-`) that no quote or letter touches, such as a port; otherwise that source is left out of the node's setup with a WARN, and boot lists each such template: quote its placeholders and save it again as a superuser. See [Upgrading to 0.11.0](./upgrading.md).
 
 ## Backup and restore
 
@@ -115,4 +117,7 @@ Federated sources and their secrets are included in the whole-control-plane conf
 | `unresolved secret 'X' in source '<alias>'` in the supervisor log | `setupSql` references `{{secret.X}}` but no matching secret row exists | Add the secret with `qod federation secret set <tenant> <db> <alias> --name X --value ...` |
 | `unsubstituted placeholder` at boot | A malformed placeholder such as `{{secret.X}` (missing brace) | Fix `setupSql` (`qod federation create` upserts the source) and recycle the pool |
 | Client sees `catalog 'fedpg' does not exist` | The pool was not recycled after the source changed | Recreate the pool, or wait for the idle-timeout replacement |
-| Client sees `missing SELECT grant on fedpg.public.X` | No ACL grant on the federated alias | Grant `SELECT` on the alias (see "Administering access") |
+| Client sees `QoD: user:<name> lacks grants on fedpg.public.x:read` | No grant on the federated alias (a wildcard catalog grant does not cover it) | Grant `RO` on the alias (see "Administering access") |
+| Client sees `QoD: catalog fedpg is read-only` | The source is read-only | Clear the source's `readOnly` flag (or `READ_ONLY` in its `ATTACH`, then recycle the pool) if writes are intended |
+| Tenant admin gets `403 superuser_required` | Creating or changing a `sql` source | A superuser saves it, or use a typed source |
+| `400 invalid_federated_source` naming a `{{secret.NAME}}` | The placeholder sits outside a single-quoted literal | Write it as `'{{secret.NAME}}'` |

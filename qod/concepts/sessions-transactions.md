@@ -38,7 +38,7 @@ A pin is dropped (pin and `txOpen` both cleared) when the bound node can no long
 - **Transient failure mid-transaction.** As covered on the routing page, a transient node failure inside an open transaction does not retry on another node (a partially-applied transaction cannot move). The pin is invalidated and the statement fails.
 - **Pool vanished.** If the target pool is no longer found while a transaction was open, the pin is invalidated.
 
-In each case the failure is explicit: there is no silent re-execution of a transaction's statements on a different node.
+In each case the failure is explicit: there is no silent re-execution of a transaction's statements on a different node. On the [native Quack front door](/qod/connecting/duckdb) the client's transaction is ended as well: when its node leaves the pool (scale down, failure, restart), or a statement inside it is refused (a grant revoked mid-transaction included), that statement and every later one answer `transaction aborted: <reason>; ROLLBACK to continue` until the client sends `ROLLBACK`, rather than autocommitting on another node.
 
 ## Retry and re-pin
 
@@ -52,5 +52,6 @@ The edge supports prepared statements with a behavior shaped by Arrow JDBC and D
 - On the following `getStream` the edge **replays the cached stream once** and the caller closes it. The handle is effectively single-use: the result is produced at prepare time, not re-run per execution.
 - `closePreparedStatement` is a safety net that frees a handle the client opened but never executed.
 - Parameter bindings are not supported in this version; a prepared statement is a fixed SQL string.
+- A session's prepared statements are dropped when the session ends, and one left unused for the session TTL (`QOD_SESSION_TTL_SEC`, default 1 h) is dropped too: using it then answers "no such prepared statement", and the client prepares again.
 
-Because a prepared statement executes at prepare time, it passes through the same classification, ACL gate, routing, and (if it is a `BEGIN`) pinning as a directly executed statement.
+Because a prepared statement executes at prepare time, it passes through the same classification, the node's authorization check, routing, and (if it is a `BEGIN`) pinning as a directly executed statement.

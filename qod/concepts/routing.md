@@ -5,7 +5,7 @@ description: "How each statement on the Flight SQL edge is classified read or wr
 keywords: ["duckdb routing", "load balancing", "statement classification", "read write split"]
 ---
 
-Every statement that arrives on the FlightSQL edge is classified, authorized, and then routed to one Quack node in the target pool. This page covers the classification and routing half (the authorization half is the [Access control model](/qod/operating/rbac-model)). It sits in the request flow described on the [Architecture](/qod/concepts/architecture) page, between the ACL gate and the node's `/quack` endpoint.
+Every statement that arrives on the FlightSQL edge is classified, routed to one Quack node in the target pool, and authorized there by the node before it runs. This page covers the classification and routing half (the authorization half is the [Access control model](/qod/operating/rbac-model)). It sits in the request flow described on the [Architecture](/qod/concepts/architecture) page, between the policy rewriters and the node.
 
 ## Statement classification
 
@@ -21,7 +21,7 @@ The router classifies a statement with a cheap, keyword-based pass, not the full
 | `Rollback` | `ROLLBACK`, `ABORT` |
 | `Other` | anything else (routed like a read) |
 
-This is deliberately separate from the authorization parser: routing wants a fast three-way read/write/DDL answer, while the ACL layer runs its own full parse to extract per-table accesses. The `FROM` keyword covers DuckDB's FROM-first shorthand; `EXPLAIN` is treated as read-side by convention.
+This is deliberately separate from authorization: routing wants a fast three-way read/write/DDL answer, while the node judges the plan DuckDB binds. The `FROM` keyword covers DuckDB's FROM-first shorthand; `EXPLAIN` is treated as read-side by convention.
 
 The keyword lists are operator-tunable under `quack-on-demand.statementClassifier.*` (the `QOD_CLASSIFIER_*` env vars). A configured list **replaces** the built-in default rather than extending it, so to add one keyword you copy the default list and append. An empty or whitespace-only value collapses that bucket to "never matches", which fails closed (the statement falls to `Other` and routes like a read) rather than fails open. See the [Configuration reference](/qod/reference/configuration).
 

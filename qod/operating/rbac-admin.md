@@ -11,9 +11,9 @@ For a description of the underlying data model, the EffectiveSet, pool-access ga
 
 ## Authentication
 
-Every RBAC endpoint admits either of two transports:
+Every RBAC endpoint admits either of two credentials, and every action is attributed to the user behind it (the static API key was removed in 0.11.0):
 
-- **Static key** - set `QOD_API_KEY` in the manager environment and pass it as `X-API-Key`. Best for CLI scripts and CI.
+- **Personal access token** - mint one with `qod auth pat create` and pass it as `X-API-Key` (the CLI reads it from `QOD_TOKEN`). Best for CLI scripts and CI.
 - **Session token** - `POST /api/auth/login` with `{"username":"...","password":"..."}`. Two ways to use the response:
   - **Cookie** (browser default). The login response sets `qod_session=<jwt>` as an HttpOnly Secure SameSite=Lax cookie; the browser auto-attaches it on subsequent same-origin calls. JavaScript cannot read or send it manually - the `/api/auth/whoami` and `/api/auth/logout` endpoints accept the cookie automatically.
   - **Header** (CLI). The JSON body still contains a `token` field; pass it as `X-API-Key: $TOKEN` for non-browser callers.
@@ -27,9 +27,9 @@ Every RBAC handler checks the caller's session scope before mutating. A tenant-A
   "message": "session has no admin grant on tenant 't-...'" }
 ```
 
-with HTTP `403`. Superuser and static-key sessions bypass the gate. Unknown ids return `404` (not `403`) so a probe cannot distinguish "exists in another tenant" from "doesn't exist at all". The pattern covers id-only endpoints (`/role/delete`, `/user/delete`, `/group/delete`, `/role/permission/revoke`, `/pool/permission/revoke`, all 6 membership ops, the per-user `/effective`) - those resolve the owning tenant from the resource before applying the check.
+with HTTP `403`. Superuser sessions (and PATs owned by a superuser) bypass the gate. Unknown ids return `404` (not `403`) so a probe cannot distinguish "exists in another tenant" from "doesn't exist at all". The pattern covers id-only endpoints (`/role/delete`, `/user/delete`, `/group/delete`, `/role/permission/revoke`, `/pool/permission/revoke`, all 6 membership ops, the per-user `/effective`) - those resolve the owning tenant from the resource before applying the check.
 
-The examples below assume `qod login` has stored a session (see [the CLI section](/qod/cli/)); CI scripts can use `QOD_API_KEY` instead.
+The examples below assume `qod login` has stored a session (see [the CLI section](/qod/cli/)); CI scripts set `QOD_TOKEN` to a personal access token instead.
 
 ---
 

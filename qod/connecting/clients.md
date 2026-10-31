@@ -13,7 +13,7 @@ Queries never go through the REST API. The gateway serves them on two dedicated 
 | **Arrow Flight SQL** | `:31338` | The JDBC driver (DBeaver, Spark, any JDBC tool), ADBC (Python, Go, and others), a third-party Flight SQL ODBC driver, the `qod` CLI |
 | **Native Quack** | `:9494` | DuckDB itself: the CLI, the Python package, an embedded DuckDB, with no driver in between |
 
-Both wires resolve the same tenants and users, run the same per-statement ACL, column masking and row filters, and route through the same router, so the choice is about which client you hold, not which features you get.
+Both wires resolve the same tenants and users, have every statement judged by the node on the same grants (or the tenant's OPA policy), apply the same column masking and row filters, and route through the same router, so the choice is about which client you hold, not which features you get.
 
 From DuckDB, the whole connection is one statement, and the attached catalog joins your local tables:
 
@@ -50,7 +50,7 @@ Connections authenticated against the system realm (a row in `qodstate_user` wit
 - **ADBC**: send the call header `superuser` with value `true` alongside the existing `tenant` and `pool` call headers.
 - **Raw Flight**: gRPC header `superuser: true` plus the regular `tenant` and `pool` headers.
 
-A superuser can target any tenant's pool for routing while authenticating against the manager's global auth providers; the per-statement ACL gate is bypassed and the session can reach any catalog. See [Authentication](/qod/operating/authentication) for the realm split.
+A superuser can target any tenant's pool for routing while authenticating against the manager's global auth providers; its statements are not judged against grants and can reach any catalog, though the node still refuses what it refuses to everyone (writes into a read-only federated catalog, for one). See [Authentication](/qod/operating/authentication) for the realm split.
 
 Because the edge ships with an auto-generated self-signed certificate, the recipes below skip certificate verification. To remove that, install a CA-signed cert as described on the [TLS](/qod/operating/tls) page.
 
