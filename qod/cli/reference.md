@@ -182,10 +182,14 @@ qod catalog restore --tenant acme --db acme_tpch --schema tpch1 --table orders -
 dry run first and prints the change summary, then prompts to confirm before writing the new
 snapshot (skip the prompt with `--yes`, or stop after the preview with `--dry-run`). Requires an
 ALL grant, or DDL plus RO/RW, on the table. For dropped tables, use `qod catalog undrop` instead.
-`restore`, `undrop`, `preview` and `data-diff` run their statements as the caller: a session as its
-user, a PAT as its owner with the token's restriction, so the node judges them against that user's
-grants and column masking and row policies apply. None of them runs as the manager's system
-principal.
+`restore` (its dry run included), `undrop`, `preview` and `data-diff` run their statements as the
+caller: a session as its user, a PAT as its owner with the token's restriction (its databases,
+pools, verb ceiling and branch-only flag, a branch counting as its parent database), so the node
+judges them against that user's grants and column masking and row policies apply. None of them
+runs as the manager's system principal. `data-diff` and the restore dry run read DuckLake's change
+feed, which is refused to a user with any column or row policy; history reads are judged on the
+table as it is now (see
+[Earlier snapshots and the change feed](/qod/operating/rbac-model#earlier-snapshots-and-the-change-feed)).
 
 `schemas`, `tables`, `describe`, `history`, `preview` and `data-diff` also take `--iceberg ALIAS` to
 read an attached external Iceberg catalog instead of the database's DuckLake catalog. Snapshot ids

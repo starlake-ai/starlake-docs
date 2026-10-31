@@ -171,7 +171,7 @@ Specifically, the following never enter the audit trail:
 - Full metastore connection maps (which may contain passwords)
 - Raw pod template bodies (which may contain paths and credentials)
 
-SQL text in data-plane events (`sql.write`, `sql.ddl`, `sql.denied`) is capped at 500 characters. The text is recorded verbatim; statements that inline credentials (for example `CREATE SECRET`) will persist those literals in the audit trail up to the 500-char cap. The key whitelist described above guards structured `detail` fields only, not SQL text.
+SQL text in data-plane events (`sql.write`, `sql.ddl`, `sql.denied`) is capped at 500 characters. The text is recorded verbatim; statements that inline credentials (for example `CREATE SECRET`) will persist those literals in the audit trail up to the 500-char cap. The key whitelist described above guards structured `detail` fields only, not SQL text. The exception is a statement the manager runs as its own system caller: tenant admins see the audit log, and such a statement may carry platform credentials, so its literal values and bare option values are masked (as the `QOD_AUDIT_SINK=stdout` sink masks every statement), and its error is scrubbed of them. The same masking applies to it in statement history and in the active statements list.
 
 ## The `none` off switch
 

@@ -160,12 +160,13 @@ user then reads the catalog's tables with the S3 keys they registered themselves
 (`qod profile s3 add`, see [Hardening](hardening.md#files-and-s3)). The raw files of a warehouse
 bucket are not data folders QoD knows: a user holding keys for it can read them directly.
 
-:::caution Iceberg tables on S3 are read-only through QoD
+:::caution Iceberg tables on S3 read with users' own keys are read-only through QoD
 DuckDB's Iceberg extension (v2.0.0) commits its manifest files without connection secrets, while the
-nodes hold users' S3 keys as connection secrets of each user's connection. A write to an Iceberg
-table on S3 therefore fails with HTTP 403 at commit, for every principal, superusers included,
-until upstream duckdb-iceberg signs its commits with connection secrets. Write with the warehouse's
-own tooling meanwhile.
+nodes hold users' S3 keys as connection secrets of each user's connection. On a catalog that neither
+vends credentials nor has AWS credentials of its own, a write to an Iceberg table on S3 therefore
+fails with HTTP 403 at commit, for every principal, superusers included, until upstream
+duckdb-iceberg signs its commits with connection secrets. Write with the warehouse's own tooling
+meanwhile.
 :::
 
 ### Alias rules
@@ -406,7 +407,8 @@ database (`404 catalog_not_found` otherwise).
 Namespaces, tables, table detail and history are metadata reads that the manager runs itself on a
 live read node of the database's pool. The preview and the diff read table data, so they run **as
 the caller**, through the same pipeline as a normal query: the node's grant check, column masking
-and row policies apply. A personal access token runs as its owner with the token's own restriction, and its
+and row policies apply. A personal access token runs as its owner with the token's own restriction: a token whose
+databases or pools axis leaves out the database or the pool is refused (`403 token_scope`), and its
 `maxRows` caps the preview and diff page. Every preview and diff is audited; the metadata reads are
 audited only when `QOD_AUDIT_CATALOG_READS` is on.
 
@@ -475,7 +477,8 @@ is covered in the same page under
 - **No branching on Iceberg.** [Branching](branching.md) is DuckLake-only. Branch, propose and
   merge are written against DuckLake catalog tables and have no Iceberg-native implementation.
 - **A catalog is required to write.** Only attached REST catalogs are writable; scanning raw
-  storage cannot commit new table metadata. Tables on S3 are read-only through QoD for now (see
+  storage cannot commit new table metadata. Tables on S3 read with users' own keys are read-only
+  through QoD for now (see
   [AWS credentials](#aws-credentials-sigv4-glue-and-s3-tables)).
 - **The management views are read-only.** There is no restore, undrop or tagging on an Iceberg
   table; see [Browsing a catalog](#browsing-a-catalog).
@@ -491,7 +494,7 @@ is covered in the same page under
 | `400` naming `authType / endpointType` | Both were set, or neither | Set exactly one |
 | `400` naming `awsScope` or `awsRegion` | `awsCredentials` is set without a scope, or without a region the manager can use | Add `--aws-scope s3://bucket/`, and `--aws-region` for `sigv4` / `glue` |
 | `Could not find a valid storage secret` or `... does not have a region` in `attachStatus` | An AWS-signed catalog has no AWS fields, and the nodes hold no S3 key of their own outside the data path | Set `awsCredentials`, `awsRegion` and `awsScope` on the source, then recycle the pool |
-| An `INSERT` into an Iceberg table on S3 fails with HTTP 403 at commit | DuckDB's Iceberg extension commits without connection secrets | Expected: Iceberg tables on S3 are read-only through QoD for every principal; write with the warehouse's own tooling |
+| An `INSERT` into an Iceberg table on S3 fails with HTTP 403 at commit | DuckDB's Iceberg extension commits without connection secrets | Expected: on a catalog read with users' own S3 keys, Iceberg tables on S3 are read-only through QoD for every principal; write with the warehouse's own tooling |
 | A user's read fails with no S3 secret for the warehouse | The catalog vends no credentials and has no AWS fields, and the user registered no S3 keys covering the warehouse | The user runs `qod profile s3 add` for the warehouse prefix, or set the source's AWS fields |
 | `400 alias '...' is reserved` | The alias collides with the database's own catalog, a sibling source, or `memory` / `system` / `temp` | Rename the source's alias |
 | Client sees `Catalog 'x' does not exist`, pool looks healthy | The `ATTACH` failed at node spawn | Read `attachStatus` on the source and `catalogAttachFailures` on the node for the real DuckDB error |

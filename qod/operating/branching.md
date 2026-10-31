@@ -23,7 +23,7 @@ The fork snapshot is recorded per branch and pinned: [managed maintenance](/qod/
 |---|---|---|
 | create | anyone who can connect to a pool of the database | Clone at head, start the branch pool, start the TTL |
 | write | the same principal, targeting the branch | Ordinary SQL through FlightSQL or MCP; the node judges it against the principal's grants, and RLS and CLS apply |
-| changes and diff | anyone with access | Touched tables classified as created, dropped, recreated, modified or altered, with row counts; conflicts against main; row-level diff per table |
+| changes and diff | anyone with access | Touched tables classified as created, dropped, recreated, modified or altered, with row counts counted as the requester; conflicts against main; row-level diff per table |
 | propose | the branch owner or any principal with access | Records a merge request carrying the change set and conflicts as of now |
 | merge | a tenant admin **other than the proposer**, not through a branch-only token | Fast-forward onto main, one snapshot, tagged, branch torn down |
 | discard | the owner or a tenant admin | Pool, catalog and branch-only files freed; the row stays as history |
@@ -61,7 +61,9 @@ qod auth pat create --name agent --branch-only --database acme_tpch
 
 `INSERT`, `UPDATE`, `DELETE` and DDL on the live database are then refused with `write_requires_branch`; reads are unchanged, writes on any branch work, and every child token inherits the flag. A branch-only token cannot merge either, not even over REST where the merge endpoint exists: it gets 403 `branch_only_token`. Combined with the absence of a merge tool on MCP, the agent can only ever propose. This gate applies to MCP and REST callers; the raw FlightSQL wire has no token concept.
 
-The branch endpoints (create, changes, propose, merge, discard) act as the caller's own principal. A credential that resolves to no live session or PAT, such as a session that expired mid-request, is refused with 401 before the branch service runs.
+The branch endpoints (create, changes, propose, merge, discard) act as the caller's own principal. A credential that resolves to no live session or PAT, such as a session that expired mid-request, is refused with 401 before the branch service runs, and a token whose `databases` axis does not name the branch's parent database is refused with 403 `token_scope`.
+
+Change counts run as the requester too (REST `changes`, MCP `branch_changes`), so the node counts only the tables they may read. DuckLake's change feed is what counts them, and it is refused to a user with any column or row policy. A table whose count the node refuses, or whose count fails, carries `countsUnavailable: true`: its zeros are no counts, and the admin UI shows a dash. A proposal's reply counts as the proposer. The summary stored on the merge request is counted by the manager itself, so `show`, propose and merge replies show its per-table counts to superusers only; everyone else, tenant admins included, gets them zeroed and flagged `countsUnavailable`, and asks `changes` for the counts they may read.
 
 ## From the CLI
 

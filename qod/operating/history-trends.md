@@ -20,7 +20,7 @@ Every statement that completes the FlightSQL execute path is recorded:
 | `pool` | Pool key |
 | `username` | The authenticated user |
 | `status` | `ok`, `denied` (the node refused it: `QoD: ...`), `transient`, `permanent`, `no-node`, `no-pool`, `pin-lost` |
-| `sql` | SQL text, capped at 500 characters |
+| `sql` | SQL text, capped at 500 characters. A statement the manager runs as its own system caller is recorded with its literal values masked, and its error scrubbed of them, since tenant admins see history |
 | `durationMs` | Wall-clock duration from receive to completion |
 | `nodeId` | The node that executed the statement |
 

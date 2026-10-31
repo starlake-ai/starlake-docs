@@ -179,7 +179,7 @@ The **Branches** page is the review and approval surface for [branching](/qod/op
 
 - **Create branch**: a name and an optional TTL in hours (blank for the server default, `0` for never). Invalid names, duplicates and the per-database cap surface as the server's error text.
 - **Branch list**: live branches with status, owner, fork snapshot, creation and expiry; a checkbox includes merged, discarded and expired history rows.
-- **Expand a branch** for its change set: each touched table with its kind (created, dropped, recreated, modified, altered), insert/delete/update counts and a per-table merge verdict, the conflicts against main, anything v1 cannot merge, and the branch's merge requests with proposer, approver, main snapshot before and after, and the tag. The **rows** link on a table opens the row-level diff between the fork and the branch head, filterable by change type and paginated.
+- **Expand a branch** for its change set: each touched table with its kind (created, dropped, recreated, modified, altered), insert/delete/update counts and a per-table merge verdict (the counts are counted as you: a table you may not read, or whose count failed, shows a dash with an explanation on hover instead of 0, and a stored merge request's counts show only to a superuser), the conflicts against main, anything v1 cannot merge, and the branch's merge requests with proposer, approver, main snapshot before and after, and the tag. The **rows** link on a table opens the row-level diff between the fork and the branch head, filterable by change type and paginated.
 - **Actions** per row: **propose** on an open branch, **merge** on a proposed branch (after a confirmation), **discard** on any live branch. Merge is refused for the proposer's own identity, so review as a different admin than the agent or user who proposed.
 
 ## Servers (fleet)
@@ -251,7 +251,8 @@ Both the Snapshots panel and the History tab offer a **Restore** action on a liv
 snapshot** button in the History tab's commit detail drawer. Either entry point opens the same
 dialog, which runs a dry run immediately and shows the change summary that will be undone
 (rows inserted, deleted, and updated since the target snapshot) before enabling the **Restore**
-button; there is no way to write without seeing the preview first.
+button; there is no way to write without seeing the preview first. The dry run runs as you, like
+the restore itself, so a table you may not read is refused there (`acl_denied`).
 
 Restore is non-destructive: it writes the table's state at the target snapshot as a new forward
 snapshot rather than rewriting history. The pre-restore state stays queryable by time travel, but
