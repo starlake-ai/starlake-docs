@@ -97,3 +97,14 @@ The listener DuckDB clients `ATTACH` to (`quack-native`, default port `9494`) sh
 | Private key (PKCS8) | `certs/server-key.pem` (the FlightSQL edge's) | `QOD_QUACK_TLS_PRIVATE_KEY` |
 
 Before exposing the port beyond the host, either turn TLS on (remote DuckDB clients then default to TLS, and the client does not verify a self-signed certificate unless configured to) or terminate TLS in front of the port as for the REST API. A remote client reaching a plain-HTTP listener must add `DISABLE_SSL true` to its `ATTACH` options (`disable_ssl := true` on `quack_query`). A PKCS1 key (`-----BEGIN RSA PRIVATE KEY-----`) is refused at boot with a conversion hint; convert it with `openssl pkcs8 -topk8 -nocrypt`. See [DuckDB (native Quack)](/qod/connecting/duckdb).
+
+## Secure in production
+
+- [ ] Keep `PROXY_TLS_ENABLED=true` (the default) everywhere but a fully trusted development network: without it, passwords and tokens cross the network in cleartext.
+- [ ] Replace the self-signed certificate with a CA-signed one whose name matches the address clients dial, through `PROXY_TLS_CERT_CHAIN` and `PROXY_TLS_PRIVATE_KEY` (see [Use a CA-signed certificate](#use-a-ca-signed-certificate)), and restart the manager each time you renew it.
+- [ ] Keep the private key readable by the manager's account only: it has no passphrase.
+- [ ] Remove `disableCertificateVerification=true` (JDBC) and `--insecure` (ADBC and CLI clients) from every production connection string; import the CA into the client trust store instead.
+- [ ] Before exposing the native front door beyond the host, set `QOD_QUACK_TLS_ENABLED=true` with a PKCS8 key (`QOD_QUACK_TLS_CERT_CHAIN`, `QOD_QUACK_TLS_PRIVATE_KEY`, by default the edge's pair), or keep it on loopback with `QOD_QUACK_HOST=127.0.0.1`, or terminate TLS in front of it: it ships with TLS off (see [The native Quack front door](#the-native-quack-front-door)).
+- [ ] Terminate TLS for the REST port (`:20900`, plain HTTP) in a reverse proxy or ingress, and set `QOD_SESSION_COOKIE_SECURE=true` when that proxy does not send `X-Forwarded-Proto`, so the session cookie is never sent over plain HTTP.
+
+See [Security hardening](./hardening.md#recommended-posture-for-untrusted-tenants) for the network and secret controls that go with TLS.

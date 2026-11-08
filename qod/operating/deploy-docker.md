@@ -178,7 +178,7 @@ A one-shot `starflow-db-init` service creates the `starlake` metadata database o
 
 ### Fleet mode (manager and workers as containers)
 
-`docker-compose.fleet.yml` layers on the base file and runs the stack with the [fleet runtime](deploy-fleet.md#run-servers-as-docker-containers): the manager schedules nodes onto two worker containers (`fleet-worker-1` on port `21901`, `fleet-worker-2` on `21902`) instead of spawning them itself. It needs a join token in `.env` and the SeaweedFS profile; it sets `QOD_INTERNAL_URL=http://host.docker.internal:20900` so the worker nodes can call the manager back for their authorization verdicts (fleet mode refuses to boot without it):
+`docker-compose.fleet.yml` layers on the base file and runs the stack with the [fleet runtime](deploy-fleet.md#run-servers-as-docker-containers): the manager schedules nodes onto two worker containers (`fleet-worker-1` on port `21901`, `fleet-worker-2` on `21902`) instead of spawning them itself. It needs a join token in `.env` and the SeaweedFS profile; it sets `QOD_INTERNAL_URL=http://host.docker.internal:20901` and publishes that port, the manager's verdict listener, so the worker nodes can call the manager back for their authorization verdicts (fleet mode refuses to boot without it):
 
 ```bash
 echo "FLEET_JOIN_TOKEN=$(openssl rand -hex 24)" >> .env
@@ -197,8 +197,21 @@ The defaults are tuned for a fast local smoke test. Change these before any non-
 |---|---|---|
 | Admin password | `ADMIN_PASSWORD` (or `QOD_ADMIN_PASSWORD`, which wins) | `admin`, set on the first boot only; afterwards rotate with `qod auth change-password` |
 | Postgres password | `PG_PASSWORD` | `azizam` |
-| FlightSQL TLS | `TLS` | `false` in compose |
+| FlightSQL TLS | `TLS` | `false` when `TLS` is unset (plain `docker compose up` with no `.env`). A wrapper run with no `.env` copies `.env.example`, which sets `TLS=true`, so the edge starts with TLS on |
 
 There is no REST API key to set: the REST API takes `qod login` sessions and personal access tokens (`qod auth pat create`) only, and an `API_KEY` line left in `.env` by an earlier release is ignored with a warning. `AUTH=false` boots only with another FlightSQL authenticator and a way to sign in to the admin UI (see `.env.example`); otherwise the manager refuses to boot. The session signing secret needs no setting: when `SESSION_JWT_SECRET` is unset, the first boot generates one and stores it in the control-plane database, so sessions survive restarts.
 
 Enable edge TLS with `TLS=true` (clients then connect with `grpc+tls://...`); see [TLS](/qod/operating/tls). For the full set of tunable keys, see the [Configuration reference](/qod/reference/configuration).
+
+## Secure in production
+
+- [ ] Set the values in [Before exposing beyond localhost](#before-exposing-beyond-localhost) (`ADMIN_PASSWORD`, `PG_PASSWORD`, `TLS=true`) in `.env` before the first boot: the admin password is read on that boot only.
+- [ ] Remove the `ports` entry of the `postgres` service unless outside tools must reach it: it publishes `PG_PORT` on the host, and the manager logs in as the bundled Postgres's own superuser (`PG_USER`, default `postgres`). For tenants you do not fully trust, run an external Postgres with a non-superuser `CREATEDB` role instead.
+- [ ] Block the node port range (`QUACK_MIN_PORT`..`QUACK_MAX_PORT`, 21900 to 22500) at the host firewall: the compose file publishes it, and only the manager, inside the same container, calls the nodes.
+- [ ] Keep `:9494` (`QUACK_PORT`) closed to remote clients, or turn its TLS on: the native front door speaks plain HTTP by default, and the compose file does not pass `QOD_QUACK_TLS_ENABLED`, so add it to the `quack` service's `environment` (see [TLS](./tls.md#the-native-quack-front-door)).
+- [ ] Put a TLS-terminating reverse proxy in front of `MANAGER_PORT` (`20900`) for remote browsers and CLIs: the REST port speaks plain HTTP.
+- [ ] Leave the `observability` profile off on a host others can reach, or turn off Grafana's anonymous admin first (see [Observability](#observability)); with the `seaweedfs` profile, firewall its published ports (`8333`, `9333`, `8080`, `8888`).
+- [ ] Do not seed with `LOAD_TPC` / `LOAD_TPCH` / `LOAD_TPCDS` / `LOAD_SSB` on a shared host: the demo manifest creates users whose passwords are published in it.
+- [ ] Treat `PGDATA_DIR` (`./pgdata`) and its backups as secrets: the control plane stores catalog passwords, object-store keys, the node-key secret and, unless `SESSION_JWT_SECRET` is set, the session-signing secret.
+
+See [Security hardening](./hardening.md#recommended-posture-for-untrusted-tenants) for the controls to add before tenants you do not fully trust connect.

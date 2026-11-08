@@ -130,3 +130,13 @@ Both are the expected outcome, and both are what a copy of your storage would gi
 - **DuckLake's own checks are asymmetric.** Attaching an unencrypted catalog with encryption
   enabled fails loudly, but attaching an encrypted catalog with encryption disabled succeeds
   silently. The manager's own check is what catches the second case.
+
+## Secure in production
+
+- [ ] Set `QOD_REQUIRE_ENCRYPTION=true` before you create the first database: it refuses unencrypted creates over REST and manifest import, and leaves existing databases as they are (see [Requiring encryption deployment-wide](#requiring-encryption-deployment-wide)).
+- [ ] Protect the control-plane Postgres, its backups and its replicas as the decryption key for every encrypted database (see [What it protects, and what it does not](#what-it-protects-and-what-it-does-not)).
+- [ ] Treat an exported manifest as a decryption credential: a database's `metastore` is exported verbatim, its `pgPassword` included, which opens a DuckLake catalog and its per-file keys (see [Sensitivity of an export](./manifest.md#sensitivity-of-an-export)).
+- [ ] For an encrypted `duckdb-file` database, back up the control plane, not only a manifest: an export never carries the key, so a restore elsewhere needs the control-plane backup, or your own copy of a key you supplied with `--encryption-key`.
+- [ ] Restart every node after upgrading on Kubernetes, so that pods started by an earlier manager receive the encryption key and the catalog password as files rather than in their environment (see [Kubernetes](#kubernetes)).
+
+See [Security hardening](./hardening.md#node-enforcement-always-on) for how nodes keep the DuckLake metadata catalog, which holds the per-file keys, from every non-superuser.

@@ -55,7 +55,7 @@ dataPath = s3://<bucket>/<tenant>_<dbname>-<id8>/
 
 where `id8` is the first 8 characters of the database's surrogate id. Prefixes are keyed by the incarnation, not by the name: delete `acme_sales` and create it again and the new database gets a fresh, empty prefix instead of inheriting its predecessor's files. The response carries the effective `dataPath`.
 
-The database's `objectStore` map is filled from the config block (`s3_endpoint`, `s3_region`, `s3_url_style`, `s3_access_key_id`, `s3_secret_access_key`), so everything downstream behaves exactly as it does for a bring-your-own bucket: the path-scoped `CREATE SECRET` at node spawn, secret redaction on GET/list, the Kubernetes per-node Secret, and manifest export redaction.
+The database's `objectStore` map is filled from the config block (`s3_endpoint`, `s3_region`, `s3_url_style`, `s3_access_key_id`, `s3_secret_access_key`), so everything downstream behaves exactly as it does for a bring-your-own bucket: the path-scoped `CREATE SECRET` at node spawn, secret redaction on GET/list and the Kubernetes per-node Secret. A [manifest export](./manifest.md) carries the database's `objectStore` as stored, its `s3_secret_access_key` included.
 
 Three refusals, all `400` with an actionable message:
 
@@ -123,6 +123,17 @@ Per-database credential minting (per-database keys issued by the store's admin A
 A managed create snapshots the operator credential (`QOD_MANAGED_STORE_ACCESS_KEY_ID` / `QOD_MANAGED_STORE_SECRET_ACCESS_KEY`) into that database's own `objectStore` at create time; it is a copy, not a live reference to the config block. Rotating `QOD_MANAGED_STORE_SECRET_ACCESS_KEY` on the manager therefore only affects *future* managed creates - every managed database that already exists keeps signing requests with the old key until something rewrites its `objectStore`, and it breaks at its next node respawn once the old key is revoked at the store.
 
 Today's remediation is manual, per database: `database/update` with a fresh `objectStore` pointing at the new secret, then recycle that database's pools so nodes pick it up on their next spawn. Per-database credential minting (above) is the designed follow-up that would make rotation blast-radius-free by construction.
+
+## Secure in production
+
+- [ ] Create the root bucket (`QOD_MANAGED_STORE_BUCKET`) with versioning off and never turn it on: on a versioned bucket a purge leaves every object version behind.
+- [ ] Give `QOD_MANAGED_STORE_ACCESS_KEY_ID` / `QOD_MANAGED_STORE_SECRET_ACCESS_KEY` a key limited to the managed bucket, from a secret store: every managed database shares it, and tenants are kept apart by prefix (see [Isolation posture](#isolation-posture-shared-credential-prefix-by-convention)).
+- [ ] Treat exported manifests as holding that key: each managed database's `objectStore` is exported as stored, the operator's `s3_secret_access_key` included.
+- [ ] Rotate by rewriting each managed database's `objectStore` (`qod database update --object-store ...`, as a superuser), recycling its pools, and only then revoking the old key: a new `QOD_MANAGED_STORE_SECRET_ACCESS_KEY` reaches only later creates (see [Credential rotation](#credential-rotation)).
+- [ ] Set `QOD_MANAGED_STORE_RETAIN_DAYS` to how long a deleted database's data may stay recoverable, and delete with `--purge-managed-data` when a tenant's data must go at the next sweep.
+- [ ] Purge or migrate the outstanding prefixes before changing `QOD_MANAGED_STORE_BUCKET` (see [Changing the bucket](#changing-the-bucket-strands-existing-tombstones)).
+
+See [Security hardening](./hardening.md#the-nodes-own-credentials) for how a node scopes a database's keys to its own data path.
 
 ## See also
 

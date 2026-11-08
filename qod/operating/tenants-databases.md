@@ -21,7 +21,7 @@ Provision them in that order: tenant first, then a database under it, then a poo
 
 ## Authenticating with the CLI
 
-Every `/api/*` call needs a credential. The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_TOKEN` holds a personal access token for CI scripts. These endpoints are mounted only in `postgres` state-storage mode (the default).
+Every `/api/*` call needs a credential. The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_TOKEN` holds a personal access token for CI scripts.
 
 ## Tenants
 
@@ -104,8 +104,8 @@ qod database create --tenant acme --name sales --kind ducklake \
 | `tenant` | Owning tenant (must exist). |
 | `name` | Database suffix; the full name becomes `${tenant}_${name}`. |
 | `kind` | `ducklake` (DuckLake catalog backed by Postgres, the default), `duckdb-file` (a standalone `.duckdb` file), or `memory` (no persistent catalog; useful for federation-only databases). |
-| `dataPath` | Where DuckLake writes Parquet. A filesystem path, or an `s3://` / `az://` / `abfss://` URI for object storage. Required on create for `kind=ducklake` unless `managedStorage` is used. |
-| `metastore` | Optional per-database overrides of the Postgres connection (`pgHost`, `pgPort`, `pgUser`, `pgPassword`, `dbName`, `schemaName`). Empty inherits the global defaults. |
+| `dataPath` | Where DuckLake writes Parquet. A filesystem path, or an `s3://` / `az://` / `abfss://` URI for object storage. A `ducklake` create that names none gets a folder of its own beside the default data path (`QOD_DUCKLAKE_DATA_PATH`), under the database's full name, stored on the database: `400 invalid_contract` when there is no default to place it by, `409 data_path_taken` when another database's folder overlaps it. A caller who is not a superuser names no other path than a folder of a remote store (`s3://`, `s3a://`, `r2://`, `gs://`, `az://`, `azure://`, `abfss://`), not its root, with their own keys in `objectStore`, complete for its scheme; anything else is `403 superuser_required`, and a folder at, under or above another database's is `409 data_path_taken`. `managedStorage` is the other way to get one. |
+| `metastore` | Optional per-database overrides of the Postgres connection (`pgHost`, `pgPort`, `pgUser`, `pgPassword`, `dbName`, `schemaName`). Keys left out take the manager's defaults, but the default login (`pgUser`, `pgPassword`) fills in only on QoD's own Postgres server: a `ducklake` database on another server brings its own, else `400 own_login_required`. Only a superuser sets `pgHost`, `pgPort`, `pgUser`, `pgPassword` or `dbName` (`dbName` stays free on `kind=duckdb-file`); anyone else gets `403 superuser_required`. |
 | `objectStore` | Optional per-database object-store credentials when `dataPath` is an object-store URI. Takes effect at node spawn as a path-scoped DuckDB secret; see below. |
 | `defaultDatabase` / `defaultSchema` | The catalog and schema unqualified table names resolve against for sessions on this database. `defaultSchema` must differ from the database name to avoid ambiguous two-part identifiers in DuckDB. |
 
@@ -165,7 +165,19 @@ qod database list --tenant acme
 qod database delete --tenant acme --name sales
 ```
 
-Deleting a database removes the `qodstate_tenant_db` row. The underlying Postgres database and any object-store Parquet are not erased by the API; reclaim them separately if you no longer need the data. The exception is a database on [managed object storage](/qod/operating/managed-storage), whose data QoD does reclaim: delete tombstones the prefix and a background worker purges the objects once the retention window elapses, or right away with `--purge-managed-data`.
+Deleting a database removes the `qodstate_tenant_db` row. For a `ducklake` database it also drops the catalog's Postgres database when that lies on QoD's own server; on another server it drops nothing and logs an ERROR naming the database to drop there by hand. The data files are left in place: reclaim them separately if you no longer need the data. The exception is a database on [managed object storage](/qod/operating/managed-storage), whose data QoD does reclaim: delete tombstones the prefix and a background worker purges the objects once the retention window elapses, or right away with `--purge-managed-data`.
+
+## Secure in production
+
+- [ ] Set `QOD_PG_USER` / `QOD_PG_PASSWORD` to a non-superuser Postgres role with `CREATEDB` (the defaults are `postgres` / `azizam`): every database on QoD's own Postgres server, and the nodes that serve it, use this login.
+- [ ] Point a database's `metastore` at another Postgres server only when you trust that server as far as the database's nodes: whoever controls it reaches what those nodes reach. Such a database needs its own `pgUser` and `pgPassword` (`400 own_login_required`), and only a superuser sets the server keys (`403 superuser_required`).
+- [ ] Leave `QOD_TENANT_FILES_ROOT` unset unless users must load local files; when you set it, keep the tenant folders free of symbolic links (see [Authorized folders and users' own S3 keys](#authorized-folders-and-users-own-s3-keys)).
+- [ ] List in `QOD_USER_S3_ALLOWED_ENDPOINTS` only the S3-compatible endpoints you trust users to send their own keys to (empty, the default, means AWS only).
+- [ ] Set `QOD_NODE_ALLOW_LOCAL_FILES=false` when every database's data lies on object storage (on Kubernetes, in the chart's `env`): nodes then open no local file for anyone, from their next start. A database whose data path is local is blocked, and boot refuses the setting together with `QOD_TENANT_FILES_ROOT`.
+- [ ] On Kubernetes, and on fleet without `QOD_FLEET_EPHEMERAL=local`, read every tenant admin's `initSql` whose save answered with `initSqlWarning`: it was not checked against the allowlist, and a superuser who re-saves it unchanged makes it trusted (see [Init SQL trust](#init-sql-trust)).
+- [ ] When a tenant's data must be gone, remove its data folder yourself: deleting a DuckLake database drops its catalog database only when it lies on QoD's own Postgres server, and leaves its data files in place (managed storage excepted).
+
+See [Security hardening](./hardening.md#files-and-s3) for how nodes judge file paths and S3 scopes, and why users' S3 keys make control-plane backups sensitive.
 
 ## Next step
 

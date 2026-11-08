@@ -56,6 +56,7 @@ Access to both history endpoints follows the same scope rules as the audit log:
 
 - **Superusers** see all rows and all tenants.
 - **Tenant admins** see only their own tenant's rows. Specifying a different `tenant` in the query is silently overridden to their own tenant; no cross-tenant existence is leaked via differential error codes.
+- **Regular users** (non-admin `kind=user` principals) cannot call either endpoint (`403 admin_required`). They see their own recent statements with `qod profile statements` (`GET /api/profile/statements`) and their own usage with `qod profile usage` (`GET /api/profile/usage`). The statements come from the answering manager's in-memory ring of recent executions, not from `qodstate_stmt_history`, so they start empty after a restart; the usage comes from the daily rollups.
 
 ## Retention
 
@@ -152,3 +153,13 @@ qod history trends --granularity day --tenant acme \
 Each bucket in the response carries `bucketStart` (UTC bucket start), `tenant`, `pool`, `username`, `stmtCount`, `errorCount`, `deniedCount`, `engineMsSum`, and `p50Ms`/`p95Ms`/`p99Ms`. Percentile fields are present on hourly buckets only; daily buckets carry `null` for percentiles (daily rollups are per-user and are not yet surfaced as latency charts).
 
 Buckets that had zero statements are not returned; gaps in the response represent idle periods.
+
+## Secure in production
+
+- [ ] Keep credentials out of SQL text. A client statement is stored as sent (its first 500 characters) and shown to the admins of the pool's tenant, a superuser's statement on that tenant's pool included. Only the SQL admin dialect's statements (`CREATE USER ... PASSWORD`, `GRANT`, ...) are replaced by a placeholder, and only the manager's own statements have their literals masked. Register S3 keys with `qod profile s3 add` rather than in a `CREATE SECRET`.
+- [ ] Set `QOD_STMT_HISTORY_RETENTION_DAYS` (default `7`) to your retention policy for query text, and avoid `0` (keep forever) unless that policy asks for it: raw rows hold every statement's text and literals. Daily rollups keep per-user counts for `QOD_USAGE_RETENTION_DAYS` (default `400`).
+- [ ] Keep `QOD_TELEMETRY_STORE=postgres` (the default): `none` records nothing anywhere, so the audit log stops along with the statement history.
+- [ ] To ship statements to a log pipeline, use `QOD_AUDIT_SINK=stdout` (one JSON line per audit or statement event; it needs `QOD_TELEMETRY_STORE=postgres`): it masks every quoted literal on the way out.
+- [ ] Protect control-plane backups and read replicas as holders of query text: `qodstate_stmt_history` lives in the control-plane database.
+
+See [Security hardening](./hardening.md) for protecting the control-plane database and its backups.

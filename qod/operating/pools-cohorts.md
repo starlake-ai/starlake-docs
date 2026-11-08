@@ -139,3 +139,13 @@ Two validation rules apply when `cohorts` is non-empty:
 Each toleration is `{key, operator, value, effect}`, matching the Kubernetes pod toleration fields.
 
 Cohorts are ignored on the local (non-Kubernetes) backend, where all nodes are child processes of the manager and there is nothing to place them on. The admin UI hides the per-pool placement controls unless the runtime backend reports that placement is supported. For the Kubernetes backend itself, see [Kubernetes deployment](/qod/operating/deploy-kubernetes).
+
+## Secure in production
+
+- [ ] Review the pool `initSql` that tenant admins write. It runs under the [initSql allowlist](./tenants-databases.md#init-sql-trust), but on Kubernetes, and on fleet without `QOD_FLEET_EPHEMERAL=local`, the manager cannot check it when it is saved: the write is accepted with an `initSqlWarning`, and the node skips each refused statement.
+- [ ] On Kubernetes, size every pool's nodes with `qod pool set-resources --cpu <n> --memory <q>` and cap the engine below the pod with `SET memory_limit` in `initSql`, so that one tenant's queries cannot take a whole host from its neighbours.
+- [ ] Grant tenant-admin rights only to people who may spend node capacity. The manager enforces no per-tenant node quota of its own (only a manager module can add one), so a tenant admin can create pools, scale them and set their `cpu` and `memory`.
+- [ ] On Kubernetes, give the pools of tenants you do not fully trust nodes of their own with `cohorts` (a `nodeSelector` plus tolerations); without them, node pods of every tenant share the cluster's nodes.
+- [ ] Leave `QOD_POD_TEMPLATE_ENABLED` at `false` unless a pool needs a full pod template. Setting a template is superuser-only, and a template adds its volumes and sidecars to every node pod of the pool.
+
+See [Security hardening](./hardening.md) for the node pods' security context, the network policy around them, and the rules that tenant admins' init SQL runs under.

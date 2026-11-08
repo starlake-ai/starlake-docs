@@ -61,3 +61,14 @@ Point the IdP's SCIM integration at the tenant base URL and give it the Bearer t
 - **Microsoft Entra**: enterprise application provisioning, tenant URL as above, secret token = the PAT. Entra's non-standard string booleans on `active` are accepted.
 
 Pair provisioning with the tenant's SSO configuration (see [Authentication providers](/qod/operating/auth-providers)) so provisioned users can actually sign in.
+
+## Secure in production
+
+- [ ] Mint each connector's token as an admin of that tenant, never as a superuser: a superuser's personal access token passes the tenant check on every tenant's SCIM base URL.
+- [ ] Own the token by a dedicated admin account of the tenant rather than a person's: a token stops working when its owner is disabled, so offboarding that person would stop provisioning.
+- [ ] Use one token per connector with an expiry (`qod auth pat create --name scim-okta --expires-at <ISO-8601 date>`), and rotate it before then: mint the new one, paste it into the connector, then revoke the old one (`qod auth pat list` shows ids, never values; `qod auth pat revoke --id <id>`).
+- [ ] Configure the connector with an `https://` base URL only: the bearer is a tenant admin's credential.
+- [ ] Link IdP groups to roles and pool grants deliberately ([group-role grants](./rbac-admin.md#2-create-a-group-and-attach-a-role)): everyone the IdP adds to a group linked to a role holding `*.*.*`, or to a tenant-wide pool grant, gets that access.
+- [ ] Deprovision with `active: false` or DELETE: either way the user's open FlightSQL and native sessions are refused on their next statement.
+
+See [Security hardening](./hardening.md) for the node-side enforcement and the rest of the production posture.

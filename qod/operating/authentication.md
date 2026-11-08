@@ -217,3 +217,16 @@ There is no unauthenticated mode. The manager refuses to boot when the FlightSQL
 The handshake fails closed as well: with no provider configured, the FlightSQL edge and the Quack front door refuse every connection, superusers included ("no authenticator is configured on this manager: every connection is refused").
 
 For all configuration keys and their defaults see [/reference/configuration](/qod/reference/configuration).
+
+## Secure in production
+
+- [ ] Serve the admin UI and REST API (`:20900`, plain HTTP) only through a TLS-terminating proxy. Leave `QOD_SESSION_COOKIE_SECURE` at its default `auto` when the proxy sends `X-Forwarded-Proto: https`, and set it to `true` when it does not: the `qod_session` cookie carries the session JWT and must never cross plain HTTP.
+- [ ] Keep TLS on the FlightSQL edge (`PROXY_TLS_ENABLED`, default `true`) with a [CA-signed certificate](./tls.md#use-a-ca-signed-certificate): Basic passwords and bearer tokens travel on the handshake.
+- [ ] Pin `QOD_SESSION_JWT_SECRET` (at least 32 bytes, the same value on every replica) from an external secret store when control-plane backups, snapshots or read replicas are less trusted than the manager. With the stored secret, anyone who can read the control-plane database can forge a superuser session.
+- [ ] Rotate the first-boot password of both seeded superusers (`qod auth change-password --username admin@localhost.local`, then `--username admin`), then remove `QOD_ADMIN_PASSWORD` from the manager's environment: a boot with it set re-creates a deleted superuser row with that password.
+- [ ] Set `QOD_MGMT_PUBLIC_BASE_URL` to the browser-visible `https://` origin before anyone signs in through single sign-on, the system login's or a tenant's. Unset, the redirect URI is `http://localhost:<manager port>/api/auth/oidc/callback`.
+- [ ] Restrict who can set the claims that name QoD roles and groups at your identity provider. The role claim (`QOD_AUTH_ROLE_CLAIM`, default `role`) and the groups claims of [Roles and groups from tokens](#roles-and-groups-from-tokens) are matched by name against the tenant's roles and groups, the built-ins included: a token whose role is `qod_all_tables` reads and writes every table of the tenant, and one whose groups include `qod_all_pools` reaches every pool.
+- [ ] Give automation personal access tokens (`qod auth pat create`) and unset `QOD_API_KEY`: the static API key is gone, and the manager only warns that it ignores it.
+- [ ] Lower `QOD_SESSION_TTL_SEC` (default `3600`) when a credential revoked at the identity provider must stop working on open FlightSQL sessions sooner. A user disabled in QoD (`qod user update <id> --no-enabled`) is refused on its next statement whatever the TTL.
+
+See [Security hardening](./hardening.md) for the node-side enforcement, the node key secret and the network controls that sit behind authentication.

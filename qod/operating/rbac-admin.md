@@ -105,12 +105,14 @@ A tenant-scoped user can only connect to pools belonging to their tenant. The `k
 
 Roles and groups are attached at creation with the repeatable `--role` and `--group` flags (role and group names in the user's tenant). Omitting a flag attaches the built-in default: `qod_all_tables` for roles and `qod_all_pools` for groups, which gives the user **full data access to every table and every pool of the tenant**. Name narrower memberships to start smaller:
 
+Without `--password` the CLI prompts for the password twice, hidden, so it stays out of the shell history:
+
 ```bash
 # Full access (defaults: qod_all_tables + qod_all_pools)
-qod user create --tenant acme --username alice --password s3cr3t
+qod user create --tenant acme --username alice
 
 # Only the analyst role, no pool yet (grant pool access in step 5)
-qod user create --tenant acme --username bob --password s3cr3t \
+qod user create --tenant acme --username bob \
   --role analyst --group qod_no_pools
 ```
 
@@ -121,7 +123,7 @@ An unknown name is refused with `400 unknown_role` / `unknown_group`; an explici
 A superuser has `tenant: null`. Superusers bypass the pool-access gate and the per-statement ACL gate entirely. Only an existing superuser may create another superuser; a tenant-scoped admin attempting this call receives a 403.
 
 ```bash
-qod user create --username ops-admin --password 'str0ng!' --superuser --kind admin
+qod user create --username ops-admin --superuser --kind admin
 ```
 
 Passing `--superuser` (and omitting `--tenant`) is equivalent to passing `"tenant": null` on the REST body. Superusers bypass RBAC, so they take no roles or groups (`400 memberships_not_applicable`).
@@ -228,3 +230,14 @@ In the admin UI: click a user on the **Users** page to open the effective-permis
 | Groups | `qod group list --tenant <name>` |
 | Group role memberships | `qod membership group-role list --group-id <id>` |
 | Pool permissions | `qod pool permission list --tenant <name> --user-id <id> --group-id <id>` |
+
+## Secure in production
+
+- [ ] Leave `--password` off `qod user create` so the CLI prompts for it and the shell history never holds it, and add `--must-change-password` so the user replaces it at the first login.
+- [ ] Pass `--role` and `--group` on every `qod user create`: without them the user gets `qod_all_tables` and `qod_all_pools`, every table and every pool of the tenant.
+- [ ] Pass `--pool-id` on `qod pool permission grant`: without it the grant covers every current and future pool of the tenant.
+- [ ] Give agents and CI narrowed personal access tokens: `qod auth pat create --name <name> --expires-at <ISO-8601 date>` with `--verb-ceiling RO`, `--database` / `--pool` to the ones it needs, `--drop-admin` to strip the owner's admin or superuser standing, and `--branch-only` to keep its writes on branches.
+- [ ] Offboard with `qod user update <id> --no-enabled` (sign-in refused, the user's tokens stop working, open sessions refused on their next statement) or `qod user delete <id>`.
+- [ ] Check the result of a change with `qod user effective <user-id>` before handing out the credentials.
+
+See [Security hardening](./hardening.md) for the node enforcement behind these grants and the rest of the production posture.

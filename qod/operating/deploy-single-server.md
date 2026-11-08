@@ -71,7 +71,7 @@ export QOD_MANAGED_STORE_URL_STYLE=path
 ```
 
    Important: the rustfs bucket used as the managed root must have **versioning OFF**, otherwise deleted data is never really purged.
-4. **Secure it before exposing anything**: grants are always enforced (every node judges each tenant statement), so grant users what they read; rotate the admin password with `qod auth change-password` (`QOD_ADMIN_PASSWORD` only sets it on the first boot); keep TLS on the FlightSQL edge. `/api` takes `qod login` sessions and personal access tokens (`qod auth pat create`) only: there is no static API key, and a manager with `QOD_API_KEY` set refuses to boot.
+4. **Secure it before exposing anything**: grants are always enforced (every node judges each tenant statement), so grant users what they read; rotate the admin password with `qod auth change-password` (`QOD_ADMIN_PASSWORD` only sets it on the first boot); keep TLS on the FlightSQL edge. `/api` takes `qod login` sessions and personal access tokens (`qod auth pat create`) only: there is no static API key, and a `QOD_API_KEY` value is ignored with a warning on stderr.
 
 ### 0.1 The complete environment for this deployment
 
@@ -938,6 +938,19 @@ It reports throughput, success rate, and p50/p95/p99 latency. For a stress run, 
 - **No cross-node query fan-out**: one statement, one node.
 - Local backend caps: max 50 child nodes (`QOD_MAX_NODES_TOTAL`), node ports from 21900 to 22500.
 - The manager runs as a single process in this deployment mode; nodes keep serving in-flight work if it restarts, and reconcile respawns state on the next boot.
+
+## Secure in production
+
+- [ ] Delete `QOD_ADMIN_PASSWORD` from `/etc/qod/qod.env` once the first boot has seeded the admins (step 4 of [section 0.3](#03-run-the-manager-under-systemd)), and rotate both default admin names, `admin@localhost.local` and `admin`, which share that password (`qod auth change-password --username <name>`).
+- [ ] Make `QOD_PG_USER` a non-superuser role that holds `CREATEDB` only: every database without its own login, and every node that serves one, uses this login.
+- [ ] Keep TLS on the FlightSQL edge (`PROXY_TLS_ENABLED`, `true` by default) and replace the self-signed certificate with a CA-signed one through `PROXY_TLS_CERT_CHAIN` and `PROXY_TLS_PRIVATE_KEY` (see [TLS](./tls.md#use-a-ca-signed-certificate)).
+- [ ] Put a TLS-terminating reverse proxy in front of `:20900` (the REST port speaks plain HTTP), set `QOD_PUBLIC_BASE_URL` (password reset links) and `QOD_MGMT_PUBLIC_BASE_URL` (the SSO redirect URI) to its `https://` origin, and set `QOD_SESSION_COOKIE_SECURE=true` if the proxy does not send `X-Forwarded-Proto`.
+- [ ] Keep the native front door on loopback (`QOD_QUACK_HOST=127.0.0.1`) or turn its TLS on (`QOD_QUACK_TLS_ENABLED=true`): it speaks plain HTTP by default and listens on every interface.
+- [ ] Block the node port range (21900 to 22500) at the host firewall: nodes listen on every interface, and only the manager, on the same host, calls them.
+- [ ] With every data path on rustfs and `QOD_TENANT_FILES_ROOT` unset, set `QOD_NODE_ALLOW_LOCAL_FILES=false`: nodes then open no local file for anyone, from their next start (boot refuses it together with `QOD_TENANT_FILES_ROOT`).
+- [ ] Protect the Postgres backups and replicas like the secrets they hold, or pin `QOD_SESSION_JWT_SECRET` and `QOD_NODE_KEY_SECRET` (at least 32 characters) from an external secret store: unset, both are generated and stored in the control-plane database, where a read-only copy can forge a superuser session or a node session handle.
+
+See [Security hardening](./hardening.md#recommended-posture-for-untrusted-tenants) for the controls to add before tenants you do not fully trust connect.
 
 ## Related pages
 

@@ -121,3 +121,15 @@ Federated sources and their secrets are included in the whole-control-plane conf
 | Client sees `QoD: catalog fedpg is read-only` | The source is read-only | Clear the source's `readOnly` flag (or `READ_ONLY` in its `ATTACH`, then recycle the pool) if writes are intended |
 | Tenant admin gets `403 superuser_required` | Creating or changing a `sql` source | A superuser saves it, or use a typed source |
 | `400 invalid_federated_source` naming a `{{secret.NAME}}` | The placeholder sits outside a single-quoted literal | Write it as `'{{secret.NAME}}'` |
+
+## Secure in production
+
+- [ ] Keep `QOD_FEDERATION_SECRET_STORE` at `dispatch` (the default) and store each secret as an inline `--value` or an `env:` reference: `aws-sm:`, `gcp-sm:`, `azure-kv:` and `vault:` references fail at node spawn, and their single-backend modes are refused at config load.
+- [ ] Write every credential in `setupSql` as `'{{secret.NAME}}'`, never as a literal: `setupSql` is exported verbatim in manifests, while a secret's value is exported as `***REDACTED***`.
+- [ ] Mark a source read-only (`--read-only`, REST `"readOnly": true`) unless QoD must write through it. Once the source holds a secret, only a superuser can make it writable again.
+- [ ] Leave `sql` sources to superusers (a tenant admin gets `403 superuser_required`) and give tenant admins typed sources: a `sql` source's `setupSql` runs unrestricted on every node of the database.
+- [ ] As a superuser (the only one who may author an `externalRef`), reference only values the tenant may see: the reference resolves from the manager's own environment into the tenant's node setup.
+- [ ] Give the upstream account a source logs in with (the `USER` of a Postgres `ATTACH`, for example) only the rights QoD should have there: a superuser's raw passthrough (`postgres_execute`, `mysql_*`) is not held to `readOnly`.
+- [ ] Recycle the pool after disabling or deleting a source: running nodes keep the catalog attached until they exit (see [Lifecycle](#lifecycle)).
+
+See [Security hardening](./hardening.md#init-sql-written-by-tenant-admins) for the other SQL that runs at node start and who may write it.

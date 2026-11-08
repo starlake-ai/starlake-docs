@@ -115,7 +115,7 @@ See [Split-horizon issuer](#split-horizon-issuer-qod_auth_keycloak_issuer). The 
 
 ## Worked example: Power BI via Keycloak
 
-This is the configuration the bundled kind rig (`charts/quack-on-demand/local-stack-k8s`) uses end to end:
+This is the configuration the bundled kind rig (`charts/quack-on-demand/local-stack-k8s`) uses end to end. It is a local test rig, which is why its public URLs are plain `http://`; in production they are `https://`.
 
 1. **Data-plane provider** (manager): Keycloak enabled, JWKS in-cluster, issuer overridden to the browser host:
    ```bash
@@ -130,6 +130,18 @@ This is the configuration the bundled kind rig (`charts/quack-on-demand/local-st
 4. The Power BI connector points its `AuthorizeUrl` / `TokenUrl` at `http://<public-host>:20900/auth/realms/qod/protocol/openid-connect/{auth,token}` with `ClientId = quack-powerbi`.
 
 With all four in place the browser login issues a token whose `iss` matches the override and whose `aud` contains `qod-flightsql`, so the FlightSQL handshake accepts it.
+
+## Secure in production
+
+- [ ] Enable only the providers you use (`QOD_AUTH_KEYCLOAK_ENABLED`, `QOD_AUTH_GOOGLE_ENABLED`, `QOD_AUTH_AZURE_ENABLED`, `QOD_AUTH_AWS_ENABLED`, all `false` by default): every enabled provider is one more issuer whose tokens the edge accepts.
+- [ ] Use `https://` for the issuer and authorization endpoints that browsers and SQL clients reach (the worked example's `http://<public-host>` is the local kind rig), and keep an `http://` `QOD_AUTH_KEYCLOAK_BASE_URL` for JWKS to the cluster's own network.
+- [ ] Keep `QOD_AUTH_KEYCLOAK_CLIENT_SECRET`, `QOD_AUTH_GOOGLE_CLIENT_SECRET` and `QOD_AUTH_AZURE_CLIENT_SECRET` in a mounted Secret, never in a ConfigMap or a committed values file.
+- [ ] Add the [audience mapper](#audience-the-token-must-be-for-your-client) only to the interactive clients that must reach the edge: any client whose tokens carry your `*_CLIENT_ID` as audience can open FlightSQL sessions.
+- [ ] In the Keycloak realm, turn off self-registration and user-editable user names: the token's `preferred_username` picks the QoD user row, a superuser's on a `superuser=true` handshake ([Identity source](./authentication.md#identity-source)).
+- [ ] Control who holds which realm roles and groups: Keycloak's `realm_access.roles` feeds both the role and the groups QoD reads, and those names are matched against the tenant's roles and groups, built-ins included ([Roles and groups from tokens](./authentication.md#roles-and-groups-from-tokens)).
+- [ ] On Azure AD, issue v2 tokens (`accessTokenAcceptedVersion: 2` in the app registration's manifest): a v1 token carries no `preferred_username`, Azure never sends `email_verified`, so a v1 token named by its email is refused.
+
+See [Security hardening](./hardening.md) for the node-side enforcement and the network controls behind the edge.
 
 ## See also
 

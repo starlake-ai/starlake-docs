@@ -607,3 +607,14 @@ The release that introduces the built-in roles and groups also renames the user 
 - **Rename user-made `qod_` roles and groups** left from before the prefix was reserved (including backfill-renamed `<name>_renamed` rows): while any exists, manifest export answers `400 reserved_name` and lists them.
 
 The session JWT `role` claim and the login and whoami responses are unchanged.
+
+## Secure in production
+
+- [ ] Create tenant users with explicit memberships (`qod user create --role ... --group ...`, or `qod_no_tables` / `qod_no_pools` to start from nothing): an omitted list attaches `qod_all_tables` and `qod_all_pools`, which is every table and every pool of the tenant ([Memberships at user creation](#memberships-at-user-creation)).
+- [ ] Review every grant with a `*` part, `*.*.*` first, and who holds `qod_all_tables`: `qod role permission list --role-id <id>` per role, `qod user effective <user-id>` per user.
+- [ ] Prefer pool grants naming a pool over tenant-wide ones (a null `pool_id`, the `qod_all_pools` group): a tenant-wide grant admits every current and future pool, and so every database behind them.
+- [ ] Give `kind=admin` only to the people who administer the tenant: an admin creates users and grants up to what they hold ([Privilege-escalation guards](#privilege-escalation-guards)).
+- [ ] Keep superusers few and check them with `qod user list` (without `--tenant` it includes them): they skip both gates.
+- [ ] Leave `QOD_CLS_ENABLED` and `QOD_RLS_ENABLED` at their default `true`: setting either to `false` drops every column mask or every row policy, for every tenant.
+
+See [Security hardening](./hardening.md) for the node enforcement that applies these grants and the rules no grant can lift.

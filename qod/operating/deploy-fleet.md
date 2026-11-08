@@ -53,7 +53,7 @@ Set `QOD_RUNTIME_TYPE=fleet`, a join token and this manager's internal URL. Ever
 |---|---|---|---|
 | `quack-on-demand.runtimeType` | `QOD_RUNTIME_TYPE` | `local` | Set to `fleet`. |
 | `quack-on-demand.fleet.joinToken` | `QOD_FLEET_JOIN_TOKEN` | (none) | Shared secret every fleet heartbeat carries. Required: the manager refuses to boot in fleet mode without it. |
-| `quack-on-demand.nodeAuthz.internalUrl` | `QOD_INTERNAL_URL` | (none in fleet mode) | This manager's own plain `http://` address on the servers' private network, which nodes call for their authorization verdicts (`http://10.0.3.2:20900`). Required: the manager refuses to boot in fleet mode without it. Under HA, one per replica, never a load balancer: each node calls the replica that minted its session handle. Boot prints `node decide URL: <url>`. |
+| `quack-on-demand.nodeAuthz.internalUrl` | `QOD_INTERNAL_URL` | (none in fleet mode) | This manager's own plain `http://` address on the servers' private network, which nodes call for their authorization verdicts. It names the verdict listener's port, the REST port plus one unless `QOD_INTERNAL_PORT` sets another (`http://10.0.3.2:20901`); a URL naming the REST port is refused at boot. Required: the manager refuses to boot in fleet mode without it. Under HA, one per replica, never a load balancer: each node calls the replica that minted its session handle. Boot prints `node decide URL: <url>`. |
 | `quack-on-demand.fleet.heartbeatSec` | `QOD_FLEET_HEARTBEAT_SEC` | `5` | Heartbeat interval. The manager returns it in every reply, so every server follows this one setting. |
 | `quack-on-demand.fleet.heartbeatTimeoutSec` | `QOD_FLEET_HEARTBEAT_TIMEOUT_SEC` | `30` | Silence beyond this marks a server `unreachable`. Must be greater than `heartbeatSec`. |
 | `quack-on-demand.fleet.reassignAfterSec` | `QOD_FLEET_REASSIGN_AFTER_SEC` | `600` | Silence beyond this marks a server `dead` and moves its node to a free server. `0` moves it as soon as the server is unreachable, `-1` never moves it. Otherwise must be at least `heartbeatTimeoutSec`. |
@@ -280,7 +280,7 @@ docker compose -f docker-compose.yml -f docker-compose.fleet.yml --profile seawe
 qod fleet servers    # fleet-worker-1 and fleet-worker-2, approved
 ```
 
-The manager runs maintenance and merge nodes itself (`QOD_FLEET_EPHEMERAL=local`), nodes call it back at `QOD_INTERNAL_URL=http://host.docker.internal:20900`, and the workers publish ports `21901` and `21902`. Docker Compose 2.24 or later is required. See [Docker Compose](deploy-docker.md) for the base stack.
+The manager runs maintenance and merge nodes itself (`QOD_FLEET_EPHEMERAL=local`), nodes call it back at `QOD_INTERNAL_URL=http://host.docker.internal:20901` (the verdict listener, published on the host), and the workers publish ports `21901` and `21902`. Docker Compose 2.24 or later is required. See [Docker Compose](deploy-docker.md) for the base stack.
 
 ## How scheduling works
 
@@ -432,3 +432,15 @@ The server-to-manager hop carries the assignments, so the join process insists o
 
 Fleet is an HA-capable runtime, like Kubernetes: `QOD_HA_ENABLED=true` with `QOD_RUNTIME_TYPE=fleet` runs several active-active managers against the same control-plane Postgres. Point every server at a load-balanced URL in front of the managers; any replica accepts heartbeats and claims, because both are Postgres writes. List that load balancer in `QOD_FLEET_TRUSTED_PROXIES` on every replica, with the same `QOD_FLEET_AUTO_APPROVE` everywhere, so [join approval](#join-approval) sees each server's real address whichever replica answers. Approval is stored in the shared control plane, so an approval made on one replica holds on all of them. Reconcile, and with it pending-slot filling, grace expiry and respawns, runs on the elected leader only. See [Resilience and recovery](resilience.md) for the HA model.
 
+
+## Secure in production
+
+- [ ] Narrow `QOD_FLEET_AUTO_APPROVE` from its open default (`0.0.0.0/0,::/0`) to the CIDRs your servers live on, or set it empty and approve each server with `qod fleet approve` (see [Join approval](#join-approval)).
+- [ ] Set `QOD_FLEET_TRUSTED_PROXIES` on every replica to the addresses of the TLS proxy or load balancer in front of the REST port, and to no range that holds untrusted clients: without it every server appears to come from the proxy.
+- [ ] Point `--manager` at that proxy's `https://` URL, and never run `--insecure` (`QOD_FLEET_INSECURE=true` in the worker image) outside tests: each assignment carries database credentials.
+- [ ] Keep managers and servers on a private network: set each replica's `QOD_INTERNAL_URL` to its own address there (the verdict listener's port, by default the REST port plus one), pass `--advertise-host` (and `--bind-host` if needed) for the data interface, and firewall the node port (`QOD_FLEET_NODE_PORT`, `21900`) to the managers only.
+- [ ] Pass `QOD_FLEET_JOIN_TOKEN` through the environment of a root-only unit file or plist, never `--join-token`, and rotate it on any suspicion (see [Security](#security)).
+- [ ] Set `QOD_NODE_KEY_SECRET` (at least 32 characters) to the same value on every replica, from an external secret store, when control-plane backups are less trusted than the managers.
+- [ ] Set `QOD_NODE_ALLOW_LOCAL_FILES=false`: every fleet data path is already on object storage, and nodes then open no local file on the servers for anyone.
+
+See [Security hardening](./hardening.md#node-keys-and-the-decide-url) for how node keys and the decide URL work, and the rest of that page for the controls on tenant SQL.

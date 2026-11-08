@@ -164,3 +164,13 @@ qod pool set-autoscale --tenant acme --db acme_sales --pool bi
 ```
 
 `qod pool list` reports the band alongside the pool's size, so you can see at a glance which pools are elastic and where they currently sit inside their range.
+
+## Secure in production
+
+- [ ] Lower `QOD_AUTOSCALE_HARD_CAP` (default `16`) to the largest pool you are willing to pay for. Anyone who can manage a pool, tenant admins included, declares its band, and the hard cap is the only manager-wide bound on the `maxNodes` they set (a manifest import does not apply it).
+- [ ] Give each band a `--max-nodes` that matches the pool's budget: the sweep adds read nodes under sustained load whoever sends it, so any user with access to the pool can grow it up to that ceiling.
+- [ ] Do not count on quotas to stop the growth: the core manager has no per-tenant node quota, and an autoscale action is refused only by a quota that a manager module enforces.
+- [ ] Use `QOD_AUTOSCALE_ENABLED=false` as the emergency brake: it stops every pool from moving at once, and the bands stay recorded.
+- [ ] Watch the [audit log](../administration/audit-log.md) for rows with actor `autoscale` and action `pool.scale`: each one records the direction, the target size and the utilization behind it.
+
+See [Security hardening](./hardening.md) for the controls that bound what each added node can reach.

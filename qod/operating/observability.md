@@ -147,3 +147,14 @@ Kubernetes-only rows (in `grafana-dashboard-k8s.json`):
 | Routing Locality | Table repeat rate, placement switch (scatter) rate, placement decisions by outcome, load ratio |
 
 The metric names and labels these panels query are listed in the [Metrics reference](/qod/reference/metrics). For the `QOD_METRICS_*` configuration keys, see the [Configuration reference](/qod/reference/configuration).
+
+## Secure in production
+
+- [ ] Keep `/metrics` off the public network. It answers without credentials on the REST port (`20900`), which also serves the console and the API, so block the `/metrics` path at the ingress or reverse proxy that publishes that port and scrape from the private network: the series name tenants, pools and nodes (`statements_total{tenant,pool,status}`, for one).
+- [ ] Set `QOD_METRICS_SINK=none`, or a cloud sink, where nothing scrapes the manager: neither mounts `/metrics`.
+- [ ] Never publish the Grafana of the bundled compose stack (port `3000`): it runs anonymous-admin (see [Local stack via the observability profile](#local-stack-via-the-observability-profile)).
+- [ ] Alert on `qod_journal_dropped_total{table="audit"}` above zero: each increment is an audit event that was not recorded (see [Audit journal health](#audit-journal-health)).
+- [ ] Alert on `qod_authz_decisions_total{outcome="unavailable"}`: nodes refuse the statements they cannot get a verdict for, and a rise can mean that something holds the verdict listener's connections (see [Authorization health](#authorization-health)).
+- [ ] On a cloud sink, give the manager an identity allowed only to publish metrics, and prefer an instance or workload identity to keys in its environment: on the local runtime the manager's `AWS_*`, `AZURE_*` and `GOOGLE_*` variables reach every node's environment.
+
+See [Security hardening](./hardening.md) for the network policy that restricts who reaches the manager's ports.

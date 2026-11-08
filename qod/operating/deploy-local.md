@@ -90,3 +90,15 @@ NUKE=1 DEMO=minimal LOAD_TPCH=1 qod start
 See [Demo bootstrap](/qod/getting-started/demo) for the full flag reference and what each profile creates.
 
 **Respawn and recovery behavior.** When the manager restarts after a crash or SIGTERM, it reads the persisted node registry and calls `adopt()` on each node that was alive at shutdown. Adopted nodes have their port re-claimed in the allocator and are tracked via `ProcessHandle` so a subsequent `stop()` still delivers SIGTERM. Nodes that died while the manager was down are detected by the health-check loop and replaced automatically. For full details on how the manager handles node failures, drains, and replacements, refer to the Resilience guide.
+
+## Secure in production
+
+- [ ] Choose a strong admin password on the first boot (`qod start` prompts for it, or set `QOD_ADMIN_PASSWORD`, read on that boot only), then rotate each admin name on its own: the default `QOD_ADMIN_USERNAME` seeds two superusers, `admin@localhost.local` and `admin`, with that one password (`qod auth change-password --username <name>`).
+- [ ] Replace the shipped Postgres login (`QOD_PG_USER=postgres`, `QOD_PG_PASSWORD=azizam`) with a non-superuser role that holds `CREATEDB`: every database without its own login, and every node that serves one, uses it.
+- [ ] Use your own Postgres rather than `QOD_PG_EMBEDDED=true`, and protect its backups and replicas: the control plane stores catalog passwords, object-store keys, the node-key secret and, unless `QOD_SESSION_JWT_SECRET` is set, the session-signing secret.
+- [ ] Set `QOD_DUCKLAKE_DATA_PATH` to an absolute path on persistent storage, or an object-store URL, before creating databases: the default `./ducklake/tpch` is relative to the manager's working directory, and DuckLake records the path in each catalog.
+- [ ] The REST port, the FlightSQL edge and the native front door listen on every interface (`QOD_ON_DEMAND_HOST`, `PROXY_HOST`, `QOD_QUACK_HOST`, all `0.0.0.0`): set `127.0.0.1` for each one that only local clients use.
+- [ ] Block the node port range (`QOD_MIN_PORT`..`QOD_MAX_PORT`, 21900 to 22500) at the host firewall: nodes listen on every interface, and only the manager, on the same host, calls them.
+- [ ] Put a TLS-terminating reverse proxy in front of `:20900` before any remote browser or CLI uses it (the REST port speaks plain HTTP), keep TLS on the FlightSQL edge with a CA-signed certificate, and keep `:9494` on loopback or turn its TLS on (see [TLS](./tls.md)).
+
+See [Security hardening](./hardening.md#recommended-posture-for-untrusted-tenants) for the controls to add before tenants you do not fully trust connect.

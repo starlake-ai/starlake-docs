@@ -504,3 +504,13 @@ is covered in the same page under
 | `400 unsupported_for_iceberg` from a catalog view | The table is Iceberg format v1, or the preview named a tag | Upgrade the table to format v2; select a snapshot by id or time |
 | `413 diff_too_large` | A snapshot of the diff has more data files than `QOD_CATALOG_ICEBERG_DIFF_MAX_FILES` | Diff closer snapshots, or raise the limit |
 | `503 catalog_unavailable` from a catalog view | No running node of the pool has the catalog attached | Read `attachStatus` on the source for the DuckDB error |
+
+## Secure in production
+
+- [ ] Set `QOD_NODE_ALLOW_LOCAL_FILES=false`, with every database's data on object storage. A node reads whatever files a catalog lists, local files included, so the manager prints `WARN: Iceberg source <tenant>/<database>/<alias>: ...` on stdout for each source when it is created or changed, and at each boot.
+- [ ] Keep sources read-only (the default for `iceberg_rest`); pass `--no-read-only` only for a catalog QoD must write, and recycle the pool after turning the flag off (see [Read-only](#read-only)).
+- [ ] Prefer a catalog that vends credentials, or give an AWS-signed source its own `awsCredentials` with an `awsScope` naming only the buckets that hold the catalog's table data (see [AWS credentials](#aws-credentials-sigv4-glue-and-s3-tables)).
+- [ ] Limit on the store side what any key reaching the warehouse can do, users' own keys included: the raw files of a warehouse bucket are no data folder QoD knows, so a user holding keys for it reads them directly.
+- [ ] Keep secrets out of `uri`, `warehouse` and the other literal fields: `config` is exported verbatim in manifests, and only `{{secret.NAME}}` placeholders (required for `clientSecret`, `token`, `awsSecretAccessKey` and `awsSessionToken`) keep a value out.
+
+See [Security hardening](./hardening.md#files-and-s3) for how users' own S3 keys are scoped and signed on the nodes.

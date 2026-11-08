@@ -83,3 +83,12 @@ A run moves `queued` to `running` (with a heartbeat per chain step) to `succeede
 - With `QOD_MAINT_ENABLED=false` the fibers do not run at all: nothing is scheduled, and manually enqueued runs stay `queued` until the service is re-enabled.
 
 Configuration knobs (`QOD_MAINT_*`) are listed in the [configuration reference](/qod/reference/configuration); the `qod_maint_*` series are in the [metrics reference](/qod/reference/metrics).
+
+## Secure in production
+
+- [ ] Enable maintenance on every DuckLake database and set `--retention-days` to your data-retention policy. Policies start disabled, so without one nothing is ever expired, and until expiry and cleanup run, rows that were deleted or updated stay readable by time travel to the users who may read the table.
+- [ ] Keep `retentionDays` at least as long as the window in which you must be able to undrop or restore after a mistaken or hostile write: nothing older than the horizon can be brought back. Tag the snapshots you must keep beyond it `protected` (see [Retention holds](#retention-holds)).
+- [ ] Give branches a TTL: a live branch pins its fork snapshot, and expiry keeps every snapshot from the oldest fork onwards (see [Branching](./branching.md#secure-in-production)).
+- [ ] Review the `maintenance.policy.upsert`, `maintenance.policy.delete` and `maintenance.run.manual` rows of the [audit log](../administration/audit-log.md): tenant admins manage their own tenant's policies, and a lowered `retentionDays` expires history at the next full run.
+
+See [Security hardening](./hardening.md) for the rules that decide what each user may read.

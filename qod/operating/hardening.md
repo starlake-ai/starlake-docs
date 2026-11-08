@@ -212,13 +212,13 @@ When enabled you get default-deny ingress and egress with only the necessary
 holes:
 
 - **Node pods:** ingress only from manager pods on the node port range; egress to
-  the manager pods on TCP 20900 (each statement's authorization verdict), DNS,
-  the control-plane Postgres, and the object store. A tenant node cannot reach the
-  rest of the cluster or the internet beyond those.
-- **Manager:** ingress on the REST/UI port (20900) and the FlightSQL edge (31338)
-  from `ingressFrom`, plus 20900 from the node pods whatever `ingressFrom` says
-  (the whole REST port: a network policy cannot filter by path); egress to node
-  pods, Postgres, DNS, and optionally SMTP.
+  the manager pods on TCP 20901, the verdict listener (each statement's
+  authorization verdict), DNS, the control-plane Postgres, and the object store.
+  A tenant node cannot reach the rest of the cluster or the internet beyond those.
+- **Manager:** ingress on the REST/UI port (20900), the FlightSQL edge (31338) and
+  the native Quack front door (9494) from `ingressFrom`, plus the verdict listener
+  (20901) from the node pods whatever `ingressFrom` says; egress to node pods,
+  Postgres, DNS, and optionally SMTP.
 
 The rules match the release namespace only.
 

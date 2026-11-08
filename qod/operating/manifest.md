@@ -56,6 +56,8 @@ A database's `metastore` is exported verbatim, including its control-plane passw
 encrypted DuckLake database that password opens the catalog holding every per-file key, so an
 export is a decryption credential for that database however its own key is handled.
 
+A database's `objectStore` is exported as stored, its secret key included (`s3_secret_access_key` and the like). That holds for a [managed-storage](./managed-storage.md) database too, whose `objectStore` carries the managed bucket's own key, the one key every managed database shares: an export holding any managed database is a credential for the whole managed bucket.
+
 Because bcrypt hashes of weak passwords are subject to offline cracking, **treat an exported manifest as sensitive**: do not commit it to a public repository, and store it with the same care as any other credential material (private repository, secret store, or encrypted backup).
 
 A plain export-then-import round-trip preserves credentials without rotation: exported hashes are applied verbatim on import, an absent hash falls back to the existing row, and redacted secret values are reused from the existing rows (see below).
@@ -135,3 +137,15 @@ Users' own S3 credentials are never in a manifest: after an import into another 
 - **Clone an environment.** Import a source environment's manifest into a fresh manager. Exported `passwordHash` values carry user credentials over as-is; provide real `password` / secret `value`s only for anything the manifest does not carry, since there is nothing to reuse on a first import.
 
 For the objects the manifest carries, see "Tenants and databases", "Pools and cohorts", [Federation](/qod/operating/federation), and the [Access control model](/qod/operating/rbac-model).
+
+## Secure in production
+
+- [ ] Store every export like a secret (private repository, secret store or encrypted backup): it carries each user's bcrypt hash, each database's `metastore` with its `pgPassword` and its `objectStore` with its secret key (the managed bucket's key for a managed-storage database), and typed federation configs verbatim. See [Sensitivity of an export](#sensitivity-of-an-export).
+- [ ] Import only files that went through review: `manifest/import` is superuser-only, writes across every tenant and replaces nested collections wholesale, and a YAML document nested deeply enough can stop the manager.
+- [ ] Read every `initSql` and its `initSqlTrusted` flag before importing: an import is a superuser's, so an entry that leaves the flag out runs on the nodes as written, outside the tenant-admin allowlist.
+- [ ] Before replaying an old manifest, compare its `federatedSources` with a current export: a `sourceType` moved back from `iceberg_rest` to `sql` makes a read-only catalog writable (see [Replaying an old manifest over an Iceberg source](#replaying-an-old-manifest-over-an-iceberg-source)).
+- [ ] Before importing a manifest exported before 0.11.0, check each tenant's `authConfig.clientSecretRef`: it imports active, without the review the upgrade asked for (see [Passwords and secrets on import](#passwords-and-secrets-on-import)).
+- [ ] Set `QOD_REQUIRE_ENCRYPTION=true` on a deployment that must encrypt before restoring into it: the import then refuses an unencrypted database, as `database/create` does.
+- [ ] Back up the control-plane database too, and protect that backup the same way: a manifest cannot recreate an encrypted `duckdb-file` database (its key is redacted) nor users' own S3 credentials.
+
+See [Security hardening](./hardening.md) for the node-key and session secrets that a control-plane backup also carries.
