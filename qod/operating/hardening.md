@@ -329,6 +329,30 @@ The sweep runs on every replica (the cache is per-process), independently of the
 [HA leader](resilience.md). No action is needed; the defaults suit most
 deployments.
 
+## Security audit
+
+A superuser sees how a deployment stands against the "Secure in production" checklist that ends
+each operating page:
+
+- in the console, under **Settings > Security audit**;
+- with `qod admin security-audit`: `--json` lists every check, and `--fail-on warn,error` makes a
+  warning or an error fail the command too, for a CI gate. A critical finding always exits 3.
+
+Each finding says what was found, what to change, and links to the checklist that explains it. The
+statuses:
+
+| Status | Meaning |
+|---|---|
+| critical | exploitable as configured |
+| warning | weakens the posture, or depends on your environment |
+| error | the check could not complete within its 5 seconds; the cause is in the manager log |
+| ok | checked, nothing to report |
+| n/a | the check does not apply here (another runtime, a feature turned off) |
+
+A finding names settings, counts and object names, never a secret's value. The audit reads the
+configuration of the replica that answers and the shared control-plane database, and changes
+nothing.
+
 ## Recommended posture for untrusted tenants
 
 For a gateway exposed to tenants you do not fully trust:
