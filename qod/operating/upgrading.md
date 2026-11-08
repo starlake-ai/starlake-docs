@@ -5,6 +5,8 @@ description: "The ordered checklist for upgrading a Quack on Demand manager from
 keywords: ["upgrade", "release notes", "0.11.0", "migration", "breaking changes"]
 ---
 
+Already on 0.11.0 or later? See [Upgrading to 0.12](./upgrading-0-12.md).
+
 0.11.0 moves every authorization decision into the node: each DuckDB node now runs `qod-node`, QoD's own executable on the official DuckDB library, and judges every statement of a user who is not a superuser on the plan DuckDB bound for it, asking the manager for a verdict. It is not a drop-in upgrade. A manager still carrying a removed setting refuses to boot, every node must restart, and tenant users lose access the old switches used to grant.
 
 Work through the steps in order. The sections after the checklist give the details, and the pages they link to describe the new behavior in full.

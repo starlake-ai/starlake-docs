@@ -140,7 +140,7 @@ sudo apt-get install lsof procps     # or your distribution's equivalent
 sudo useradd --system --create-home --home-dir /var/lib/qod --shell /usr/sbin/nologin qod
 
 sudo python3 -m venv /opt/qod
-sudo /opt/qod/bin/pip install qod==0.11.0
+sudo /opt/qod/bin/pip install qod==0.12.1
 sudo ln -s /opt/qod/bin/qod /usr/local/bin/qod
 ```
 
@@ -181,7 +181,7 @@ StartLimitIntervalSec=0
 [Service]
 User=qod
 EnvironmentFile=/etc/qod/qod.env
-ExecStart=/usr/local/bin/qod start --version 0.11.0
+ExecStart=/usr/local/bin/qod start --version 0.12.1
 Restart=always
 RestartSec=5
 KillMode=mixed
@@ -210,7 +210,7 @@ curl -fsS http://localhost:20900/ready
 
 | Setting | Why |
 |---|---|
-| `--version 0.11.0` | Without a pin, every start asks GitHub for the latest release, so a reboot or a crash restart can upgrade the manager with nobody watching, and an upgrade can require [steps of its own](upgrading.md). |
+| `--version 0.12.1` | Without a pin, every start asks GitHub for the latest release, so a reboot or a crash restart can upgrade the manager with nobody watching, and an upgrade can require [steps of its own](upgrading-0-12.md). |
 | `Restart=always`, `RestartSec=5`, `StartLimitIntervalSec=0` | Restarts the manager after any exit and keeps retrying, for example while Postgres is down. `systemctl stop` is not restarted. |
 | `KillMode=mixed` | Sends SIGTERM to `qod start` alone, which runs the same stop sequence as `qod stop`. Anything still alive at the end gets SIGKILL, so no node stays behind holding a port in the `21900+` range, even if the CLI itself is killed. |
 | `TimeoutStopSec=60` | Leaves room for that sequence, which sends SIGKILL after `FORCE_AFTER` seconds (default 10). If you raise `FORCE_AFTER`, keep this value well above it. |

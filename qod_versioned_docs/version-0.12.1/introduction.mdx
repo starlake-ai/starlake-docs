@@ -84,4 +84,4 @@ Questions or feedback? Join the [community on Discord](https://discord.gg/xHj9D6
 
 ## QoD and Starflow
 
-QoD is a standalone product; you do not need Starflow to run it. If you use Starflow, the [`starlake quack`](/starflow/cli/quack) command can host a Quack DuckDB server inside the Starflow process for local, single-node use, and Starflow can query a QoD fleet as a [regular connection](/starflow/guides/project-setup/connections), over either wire: `ATTACH 'quack:host:9494'` from its DuckDB engine, or a Flight SQL driver. For multi-tenant fleets with autoscaling and ACLs, use QoD.
+QoD is a standalone product; you do not need Starflow to run it. To run the two together, on any deployment, see [Run Starflow with QoD](./operating/starflow.md). If you use Starflow, the [`starlake quack`](/starflow/cli/quack) command can host a Quack DuckDB server inside the Starflow process for local, single-node use, and Starflow can query a QoD fleet as a [regular connection](/starflow/guides/project-setup/connections), over either wire: `ATTACH 'quack:host:9494'` from its DuckDB engine, or a Flight SQL driver. For multi-tenant fleets with autoscaling and ACLs, use QoD.

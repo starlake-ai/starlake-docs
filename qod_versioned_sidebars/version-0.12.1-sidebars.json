@@ -70,10 +70,12 @@
             "operating/deploy-docker",
             "operating/deploy-fleet",
             "operating/deploy-kubernetes",
+            "operating/starflow",
             "operating/tls",
             "operating/encryption",
             "operating/hardening",
             "operating/resilience",
+            "operating/upgrading-0-12",
             "operating/upgrading"
           ]
         },

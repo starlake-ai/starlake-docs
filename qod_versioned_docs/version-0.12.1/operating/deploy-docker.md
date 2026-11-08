@@ -144,6 +144,8 @@ Prometheus scrapes the in-network `quack` service; Grafana serves a pre-provisio
 
 ### Starflow
 
+For other setups, see [Run Starflow with QoD](./starflow.md).
+
 The `starflow` profile runs [Starflow](/starflow/overview) (the Starlake API + UI) next to the manager, paired with it over SSO: the admin UI's [Workbench](/qod/operating/admin-ui#workbench) entry opens Starflow already signed in, and Starflow queries the gateway as the signed-in QoD user. It is the Docker equivalent of `qod start --with-starflow`.
 
 ```bash
