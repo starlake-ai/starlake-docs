@@ -123,6 +123,66 @@ Users' S3 keys are stored in plaintext in the control-plane database
 protect its backups and replicas accordingly, and keep manager-to-node traffic on
 a private network.
 
+### Local files off
+
+The rules above bind tenant users, and only the paths a statement names. A
+superuser still reads any local file the node's OS user can, and a node reads
+whatever files a catalog lists, so a DuckLake file list, deletion schedule or
+Iceberg manifest can point it at a local path. When every database's data lies on
+object storage, close both on the manager:
+
+```bash
+QOD_NODE_ALLOW_LOCAL_FILES=false   # quack-on-demand.nodeFiles.allowLocal, default true
+```
+
+| Deployment | Where to set it |
+|---|---|
+| Kubernetes | The chart's `env` (`env.QOD_NODE_ALLOW_LOCAL_FILES=false`): it has no value of its own |
+| Single Docker container | The `quack` service's `environment` (`QOD_NODE_ALLOW_LOCAL_FILES: "false"`): the compose file does not pass it from `.env` |
+| Local, single server, fleet | The manager's environment: it reaches every node it starts, `qod fleet join` servers included |
+
+It applies at each node's next start, so restart the nodes already running. Each
+node's setup then ends by turning DuckDB's external access off: nothing on the node
+opens a local path for anyone, superusers included (`Permission Error: Cannot
+access file ...`), and no session can turn it back on. DuckDB's own temp directory
+and the system's CA bundle stay open, so spills and HTTPS keep working, as do
+DuckLake, merges, maintenance, users' S3 keys and Iceberg over REST on object
+storage.
+
+The manager checks each node's setting with its health probe. A node that does not
+show it (an older image or `qod fleet join`, a node started before the setting, a
+switch that failed at init) is unhealthy and not routed to until someone restarts
+it, and the pool's `statusDetail` says so.
+
+What it costs:
+
+- A database on a local data path is blocked: its pools start no node, and the boot
+  banner and `/api/pool/list` say why. A create or an update that would make one
+  answers `400 local_files_off`, and a statement that would wake a suspended pool of
+  one is refused at once. A manifest still imports one, so a backup always restores.
+  The default data path of a local or Docker install is local: change it first.
+- `QOD_TENANT_FILES_ROOT` set with it refuses boot, so users cannot load local files.
+- `INSTALL` and `LOAD` are refused at run time, to superusers too. `icu`, `json`,
+  `parquet` and `httpfs` always work; `ducklake`, `postgres`, `iceberg` and `avro`
+  only where the node's setup loaded them; any other only through a database's or
+  pool's `initSql`.
+- A federated source that failed at a node's start, or was added to a running node,
+  attaches only after a node restart.
+- A private CA goes in the system bundle: a `ca_cert_file` at a path of its own is
+  refused.
+- Views over local files (`qod serve <local file>`) start and read nothing.
+- A superuser's `enable_logging` with file storage at a local path aborts the node.
+
+What it leaves open:
+
+- It covers local files only, nothing about what a node's own keys reach on object
+  storage (see [the nodes' own credentials](#the-nodes-own-credentials)).
+- A superuser can still read and write DuckDB's temp directory and the CA bundle
+  files, and a local file a superuser's `initSql` attached stays reachable.
+- A node is routable from its start until the first health probe reads it, and no
+  probe visits a maintenance or merge node.
+- It has not been run on Windows nodes.
+
 ### The nodes' own credentials
 
 Nodes open with DuckDB's external file cache and HTTP metadata cache off (both are
@@ -279,6 +339,9 @@ For a gateway exposed to tenants you do not fully trust:
 - Leave `QOD_TENANT_FILES_ROOT` unset unless users load local files, keep the
   tenant folders free of symbolic links, and list in
   `QOD_USER_S3_ALLOWED_ENDPOINTS` only the S3 endpoints you trust.
+- With every database's data on object storage, set
+  `QOD_NODE_ALLOW_LOCAL_FILES=false` so that no node opens a local file for anyone
+  ([Local files off](#local-files-off)).
 - Keep the extension settings at their defaults.
 - TLS on the edge ([TLS](tls.md)), a pinned `QOD_SESSION_JWT_SECRET`
   ([Authentication](authentication.md)) and a pinned `QOD_NODE_KEY_SECRET`, both

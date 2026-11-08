@@ -338,7 +338,7 @@ Interactive pools can be modestly oversubscribed on CPU (not every node is busy 
 |---|---|---|
 | Node memory | `SET memory_limit` in db/pool `initSql` | ~80% of host RAM per node (unbounded in practice): **always set it** |
 | Node threads | `SET threads` in db/pool `initSql` | all host cores per node: **always set it** |
-| Node spill dir | `SET temp_directory` in `initSql` | DuckDB default |
+| Node spill dir | `SET temp_directory` in a superuser's `initSql` (no environment variable) | a per-node folder under `.tmp` of the directory nodes are started from |
 | Manager heap | `JAVA_OPTS=-Xmx2g` (hard rule: never more than 2g) | none (JVM default) |
 | Arrow allocator | `-Darrow.allocation.manager.type=Unsafe` | already set by the start scripts; required |
 | Per-node concurrency cap | `maxConcurrentPerNode` on `pool/create` | 0 = unbounded |

@@ -159,5 +159,6 @@ Pods created by an earlier manager are not migrated in place, and a 0.11.0 manag
 - [ ] Set `quack.tls.enabled=true` before exposing `service.quack` beyond the cluster, or `quack.enabled=false` when no DuckDB client attaches.
 - [ ] Expose the REST/UI only through `ingress` with `ingress.tls` (the REST port speaks plain HTTP), and set `env.QOD_SESSION_COOKIE_SECURE=true` if the ingress does not send `X-Forwarded-Proto`.
 - [ ] Keep `loadTpc.enabled=false`: the demo manifest creates users whose passwords are published in it.
+- [ ] Set `env.QOD_NODE_ALLOW_LOCAL_FILES=false` when every database's data lies on object storage, as `storage.dataPath` does by default (the chart has no value of its own): nodes then open no local file for anyone, superusers included, from their next start. A database on a local path is blocked, and boot refuses the setting together with `QOD_TENANT_FILES_ROOT`. See [Local files off](./hardening.md#local-files-off).
 
 See [Security hardening](./hardening.md#network-policy-kubernetes-opt-in) for what the network policies allow and the pod security context nodes get.
