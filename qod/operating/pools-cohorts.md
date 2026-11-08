@@ -107,6 +107,32 @@ qod pool set-resources --tenant acme --db acme_sales --pool bi --cpu 2 --memory 
 
 When requests-and-limits are not enough (sidecars, volumes, affinity), a pool can carry a full Pod-manifest template via `qod pool set-pod-template` (`POST /api/pool/setPodTemplate`; CLI/API-only, superuser-only, gated behind `QOD_POD_TEMPLATE_ENABLED`, default off). The template must contain a container named `quack`; the manager overlays the pod name, its identity labels, and the quack container's env contract and resources.
 
+## Temp directory and spilling
+
+When a statement needs more memory than the node's `memory_limit` allows (large sorts, joins, aggregations), DuckDB writes the overflow to files in its temp directory and removes them when it is done. Plan disk for this as you plan memory: it decides how large a query can get before it fails.
+
+QoD sets the temp directory itself when a node starts, and gives each node a folder of its own (`qod-node.*`), so that no node reads another's spill files. No environment variable, configuration key or Helm value changes it.
+
+| Deployment | Where a node spills by default |
+|---|---|
+| Kubernetes | `/duckdb-tmp/qod-node.*`, on the `emptyDir` every node pod carries. It has no size limit of its own, draws on the Kubernetes node's disk, and is gone with the pod |
+| Single Docker container | `/app/.tmp/qod-node.*`, in the container's writable layer: the compose file mounts nothing there |
+| Local, single server, fleet | `.tmp/qod-node.*` under the directory the node is started from, on each server |
+
+If that folder cannot be created, the node uses a `tmp` folder in its private directory under `TMPDIR`. QoD removes the folder when the node stops, and a later node start sweeps those a killed node left behind.
+
+**To spill on another disk**, put that disk behind the default path, which keeps the per-node folders and their cleanup:
+
+- **Kubernetes:** in a [pod template](#node-pod-sizing-kubernetes), declare a volume named `duckdb-tmp` and mount it at `/duckdb-tmp`; the manager then adds neither. It must be writable by the node's user (uid 1000 by default).
+- **Single Docker container:** add a bind mount to the `quack` service's `volumes` (`- /fastdisk/qod-tmp:/app/.tmp`), on a host folder the container's user can write to.
+- **Local, single server, fleet:** make `.tmp` a mount or a symbolic link to the fast disk.
+
+**Or set the path in SQL**, with `SET temp_directory = '/fastdisk/duckdb-tmp'` in a database's or pool's `initSql`, written by a superuser (a tenant admin's is refused). It overrides QoD's value, and a pool's wins over its database's. Every node of that database or pool then uses the same folder, so nodes on one host lose the per-node separation, and QoD does not clean that folder. Keep it on local disk, never on the object store.
+
+**To cap it**, use `SET max_temp_directory_size = '200GB'` in `initSql`, which a tenant admin may also write. It applies per node, and DuckDB's default is 90% of the disk's free space. A statement that would pass the cap fails, instead of filling the disk.
+
+Either setting takes effect when a node starts. Tenant users cannot change the path from a session, and with [local files off](./hardening.md#local-files-off) nobody can, superusers included; spills keep working. Watch `node_duckdb_spill_bytes` and `node_duckdb_spill_files` ([metrics](../reference/metrics.md)): sustained spilling means `memory_limit` is too small for the workload.
+
 ## Cohorts and Kubernetes placement
 
 By default the supervisor schedules every node in a pool with no placement constraint. On the Kubernetes backend you can instead split a pool into cohorts, each pinned to a class of nodes with a `nodeSelector` and tolerations. This is how you keep, for example, the write nodes on memory-optimized hardware and the read nodes on cheaper general-purpose nodes.

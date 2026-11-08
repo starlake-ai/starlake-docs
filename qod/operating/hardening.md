@@ -245,7 +245,9 @@ context by default (no flag needed):
 - **Container:** `allowPrivilegeEscalation: false`, all Linux capabilities
   dropped, `readOnlyRootFilesystem: true`.
 - **Writable temp:** `emptyDir` volumes at `/tmp` and `/duckdb-tmp` so the manager
-  and DuckDB still have scratch space despite the read-only root filesystem.
+  and DuckDB still have scratch space despite the read-only root filesystem. Nodes
+  spill under `/duckdb-tmp` (see
+  [Temp directory and spilling](pools-cohorts.md#temp-directory-and-spilling)).
 
 The kubelet refuses to start a pod that would run as root, so this is enforced,
 not advisory. If you supply a [pod template](pools-cohorts.md), its own
