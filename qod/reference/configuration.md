@@ -19,6 +19,11 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-flightsql.tlsPrivateKey` | `PROXY_TLS_PRIVATE_KEY` | `certs/server-key.pem` |  | Path to the TLS private key PEM (auto-generated if missing). |
 | `quack-flightsql.sessionTtlSec` | `QOD_SESSION_TTL_SEC` | `3600` |  | Edge session TTL in seconds before a fresh handshake is forced. |
 | `quack-flightsql.resumeHoldTimeoutSec` | `PROXY_RESUME_HOLD_TIMEOUT_SEC` | `60` |  | Max seconds the edge holds a statement while a suspended pool cold-starts. |
+| `quack-flightsql.maxInboundMessageBytes` | `PROXY_MAX_INBOUND_MESSAGE_BYTES` | `16777216` |  | Largest gRPC message the FlightSQL edge reads, in bytes, whatever the method and whether or not the caller has credentials: a larger one is refused with RESOURCE_EXHAUSTED. Bound parameters are never read, so only SQL text needs room. |
+| `quack-flightsql.maxHeaderBytes` | `PROXY_MAX_HEADER_BYTES` | `65536` |  | Largest gRPC header list the FlightSQL edge reads, in bytes. |
+| `quack-flightsql.maxAnonymousCalls` | `PROXY_MAX_ANONYMOUS_CALLS` | `256` |  | FlightSQL calls with no credentials at once. Only GetSqlInfo and GetXdbcTypeInfo answer them, for clients that ask before they present their credentials; past this they are refused with UNAVAILABLE. |
+| `quack-flightsql.flightThreads` | `PROXY_FLIGHT_THREADS` | `512` |  | Threads of the FlightSQL edge's fixed executor, at least 16. A call waits for a free one; while more tasks wait than there are threads, or than fit a twentieth of the heap, a new connection is closed at once. A quarter of them is the most DoPuts that may wait for their data at once. |
+| `quack-flightsql.maxUnauthenticatedConnections` | `PROXY_MAX_UNAUTHENTICATED_CONNECTIONS` | `1024` |  | FlightSQL connections at once that have not yet shown a working credential; one past this is closed at once. The edge takes no more than fit a tenth of the heap. Connections that have shown one do not count and have no limit. |
 
 ## `quack-flightsql.auth`
 
@@ -86,6 +91,11 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-native.tlsPrivateKey` | `QOD_QUACK_TLS_PRIVATE_KEY` | `certs/server-key.pem` |  | Path to the TLS private key PEM (PKCS8). |
 | `quack-native.maxHeartbeatTimeoutSec` | `QOD_QUACK_MAX_HEARTBEAT_SEC` | `3600` |  | Cap on the heartbeat lease a client may request, in seconds. |
 | `quack-native.maxBodyBytes` | `QOD_QUACK_MAX_BODY_BYTES` | `268435456` |  | Largest request body accepted on /quack, in bytes (appends and streamed inserts). |
+| `quack-native.maxConnectBodyBytes` | `QOD_QUACK_MAX_CONNECT_BODY_BYTES` | `65536` |  | Largest CONNECTION_REQUEST accepted on /quack, in bytes: read before any credential is checked. |
+| `quack-native.connectBodyTimeoutSec` | `QOD_QUACK_CONNECT_BODY_TIMEOUT_SEC` | `30` |  | Seconds a /quack request has to send its message header and, for a CONNECTION_REQUEST, its body. |
+| `quack-native.bodyTimeoutSec` | `QOD_QUACK_BODY_TIMEOUT_SEC` | `300` |  | Seconds a live session's message has to arrive whole on /quack. |
+| `quack-native.maxConnections` | `QOD_QUACK_MAX_CONNECTIONS` | `1024` |  | Most connections the Quack front door keeps open at once. Fewer when a fifth of the heap cannot hold that many: boot says so. |
+| `quack-native.maxHeaderBytes` | `QOD_QUACK_MAX_HEADER_BYTES` | `4096` |  | Largest request line, and largest header block, the Quack front door reads, in bytes each. Raising it lowers how many connections fit the heap. |
 
 ## `quack-on-demand`
 
@@ -97,7 +107,7 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.minPort` | `QOD_MIN_PORT` | `21900` |  | Lower bound of the port range LocalQuackBackend allocates child nodes from. |
 | `quack-on-demand.maxPort` | `QOD_MAX_PORT` | `22500` |  | Upper bound of the port range LocalQuackBackend allocates child nodes from. |
 | `quack-on-demand.maxNodesTotal` | `QOD_MAX_NODES_TOTAL` | `50` |  | Hard cap on concurrent child nodes across all pools. |
-| `quack-on-demand.stampWrites` | `QOD_STAMP_WRITES` | `true` |  | Stamp DuckLake snapshots created by FlightSQL DML/DDL with author and commit message (native wire bracket; fail-open). Off = writes are never bracketed. |
+| `quack-on-demand.stampWrites` | `QOD_STAMP_WRITES` | `true` |  | Stamp DuckLake snapshots created by FlightSQL DML/DDL with author and commit message (native wire bracket; fail-open). Off = client writes are never bracketed. A manager handler's own write that names its commit message (a table restore, an undrop) is stamped whatever this says, and is not sent when its stamp fails. |
 | `quack-on-demand.nodeLeaseSec` | `QOD_QUACK_NODE_LEASE_SEC` | `30` |  | Lease (seconds, >= 1) the manager asks a node for on each native connection. The manager heartbeats at a third of it. The node checks the lease only when the connection's next message arrives; once lapsed, that message fails and the node interrupts what still runs on the connection and drops it. A lapse by itself interrupts nothing, so the lease does not bound work orphaned by a dead manager. |
 | `quack-on-demand.spawnScript` | `QOD_SPAWN_SCRIPT` | `./scripts/spawn-quack-node.sh` |  | Path to spawn-quack-node.sh invoked by LocalQuackBackend on Unix. |
 | `quack-on-demand.spawnScriptWindows` | `QOD_SPAWN_SCRIPT_WINDOWS` | `./scripts/spawn-quack-node.ps1` |  | Path to the PowerShell spawn script (spawn-quack-node.ps1) invoked by LocalQuackBackend on Windows. |
@@ -160,8 +170,10 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.branching.defaultTtlHours` | `QOD_BRANCH_DEFAULT_TTL_HOURS` | `168` |  | Default time-to-live of a branch in hours when the creator sets none; an expired branch is discarded by the leader's sweep. 0 = branches never expire by default. |
 | `quack-on-demand.branching.sweepSec` | `QOD_BRANCH_SWEEP_SEC` | `300` |  | Expiry sweep interval in seconds; clamped to a 60s floor. |
 | `quack-on-demand.branching.maxPerDatabase` | `QOD_BRANCH_MAX_PER_DATABASE` | `20` |  | Maximum live (open or proposed) branches per tenant-db. |
-| `quack-on-demand.branching.mergeTimeoutSec` | `QOD_BRANCH_MERGE_TIMEOUT_SEC` | `600` |  | Bounded wait for the merge transaction on the ephemeral merge node before the request fails; the commit is probed afterwards so a late commit is still recorded. |
+| `quack-on-demand.branching.mergeTimeoutSec` | `QOD_BRANCH_MERGE_TIMEOUT_SEC` | `600` |  | Bounded wait for each send to the ephemeral merge node (a stage of a merge or of a proposal's analysis) before the request fails; the commit is probed afterwards so a late commit is still recorded. |
 | `quack-on-demand.branching.nodeReadyTimeoutSec` | `QOD_BRANCH_NODE_READY_TIMEOUT_SEC` | `120` |  | How long to wait for the ephemeral merge node to accept connections. |
+| `quack-on-demand.branching.mergeMaxAttempts` | `QOD_BRANCH_MERGE_MAX_ATTEMPTS` | `5` |  | How many times a merge tries to commit when main keeps changing the merged tables, before it answers 409 concurrent_write and suggests --hold-writers. |
+| `quack-on-demand.branching.mergeUpdateChunkRows` | `QOD_BRANCH_MERGE_UPDATE_CHUNK_ROWS` | `50000000` |  | Rows one UPDATE may carry per table in a merge. Above it, or after an out-of-memory failure, the update splits into rowid ranges inside the same transaction, which read far more data: 26 times the bytes at 1B rows and 110M rows updated. Raising it is a bet: whether one UPDATE fits does not follow its size (at 16GB it passed at 69M and 110M rows and ran out of memory at 92M), and a failure costs a retry with ranges. |
 
 ## `quack-on-demand.catalog`
 
@@ -296,8 +308,10 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | Key | Env var | Default | Sensitive | Description |
 | --- | --- | --- | --- | --- |
 | `quack-on-demand.nodeAuthz.keySecret` | `QOD_NODE_KEY_SECRET` | `***` | yes | Secret every node key derives from (>= 32 characters). Unset: one value generated by the first boot and kept in the control-plane database, shared by every replica. Changing it means restarting every node. |
-| `quack-on-demand.nodeAuthz.internalUrl` | `QOD_INTERNAL_URL` | _(unset)_ |  | URL nodes reach this replica on, carried in every session handle: nodes call it for their statements' verdicts (plain http). Default `http://<QOD_POD_IP>:<manager port>` when the pod IP is set, else `http://<QOD_ON_DEMAND_HOST>:<manager port>` when the manager listens on one specific address, else `http://127.0.0.1:<manager port>`. Required in fleet mode (this replica's own address, one per replica, never a load balancer); never a loopback URL on Kubernetes. |
-| `quack-on-demand.nodeAuthz.podIp` | `QOD_POD_IP` | _(unset)_ |  | This replica's pod IP; the Helm chart sets it from the downward API. With QOD_INTERNAL_URL unset, nodes reach this replica on `http://<pod IP>:<manager port>`, so the replica that minted a handle, not the Service, answers its node. |
+| `quack-on-demand.nodeAuthz.internalUrl` | `QOD_INTERNAL_URL` | _(unset)_ |  | URL nodes reach this replica on, carried in every session handle: nodes call it for their statements' verdicts (plain http). Default `http://<QOD_POD_IP>:<internal port>` when the pod IP is set, else `http://127.0.0.1:<internal port>`. Required in fleet mode (this replica's own address, one per replica, never a load balancer); never a loopback URL on Kubernetes. It must name the internal port, not the manager's REST port. |
+| `quack-on-demand.nodeAuthz.internalPort` | `QOD_INTERNAL_PORT` | `0` |  | Port of the listener that answers nodes' verdict and credential calls. 0 means the manager port + 1. |
+| `quack-on-demand.nodeAuthz.internalMaxConnections` | `QOD_INTERNAL_MAX_CONNECTIONS` | `256` |  | How many connections the node verdict listener serves at once. A node opens one per call. A call's body, up to 1 MiB, is read before its signature can be checked, so this bounds the heap a client reaching the port can hold, at about 1.4 MiB per connection: keep clients off the port. Fewer when a fifth of the heap cannot hold that many: boot says so. |
+| `quack-on-demand.nodeAuthz.podIp` | `QOD_POD_IP` | _(unset)_ |  | This replica's pod IP; the Helm chart sets it from the downward API. With QOD_INTERNAL_URL unset, nodes reach this replica on `http://<pod IP>:<internal port>`, so the replica that minted a handle, not the Service, answers its node. |
 | `quack-on-demand.nodeAuthz.handleContextsMax` | `QOD_AUTHZ_HANDLE_CONTEXTS_MAX` | `200000` |  | How many session handle contexts this replica keeps for its nodes' verdict and credential calls (at least 1000). Each is kept 360 s whatever the statement's duration, so this caps the replica's sustained tenant statements at about this / 360 per second (about 555 at the default); past it a statement can be refused with 'authorization context expired; retry'. Watch cache_evictions_total&#123;cache="qod_minted_handles"&#125;. |
 
 ## `quack-on-demand.nodeAuthzLimits`
@@ -315,11 +329,28 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.nodeExtensions.allowUnsigned` | `QOD_NODE_ALLOW_UNSIGNED_EXTENSIONS` | `false` |  | Let nodes load extensions with a missing or invalid signature (allow_unsigned_extensions). Off by default. Applies at each node's next start. |
 | `quack-on-demand.nodeExtensions.autoinstallKnown` | `QOD_NODE_AUTOINSTALL_KNOWN_EXTENSIONS` | `false` |  | Let nodes download a known extension the first time a statement needs it (autoinstall_known_extensions). Off by default: nodes install what QoD's own setup needs explicitly. Applies at each node's next start. |
 
+## `quack-on-demand.nodeFiles`
+
+| Key | Env var | Default | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `quack-on-demand.nodeFiles.allowLocal` | `QOD_NODE_ALLOW_LOCAL_FILES` | `true` |  | false starts every node with DuckDB's local file access off: no statement and no catalog file list reaches a local path outside DuckDB's own temp directory, for anyone. Spills keep working. A database on a local data path is blocked and cannot be created, data must lie on object storage, and extensions a node did not load at start stay out. Refused together with QOD_TENANT_FILES_ROOT. Applies at each node's next start. |
+
 ## `quack-on-demand.pat`
 
 | Key | Env var | Default | Sensitive | Description |
 | --- | --- | --- | --- | --- |
 | `quack-on-demand.pat.maxDepth` | `QOD_PAT_MAX_DEPTH` | `8` |  | Max depth of a PAT delegation chain (root = 0). Operational backstop on the revocation cascade and row growth, not a security boundary -- narrow() already bounds privilege. |
+
+## `quack-on-demand.restLimits`
+
+| Key | Env var | Default | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `quack-on-demand.restLimits.maxBodyBytes` | `QOD_REST_MAX_BODY_BYTES` | `16777216` |  | Largest request body the REST port reads for an admitted caller, in bytes. |
+| `quack-on-demand.restLimits.maxPublicBodyBytes` | `QOD_REST_MAX_PUBLIC_BODY_BYTES` | `65536` |  | Largest request body the REST port reads on a public route (login, password reset, SSO), in bytes: read before any credential is checked. |
+| `quack-on-demand.restLimits.bodyTimeoutSec` | `QOD_REST_BODY_TIMEOUT_SEC` | `30` |  | Seconds a REST request has to send its whole body. |
+| `quack-on-demand.restLimits.maxConnections` | `QOD_REST_MAX_CONNECTIONS` | `1024` |  | Most connections the REST port keeps open at once. Fewer when a fifth of the heap cannot hold that many: boot says so. |
+| `quack-on-demand.restLimits.maxHeaderBytes` | `QOD_REST_MAX_HEADER_BYTES` | `8192` |  | Largest request line, and largest header block, the REST port reads, in bytes each. Raising it lowers how many connections fit the heap. |
+| `quack-on-demand.restLimits.maxModulePublicBodyBytes` | `QOD_REST_MAX_MODULE_PUBLIC_BODY_BYTES` | `1048576` |  | Largest request body the REST port reads on a module's public route, in bytes: read before any credential is checked. Raising it lowers how many connections fit the heap on a manager with such routes. |
 
 ## `quack-on-demand.routing`
 
