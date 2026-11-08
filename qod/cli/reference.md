@@ -311,6 +311,7 @@ Local boot and teardown; the full walkthrough is on the [manager jar page](/qod/
 | `qod serve` | Boot a persistent gateway over your own data (a `.duckdb` file, a parquet/csv directory, an object-store prefix) on an embedded Postgres, or the self-contained demo with `--demo`. The manager provisions the tenant, database and pool itself at boot (add-only: it never updates or deletes an existing one), so later boots need no credential. |
 | `qod stop` | Stop a running manager and its quack nodes. |
 | `qod admin reset-password` | Set a new superuser password straight in the control-plane database, clearing its lockout (works with the manager down). `--username` targets one superuser and re-enables it if disabled, reviving its personal access tokens; without it every configured admin name is reset and a disabled one stays disabled. |
+| `qod admin security-audit` | Superuser only: check the running manager against the "Secure in production" checklists ([Security audit](../operating/hardening.md#security-audit)). Prints each critical and warning finding with its fix and docs link; `--json` gives every check. Exits 3 on a critical finding, and also on a warning or an error with `--fail-on warn,error`. |
 | `qod status` | Show whether a manager is running and what it is serving (pools need a `qod login` session or `QOD_TOKEN`). |
 | `qod setup` | Persist the env vars `qod start` reads (Postgres coordinates, auth and TLS toggles, any `QOD_*` / `PROXY_*` var) so it runs bare afterwards; `--unset NAME` removes a stored one. |
 
