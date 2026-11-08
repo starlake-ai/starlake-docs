@@ -95,7 +95,7 @@ All of these recover through re-population from live traffic. None cause incorre
 
 If you are running the default single-manager mode in production (one manager plus Postgres), the guidance below applies. For zero-downtime rolling deploys and replica-crash tolerance, enable opt-in HA on Kubernetes (`QOD_HA_ENABLED=true`, `replicaCount > 1`) or on the fleet runtime (`QOD_HA_ENABLED=true` on every manager); the same process-supervisor and probe guidance then applies to each replica. Exceptions: the release that renames `qodstate_user.role` to `kind` cannot be rolled; stop every replica, then start them all on the new version (see [Upgrading to the built-in RBAC release](/qod/operating/rbac-model#upgrading-to-the-built-in-rbac-release)). Neither can 0.11.0, whose migration `0055` drops a column the previous release reads: scale to one replica or use a `Recreate` rollout, and restart every node afterwards (see [Upgrading to 0.11.0](./upgrading.md)).
 
-- **Run under a process supervisor** that restarts the manager on exit: systemd with `Restart=always`, a Kubernetes `Deployment` with `restartPolicy: Always` (the default), or Docker with `restart: unless-stopped`.
+- **Run under a process supervisor** that restarts the manager on exit: systemd with `Restart=always` ([recommended unit](deploy-single-server.md#03-run-the-manager-under-systemd)), a Kubernetes `Deployment` with `restartPolicy: Always` (the default), or Docker with `restart: unless-stopped`.
 
 - **Add Kubernetes readiness and liveness probes** before exposing the manager to traffic:
 

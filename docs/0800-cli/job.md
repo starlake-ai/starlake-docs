@@ -18,13 +18,14 @@ Execute a SQL or Python transformation task. Starflow resolves dependencies, com
 Parameter|Cardinality|Description
 ---|---|---
 --action `<value>`|*Optional*|May take one of run (default) or create. When action is set to 'create', only parameters 'name' and 'query' are meaningful
---name `<value>`|*Required*|Task Name in the form domain.task
+--name `<value>`|*Optional*|Task name in the form domain.task. Several names separated by commas run in one JVM, upstream tasks first. Either --name or --tags is required
+--parallelism `<value>`|*Optional*|How many tasks may run at the same time with several names, --tags or --recursive, on DuckDB, JDBC and BigQuery connections only. A task still waits for the tasks it reads. Default is maxParTask (SL_MAX_PAR_TASK), which is 1
 --compile `<value>`|*Optional*|Return final query only
 --sync-apply `<value>`|*Optional*|Update YAML attributes to match SQL query
 --sync-preview `<value>`|*Optional*|Preview YAML attributes to match SQL query
 --query `<value>`|*Optional*|if action is 'create', this is the query used to initialize th SQL file. If action is set to 'run', run this query instead of the one in the task
---dry-run `<value>`|*Optional*|Dry run only (supported on BigQuery only)
---tags `<value>`|*Optional*|Return final query only
+--dry-run `<value>`|*Optional*|Dry run only. Refused on engines other than BigQuery, which would really write
+--tags `<value>`|*Optional*|Run in one JVM, upstream tasks first, the tasks that have at least one of these tags
 --format `<value>`|*Optional*|pretty print the final query and update sql file
 --interactive `<value>`|*Optional*|Run query without sinking the result. Valid parameters are: `csv`, `json`, `table`, `json-array`
 --reload `<value>`|*Optional*|Reload YAML  files. Used in server mode

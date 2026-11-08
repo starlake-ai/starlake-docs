@@ -127,7 +127,106 @@ Notes:
 
 - The manager creates its own Postgres databases over JDBC at startup (0.8.3+): the control-plane database at preflight and one database per tenant-db at bootstrap, which is why the QoD Postgres user needs `CREATEDB`. On earlier releases, create the control-plane database once by hand (`CREATE DATABASE qod;`).
 - A system `duckdb` on PATH is deliberately ignored to avoid ABI mismatches.
-- For production, wrap `qod start` in a systemd unit so the manager restarts on boot; reconcile respawns the node processes automatically.
+- For production, run `qod start` under systemd so the manager restarts on boot and after a crash: see [section 0.3](#03-run-the-manager-under-systemd). Reconcile respawns the node processes automatically.
+
+### 0.3 Run the manager under systemd
+
+This is the recommended unit for a native install on Linux. `qod start` stays in the foreground, logs to stdout (so to the journal) and already handles SIGTERM, so systemd only has to run it. The settings below were checked against `qod` 0.11.0 on systemd 255.
+
+**1. Create the account and install the CLI.** The CLI keeps the jar, JRE and DuckDB in `~/.cache/qod`, and the TLS certificates and other state in `~/.local/share/qod`, so the account needs a real home directory. `lsof` and `pgrep` are required: the stop sequence finds the manager and its nodes with them.
+
+```bash
+sudo apt-get install lsof procps     # or your distribution's equivalent
+sudo useradd --system --create-home --home-dir /var/lib/qod --shell /usr/sbin/nologin qod
+
+sudo python3 -m venv /opt/qod
+sudo /opt/qod/bin/pip install qod==0.11.0
+sudo ln -s /opt/qod/bin/qod /usr/local/bin/qod
+```
+
+**2. Put the environment in a root-only file.** Use the variables from [section 0.1](#01-the-complete-environment-for-this-deployment), but in the format systemd reads: no `export`, and no comment after a value (systemd would make it part of the value).
+
+`/etc/qod/qod.env`:
+
+```ini
+QOD_PG_HOST=pg.internal
+QOD_PG_PORT=5432
+QOD_PG_USER=qod
+QOD_PG_PASSWORD=...
+QOD_PG_DBNAME=qod
+QOD_DUCKLAKE_DATA_PATH=s3://ducklake/qod
+QOD_S3_ENDPOINT=rustfs.internal:9000
+QOD_S3_ACCESS_KEY_ID=...
+QOD_S3_SECRET_ACCESS_KEY=...
+QOD_S3_REGION=us-east-1
+QOD_S3_URL_STYLE=path
+QOD_S3_USE_SSL=false
+JAVA_OPTS=-Xmx2g
+QOD_ADMIN_PASSWORD='<strong password>'
+```
+
+Never add `NUKE=1` to this file. Under systemd there is no terminal, so the confirmation prompt is skipped and every start would drop the control plane.
+
+**3. Install the unit.**
+
+`/etc/systemd/system/qod-manager.service`:
+
+```ini
+[Unit]
+Description=Quack on Demand manager
+After=network-online.target postgresql.service
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+User=qod
+EnvironmentFile=/etc/qod/qod.env
+ExecStart=/usr/local/bin/qod start --version 0.11.0
+Restart=always
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=60
+SuccessExitStatus=130
+OOMPolicy=continue
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo chmod 600 /etc/qod/qod.env
+sudo systemctl daemon-reload
+sudo systemctl enable --now qod-manager
+journalctl -u qod-manager -f
+curl -fsS http://localhost:20900/ready
+```
+
+`systemctl status` shows `active` as soon as the process starts, while the first boot still has to download the JRE and DuckDB (about a minute). Wait for `/ready` to answer before going further.
+
+**4. Remove the admin password.** It is only read on the first boot of a control plane, when the admin row is created. Delete the `QOD_ADMIN_PASSWORD` line from `/etc/qod/qod.env`; later starts do not need it. If it is missing on a first boot, the journal shows `error: first boot needs an admin password` and the unit retries every 5 seconds until you add it.
+
+**Why these settings:**
+
+| Setting | Why |
+|---|---|
+| `--version 0.11.0` | Without a pin, every start asks GitHub for the latest release, so a reboot or a crash restart can upgrade the manager with nobody watching, and an upgrade can require [steps of its own](upgrading.md). |
+| `Restart=always`, `RestartSec=5`, `StartLimitIntervalSec=0` | Restarts the manager after any exit and keeps retrying, for example while Postgres is down. `systemctl stop` is not restarted. |
+| `KillMode=mixed` | Sends SIGTERM to `qod start` alone, which runs the same stop sequence as `qod stop`. Anything still alive at the end gets SIGKILL, so no node stays behind holding a port in the `21900+` range, even if the CLI itself is killed. |
+| `TimeoutStopSec=60` | Leaves room for that sequence, which sends SIGKILL after `FORCE_AFTER` seconds (default 10). If you raise `FORCE_AFTER`, keep this value well above it. |
+| `SuccessExitStatus=130` | `qod start` exits with 130 after a stop. Without this, `systemctl stop` leaves the unit in the `failed` state. |
+| `OOMPolicy=continue` | The nodes run in the unit's cgroup. With systemd's default (`stop`), one process killed by the kernel for lack of memory restarts the manager and every node. With `continue`, only that process is lost, and reconcile respawns it if it was a node. If it was the manager, the unit restarts as usual. |
+
+**Leave out `MemoryMax=` and `CPUQuota=`.** They would apply to the manager and all its nodes together, and hitting the memory limit kills processes. Set per-node budgets as in [section 3](#3-configuring-cpu-threads-and-memory-limits). There is also no need for `LimitNOFILE=`: the JVM raises its own open-file limit to the hard limit and the nodes inherit it, so a lower value only reduces it.
+
+**Operating it:**
+
+- **Use `systemctl`, not `qod stop`.** `qod stop` does stop the manager, but `Restart=always` starts it again 5 seconds later. To start, stop or restart the manager, use `sudo systemctl start|stop|restart qod-manager`. Use `qod login` and the other commands from your own account as usual.
+- **A stop or restart interrupts running statements.** The stop sequence signals the manager and its nodes at the same time and completes in seconds, so statements still running fail and clients have to reconnect. `QOD_DRAIN_TIMEOUT_SEC` does not extend this. The nodes come back on the next boot through reconcile.
+- **To let short statements finish before a planned restart**, suspend each pool first with `qod pool suspend --tenant <t> --db <db> --pool <pool>`. It waits for running statements for up to `QOD_POOL_DRAIN_TIMEOUT_SEC` (default 20 s, see [how a graceful drain works](pools-cohorts.md)). A suspended pool stays suspended across the restart and wakes on its first statement, or with `qod pool resume`.
+- **To upgrade**, read the [upgrade notes](upgrading.md), install the new CLI (`sudo /opt/qod/bin/pip install qod==<release>`), change `--version` in the unit, then run `sudo systemctl daemon-reload` and `sudo systemctl restart qod-manager`. The CLI and the manager should stay on the same release.
+
+**Other ways to run it.** In a [single Docker container](deploy-docker.md), Docker is the supervisor: use `restart: unless-stopped`. On [Kubernetes](deploy-kubernetes.md), the Helm chart's `Deployment` restarts the manager and sets its termination grace period. The [fleet runtime](deploy-fleet.md#run-qod-fleet-join-under-systemd-linux) has its own unit for the servers that run the nodes.
 
 ---
 
@@ -169,6 +268,7 @@ graph LR
 |---|---|
 | PostgreSQL | 16+; the QoD Postgres user needs `CREATEDB` (one database is auto-created per tenant-db) |
 | OS | Linux or macOS; Windows native is experimental (PowerShell scripts), Docker on Windows requires WSL2 |
+| `lsof`, `pgrep` | `qod stop`, and a stop of `qod start` under systemd, find the manager and its nodes with them. Without them the stop is not graceful (see [section 0.3](#03-run-the-manager-under-systemd)) |
 
 Everything else is provisioned by `qod start` itself: a Temurin 21 JRE when no 21+ JVM is present (`JAVA_BIN` forces a specific one) and the pinned DuckDB build (a system `duckdb` on PATH is deliberately ignored to avoid ABI mismatches). The nodes run `qod-node`, which the jar bundles for Linux and macOS.
 
