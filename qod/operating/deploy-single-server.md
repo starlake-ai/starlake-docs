@@ -303,7 +303,7 @@ Rules:
 
 - `memory_limit`: per-node share of RAM, at about 80% so DuckDB spills to disk before the OS OOM-killer fires.
 - `threads`: per-node CPU share; keep close to the 1 vCPU : 4 GiB ratio.
-- `temp_directory`: fast local disk, never the object store. Set like this, every node of the database shares the folder; to keep each node's own folder, mount or link `.tmp` to the fast disk instead (see [Temp directory and spilling](./pools-cohorts.md#temp-directory-and-spilling)).
+- `temp_directory`: fast local disk, never the object store. Each node spills to a folder of its own under it (`qod-spill.<marker>.XXXXXX`), created at start and removed at stop; every existing folder of the path must be owned by root or the node's OS user (see [Temp directory and spilling](./pools-cohorts.md#temp-directory-and-spilling)).
 - Never put credentials in `initSql` (it is stored unredacted); engine settings only.
 - Written by a superuser (as here), `initSql` runs as written. One a tenant admin writes keeps only `SET` / `RESET` of 15 resource and session settings to a literal (`memory_limit`, `threads`, `timezone`, ..., not `temp_directory`), read-only PRAGMAs and `INSTALL` / `LOAD` of allowlisted extensions; the rest is refused at write time (`400 init_sql_refused`).
 - Editing a database's `initSql` restarts its nodes immediately; pool `initSql` applies on the next node spawn.
