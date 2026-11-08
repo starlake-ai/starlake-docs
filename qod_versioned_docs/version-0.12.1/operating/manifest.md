@@ -1,0 +1,151 @@
+---
+id: manifest
+title: Manifest backup and restore
+description: "Export the entire control-plane configuration as one YAML manifest and import it to restore, clone an environment or apply a reviewed change."
+keywords: ["manifest", "backup", "restore", "yaml", "configuration"]
+---
+
+The config manifest is the entire control-plane configuration serialized as one YAML document: every tenant, database, pool, federated source, role, group, user, and grant. Export it to back up or version-control your configuration, then import it to restore, clone an environment, or apply a reviewed change. The manifest holds configuration only; it does not contain table data or the DuckLake catalogs.
+
+Manifest export and import are cross-tenant operations and are **restricted to superusers**. A tenant-scoped session or PAT is rejected with `403 superuser_required`; a superuser's session or PAT is admitted. The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a superuser session, or `QOD_TOKEN` holds a personal access token for CI scripts.
+
+## Export
+
+```bash
+qod manifest export --out manifest.yaml
+```
+
+`GET /api/manifest/export` returns the manifest as `application/yaml`. The top of the document records provenance:
+
+```yaml
+apiVersion: quack-on-demand/v1
+kind: ConfigManifest
+exportedAt: 2026-06-10T12:00:00Z
+exportedFrom:
+  managerVersion: 0.3.2
+  hostname: qod-1
+```
+
+### What the export contains
+
+The document mirrors the object hierarchy:
+
+- `tenants[]` - each with its `authProvider` / `authConfig`, and nested:
+  - `tenantDbs[]` - `kind`, `metastore`, `dataPath`, `objectStore`, `defaultDatabase`, `defaultSchema`, `initSql` with its `initSqlTrusted` flag, and nested `federatedSources[]` (with their `secrets[]`).
+  - `pools[]` - `tenantDb`, `roleDistribution`, `maxConcurrentPerNode`, `disabled`, `initSql` with its `initSqlTrusted` flag, and optional `cohorts[]` placement. A `lockdown` field in a manifest exported by an earlier release is ignored on import.
+  - `locations[]` - the tenant's authorized local folders (each a `location`), exported only when the tenant has some. On import, a tenant without `locations` keeps its stored folders; a present list (an empty one included) becomes exactly the tenant's folders.
+  - `identities[]` - external identity mappings for the tenant.
+- `roles[]` - each `(tenant, name)` with its `permissions[]` (catalog/schema/table/verb).
+- `groups[]` - each `(tenant, name)` with its assigned `roles[]`.
+- `users[]` - `tenant` (omitted/null for a superuser), `username`, `passwordHash`, `kind` (`admin` or `user`; the key was named `role` before the [built-in RBAC release](/qod/operating/rbac-model#upgrading-to-the-built-in-rbac-release), and a manifest still using `role` is refused), `enabled`, `mustChangePassword` (optional, default `false`), and the user's `roles[]`, `groups[]`, and `poolGrants[]`.
+
+The four [built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups) (`qod_all_tables`, `qod_no_tables`, `qod_all_pools`, `qod_no_pools`) are not exported: every tenant carries them, and users and groups reference them by name. While any tenant holds a user-made role or group whose name starts with `qod_` (left from before the prefix was reserved, or renamed `<name>_renamed` by the upgrade backfill), the whole export is refused with `400 reserved_name`, listing the offending rows: such a manifest could not be imported. Rename those rows, then export again.
+
+### Sensitivity of an export
+
+Plaintext credentials are never written on export, but the file is NOT free of credential material:
+
+- User `password` (plaintext) is **omitted** entirely from exported users; there is no plaintext to export, only bcrypt hashes are stored.
+- User `passwordHash` carries the user's **real bcrypt hash verbatim**. This is what lets a backup restore the same credential without anyone re-typing passwords.
+- Federated secret `value`s are written as `***REDACTED***`; an `externalRef` is written verbatim.
+- A typed federated source's `config` (see [External Iceberg catalogs](iceberg.md)) is written **verbatim**. Its credential fields hold `{{secret.NAME}}` placeholders rather than values, so the credentials themselves are covered by the rule above, but every other field may hold a literal: a `uri` carrying userinfo or a signed query parameter is exported in the clear. This is the same policy the manifest already applies to `setupSql`, which can hold a full connection string. Redacting `uri` was considered and rejected, because a round trip has to reproduce an attachable catalog and a redaction sentinel there imports as a source that can never attach.
+- A database's `encryptionKey` (see [Encryption at rest](encryption.md)) is redacted. The `encrypted` flag itself round-trips, so the manifest still records that the database is encrypted, but it cannot recreate an encrypted DuckDB file database on another deployment. Re-applying to the SAME deployment is unaffected: the stored key is carried forward.
+- A tenant's OPA bearer token (`acl.opaToken`) and its OIDC client secret (`clientSecret`) are written as `***REDACTED***`. The tenant's `authConfig`, a `clientSecretRef` included, is written verbatim (a reference is the name of a secret, not its value).
+
+A database's `metastore` is exported verbatim, including its control-plane password. For an
+encrypted DuckLake database that password opens the catalog holding every per-file key, so an
+export is a decryption credential for that database however its own key is handled.
+
+A database's `objectStore` is exported as stored, its secret key included (`s3_secret_access_key` and the like). That holds for a [managed-storage](./managed-storage.md) database too, whose `objectStore` carries the managed bucket's own key, the one key every managed database shares: an export holding any managed database is a credential for the whole managed bucket.
+
+Because bcrypt hashes of weak passwords are subject to offline cracking, **treat an exported manifest as sensitive**: do not commit it to a public repository, and store it with the same care as any other credential material (private repository, secret store, or encrypted backup).
+
+A plain export-then-import round-trip preserves credentials without rotation: exported hashes are applied verbatim on import, an absent hash falls back to the existing row, and redacted secret values are reused from the existing rows (see below).
+
+## Import
+
+```bash
+qod manifest import manifest.yaml
+```
+
+`POST /api/manifest/import` takes the YAML body and returns a summary of how many top-level resources were in the manifest:
+
+```json
+{"tenants":2,"tenantDbs":3,"pools":4,"roles":5,"groups":2,"users":7}
+```
+
+Import validates the whole document before writing anything. On failure it returns `400` and changes nothing:
+
+- `invalid-yaml` - the body did not parse as YAML.
+- `invalid-manifest` - validation failed: a wrong `apiVersion` (must be `quack-on-demand/v1`), duplicate keys (tenant name, `(tenant, role)`, `(tenant, group)`, `(tenant, user)`, or a nested duplicate), a user/role/group that references a tenant not present in the manifest or already in the database, a user still carrying the old `role` key, or a role or group named with the reserved `qod_` prefix (only a built-in in its exact built-in shape is accepted, as a no-op).
+
+Import seeds the built-in roles and groups into every tenant it touches. It attaches no default memberships: a user gets exactly the `roles` and `groups` the manifest lists, which may name the built-ins.
+
+After a successful import the manager reloads its in-memory caches (tenants, databases, pools, RBAC effective sets) immediately. No restart is needed for the new configuration to take effect.
+
+### Apply semantics
+
+This is the part to understand before importing a hand-edited file. The rules differ between top-level and nested resources:
+
+- **Top level is additive (upsert only).** Tenants, roles, groups, and users that appear in the manifest are created or updated. Top-level resources that are **absent** from the manifest are left untouched: importing a manifest that lists only `tenant: acme` does not delete `tenant: widgets`. None of the top-level lists are required, so a manifest may omit `users`, `roles`, or `groups` entirely. An omitted user is ignored, never deleted; the importer only ever upserts the users it finds in the file.
+- **Nested collections under a present parent are replace (delete-then-upsert).** For any parent that *is* in the manifest, its child collections are made to match the manifest exactly. Children present in the manifest are upserted; children that exist in the database but are missing from the manifest are deleted.
+
+:::caution Nested omissions delete
+Because nested collections are replaced, omitting a child under a parent you do include removes it. If you export, then hand-edit a tenant to drop one pool from its `pools` list and re-import, that pool is deleted. A role's `permissions` are fully replaced; a user's `poolGrants` are fully replaced. To change one tenant safely, keep all of its databases, pools, roles, and grants in the file, or edit a full export rather than a partial document.
+:::
+
+### Replaying an old manifest over an Iceberg source
+
+A manifest is a statement of desired state, so import applies a federated source's `sourceType` as
+written. That includes changing it. The REST and CLI paths **refuse** an in-place flip between
+`sql` and `iceberg_rest`, because it would silently replace operator-written `setupSql` with a
+rendered config or the reverse; import does not, and applies the manifest's `readOnly` along with
+it.
+
+The case that costs you something is replaying a manifest exported **before** an alias was
+converted to [an Iceberg source](iceberg.md). The alias goes back to being a `sql` source, and
+because a `sql` source's `readOnly` defaults to `false`, a catalog that was read-only becomes
+writable at the next node spawn.
+
+This is intended for a declarative apply, but it is never silent. The importer emits a WARN naming
+the database, the alias and the transition, and it is the only audit line the downgrade leaves:
+
+```
+manifest import: tenant-db 'acme_lake' federated source 'sales_lake' changes sourceType 'iceberg_rest' -> 'sql' (readOnly becomes false); REST refuses this transition in place
+```
+
+Before re-applying an old manifest, check it against a current export for any `federatedSources`
+entry whose `sourceType` has moved backwards, and grep the import for that line afterwards.
+
+`initSqlTrusted` records who wrote a database's or pool's init SQL: `true` for a superuser or the manager (runs as written), `false` for a tenant admin (runs under the [initSql allowlist](./tenants-databases.md#init-sql-trust)). A hand-written manifest that leaves it out is a superuser's own text and imports trusted, except that a row whose init SQL the manifest leaves unchanged keeps its stored flag.
+
+Users' own S3 credentials are never in a manifest: after an import into another deployment, each user registers them again (`qod profile s3 add`).
+
+### Passwords and secrets on import
+
+- A user with a `passwordHash` value has it applied **verbatim** (no re-hashing): this is the field an export populates, so a round-trip restores the exact credential the user had at export time.
+- Otherwise, a user with a `password` value sets it (the value is treated as a bcrypt hash if it looks like one, otherwise as plaintext to be hashed). A user with **neither** field reuses the bcrypt hash captured from the existing row at the start of the import, so hand-written manifests that omit both keep existing users' passwords unchanged.
+- A federated secret left as `value: "***REDACTED***"` (and no `externalRef`) reuses the existing stored value. This is why a redacted export re-imports without re-typing credentials.
+- A tenant's `acl.opaToken` left as `***REDACTED***` reuses the stored token while `opaUrl` is unchanged; with a changed `opaUrl`, or no stored token, the import is refused. A tenant without an `acl` block keeps its stored ACL.
+- A tenant's `clientSecret` left as `***REDACTED***` reuses the stored secret while `authConfig.issuerUrl` is unchanged; with a changed issuer, or no stored secret, the import is refused, naming the tenant. Any other value is stored as given (a value made only of whitespace is refused). A tenant without `clientSecret`, or with `""`, stores none: a hand-written manifest that leaves it out removes a stored secret. A tenant that carries both a `clientSecret` and an `authConfig.clientSecretRef`, or an `authConfig` holding a `clientSecret` key, is refused; a `clientSecretRef` alone imports as written, whatever the issuer, because a manifest import is a superuser's.
+- A manifest exported before 0.11.0 carries its tenants' `clientSecretRef` values as active settings, and importing it after the upgrade stores them as they are, without the review that the upgrade asks of a superuser for the references it parked (see [Per-tenant OIDC](./auth-providers.md#per-tenant-oidc)): check those references before importing such a manifest. The `clientSecretRefUnconfirmed` key that the upgrade parks follows the rule of a `tenant/setAuth` save: an import keeps it only when the tenant still holds it, the manifest carries it unchanged, the tenant ends up with no secret source and `authConfig.issuerUrl` is unchanged; into a manager that does not hold it, the key is dropped (its value stays in the manifest file).
+
+## Typical workflows
+
+- **Backup.** Export on a schedule and store `manifest.yaml` somewhere access-controlled (private repository, secret store, or encrypted backup). The file carries no plaintext credentials, but it DOES carry each user's bcrypt password hash, so treat it as sensitive and keep it out of public repositories.
+- **Promote a change.** Export, edit in a reviewed pull request, re-import. Validation plus all-or-nothing apply makes a bad edit fail before it touches the store.
+- **Clone an environment.** Import a source environment's manifest into a fresh manager. Exported `passwordHash` values carry user credentials over as-is; provide real `password` / secret `value`s only for anything the manifest does not carry, since there is nothing to reuse on a first import.
+
+For the objects the manifest carries, see "Tenants and databases", "Pools and cohorts", [Federation](/qod/operating/federation), and the [Access control model](/qod/operating/rbac-model).
+
+## Secure in production
+
+- [ ] Store every export like a secret (private repository, secret store or encrypted backup): it carries each user's bcrypt hash, each database's `metastore` with its `pgPassword` and its `objectStore` with its secret key (the managed bucket's key for a managed-storage database), and typed federation configs verbatim. See [Sensitivity of an export](#sensitivity-of-an-export).
+- [ ] Import only files that went through review: `manifest/import` is superuser-only, writes across every tenant and replaces nested collections wholesale, and a YAML document nested deeply enough can stop the manager.
+- [ ] Read every `initSql` and its `initSqlTrusted` flag before importing: an import is a superuser's, so an entry that leaves the flag out runs on the nodes as written, outside the tenant-admin allowlist.
+- [ ] Before replaying an old manifest, compare its `federatedSources` with a current export: a `sourceType` moved back from `iceberg_rest` to `sql` makes a read-only catalog writable (see [Replaying an old manifest over an Iceberg source](#replaying-an-old-manifest-over-an-iceberg-source)).
+- [ ] Before importing a manifest exported before 0.11.0, check each tenant's `authConfig.clientSecretRef`: it imports active, without the review the upgrade asked for (see [Passwords and secrets on import](#passwords-and-secrets-on-import)).
+- [ ] Set `QOD_REQUIRE_ENCRYPTION=true` on a deployment that must encrypt before restoring into it: the import then refuses an unencrypted database, as `database/create` does.
+- [ ] Back up the control-plane database too, and protect that backup the same way: a manifest cannot recreate an encrypted `duckdb-file` database (its key is redacted) nor users' own S3 credentials.
+
+See [Security hardening](./hardening.md) for the node-key and session secrets that a control-plane backup also carries.

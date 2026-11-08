@@ -1,0 +1,268 @@
+---
+id: sql-administration
+title: "Administer DuckDB access with SQL: roles, grants, row and column policies"
+sidebar_label: "Administer with SQL"
+description: "Manage users, roles, grants, row policies and column masks on DuckDB with plain SQL from any client: CREATE ROLE, GRANT, CREATE ROW POLICY."
+keywords: ["duckdb grant", "duckdb create role", "row policy", "column policy", "sql administration", "duckdb acl"]
+---
+
+Everything on this page's siblings - table grants, row and column policies,
+masking, roles, groups, pool access, and user management - can also be
+administered with plain SQL statements over the regular FlightSQL connection.
+Any SQL client works: DBeaver, ADBC, `qod shell`, a JDBC notebook. The manager
+recognizes these statements at the edge, executes them against the control
+plane, and answers directly; they are never forwarded to a DuckDB node.
+
+The dialect is a front-end over the same machinery as the UI, REST, and CLI:
+expressions are validated by the same parser, caches invalidate the same way,
+and changes propagate across HA replicas identically. Anything you create with
+SQL is visible in the UI and exportable by manifest, and vice versa.
+
+## Who can run admin statements
+
+The session principal must be a **superuser** or a **tenant admin** of the
+tenant that owns the pool the connection is bound to. Regular users receive
+`PERMISSION_DENIED admin_required`. Everything resolves within the session's
+tenant; there is no cross-tenant addressing, superusers included.
+
+The one exception is [`UNDROP TABLE`](#recover-a-dropped-table): any signed-in
+user may run it, and it runs as them.
+
+The whole dialect sits behind `QOD_SQL_ADMIN_ENABLED` (default `true`). With
+the flag off, these statements are rejected exactly as they were before the
+feature existed. Admin SQL is available on the FlightSQL edge and the
+[native Quack front door](../connecting/duckdb.md) only: statements arriving
+through the MCP server or catalog preview paths are denied regardless of the
+flag.
+
+## Statements by family
+
+### Roles, membership, groups
+
+```sql
+CREATE ROLE analyst;
+DROP ROLE IF EXISTS analyst;
+
+GRANT ROLE analyst TO USER alice;
+GRANT ROLE analyst TO GROUP finance;
+REVOKE ROLE analyst FROM USER alice;
+
+ALTER GROUP finance ADD USER alice;
+ALTER GROUP finance DROP USER alice;
+```
+
+Every tenant carries the protected built-ins `qod_all_tables` / `qod_no_tables`
+(roles) and `qod_all_pools` / `qod_no_pools` (groups). Users can be granted or
+revoked from them like any other role or group, but `DROP ROLE`, grants and
+policies on a built-in role, and role bindings or pool grants on a built-in
+group are refused (`builtin_protected`). `CREATE ROLE` refuses any name starting
+with `qod_` (`reserved_name`).
+
+### Table grants
+
+```sql
+GRANT SELECT ON acme_tpch.tpch1.customer TO ROLE analyst;
+GRANT INSERT, UPDATE, DELETE ON acme_tpch.tpch1.orders TO ROLE etl;
+GRANT DDL ON acme_tpch.tpch1.* TO ROLE dba;
+GRANT ALL ON *.*.* TO ROLE root_like;
+
+REVOKE SELECT ON acme_tpch.tpch1.customer FROM ROLE analyst;
+REVOKE ALL ON acme_tpch.tpch1.customer FROM ROLE analyst;
+```
+
+Privilege lists map onto the stored verbs described in
+[Access control model](/qod/operating/rbac-model): `SELECT` alone is `RO`, any
+of `INSERT`/`UPDATE`/`DELETE` is `RW`, `DDL` is `DDL`, `ALL` is `ALL`. Mixing
+`DDL` with DML privileges is rejected (use `ALL`). Table references take 1-3
+dot-separated segments; missing leading segments become `*` wildcards.
+
+Revoking matches stored rows literally: `REVOKE ALL ON *.*.*` removes a grant
+row stored as `(*, *, *)`, not every grant the role holds. Revoking a grant
+that does not exist succeeds with `revoked = 0` (there is no warning channel
+over FlightSQL).
+
+### Row policies (RLS)
+
+```sql
+CREATE OR REPLACE ROW POLICY ON acme_tpch.tpch1.orders FOR ROLE analyst
+  USING (region = ${tenantId} OR owner = ${user});
+
+DROP ROW POLICY IF EXISTS ON acme_tpch.tpch1.orders FOR ROLE analyst;
+```
+
+Policies are keyed by `(role, catalog, schema, table)`. `OR REPLACE` upserts;
+a plain `CREATE` on an existing key is refused with `ALREADY_EXISTS`. The
+`USING` body passes through the same predicate validator as the REST path:
+one boolean expression, identity tokens `${user}` / `${tenant}` /
+`${tenantId}` / `${groups}` / `${roles}`, no subqueries, 1024 characters max.
+Comments are not allowed anywhere in an expression body. Dollar-quoted
+(`$$...$$`) and `E'...'` string literals are supported in expressions.
+
+### Column policies (CLS deny and masking)
+
+```sql
+CREATE OR REPLACE COLUMN POLICY ON acme_tpch.tpch1.customer COLUMN c_email
+  FOR ROLE analyst MASK USING (SHA256('<long-random-secret>' || CAST(c_email AS VARCHAR)));
+
+CREATE COLUMN POLICY ON acme_tpch.tpch1.customer COLUMN c_ssn
+  FOR ROLE analyst DENY;
+
+DROP COLUMN POLICY IF EXISTS ON acme_tpch.tpch1.customer COLUMN c_email
+  FOR ROLE analyst;
+```
+
+Keyed by `(role, catalog, schema, table, column)`, same `OR REPLACE`
+semantics. Mask expressions run through the same transform validator as the
+UI: one scalar expression referencing only the protected column.
+
+A plain hash of a guessable value such as an email can be reversed by
+hashing candidate values and comparing. Prefix a secret key, as above: the
+masked values stay stable, so joins and `GROUP BY` on them still work, but
+they cannot be matched against a list. Generate the key yourself (for
+example `openssl rand -hex 32`) and keep it out of source control. It is
+stored in the policy, which only superusers and tenant admins can read, and
+it appears in manifest exports, so treat those as secret. Changing the key
+changes every masked value.
+
+### Pool access
+
+```sql
+GRANT CONNECT ON POOL bi TO USER alice;
+GRANT CONNECT ON POOL acme_tpch.bi TO GROUP finance;
+REVOKE CONNECT ON POOL bi FROM USER alice;
+```
+
+Pool names are unique per tenant, so the `tenantdb.` qualifier is optional and
+never needed to disambiguate; naming a tenant-db that does not own the pool
+fails with `unknown_pool` rather than selecting a different pool.
+
+### Users
+
+```sql
+CREATE USER alice PASSWORD 'secret';
+CREATE USER ops PASSWORD 'secret' ADMIN;
+CREATE USER bob PASSWORD 'secret' ROLES analyst GROUPS qod_no_pools;
+ALTER USER alice PASSWORD 'rotated';
+ALTER USER alice REQUIRE PASSWORD CHANGE;
+ALTER USER alice DISABLE;
+ALTER USER alice ENABLE;
+DROP USER IF EXISTS alice;
+SHOW USERS;
+```
+
+User statements manage **tenant users of the session tenant only**. The
+dialect cannot create superusers; those are minted by superusers through
+REST/CLI. `ADMIN` sets the account kind to `admin` (the tenant-admin label,
+management rights only), which a tenant admin may grant (the same as REST
+allows). `CREATE USER` is a true create: an existing username in the tenant is
+refused, never overwritten. Email-format usernames set the `email` column
+automatically, exactly as everywhere else.
+
+The optional `ROLES r1, r2` and `GROUPS g1, g2` clauses (in that order, each
+at most once, comma-separated names) attach the new user to exactly those
+roles and groups. An omitted clause attaches the built-in default,
+`qod_all_tables` for roles and `qod_all_pools` for groups, so
+`CREATE USER alice PASSWORD 'secret'` alone gives `alice` **full access to every
+table and pool of the tenant**. Use `ROLES qod_no_tables GROUPS qod_no_pools`
+to start from nothing; see
+[Built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups).
+An unknown name is refused.
+
+`ALTER USER ... PASSWORD` uses the same rotation path as REST `user/update`,
+so lockout counters (`failed_attempts`, `locked_at`) are cleared by the write;
+`REQUIRE PASSWORD CHANGE` (forces a change at next login) and `ENABLE` share
+that path and also clear the counters - flagging a locked-out user for a
+password change unlocks them. `DISABLE` cuts both the REST login and the
+FlightSQL handshake, and refuses the session's own username.
+Rotation and drop are strictly per `(tenant, username)` row: the same
+username in another tenant is a different principal and is never affected.
+`DROP USER` refuses the session's own username. For a single credential across
+tenants, use tenant OIDC rather than database passwords: the credential then
+lives at the identity provider.
+
+Password literals are protected end to end: admin statements are excluded
+from statement history, the executor logs only the command kind, and the
+edge's DEBUG statement logging redacts recognized admin statements. Prefer
+plain (non-prepared) statements for admin SQL; the prepared path works but
+advertises a generic schema at prepare time.
+
+### Recover a dropped table
+
+```sql
+UNDROP TABLE main.orders;                  -- under its last name
+UNDROP TABLE main.orders AS orders_back;   -- under a new name
+UNDROP TABLE orders;                       -- the database's default schema
+```
+
+`UNDROP TABLE [schema.]t [AS new_name]` recovers a dropped table of the
+session's DuckLake database. Unlike the rest of the dialect it is not an admin
+statement: any signed-in user may run it, on either door and from `qod sql`,
+and it runs **as the caller**. The manager finds the table's last live
+snapshot and runs `CREATE TABLE ... AS SELECT * FROM ... AT (VERSION => n)` on
+a connection of its own, so the node judges it like a statement the caller
+typed: it needs a read grant on the table's last name, which no live table or
+view may hold, and DDL in the schema. Names compare without case, as DuckDB
+resolves them, and must be plain names (no quotes, separators or whitespace).
+
+The answers are plain words:
+
+| Situation | Answer |
+|---|---|
+| Recovered | `table main.orders restored as main.orders_back from snapshot <n>` |
+| No dropped table of that name | `there is no dropped table main.orders` |
+| The name (or the `AS` name) is taken | `a table or view main.orders exists; use UNDROP TABLE main.orders AS <new name>` |
+| The node refuses the read or the create | `not permitted: ...` |
+| Its last live snapshot was expired | `main.orders is no longer recoverable: ...` |
+| Inside an open transaction | `UNDROP TABLE cannot run inside a transaction: its recovery commits on its own; COMMIT or ROLLBACK first` |
+
+It is refused inside a transaction because its recovery commits on its own
+connection, which the client's `ROLLBACK` could not undo. Once a dropped
+table's name is reused by a live table or view, only a superuser can recover
+it, through `qod catalog undrop` (which also takes `--from-snapshot`). A personal access token's databases, pools and verb
+ceiling apply to every undrop route, so a read-only token cannot recover.
+
+Regular users have the same recovery outside SQL: the profile page's
+**Recover a dropped table** card, `qod profile recoverable` /
+`qod profile undrop`, and the MCP tools `list_recoverable` / `undrop_table`
+with their own PAT. See [Profile page](../operating/admin-ui.md#profile-page-regular-users).
+
+### Introspection
+
+```sql
+SHOW ROLES;
+SHOW GRANTS FOR ROLE analyst;
+SHOW ROW POLICIES;                         -- also: ON <table> | FOR ROLE <r>
+SHOW COLUMN POLICIES FOR ROLE analyst;
+SHOW POOL GRANTS;                          -- also: FOR USER <u> | FOR GROUP <g>
+SHOW GRANTS FOR USER alice;                -- flattened effective table grants
+SHOW USERS;
+```
+
+`SHOW GRANTS FOR USER` flattens the user's effective permissions (direct roles
+and roles reached through groups), naming the granting role on each row.
+
+`SHOW ... ON <table>` matches the stored tuple exactly, wildcards included.
+
+## Caveats
+
+- **Name shadowing.** `SHOW roles`, `SHOW grants`, and `SHOW users` are
+  claimed by the dialect, so a real table with one of those names cannot be
+  described with a bare `SHOW`. Quote the identifier to reach DuckDB:
+  `SHOW "users"`. `users` is the likeliest real-world collision.
+- **Not transactional.** Admin statements are control-plane writes; a
+  surrounding `BEGIN` on the data connection does not cover them.
+  `UNDROP TABLE` is refused inside one.
+- **Session staleness.** Authorization is evaluated against the principal
+  snapshot taken at connection handshake. A demoted admin keeps dialect
+  authority on an already-bound connection until the session context expires
+  (`sessionTtlSec`, default 3600s). New connections see the change
+  immediately.
+- **One statement per request**, like every statement on the FlightSQL edge.
+
+## When to use which surface
+
+SQL is the fastest path when you are already in a SQL client and want to
+grant, mask, or inspect without switching tools. The
+[manifest](/qod/administration/manage-by-manifest) remains the right surface
+for declarative, reviewable bulk state; the [CLI](/qod/cli/) for scripting
+with surrogate ids; the UI for guided flows. All four write the same store.
