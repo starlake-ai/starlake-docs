@@ -69,6 +69,27 @@ Invalid combinations (a timeout not above the heartbeat, an unknown `ephemeral` 
 
 The usual production settings still apply: point `QOD_PG_*` at your control-plane Postgres, and follow [Hardening](hardening.md). Under HA, set `QOD_NODE_KEY_SECRET` (at least 32 characters) to the same value on every replica, or leave it unset on all: each node's key derives from it, or from the value the first boot stored in the control plane. See the [Configuration reference](/qod/reference/configuration) for every key.
 
+### Run the manager under systemd (Linux)
+
+On the manager host, follow [Run the manager under systemd](deploy-single-server.md#03-run-the-manager-under-systemd). The account, the install, the root-only environment file, the unit, and the reasons for each of its settings are the same in fleet mode. Only the environment changes: add the fleet settings to `/etc/qod/qod.env`, in the format systemd reads (no `export`, and no comment after a value).
+
+```ini
+QOD_RUNTIME_TYPE=fleet
+QOD_FLEET_JOIN_TOKEN=<the join token>
+QOD_INTERNAL_URL=http://10.0.3.2:20901
+QOD_FLEET_AUTO_APPROVE=10.0.3.0/24
+QOD_FLEET_TRUSTED_PROXIES=10.0.3.1/32
+```
+
+The first three are required. The last two are the production settings from the [checklist](#secure-in-production). `QOD_DUCKLAKE_DATA_PATH` must be an object-store URL that every server can reach.
+
+Two things differ from a single-server deployment:
+
+- **The node has no unit of its own.** The manager assigns each server its pool and credentials through `qod fleet join`, which starts, restarts, and stops the node to match. The only unit a server needs is the one in [Run `qod fleet join` under systemd](#run-qod-fleet-join-under-systemd-linux).
+- **Restarting the manager does not stop the nodes.** Client sessions going through that manager drop, but each `qod fleet join` keeps its node running and retries its heartbeat until the manager is back.
+
+As on a single server, stop the manager with `systemctl stop qod-manager`, not `qod stop`: with `Restart=always`, systemd starts it again 5 seconds later.
+
 ## Join a server
 
 On each server, run `qod fleet join` with the manager URL and the join token. Pass the token through the environment, never with `--join-token`: a command-line argument is visible to every local user in `ps`.
