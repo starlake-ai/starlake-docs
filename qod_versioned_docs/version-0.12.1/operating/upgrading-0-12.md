@@ -20,11 +20,16 @@ Coming from 0.11.0, apply [From 0.11.0 to 0.12.0](#from-0110-to-0120) and then [
 5. **Rename pools that differ only by `_` and `-`.** See [Node ids and per-pool Secrets](#node-ids-and-per-pool-secrets).
 6. **Check `QOD_NODE_BIN`.** `qod-node` now requires `--spill-dir` and `--node-dir` in serve mode, which this release's spawn scripts pass. A `QOD_NODE_BIN` naming an earlier build, or a stale `native/qod-node/build`, fails every spawn with `unknown option '--spill-dir'`. Rebuild it, or unset `QOD_NODE_BIN` to use the bundled binary.
 7. **Recompile modules that call `PoolSupervisor.createTenantDb`.** It now states `writerTrusted`. With `false`, it names no server and no path of its own, as a tenant admin.
+8. **Grant roles and groups named `admin` or `user` through a membership.** See [Account kinds and role names](#account-kinds-and-role-names).
 
 **While upgrading**
 
-8. Upgrade the node image and the fleet servers with the manager, and restart every node.
-9. Under HA on Kubernetes, finish the rolling upgrade before stopping or deleting a pool: a replica still on 0.12.0 removes only the old Secret names.
+9. Upgrade the node image and the fleet servers with the manager, and restart every node.
+10. Under HA on Kubernetes, finish the rolling upgrade before stopping or deleting a pool: a replica still on 0.12.0 removes only the old Secret names.
+
+**After upgrading**
+
+11. Expect everyone to sign in again, `qod login` included: console sessions minted by an earlier release no longer resolve. Personal access tokens are not affected.
 
 ### Spill folders
 
@@ -47,6 +52,12 @@ On Kubernetes, a running pod reads its per-pool Secrets under their old names un
 Two pools that already read alike come apart at the first boot: a node keeps its stored id, and a pool left with no node row starts in the new form, on the fleet runtime once a server is free. On Kubernetes, a running pod keeps reading the old-named Secrets, which can hold the other pool's values, until the manager next starts it.
 
 Two pools of one database that differ only by `_` and `-` (`eu-west`, `eu_west`) read alike in the new form too, and no restart ends it. On the local and fleet runtimes a fresh slot takes the other's id again, and on Kubernetes each start writes the per-pool Secrets both read. Recreate one under another name, and on Kubernetes then restart the other's nodes.
+
+### Account kinds and role names
+
+An account's kind (`admin` or `user`) no longer works as a role or group name. A password login used to hold every tenant role and group literally named `admin` or `user`, by that name alone. It now holds only what its memberships grant, and the FlightSQL edge takes role and group names only from what an identity provider's token names. Grant such a role or group through a membership where a user relied on holding it by name.
+
+With the [Starflow pairing](./starflow.md), where the edge accepts a QoD console session as a bearer, that session yields no role and no group, whatever `QOD_AUTH_ROLE_CLAIM` names.
 
 ### Tenants on a shared bucket
 
