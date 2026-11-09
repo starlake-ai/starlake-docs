@@ -33,7 +33,7 @@ Parameter|Cardinality|Description
 --config `<value>`|*Required*|REST API extraction config file (in metadata/extract/)
 --outputDir `<value>`|*Required*|Where to output CSV files
 --limit `<value>`|*Optional*|Limit number of records per endpoint
---parallelism `<value>`|*Optional*|Parallelism level for endpoint extraction. Default: 16
+--parallelism `<value>`|*Optional*|Parallelism level for endpoint extraction. Default: 8
 --incremental `<value>`|*Optional*|Only extract new data since last extraction. Uses incrementalField from endpoint config.
 --resume `<value>`|*Optional*|Resume extraction from where a previous run failed, skipping already-extracted pages.
 --outputFormat `<value>`|*Optional*|Output format: csv (default) or jsonl (JSON Lines, preserves nested structures)

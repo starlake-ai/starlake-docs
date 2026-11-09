@@ -36,6 +36,43 @@ QoD has three runtimes. They differ only in where the DuckDB nodes run; tenants,
 
 A fleet is a set of servers that joined by running `qod fleet join`. Joining means the server will run a quack node: each server runs **exactly one** node, and the manager decides which pool it serves. Servers are shared by every pool of every tenant; the manager hands a free server to whichever pool needs a node.
 
+```mermaid
+graph TD
+  clients["SQL clients<br/>JDBC/ADBC, BI tools, DuckDB"]
+  browser["Browser<br/>admin UI"]
+  proxy["TLS proxy or load balancer<br/>in front of the REST port"]
+  manager["<b>QoD manager</b><br/>edge: auth, routing<br/>control plane, admin UI"]
+  subgraph server1["server 1"]
+    direction TB
+    join1["qod fleet join"]
+    node1["node, qod-node<br/>:21900"]
+    join1 -->|"starts, stops"| node1
+  end
+  subgraph server2["server 2 ... N"]
+    direction TB
+    join2["qod fleet join"]
+    node2["node, qod-node<br/>:21900"]
+    join2 -->|"starts, stops"| node2
+  end
+  pg[("PostgreSQL<br/>control plane<br/>DuckLake metastores")]
+  s3[("Object storage<br/>parquet data files")]
+  clients -->|":31338 FlightSQL, TLS<br/>:9494 native Quack"| manager
+  browser --> proxy
+  proxy -->|":20900 REST + UI"| manager
+  proxy <-->|"heartbeat from join<br/>assignment in the reply, HTTPS"| join1
+  proxy <--> join2
+  manager <-->|"statements to :21900<br/>verdicts to :20901<br/>plain HTTP, private network"| node1
+  manager <--> node2
+  manager -->|"control-plane state"| pg
+  node1 -->|"DuckLake catalog"| pg
+  node2 --> pg
+  node1 -->|"parquet read/write"| s3
+  node2 --> s3
+  style manager fill:#2e7d32,stroke:#1b5e20,color:#fff
+```
+
+The manager never starts a process on a server. Each `qod fleet join` connects out to the manager, and its heartbeat carries the assignment back. After that, statements flow directly between the manager and the node.
+
 ## Prerequisites
 
 - **Linux or macOS servers, or Docker containers.** `qod fleet join` is not available on Windows yet. To run servers (and the manager) as containers, see [Run servers as Docker containers](#run-servers-as-docker-containers).
