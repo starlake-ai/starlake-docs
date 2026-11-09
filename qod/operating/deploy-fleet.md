@@ -490,6 +490,101 @@ The server-to-manager hop carries the assignments, so the join process insists o
 
 Fleet is an HA-capable runtime, like Kubernetes: `QOD_HA_ENABLED=true` with `QOD_RUNTIME_TYPE=fleet` runs several active-active managers against the same control-plane Postgres. Point every server at a load-balanced URL in front of the managers; any replica accepts heartbeats and claims, because both are Postgres writes. List that load balancer in `QOD_FLEET_TRUSTED_PROXIES` on every replica, with the same `QOD_FLEET_AUTO_APPROVE` everywhere, so [join approval](#join-approval) sees each server's real address whichever replica answers. Approval is stored in the shared control plane, so an approval made on one replica holds on all of them. Reconcile, and with it pending-slot filling, grace expiry and respawns, runs on the elected leader only. See [Resilience and recovery](resilience.md) for the HA model.
 
+### Load balancer configuration
+
+Clients and servers reach the replicas through three ports, and each port needs something different from the load balancer:
+
+| Port | Carries | Balancer mode | Stickiness |
+|---|---|---|---|
+| `20900` | REST API, admin console, `qod fleet join` heartbeats | HTTP, with TLS ending at the balancer | None. Any replica answers |
+| `31338` | FlightSQL | TCP, with TLS passing through to the manager | Required. Sessions are per replica |
+| `9494` | Native Quack front door | TCP | Required. Sessions are per replica |
+
+Keep two kinds of port off the load balancer. Nodes call the verdict listener (`20901`) on the replica named in their session handle, so each replica's `QOD_INTERNAL_URL` is its own private address. The managers call each node directly on the node port.
+
+This HAProxy example fronts two replicas. Replace the addresses and the certificate path with your own, and add one `server` line per replica in each section.
+
+```haproxy
+global
+    maxconn 20000
+
+defaults
+    timeout connect 5s
+
+# REST, console and heartbeats: TLS ends here, and any replica answers.
+frontend qod_rest
+    bind :443 ssl crt /etc/haproxy/certs/qod.pem
+    mode http
+    timeout client 15m
+    # Keep exactly one X-Forwarded-For line: the manager refuses a heartbeat with several.
+    http-request del-header X-Forwarded-For
+    option forwardfor
+    http-request set-header X-Forwarded-Proto https
+    default_backend qod_rest_managers
+
+backend qod_rest_managers
+    mode http
+    timeout server 15m
+    balance roundrobin
+    option httpchk GET /ready
+    http-check expect status 200
+    default-server check inter 2s fall 3 rise 2
+    server mgr1 10.0.3.1:20900
+    server mgr2 10.0.3.2:20900
+
+# FlightSQL: TLS passes through, and a client stays on one replica.
+listen qod_flightsql
+    bind :31338
+    mode tcp
+    timeout client 1h
+    timeout server 1h
+    balance source
+    hash-type consistent
+    option httpchk GET /ready
+    http-check expect status 200
+    default-server check port 20900 inter 2s fall 3 rise 2
+    server mgr1 10.0.3.1:31338
+    server mgr2 10.0.3.2:31338
+
+# Native Quack front door: a client stays on one replica.
+listen qod_quack
+    bind :9494
+    mode tcp
+    timeout client 1h
+    timeout server 1h
+    balance source
+    hash-type consistent
+    option httpchk GET /ready
+    http-check expect status 200
+    default-server check port 20900 inter 2s fall 3 rise 2
+    server mgr1 10.0.3.1:9494
+    server mgr2 10.0.3.2:9494
+```
+
+Set these on every replica, with the balancer's own address in `QOD_FLEET_TRUSTED_PROXIES`, then check the configuration and reload the balancer:
+
+```bash
+QOD_HA_ENABLED=true
+QOD_RUNTIME_TYPE=fleet
+QOD_FLEET_TRUSTED_PROXIES=10.0.3.10/32
+QOD_INTERNAL_URL=http://<this replica's private address>:20901
+```
+
+```bash
+sudo haproxy -c -f /etc/haproxy/haproxy.cfg
+sudo systemctl reload haproxy
+curl -fsS https://mgr.example/ready
+```
+
+Then point each server at the balancer with `qod fleet join --manager https://mgr.example`.
+
+- **Health checks.** `/ready` answers 503 while a replica cannot reach Postgres, and it does not depend on which replica is the leader. The TCP sections check it on port `20900`, because the FlightSQL and Quack ports cannot answer it.
+- **Timeouts.** The 15 minutes on the REST port stay above the default 10 minute limit on a branch merge (`QOD_BRANCH_MERGE_TIMEOUT_SEC`). Raise the 1 hour on the TCP ports if a statement can stay silent for longer.
+- **FlightSQL certificate.** TLS reaches each manager, so give every replica the same certificate, valid for the balancer's name, through `PROXY_TLS_CERT_CHAIN` and `PROXY_TLS_PRIVATE_KEY`. A certificate each replica generates for itself differs from one replica to the next.
+- **Quack from remote clients.** The front door serves plain HTTP unless `QOD_QUACK_TLS_ENABLED=true`, and a remote DuckDB client attaching to plain HTTP must add `DISABLE_SSL true` to its `ATTACH` options.
+- **Clients behind NAT.** `balance source` hashes the client's address, so clients sharing one address land on the same replica.
+- **When a replica goes away.** Its clients move to another replica and must start a new session. A DuckDB client sees `Invalid connection id` and attaches again.
+- **The balancer itself.** One balancer is a single point of failure. Run two behind a virtual IP or a DNS name.
 
 ## Secure in production
 
