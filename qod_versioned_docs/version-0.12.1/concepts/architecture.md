@@ -15,7 +15,7 @@ The system separates a control plane from a data plane:
 - **Control plane** - the manager process: a REST API and React admin UI for managing tenants, databases, pools, users, and access control, plus the supervisor that spawns and tracks nodes. Its state lives in the control-plane store (see [State storage](/qod/concepts/state-storage)).
 - **Data plane** - the FlightSQL edge, the native Quack front door, and the Quack nodes behind them. This is where queries flow. The edge is stateless per request beyond the session it tracks; the nodes hold the DuckDB engines. Each node runs `qod-node`, QoD's own executable on the official DuckDB release library, which authorizes every statement before it runs.
 
-Both run in a single uber-jar exposing four sockets: the manager REST + UI (`:20900`), the FlightSQL edge (`:31338`), the native Quack front door (`:9494`, what a DuckDB client `ATTACH`es to), and the range of child Quack nodes.
+Both run in a single uber-jar exposing four sockets: the manager REST + UI (`:20900`), the node verdict listener (`:20901`, the REST port plus one), the FlightSQL edge (`:31338`), and the native Quack front door (`:9494`, what a DuckDB client `ATTACH`es to). The Quack nodes listen on their own ports: child processes of the manager on the local runtime, pods on Kubernetes, and one node per joined server in a [fleet](/qod/operating/deploy-fleet).
 
 ## The object model
 
@@ -45,6 +45,7 @@ When a client runs a statement, it passes through a fixed sequence:
 ## The pipeline in detail
 
 ```mermaid
+%%{init: {"flowchart": {"subGraphTitleMargin": {"top": 0, "bottom": 34}}}}%%
 flowchart TD
     C1["JDBC / ADBC client"]
     C2["Browser · admin UI"]
@@ -71,21 +72,22 @@ flowchart TD
     %% --- manager control plane ---
     API["api handlers · Tapir Endpoints<br/>tenant · pool · node · user · role · group<br/>catalog · config · session · history · rbac"]
     SUP["PoolSupervisor<br/>HealthProbe · drain · restart"]
-    BK["QuackBackend · selected by runtimeType<br/>LocalQuackBackend | KubernetesQuackBackend"]
+    BK["QuackBackend · selected by runtimeType<br/>LocalQuackBackend | KubernetesQuackBackend | FleetQuackBackend"]
+    VERDICT["Node verdict listener · :20901<br/>POST /api/internal/authz/decide"]
 
     REST --> API --> SUP --> BK
 
     %% --- node pool ---
     subgraph POOL["Quack node pool · per tenant: qod-node (DuckDB + quack_serve) · /quack"]
         direction LR
-        WO["WRITEONLY<br/>:21900 / pod"]
-        RO["READONLY<br/>:21901 / pod"]
-        DU["DUAL<br/>:21902 / pod"]
+        WO["WRITEONLY<br/>:21900 / pod / server"]
+        RO["READONLY<br/>:21901 / pod / server"]
+        DU["DUAL<br/>:21902 / pod / server"]
     end
 
     WIRE -->|"vnd.duckdb wire"| POOL
-    POOL -->|"verdict request · /api/internal/authz/decide"| REST
-    BK -->|"spawn · scale · quarantine"| POOL
+    POOL -->|"verdict request"| VERDICT
+    BK -->|"local, Kubernetes: spawn · scale · quarantine"| POOL
 
     %% --- persistence ---
     PG[("PostgreSQL<br/>control plane: qodstate_*<br/>Liquibase · RBAC<br/>per-tenant DuckLake catalogs")]
@@ -93,6 +95,7 @@ flowchart TD
 
     API -.->|control-plane state| PG
     SUP -.->|pool / node state| PG
+    BK -.->|"fleet: claim a server"| PG
     POOL -->|catalog| PG
     POOL -->|data read/write| OBJ
 
@@ -102,6 +105,11 @@ flowchart TD
     EDGE -.-> MET
     SUP -.-> MET
     MET --> SINK
+
+    %% --- fleet runtime: one join process per server, outside the manager ---
+    JOIN["qod fleet join · one per fleet server<br/>runs the node the manager assigns"]
+    REST <-->|"heartbeat from join · assignment in the reply"| JOIN
+    JOIN -->|"fleet: start · stop"| POOL
 ```
 
 **Two paths into Postgres.** The **manager** owns the control plane: it writes `qodstate_tenant` / `qodstate_tenant_db` / `qodstate_pool` / `qodstate_node` on tenant + pool CRUD, resolves the cached `EffectiveSet` for each authenticated session at handshake, and answers the nodes' verdict requests from it. Each **Quack node** owns the data plane against its tenant-db, reading and writing that DB's DuckLake `__ducklake_*` catalog tables directly. Two databases per tenant-db deployment (control-plane `qod` + tenant-db `${tenant}_${tenantDb}`) keep the control plane and DuckLake catalog cleanly separated while sharing one Postgres cluster.
