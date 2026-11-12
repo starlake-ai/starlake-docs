@@ -62,10 +62,10 @@ import Head from '@docusaurus/Head';
         },
         {
           "@type": "Question",
-          "name": "How do you visualize the lineage graph as SVG?",
+          "name": "How do you visualize the lineage graph?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Install GraphViz, then run starlake lineage --task kpi.order_summary --svg --output lineage.svg."
+            "text": "Run starlake lineage --task kpi.order_summary --json --output lineage.json: the Starflow UI draws the diagram from it. For an image, write the DOT output with --viz --output lineage.dot and render it with GraphViz: dot -Tsvg lineage.dot -o lineage.svg."
           }
         }
       ]
@@ -224,10 +224,11 @@ kpi.order_summary
     starbake.order_lines
 ```
 
-If you installed [GraphViz](/starflow/setup/starlake-core-setup), you can generate an SVG or PNG version:
+The Starflow UI draws this graph from the JSON output. To make an image yourself, write the DOT output and render it with [GraphViz](https://graphviz.org):
 
 ```bash
-starlake lineage --task kpi.order_summary --svg --output lineage.svg
+starlake lineage --task kpi.order_summary --viz --output lineage.dot
+dot -Tsvg lineage.dot -o lineage.svg
 ```
 
 ![Starlake SQL transform lineage diagram](/img/lineage.svg)
@@ -308,5 +309,5 @@ The subdirectory name inside `metadata/transform/` determines the target schema.
 ### Does Starlake work with DuckDB for SQL transformations?
 Yes. This tutorial uses DuckDB as the local engine. Starlake also supports BigQuery, Snowflake, Databricks, and any JDBC-compatible engine.
 
-### How do you visualize the lineage graph as SVG?
-Install GraphViz, then run `starlake lineage --task kpi.order_summary --svg --output lineage.svg`.
+### How do you visualize the lineage graph?
+Run `starlake lineage --task kpi.order_summary --json --output lineage.json`: the Starflow UI draws the diagram from it. For an image, write the DOT output with `--viz --output lineage.dot` and render it with GraphViz: `dot -Tsvg lineage.dot -o lineage.svg`.

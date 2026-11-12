@@ -78,8 +78,8 @@ Starlake parses `FROM` and `JOIN` clauses to build a directed acyclic graph (DAG
 # View dependency graph
 starlake lineage --task kpi.order_summary --print
 
-# Generate SVG visualization (requires GraphViz)
-starlake lineage --task kpi.order_summary --svg --output lineage.svg
+# JSON, which the Starflow UI draws as a diagram
+starlake lineage --task kpi.order_summary --json --output lineage.json
 ```
 
 ## 8. Recursive Execution

@@ -70,12 +70,12 @@ The `dataset_triggering_strategy` option controls when downstream DAGs fire:
 # Print dependency tree as text
 starlake lineage --task kpi.order_summary --print
 
-# Generate SVG (requires GraphViz)
-starlake lineage --task kpi.order_summary --svg --output lineage.svg
+# JSON, which the Starflow UI draws as a diagram
+starlake lineage --task kpi.order_summary --json --output lineage.json
 
-# Other formats
-starlake lineage --png --output lineage.png
-starlake lineage --json --output lineage.json
+# DOT, to render an image with GraphViz
+starlake lineage --task kpi.order_summary --viz --output lineage.dot
+dot -Tsvg lineage.dot -o lineage.svg
 
 # Column-level lineage
 starlake col-lineage --task kpi.order_summary
