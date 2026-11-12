@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Quack on Demand REST API
-  version: 0.12.1
+  version: 0.13.0
 paths:
   /api/scim/v2/{tenant}/Groups/{id}:
     get:
@@ -690,6 +690,11 @@ paths:
         required: false
         schema:
           type: boolean
+      - name: after
+        in: query
+        required: false
+        schema:
+          type: string
       - name: X-API-Key
         in: header
         required: false
@@ -714,7 +719,65 @@ paths:
             q, Invalid value for: query parameter from, Invalid value for: query parameter
             to, Invalid value for: query parameter limit, Invalid value for: query
             parameter before, Invalid value for: query parameter noTenant, Invalid
-            value for: header X-API-Key, Invalid value for: cookie qod_session'
+            value for: query parameter after, Invalid value for: header X-API-Key,
+            Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/driver/start:
+    get:
+      operationId: getApiAuthDriverStart
+      parameters:
+      - name: tenant
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: port
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: key
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: X-Forwarded-Proto
+        in: header
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+            Set-Cookie:
+              required: false
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: 'Invalid value for: query parameter tenant, Invalid value for:
+            query parameter port, Invalid value for: query parameter key, Invalid
+            value for: query parameter state, Invalid value for: header X-Forwarded-Proto'
           content:
             text/plain:
               schema:
@@ -913,6 +976,10 @@ paths:
         '200':
           description: ''
           headers:
+            Location:
+              required: false
+              schema:
+                type: string
             Set-Cookie:
               required: false
               schema:
@@ -2636,6 +2703,11 @@ paths:
         required: false
         schema:
           type: string
+      - name: after
+        in: query
+        required: false
+        schema:
+          type: string
       - name: X-API-Key
         in: header
         required: false
@@ -2659,8 +2731,8 @@ paths:
             value for: query parameter pool, Invalid value for: query parameter user,
             Invalid value for: query parameter status, Invalid value for: query parameter
             q, Invalid value for: query parameter limit, Invalid value for: query
-            parameter before, Invalid value for: header X-API-Key, Invalid value for:
-            cookie qod_session'
+            parameter before, Invalid value for: query parameter after, Invalid value
+            for: header X-API-Key, Invalid value for: cookie qod_session'
           content:
             text/plain:
               schema:
@@ -2845,6 +2917,16 @@ paths:
     get:
       operationId: getApiManifestExport
       parameters:
+      - name: mode
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: tenant
+        in: query
+        required: false
+        schema:
+          type: string
       - name: X-API-Key
         in: header
         required: false
@@ -2868,8 +2950,9 @@ paths:
               schema:
                 type: string
         '400':
-          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
-            qod_session'
+          description: 'Invalid value for: query parameter mode, Invalid value for:
+            query parameter tenant, Invalid value for: header X-API-Key, Invalid value
+            for: cookie qod_session'
           content:
             text/plain:
               schema:
@@ -5556,6 +5639,16 @@ paths:
     post:
       operationId: postApiManifestImport
       parameters:
+      - name: mode
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: tenant
+        in: query
+        required: false
+        schema:
+          type: string
       - name: X-API-Key
         in: header
         required: false
@@ -5580,8 +5673,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ManifestImportSummary'
         '400':
-          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
-            qod_session'
+          description: 'Invalid value for: query parameter mode, Invalid value for:
+            query parameter tenant, Invalid value for: header X-API-Key, Invalid value
+            for: cookie qod_session'
           content:
             text/plain:
               schema:
@@ -7683,6 +7777,8 @@ components:
           type: string
         detail:
           $ref: '#/components/schemas/Map_String'
+        patId:
+          type: string
     AuditListResponse:
       title: AuditListResponse
       type: object
@@ -7692,6 +7788,8 @@ components:
           items:
             $ref: '#/components/schemas/AuditEventEntry'
         nextBefore:
+          type: string
+        nextAfter:
           type: string
     AuthModeResponse:
       title: AuthModeResponse
@@ -9830,6 +9928,14 @@ components:
           type: string
         serverState:
           type: string
+        unhealthyReason:
+          type: string
+        unhealthyDetail:
+          type: string
+        unhealthySince:
+          type: string
+        lastProbeAt:
+          type: string
     NodeOpRequest:
       title: NodeOpRequest
       type: object
@@ -11030,6 +11136,8 @@ components:
           type: string
         error:
           type: string
+        patId:
+          type: string
     StatementSearchResponse:
       title: StatementSearchResponse
       type: object
@@ -11039,6 +11147,8 @@ components:
           items:
             $ref: '#/components/schemas/StatementHistoryRowEntry'
         nextBefore:
+          type: string
+        nextAfter:
           type: string
     StopPoolRequest:
       title: StopPoolRequest
@@ -11330,6 +11440,7 @@ components:
       - opaTokenSet
       - opaSendStatementText
       - clientSecretSet
+      - policyVersion
       properties:
         name:
           type: string
@@ -11359,6 +11470,9 @@ components:
           type: boolean
         clientSecretSet:
           type: boolean
+        policyVersion:
+          type: integer
+          format: int64
     TrendBucketEntry:
       title: TrendBucketEntry
       type: object

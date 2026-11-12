@@ -5,6 +5,8 @@ description: "The checklists for upgrading a Quack on Demand manager from 0.11.0
 keywords: ["upgrade", "release notes", "0.12.0", "0.12.1", "migration", "breaking changes"]
 ---
 
+Already on 0.12.1 or later? See [Upgrading to 0.13](./upgrading-0-13.md).
+
 Coming from 0.11.0, apply [From 0.11.0 to 0.12.0](#from-0110-to-0120) and then [From 0.12.0 to 0.12.1](#from-0120-to-0121). Coming from 0.10.x, start with [Upgrading to 0.11.0](./upgrading.md).
 
 ## From 0.12.0 to 0.12.1

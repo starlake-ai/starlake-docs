@@ -29,11 +29,12 @@ The `action` field is a dotted string. The full set of values emitted by the cur
 | Action | Description |
 |---|---|
 | `auth.login` | Successful login |
-| `auth.login.failure` | Failed login (bad credentials, expired, or unknown user) |
+| `auth.login.failure` | Failed login (bad credentials, expired, or unknown user). With `QOD_AUDIT_HANDSHAKE_FAILURES=true`, also a refused FlightSQL or native Quack handshake, see [Refused handshakes](#refused-handshakes) |
 | `auth.logout` | Session logout |
 | `auth.revoke` | Explicit session revocation |
 | `auth.api-key.failure` | Request on `/api` with no valid credential (no live session or PAT in `X-API-Key` or the session cookie); rate-limited to one event per source IP per minute |
 | `auth.admin.required` | Valid non-admin session denied on an admin endpoint; rate-limited to one event per user per minute |
+| `auth.token.read_only` | A read-only (`verbCeiling: RO`) token refused `403 token_read_only` on a write; rate-limited to one event per user per minute |
 | `auth.pat.create` | Personal access token minted (target is the token id, detail carries its name) |
 | `auth.pat.revoke` | Personal access token revoked (`denied` outcome on an unknown or foreign id) |
 | `auth.pat.delete` | Dead (revoked/expired) personal access token removed from the listing (`denied` outcome on a live, unknown, or foreign id) |
@@ -133,6 +134,11 @@ Every row in `qodstate_audit` carries:
 | `outcome` | `ok`, `denied`, `error` | `denied` for scope-gate rejections; `error` for unexpected failures |
 | `origin` | `rest`, `flightsql` | Where the event originated |
 | `detail` | key-value map | Whitelisted context (see Sanitization) |
+| `pat_id` | token id or null | The personal access token the call presented, as `patId` in the API |
+
+### Refused handshakes
+
+`QOD_AUDIT_HANDSHAKE_FAILURES=true` (`telemetry.auditHandshakeFailures`, off by default) writes `auth.login.failure` for a FlightSQL or native Quack handshake the manager refuses: a bad or missing credential, or a user with no access to the pool. The row names the front door, the user name as given, the tenant and pool, the client address and a fixed reason, never the credential. At most one row a minute is written per front door, address and user name.
 
 ## Who sees what
 
@@ -220,5 +226,6 @@ qod audit actions
 | `to` | ISO-8601 instant; return only events before this time |
 | `limit` | Number of rows to return (default 50, max 500) |
 | `before` | Opaque keyset cursor from `nextBefore` in a prior response; used to fetch the next page of older results |
+| `after` | A row id: return the rows after it, oldest first. A connector that follows the log polls with the last id it read (`qod audit list --after <id>`) |
 
 Results are returned newest-first. The response includes a `nextBefore` cursor whenever the page is non-empty; the UI shows a "Load more" button only when the page is full (the `limit` was reached).

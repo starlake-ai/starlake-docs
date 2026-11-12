@@ -79,6 +79,10 @@ Import validates the whole document before writing anything. On failure it retur
 - `invalid-yaml` - the body did not parse as YAML.
 - `invalid-manifest` - validation failed: a wrong `apiVersion` (must be `quack-on-demand/v1`), duplicate keys (tenant name, `(tenant, role)`, `(tenant, group)`, `(tenant, user)`, or a nested duplicate), a user/role/group that references a tenant not present in the manifest or already in the database, a user still carrying the old `role` key, or a role or group named with the reserved `qod_` prefix (only a built-in in its exact built-in shape is accepted, as a no-op).
 
+### One tenant's roles and groups
+
+A control plane connector can manage a single tenant's RBAC by manifest. `qod manifest export --mode rbac --tenant <id>` (`GET /api/manifest/export?mode=rbac&tenant=<id>`) exports that tenant's roles and groups, and `qod manifest import --mode rbac --tenant <id> <file>` (`POST /api/manifest/import?mode=rbac&tenant=<id>`) makes the tenant's custom roles and groups exactly the file's. The built-ins, existing group pool grants and SCIM groups are left alone, and a file naming a SCIM group is refused. `GET /api/tenant/list` carries each tenant's `policyVersion`, so a connector can tell when to export again.
+
 Import seeds the built-in roles and groups into every tenant it touches. It attaches no default memberships: a user gets exactly the `roles` and `groups` the manifest lists, which may name the built-ins.
 
 After a successful import the manager reloads its in-memory caches (tenants, databases, pools, RBAC effective sets) immediately. No restart is needed for the new configuration to take effect.

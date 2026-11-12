@@ -25,6 +25,8 @@ pip install ./cli
 
 Both routes install the `qod` console script on `$PATH`.
 
+In a terminal, the CLI tells you on stderr when PyPI has a newer `qod`, with the upgrade command for how you installed it (`uv tool upgrade qod`, `uvx qod@latest`, `pipx upgrade qod` or pip). It asks PyPI at most once a day. Set `QOD_NO_UPDATE_CHECK=1` to turn it off.
+
 **Windows.** The same `pip install qod` installs a `qod.exe` entry point; there is no separate Windows package. The profile file lives at `~/.qod/config.toml` as on every platform, and the interactive `qod sql` REPL gets line editing and history from `pyreadline3` (installed automatically as a Windows-only dependency).
 
 ## Login and profiles

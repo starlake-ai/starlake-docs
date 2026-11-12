@@ -192,7 +192,8 @@ data path's secret is scoped to the data path and its branches. The manager's
 `QOD_S3_*` keys (or the instance's credential chain) therefore sign only a
 database's own data path: a superuser reading another bucket registers keys too
 (`qod profile s3 add`) or creates a scoped secret, and an `initSql` that reads
-other buckets needs its own `CREATE SECRET`.
+other buckets needs its own `CREATE SECRET`. On Kubernetes, node pods do not mount
+the service account's API token, so a node cannot call the cluster API.
 
 ### Extension settings
 

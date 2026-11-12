@@ -100,6 +100,19 @@ The `qod_node_authz_*` per-node counters are exported by the HA leader only, so 
 
 The health probe also checks that each node enforces: it sends a statement with no session handle, and a node that runs it is marked unhealthy and never routed to. A node started by a release before 0.11.0 refuses every session handle and stays unhealthy until it is restarted (see [Upgrading to 0.11.0](./upgrading.md)).
 
+### Why a node is unhealthy
+
+The console's dashboard and pool page show an unhealthy node's badge as `unhealthy · <reason> · <how long>`, with the manager's one-line explanation on hover, and under the badge on the pool page. `/api/pool/list` and `qod pool list` carry the same on each node:
+
+| Field | Value |
+|---|---|
+| `unhealthyReason` | `unreachable`, `probe_lost`, `probe_refused`, `handle_refused`, `unenforced`, `local_files_on`, `probe_error`, `statement_failed`, or `fleet_leftover` / `foreign_row` for a row another runtime wrote |
+| `unhealthyDetail` | The manager's explanation. It is the manager's own text, never a node's error, since tenant admins read it |
+| `unhealthySince` | When the node turned unhealthy |
+| `lastProbeAt` | The health probe's last answer |
+
+A manager on the local runtime replaces the nodes of a row another runtime wrote against the same control plane, such as a fleet manager that ran before it, and logs it at ERROR naming the fleet server or pod and the address the row named.
+
 ## Metrics vs. the usage ledger
 
 `statements_total` and `statement_duration_seconds` (both tagged `tenant`, `pool`, `status`) are the real-time, in-process view of statement activity: they increment on every completed statement and are exported at the Prometheus scrape interval or cloud-push cadence. They answer questions like "what is the current QPS per tenant?" but do not persist across process restarts.

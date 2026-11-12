@@ -124,7 +124,9 @@ qod federation secret set acme acme_lake glue_lake \
   placeholders, refused as literals when the source is saved, like `clientSecret`; the key id may
   be a literal.
 - **`credential_chain`**: the DuckDB `aws` extension resolves the credentials on the node itself
-  (instance role, environment, profile). It takes no key id, secret key or session token.
+  (instance role, environment, profile). It takes no key id, secret key or session token. Only a
+  superuser sets or changes it: a tenant admin gets `403 superuser_required`, and a stored source
+  sent back unchanged is still accepted.
 
 Once `awsCredentials` is set:
 

@@ -383,6 +383,7 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.telemetry.rollupIntervalSec` | `QOD_ROLLUP_INTERVAL_SEC` | `300` |  | Seconds between rollup computation passes that aggregate raw statement history into rollup buckets. |
 | `quack-on-demand.telemetry.usageRetentionDays` | `QOD_USAGE_RETENTION_DAYS` | `400` |  | Days to keep daily rollup buckets (the usage-accounting ledger) before the periodic purge removes them. 400 covers a full billing year. |
 | `quack-on-demand.telemetry.auditSink` | `QOD_AUDIT_SINK` | `none` |  | Extra destination for every audit and statement event, on top of the store: none \| stdout (one JSON line per event, tagged qodEvent=audit\|statement, for a log shipper; SQL literals, engine error text and unauthenticated login names are redacted). Requires store=postgres. Lines dropped under stdout backpressure count in qod_journal_dropped_total&#123;table=stdout&#125;. |
+| `quack-on-demand.telemetry.auditHandshakeFailures` | `QOD_AUDIT_HANDSHAKE_FAILURES` | `false` |  | Record refused FlightSQL and native Quack handshakes (a bad or missing credential, a user with no access to the pool) as auth.login.failure audit events, at most one per minute per front door, client address and user name. Off by default; the client is refused either way. |
 
 ## `quack-on-demand.tenantFiles`
 

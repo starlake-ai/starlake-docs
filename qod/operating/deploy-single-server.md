@@ -140,7 +140,7 @@ sudo apt-get install lsof procps     # or your distribution's equivalent
 sudo useradd --system --create-home --home-dir /var/lib/qod --shell /usr/sbin/nologin qod
 
 sudo python3 -m venv /opt/qod
-sudo /opt/qod/bin/pip install qod==0.12.1
+sudo /opt/qod/bin/pip install qod==0.13.0
 sudo ln -s /opt/qod/bin/qod /usr/local/bin/qod
 ```
 
@@ -181,7 +181,7 @@ StartLimitIntervalSec=0
 [Service]
 User=qod
 EnvironmentFile=/etc/qod/qod.env
-ExecStart=/usr/local/bin/qod start --version 0.12.1
+ExecStart=/usr/local/bin/qod start --version 0.13.0
 Restart=always
 RestartSec=5
 KillMode=mixed
@@ -210,7 +210,7 @@ curl -fsS http://localhost:20900/ready
 
 | Setting | Why |
 |---|---|
-| `--version 0.12.1` | Without a pin, every start asks GitHub for the latest release, so a reboot or a crash restart can upgrade the manager with nobody watching, and an upgrade can require [steps of its own](upgrading-0-12.md). |
+| `--version 0.13.0` | Without a pin, every start asks GitHub for the latest release, so a reboot or a crash restart can upgrade the manager with nobody watching, and an upgrade can require [steps of its own](upgrading-0-13.md). |
 | `Restart=always`, `RestartSec=5`, `StartLimitIntervalSec=0` | Restarts the manager after any exit and keeps retrying, for example while Postgres is down. `systemctl stop` is not restarted. |
 | `KillMode=mixed` | Sends SIGTERM to `qod start` alone, which runs the same stop sequence as `qod stop`. Anything still alive at the end gets SIGKILL, so no node stays behind holding a port in the `21900+` range, even if the CLI itself is killed. |
 | `TimeoutStopSec=60` | Leaves room for that sequence, which sends SIGKILL after `FORCE_AFTER` seconds (default 10). If you raise `FORCE_AFTER`, keep this value well above it. |
@@ -270,7 +270,7 @@ graph LR
 | OS | Linux or macOS; Windows native is experimental (PowerShell scripts), Docker on Windows requires WSL2 |
 | `lsof`, `pgrep` | `qod stop`, and a stop of `qod start` under systemd, find the manager and its nodes with them. Without them the stop is not graceful (see [section 0.3](#03-run-the-manager-under-systemd)) |
 
-Everything else is provisioned by `qod start` itself: a Temurin 21 JRE when no 21+ JVM is present (`JAVA_BIN` forces a specific one) and the pinned DuckDB build (a system `duckdb` on PATH is deliberately ignored to avoid ABI mismatches). The nodes run `qod-node`, which the jar bundles for Linux and macOS.
+Everything else is provisioned by `qod start` itself: a Temurin 25 JRE when no 25+ JVM is present (`JAVA_BIN` forces a specific one) and the pinned DuckDB build (a system `duckdb` on PATH is deliberately ignored to avoid ABI mismatches). The nodes run `qod-node`, which the jar bundles for Linux and macOS.
 
 ### 2.2 Hardware guidance
 

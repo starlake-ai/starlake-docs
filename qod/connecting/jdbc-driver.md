@@ -16,7 +16,9 @@ Without `authenticator`, the driver behaves exactly like the Arrow driver: `user
 
 ## Get the driver
 
-The driver is one self-contained jar: it bundles the Arrow Flight SQL JDBC driver, unchanged, and carries its version (qod-jdbc 19.0.0 embeds Arrow's 19.0.0). Build it from source with Maven and Java 11 or later:
+The driver is one self-contained jar: it bundles the Arrow Flight SQL JDBC driver, unchanged, and carries its version (qod-jdbc 19.0.0 embeds Arrow's 19.0.0). Download `qod-jdbc-19.0.0.jar`, and its `.sha256` to check it, from the [latest release](https://github.com/starlake-ai/qod-jdbc/releases/latest).
+
+To build it from source instead, with Maven and Java 11 or later:
 
 ```bash
 git clone https://github.com/starlake-ai/qod-jdbc

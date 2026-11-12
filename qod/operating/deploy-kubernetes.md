@@ -47,6 +47,8 @@ Every pod receives the following labels:
 
 Each pod runs `qod-node`, QoD's own executable on the official DuckDB library: the node image (`docker/quack-node`) ships it with its `libduckdb` under `/opt/qod-node` and carries no DuckDB CLI. The image must match the manager's release: nodes speak node protocol 6 with session handle v4, the image build fails on a binary of another protocol, and a pod running an earlier image refuses every handle, the health probe's included, so it stays unhealthy and is never routed to. After upgrading the manager, pull this release's node image and restart every node.
 
+Node pods do not mount the service account's API token, and a pod template cannot turn it back on. Tokens projected for IRSA or workload identity are separate mounts and stay.
+
 ## Node secrets volume
 
 No secret reaches a node pod as an environment variable or a `secretKeyRef`: a node user with SQL could read its own process environment back. Every Secret below is delivered as files of one read-only projected volume, `qod-node-secrets` (mode 0400, mounted at `/var/run/qod-secrets`, the pod's `QOD_SECRETS_DIR`), and kubelet will not start a pod whose volume references a missing Secret, so the manager creates them all before the pod.

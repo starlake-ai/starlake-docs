@@ -56,7 +56,7 @@ QOD_VERSION=latest-snapshot PG_HOST=... PG_PASSWORD=*** ./scripts/docker/run-doc
     postgres:16-alpine
   ```
 
-- **Java 21+ is found, not required.** `qod start` uses `JAVA_HOME` or `java` on `PATH` when a Java 21+ runtime is present; otherwise it downloads a cached Temurin 21 JRE (about 50 MB, one time, no prompt). `JAVA_BIN` forces a specific binary; `JAVA_OPTS` adds Java options (e.g. `-Xmx2g`).
+- **Java 25+ is found, not required.** `qod start` and `qod serve` use `JAVA_HOME` or `java` on `PATH` when a Java 25+ runtime is present; otherwise they download a cached Temurin 25 JRE (about 50 MB, one time, no prompt). On Windows on ARM, which Temurin 25 does not cover, they download the Microsoft Build of OpenJDK 25. `JAVA_BIN` forces a specific binary; `JAVA_OPTS` adds Java options (e.g. `-Xmx2g`).
 - **DuckDB is self-installed** (CLI + `libduckdb` at the ABI libquackwire links against) into the user cache dir - a system duckdb at the wrong ABI would crash the first node spawn, so it is never used. `DUCKDB_VERSION` / `DUCKDB_CACHE_DIR` override the pin and location; air-gapped operators can pre-populate `$DUCKDB_CACHE_DIR/$VERSION/{bin,lib}` and no network fetch happens.
 
 ### Where downloads are cached
@@ -66,7 +66,7 @@ Everything `qod start` fetches lands in the per-user cache directory, keyed by v
 | What | Location (macOS) | Location (Linux) | Override |
 |---|---|---|---|
 | Manager jars | `~/Library/Caches/qod/jars` | `~/.cache/qod/jars` | `JAR_CACHE_DIR` |
-| Temurin JRE (only when no system Java 21+) | `~/Library/Caches/qod/jre` | `~/.cache/qod/jre` | - |
+| Java 25 JRE (only when no system Java 25+) | `~/Library/Caches/qod/jre-25` | `~/.cache/qod/jre-25` | - |
 | DuckDB CLI + `libduckdb` | `~/Library/Caches/qod/{bin,lib}` | `~/.cache/qod/{bin,lib}` | `DUCKDB_CACHE_DIR` |
 
 On Windows the root is `%LOCALAPPDATA%\qod\Cache`. Jars are named `quack-on-demand-assembly-<version>.jar`, so several releases coexist; deleting the directory only costs a re-download. Durable state (DuckLake data, TLS certs) is deliberately kept elsewhere, under `~/Library/Application Support/qod` (macOS) or `~/.local/share/qod` (Linux) - wiping the cache is safe, wiping that is not.
@@ -147,7 +147,7 @@ NUKE=1 DEMO=minimal LOAD_TPCH=1 qod start
 Windows support is **experimental**. The `qod` launcher needs release **0.3.8 or later** (older releases predate the `demo`/`start` subcommand support and are refused).
 :::
 
-The manager runs natively on Windows - no WSL, no Docker. `pip install qod` installs the same `qod.exe` entry point, and `qod serve --demo` / `qod serve` / `qod start` work as on Linux/macOS: Java 21 is auto-provisioned when missing, DuckDB (CLI + `duckdb.dll`) is self-installed, and Quack nodes are spawned through the bundled PowerShell mirror of the node-spawn script. The node executable, `qod-node-windows-<arch>.exe`, is too large to bundle in the jar: `qod start` and `qod serve` download the one of the manager's release (sha256-checked, cached under `qod-node/<release>/`) and set `QOD_NODE_BIN`.
+The manager runs natively on Windows - no WSL, no Docker. `pip install qod` installs the same `qod.exe` entry point, and `qod serve --demo` / `qod serve` / `qod start` work as on Linux/macOS: Java 25 is auto-provisioned when missing (the Microsoft Build of OpenJDK 25 on ARM), DuckDB (CLI + `duckdb.dll`) is self-installed, and Quack nodes are spawned through the bundled PowerShell mirror of the node-spawn script. The node executable, `qod-node-windows-<arch>.exe`, is too large to bundle in the jar: `qod start` and `qod serve` download the one of the manager's release (sha256-checked, cached under `qod-node/<release>/`) and set `QOD_NODE_BIN`.
 
 ```powershell
 pip install qod

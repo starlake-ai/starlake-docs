@@ -37,12 +37,14 @@ A token can be minted narrower than its owner, so an agent holds a credential it
 | `databases` | `--database` (repeatable) | Restrict the token to these databases |
 | `pools` | `--pool` (repeatable) | Restrict the token to these pools |
 | `tools` | `--tool` (repeatable) | Restrict the MCP tool surface the token may call |
-| `verbCeiling` | `--verb-ceiling` | Cap write power: `RO`, `RW`, `DDL` or `ALL` |
+| `verbCeiling` | `--verb-ceiling` | Cap write power: `RO`, `RW`, `DDL` or `ALL`. `RO` also makes the token read-only on REST and MCP, see below |
 | `dropAdmin` | `--drop-admin` | Strip the owner's superuser/admin standing from this token |
 | `stmtTimeoutMs` | `--stmt-timeout-ms` | Per-statement timeout, milliseconds |
 | `maxRows` | `--max-rows` | Row cap on this token's queries |
 
 An axis left out is unrestricted on that axis (the token inherits the owner's reach); an axis sent as an empty array restricts the token to nothing on that axis. Scope always intersects the owner's grants and can never widen them - a mint request that tries to widen any axis is refused, naming the axis. Row-level and column-level policies that apply to the owner apply to every token they mint, untouched. Every axis also binds the catalog tools that run SQL for the owner (`restore_snapshot`, `undrop_table`, `list_recoverable`, and over REST the preview, data diff and Iceberg views), refused with `token_scope` (or `write_requires_branch`) before anything runs, and the branch tools check `databases` against the branch's parent database.
+
+A token minted with `verbCeiling: RO` is read-only everywhere, not only in SQL. On REST it gets every `GET` and the four reads sent as `POST` (`/api/auth/pat/list`, `/api/profile/s3/list`, `/api/tenant/location/list` and `/api/user/s3/list`). Anything else answers `403 token_read_only` and writes an `auth.token.read_only` audit row, so such a token can neither import a manifest nor mint a child token. Over MCP it sees only the read-only tools, `run_sql` included, since the ceiling already bounds what it runs; any other tool reads as unknown.
 
 Tokens mint tokens. A PAT presented on the REST API may create a further-scoped child of itself, list its own descendants, and revoke or delete within its own subtree only - never itself, a sibling, its parent, or any other token of its owner. An axis narrowed at mint time can only narrow further down the chain, a child's expiry is clamped to its parent's, and chains are depth-capped (`QOD_PAT_MAX_DEPTH`, default 8). Revoking a token revokes its whole subtree in the same statement, so a stolen token cannot be rolled forward past its own revocation by minting a successor first.
 
