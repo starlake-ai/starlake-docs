@@ -435,7 +435,7 @@ None beyond a shell: the setup script checks for Java 25 or higher and, if none 
 Yes, Docker is the fastest way to get started with Starlake. Pull the image with `docker pull starlakeai/starlake:latest` and run commands by mounting your project directory to `/starlake` in the container.
 
 ### Which Java version does Starlake require?
-Starlake 1.9 and later requires Java 25 or higher (1.8 and earlier run on Java 17 or 21). If your machine has none, the setup script installs an embedded portable Temurin 25 JDK inside the Starlake directory automatically. You can also use your own Oracle JDK or OpenJDK; verify with `java -version`.
+Starlake 1.9 and later requires Java 25 or higher (1.8 and earlier run on Java 17 or 21). If your machine has none, the setup script installs an embedded portable Temurin 25 JDK inside the Starlake directory automatically. You can also use your own Oracle JDK or OpenJDK; verify with `java -version`. From 1.9.1, the `starlake` launcher refuses to run a command on a JDK that cannot run it, and names the version to use; set `SL_SKIP_JDK_CHECK=1` to only warn and run the command anyway.
 
 ### How do I upgrade Starlake to a newer version?
 Run `starlake upgrade` and pick a version from the menu, or run `starlake upgrade --version X.Y.Z` non-interactively. The command works in both directions (upgrade and downgrade) and re-provisions the core JAR, connectors, and the Spark runtime when the target release pins a different Spark.
