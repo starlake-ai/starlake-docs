@@ -12,6 +12,8 @@ DBeaver connects to Quack on Demand through the Apache Arrow Flight SQL JDBC dri
 DBeaver ──JDBC──▶ Arrow Flight SQL JDBC driver ──Flight SQL──▶ Quack edge (:31338, TLS)
 ```
 
+To sign in through your identity provider in the browser instead, with no token to copy, use the [QoD JDBC driver](./jdbc-driver.md) and `authenticator=externalbrowser`; its page has the DBeaver steps.
+
 This page is the click-by-click DBeaver walkthrough. For the full list of URL parameters the edge reads and the broader JDBC/Spark recipe, see [Connecting clients](/qod/connecting/clients#dbeaver-and-jdbc); for the credential and TLS contracts, see [Authenticating](/qod/connecting/authenticating).
 
 ## 1. Register the driver
@@ -55,7 +57,7 @@ Set `user` / `password` in the URL (above). With Basic auth the edge BCrypt-veri
 
 ### OAuth bearer token (browser login)
 
-When the edge is wired to an OIDC provider (Keycloak / Azure AD / Google) and you want interactive SSO / MFA, the Arrow Flight SQL JDBC driver cannot run the browser flow in-process, so the manager serves a browser **token page**:
+When the edge is wired to an OIDC provider (Keycloak / Azure AD / Google) and you want interactive SSO / MFA, the Arrow Flight SQL JDBC driver cannot run the browser flow in-process. The [QoD JDBC driver](./jdbc-driver.md) can (`authenticator=externalbrowser`). With the Arrow driver, the manager serves a browser **token page**:
 
 1. Open `https://<gateway>:20900/api/auth/sql-token/start` in a browser. The manager redirects you to the provider's login (resolved via OIDC discovery, so the URL is reachable from your host).
 2. Log in. The callback renders the **"Quack on Demand token"** page; click **Copy**.

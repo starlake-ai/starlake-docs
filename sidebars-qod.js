@@ -111,6 +111,7 @@ const sidebars = {
         'connecting/sql',
         'connecting/mcp',
         'connecting/agent-skill',
+        'connecting/jdbc-driver',
         'connecting/dbeaver',
         'connecting/powerbi',
         'connecting/tableau',
