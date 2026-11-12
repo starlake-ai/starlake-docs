@@ -88,7 +88,11 @@ The manager keeps nothing between the start of a sign-in and its end, so with se
    - Class Name: `ai.starlake.qod.jdbc.QodDriver`.
    - URL Template: `jdbc:qod://{host}:{port}`.
    - Default Port: `31338`.
-   - **Libraries -> Add File**: `qod-jdbc-19.0.0.jar`. Remove any Arrow Flight SQL driver jar from this driver's libraries.
+   - **Libraries -> Add Artifact**, paste the Maven coordinate and **Download**; DBeaver fetches the jar from Maven Central:
+     ```
+     ai.starlake.qod:qod-jdbc:19.0.0
+     ```
+     (or **Add File** with a `qod-jdbc-19.0.0.jar` you downloaded). Remove any Arrow Flight SQL driver jar from this driver's libraries.
 2. **Database -> New Database Connection**, pick it, and set the URL:
 
    ```

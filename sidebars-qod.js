@@ -106,6 +106,7 @@ const sidebars = {
       type: 'category',
       label: 'Connecting',
       items: [
+        'connecting/drivers',
         'connecting/clients',
         'connecting/duckdb',
         'connecting/authenticating',

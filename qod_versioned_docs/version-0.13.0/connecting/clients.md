@@ -27,15 +27,7 @@ See [DuckDB (native Quack)](/qod/connecting/duckdb) for the token format, TLS, a
 
 ## Get a driver
 
-| Client | Driver | Where to get it | Setup |
-|---|---|---|---|
-| DBeaver and other Java tools, signing in through the browser | QoD JDBC driver | [`qod-jdbc-19.0.0.jar`](https://github.com/starlake-ai/qod-jdbc/releases/latest) from its GitHub release | [QoD JDBC driver](./jdbc-driver.md) |
-| Any JDBC tool, with a password or a pasted token | Apache Arrow Flight SQL JDBC driver | [`org.apache.arrow:flight-sql-jdbc-driver`](https://central.sonatype.com/artifact/org.apache.arrow/flight-sql-jdbc-driver) on Maven Central | [DBeaver and JDBC](#dbeaver-and-jdbc), [DBeaver](./dbeaver.md), [Tableau](./tableau.md) |
-| Python, Go and other ADBC clients | ADBC Flight SQL driver | `pip install adbc_driver_flightsql adbc_driver_manager` ([PyPI](https://pypi.org/project/adbc-driver-flightsql/)) | [Python](#python-adbc--pyarrow) |
-| Power BI | QoD connector | [`QoD-<version>.mez`](https://github.com/starlake-ai/qod-powerbi-connector/releases) from its GitHub releases. Power BI Desktop ships the Flight SQL ADBC driver it runs on | [Power BI](./powerbi.md) |
-| ODBC tools | Any Arrow Flight SQL ODBC driver, such as Dremio's | From its vendor: QoD ships none | [ODBC](#odbc) |
-| DuckDB | None: DuckDB's `quack` extension | Comes with DuckDB | [DuckDB (native Quack)](./duckdb.md) |
-| The `qod` CLI | - | `pip install qod` | [qod CLI](../cli/index.md) |
+Which driver or connector each client uses, and where to download it, is on [Drivers and downloads](./drivers.md).
 
 ## The FlightSQL connection target
 
