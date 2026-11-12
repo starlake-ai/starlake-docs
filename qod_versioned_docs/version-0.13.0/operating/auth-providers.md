@@ -1,0 +1,328 @@
+---
+id: auth-providers
+title: "DuckDB authentication providers: Keycloak, Google, Azure AD, Cognito"
+sidebar_label: "Authentication providers"
+description: "Enable and configure each authentication provider for DuckDB clients: built-in passwords, external JWT, Keycloak, Google, Azure AD, Cognito, UI SSO."
+keywords: ["duckdb sso", "duckdb oauth", "keycloak", "azure ad", "google", "cognito", "oidc", "jwt"]
+---
+
+Quack-on-Demand supports multiple authentication providers that can be enabled independently. Any combination may be active at the same time: the edge tries each enabled provider in order and accepts the first success. The full chain logic, session TTL, and how tenant identity is derived from claims are covered in the Authentication page. This page focuses on enabling and configuring each provider.
+
+See [/reference/configuration](/qod/reference/configuration) for the complete list of tunables.
+
+---
+
+## Database (built-in)
+
+Validates username and password against the `qodstate_user` table in the control-plane Postgres using bcrypt. Enabled by default so the bootstrap admin works out of the box.
+
+The authenticator runs one of two queries, picked by the caller-declared auth realm:
+
+- `systemQuery` - used when the caller asked for the **system** realm (manager UI login with empty tenant; FlightSQL handshake with `?superuser=true`). Matches the row with `tenant IS NULL` - the bootstrap admin / system superuser.
+- `tenantQuery` - used when the caller asked for the **tenant** realm. Matches the row with `tenant = ?`.
+
+There is no fallback between the two: a system credential cannot authenticate a tenant-scoped login and vice versa.
+
+```bash
+QOD_AUTH_DB_ENABLED=true            # default true; false boots only with another FlightSQL authenticator
+
+# Override if the auth DB differs from the control-plane Postgres
+QOD_AUTH_DB_JDBC_URL=jdbc:postgresql://host:5432/qod
+QOD_AUTH_DB_USER=postgres
+QOD_AUTH_DB_PASSWORD=secret
+
+# Custom lookup queries
+# - systemQuery placeholders in order: username
+# - tenantQuery placeholders in order: tenant, username
+# Both MUST return four columns, in order:
+#   password_hash, kind, enabled, must_change_password
+# The last two are mandatory: a shorter projection is refused at boot and
+# fails every login (no tolerant default-to-enabled / default-to-unflagged).
+QOD_AUTH_DB_SYSTEM_QUERY="SELECT password_hash, kind, enabled, must_change_password \
+  FROM qodstate_user WHERE tenant IS NULL AND username = ? LIMIT 1"
+QOD_AUTH_DB_TENANT_QUERY="SELECT password_hash, kind, enabled, must_change_password \
+  FROM qodstate_user WHERE tenant = ? AND username = ? LIMIT 1"
+```
+
+The second column is the account kind (`admin` or `user`). The column was named `role` before the [built-in RBAC release](/qod/operating/rbac-model#upgrading-to-the-built-in-rbac-release): a custom query that still selects `role` from `qodstate_user` fails at boot.
+
+`QOD_ADMIN_PASSWORD` is used on the first boot only, to create each admin row that is missing; changing it and restarting rotates nothing. Rotate the password with `qod auth change-password`, and recover a lost one with `qod admin reset-password`. It writes straight into the control-plane database and never starts Postgres: against your own Postgres it works with the manager down, while the `qod serve` embedded control plane must be running (a stopped one is refused; the default target is the embedded one only while it runs, else `QOD_PG_*`). The seeded admin's account kind is `QOD_ADMIN_KIND` (default `admin`; formerly `QOD_ADMIN_ROLE`, now ignored).
+
+On the management plane (REST/UI), DB credentials are checked under either value of `auth.management.identitySource`: for the login without a tenant the setting changes how the session's grants are resolved (see [Identity source](./authentication.md#identity-source)), not whether this provider runs, although under `oidc` the bare `/ui/` offers single sign-on instead of the password form. A tenant whose own sign-in is OIDC refuses DB credentials under either value (`400 sso_required`, see [Admin UI single sign-on](#admin-ui-single-sign-on-oidc)). The edge takes them in every case.
+
+> **Upgrading from a single-query deployment**: the old `QOD_AUTH_DB_QUERY` setting is gone, along with the `(tenant IS NULL OR tenant = ?)` wildcard fallback. Pre-existing JDBC URLs that used the bootstrap admin (`admin@localhost.local`) against tenants must now add `?superuser=true` to the URL. There is no migration on the `qodstate_user` table itself.
+
+### Account lockout and password reset
+
+`qodstate_user` has an optional `email` column, set with `qod user create --email` / `qod user update --email` (or the REST `user/create` / `user/update` body). A row with an email can use the self-service password reset flow described below and is eligible for lockout; a row with a non-email username and no email cannot reset by email and is never locked out. An email-format username is auto-assigned `email = username`, so it is lockable and reset-eligible - and this includes the default seeded admin `admin@localhost.local`, whose username is email-format. A locked superuser is still recoverable without the email flow: `qod admin reset-password` writes a new password straight into the control-plane database and clears `failed_attempts` / `locked_at` (for every name in `QOD_ADMIN_USERNAME` by default, or for the one `--username` names, which also re-enables that account when it is disabled), and another superuser can set a new password with `qod user update <id> --password`. A restart changes nothing: seeding only creates admin rows that are missing. Because `admin@localhost.local` is not a routable mailbox, the seeded admin's self-service email reset will not deliver by default - set `QOD_ADMIN_USERNAME` to a real deliverable address for the admin to self-recover by email, otherwise use `qod admin reset-password`.
+
+When the username itself is in email format, `email` is derived from it automatically and cannot be set to anything else: `user/create` / `user/update` (CLI and REST) and manifest import reject a conflicting value with `400 invalid_email`. Existing rows whose username is email-format were backfilled to match on upgrade.
+
+**SMTP.** Reset links are delivered by mail. With `QOD_SMTP_HOST` unset (the default) the manager logs the mail instead of sending it - fine for local dev, useless for real users.
+
+```bash
+QOD_SMTP_HOST=smtp.example.com
+QOD_SMTP_PORT=587                 # default
+QOD_SMTP_USER=apikey
+QOD_SMTP_PASSWORD=secret
+QOD_SMTP_FROM="no-reply@quack-on-demand.local"   # default
+QOD_SMTP_STARTTLS=true            # default
+
+# Externally visible origin used to build the mailed link
+# ($QOD_PUBLIC_BASE_URL/ui/reset-password?token=...). Left empty, the link is
+# host-relative and the manager logs a boot warning.
+QOD_PUBLIC_BASE_URL=https://qod.example.com
+```
+
+**Self-service reset flow.**
+
+```bash
+# Public endpoint - no session or token needed. Always returns 200, whether or not the
+# account exists or has an email, so the response can't be used to enumerate
+# users. Only sends mail when the account exists, has an email, and the
+# per-account rate limiter admits.
+curl -sS -X POST http://localhost:20900/api/auth/forgot-password \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"alice","tenant":"acme"}'
+
+# Redeem the token from the emailed link. Also public.
+curl -sS -X POST http://localhost:20900/api/auth/reset-password \
+  -H 'Content-Type: application/json' \
+  -d '{"token":"<from the link>","newPassword":"a-new-password"}'
+```
+
+The token is a stateless, single-use, 1-hour HS256 JWT (`ResetTokenStore`), signed with the same secret as `QOD_SESSION_JWT_SECRET`. Single-use is enforced by embedding a fingerprint of the password hash at mint time rather than a server-side redemption ledger, so any password change (including the reset itself) invalidates every other outstanding link for that user. CLI: `qod auth forgot-password --username <user> --tenant <tenant>`, `qod auth reset-password` (prompts for the token and new password).
+
+**Account lockout** is opt-in (`QOD_AUTH_LOCKOUT_ENABLED`, default `false`) and locks a row after `QOD_AUTH_LOCKOUT_MAX_FAILURES` (default `10`) consecutive failed passwords - but only rows with an email; a row with a non-email username and no email is never locked. An email-format username carries `email = username`, so the seeded admin `admin@localhost.local` is lockable too. Turning lockout on without a configured SMTP relay fails boot with an error naming `QOD_SMTP_HOST`, since a locked-out user would otherwise have no way back in. A locked login gets `401 account_locked` with a message pointing at the forgot-password flow. Recovery is either the self-service reset above or an admin password reset (`user/update` with a new `password`); both clear the failure count and the lock as part of writing the new password. A locked superuser also recovers with `qod admin reset-password`, which clears the lock as it writes the new password; a manager restart leaves the lock in place.
+
+---
+
+## External JWT
+
+Validates Bearer tokens signed with a shared HMAC secret (HS256/HS512) or an RSA/EC public key. This provider is for custom JWT issuers that are not OIDC-compliant. It is activated automatically when either `JWT_SECRET_KEY` or `JWT_PUBLIC_KEY_PATH` is set; there is no separate enable flag.
+
+```bash
+# Option A: shared HMAC secret
+JWT_SECRET_KEY=your-shared-secret
+
+# Option B: RSA or EC public key (PEM file, PKCS#8 format)
+JWT_PUBLIC_KEY_PATH=/etc/quack/jwt-public.pem
+
+# Optional validation
+JWT_ISSUER=https://your-issuer.example.com
+JWT_AUDIENCE=quack-on-demand   # leave empty to skip audience check
+```
+
+If both `JWT_SECRET_KEY` and `JWT_PUBLIC_KEY_PATH` are set, either a valid HMAC or a valid RSA/EC signature is accepted. Token username is resolved from `preferred_username`, then `email`, then `sub`; a token with none of them is refused, and a name that came from `email` counts only when the token's `email_verified` is true (see [Identity source](./authentication.md#identity-source)).
+
+---
+
+## Keycloak
+
+Validates OIDC Bearer tokens via the Keycloak JWKS endpoint. Also supports the OAuth2 Resource Owner Password Credentials (ROPC) grant for clients that send Basic `username:password` credentials directly, such as JDBC drivers and BI tools.
+
+```bash
+QOD_AUTH_KEYCLOAK_ENABLED=true
+QOD_AUTH_KEYCLOAK_BASE_URL=https://keycloak.example.com
+QOD_AUTH_KEYCLOAK_REALM=your-realm
+QOD_AUTH_KEYCLOAK_CLIENT_ID=quack-client
+QOD_AUTH_KEYCLOAK_CLIENT_SECRET=client-secret
+```
+
+The JWKS URL is derived automatically as `{baseUrl}/realms/{realm}/protocol/openid-connect/certs`. For ROPC, the token endpoint is `{baseUrl}/realms/{realm}/protocol/openid-connect/token`.
+
+On the admin console (`POST /api/auth/login`, the UI form, `qod login`), a password login answered by this grant only proves who the user is: it signs in as the QoD user with the same user name as the Keycloak account (the token's `preferred_username`, never retried with its email), with that row's rights only, never with the role claim's. A token without `preferred_username` is named by its email claim, which counts only when Keycloak marks it verified (`email_verified`); otherwise the login is refused `403 not_provisioned`. A tenant's password form accepts these passwords too, so Keycloak user names must be assigned by an administrator (see [Identity source](./authentication.md#identity-source)).
+
+---
+
+## Google
+
+Validates OIDC Bearer tokens issued by Google (`https://accounts.google.com`). Google does not support the ROPC grant; users must supply a Bearer token obtained via the [browser token page](#browser-token-page-authorization-code-flow) or a service account flow. Optionally, a Google Workspace service account with domain-wide delegation can enrich group membership from the Directory API.
+
+```bash
+QOD_AUTH_GOOGLE_ENABLED=true
+QOD_AUTH_GOOGLE_CLIENT_ID=123456789.apps.googleusercontent.com
+QOD_AUTH_GOOGLE_CLIENT_SECRET=GOCSPX-...
+
+# Optional: Google Workspace groups lookup via Directory API
+QOD_AUTH_GOOGLE_GROUPS_LOOKUP=true
+QOD_AUTH_GOOGLE_SVC_ACCT_KEY_PATH=/etc/quack/google-svc-acct.json
+QOD_AUTH_GOOGLE_GROUPS_CACHE_TTL_SEC=300   # default 300 s
+```
+
+The service account key JSON must contain `client_email`, `private_key`, and `token_uri`. The account needs domain-wide delegation with the `https://www.googleapis.com/auth/admin.directory.group.readonly` scope. Group results are cached per user for `QOD_AUTH_GOOGLE_GROUPS_CACHE_TTL_SEC` seconds.
+
+### Per-tenant Google OAuth clients
+
+The HOCON block above defines a **single** Google OAuth client used by every Google tenant by default. To give a tenant its own client (separate consent screen, separate `clientId`, independent revocation blast radius), set the tenant's `clientId` on its auth provider in the admin UI or via `setTenantAuth`:
+
+| Field | Value |
+|---|---|
+| `clientId` | The tenant's Google OAuth client ID, e.g. `<tenant>.apps.googleusercontent.com` |
+
+When it is set, the edge builds a per-tenant `OidcBearerAuthenticator` and substitutes it into the bearer chain for that tenant's handshakes. Tenants that leave it blank keep using the global block. Validating a bearer token needs only the issuer's public keys and the client id, so this override reads no client secret; the secret a tenant stores serves its admin-console sign-in (see [Per-tenant OIDC](#per-tenant-oidc)). Mutations via `setTenantAuth` automatically invalidate the cached per-tenant authenticator.
+
+Keycloak (`baseUrl`, `realm`, `clientId`), Azure AD (`tenantId`, `clientId`) and AWS Cognito (`region`, `userPoolId`, `clientId`) tenants get the same override from their own fields, all-or-nothing per provider: a tenant missing one of its provider's fields uses the global block.
+
+> **Upgrading to 0.11.0**: the Google, Keycloak and Azure AD overrides no longer require a `clientSecretRef`. A tenant that set its other fields without one used the global block before and now gets its own authenticator, so bearer tokens for its handshakes must carry the tenant's client id as audience. Because the override needs no reference (which only a superuser may set), a tenant's own admins can switch their tenant to its own client by setting the public fields alone.
+
+---
+
+## Azure AD
+
+Validates OIDC Bearer tokens issued by Azure Active Directory. Also supports ROPC for Basic `username:password` authentication via the Azure OAuth2 token endpoint.
+
+```bash
+QOD_AUTH_AZURE_ENABLED=true
+QOD_AUTH_AZURE_TENANT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+QOD_AUTH_AZURE_CLIENT_ID=your-app-client-id
+QOD_AUTH_AZURE_CLIENT_SECRET=your-app-client-secret
+```
+
+The JWKS URL is derived as `https://login.microsoftonline.com/{tenantId}/discovery/v2.0/keys`. For ROPC the token endpoint is `https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token`.
+
+As with Keycloak, a password login to the admin console answered by this grant signs in as the QoD user with the same user name as the Azure account (the token's `preferred_username`, never retried with its email; a token without one is named by its email claim, which counts only when the IdP marks it verified, else the login is refused `403 not_provisioned`), with that row's rights only, never with the role claim's; user names must be assigned by an administrator (see [Identity source](./authentication.md#identity-source)).
+
+---
+
+## AWS Cognito
+
+Validates OIDC Bearer tokens from an AWS Cognito User Pool. ROPC is not supported; clients must obtain a token from Cognito before connecting.
+
+```bash
+QOD_AUTH_AWS_ENABLED=true
+QOD_AUTH_AWS_REGION=us-east-1
+QOD_AUTH_AWS_USER_POOL_ID=us-east-1_AbCdEfGhI
+QOD_AUTH_AWS_CLIENT_ID=your-app-client-id
+```
+
+The JWKS URL is derived as `https://cognito-idp.{region}.amazonaws.com/{userPoolId}/.well-known/jwks.json`.
+
+---
+
+## Browser token page (authorization-code flow)
+
+A JDBC client (DBeaver, Spark) can't run an interactive OAuth flow in the Arrow Flight SQL driver, so the manager serves a browser login page that returns a bearer to paste into the driver's `token` property. It runs on the **manager port** (no separate port or server) and reuses the first enabled OIDC provider (Keycloak, Google, or Azure AD, in that order) to resolve the authorization and token endpoints.
+
+- A user opens `https://<gateway>:20900/api/auth/sql-token/start`, logs in at the IdP, and the callback page renders the access token (and the ready-to-paste `token=` form).
+- The IdP must allow `<publicBaseUrl>/api/auth/sql-token/callback` as a redirect URI (`publicBaseUrl` = `auth.management.publicBaseUrl`).
+- The only knob is the requested scopes:
+
+```bash
+QOD_AUTH_OAUTH_SCOPES="openid profile email"      # default "openid profile email"
+```
+
+The [QoD JDBC driver](../connecting/jdbc-driver.md)'s `authenticator=externalbrowser` signs in through this same client and redirect URI for a tenant without an identity provider of its own (a tenant with one signs in through its own client, at `/api/auth/oidc/callback`), so it needs no setup of its own.
+
+At least one OIDC provider (Keycloak, Google, or Azure AD) must be enabled for the page to function; AWS Cognito is not supported as an interactive backend. Because the page reuses the data-plane confidential client, the token already carries the audience the edge expects (no separate client or audience mapper needed). See [Connecting clients](/qod/connecting/clients#oauth-with-dbeaver) for the DBeaver recipe.
+
+---
+
+## Admin UI single sign-on (OIDC)
+
+The providers above govern the **FlightSQL data plane** (how a SQL client authenticates). This section is separate: it controls how operators log in to the **admin UI** at `/ui/`.
+
+The admin-UI login mode is resolved **per scope**, not globally:
+
+- `/ui/?tenant=<id>` reads **that tenant's** `authProvider`: `db` shows the password form, an OIDC provider (`keycloak` / `google` / `azure` / `aws`) redirects to that tenant's IdP. A tenant is therefore pure-password or pure-SSO; there is no password fallback inside an OIDC tenant: a password login naming it (`POST /api/auth/login` with that `tenant`, or `qod login --tenant <id>`) answers `400 sso_required` before any password is checked, so no lockout counter moves (a tenant whose OIDC sign-in is incomplete still checks the password, then answers `400 tenant_oidc_misconfigured`). Scripts and the `qod` CLI use a [personal access token](../connecting/authenticating.md) for such a tenant: sign in through the IdP, create one under **Settings > Profile**, and send it as `X-API-Key` (`QOD_TOKEN` for the `qod` CLI). SQL clients are unaffected: FlightSQL and the native Quack front door still take the tenant users' database passwords.
+- The bare `/ui/` (system / superuser scope) uses the manager-wide `auth.management.identitySource`: `db` (default) shows the password form, `oidc` makes it a **pure SSO client** against the manager-wide issuer below. The setting governs the bare `/ui/` only: a tenant's SSO works under either value, and under `db` the bare `/ui/` stays a password form even when the `QOD_MGMT_OIDC_*` settings below are set.
+
+A tenant-scoped page URL counts as that tenant too: opening `/ui/t/<id>/...` without a session (a bookmark, or a reload after the session expired) resolves the login mode, and for SSO starts the sign-in, against tenant `<id>`, as `/ui/?tenant=<id>` does; an explicit `?tenant=` wins.
+
+The SPA resolves the mode for the tenant in the URL via the unauthenticated `GET /api/auth/mode?tenant=<id>` (omit `tenant` for the system scope) before deciding what to render. The id is trimmed and lowercased first (tenant ids are lowercase slugs), so `ACME` resolves to tenant `acme`.
+
+It is **provider-agnostic**: it uses OIDC Discovery, so it works with any compliant IdP (Keycloak, Google, Azure AD, Okta, Auth0, Cognito, ...). You configure an **issuer URL** and a client id/secret; the manager resolves the authorize / token / end-session / JWKS endpoints from `${issuerUrl}/.well-known/openid-configuration`.
+
+`qodstate_user` remains authoritative for role and tenant scope: the IdP verifies identity, and the matching `qodstate_user` grant decides what the operator may manage. IdP role/tenant claims are discarded. The user is named by the `preferred_username` claim, else the `email` claim, else the subject (a token naming none of them is refused). A name that came from the email claim binds a row only when the IdP marks the address verified (`email_verified` true), and the email is tried as a fallback, when the name matches no row, only when it is verified. The rule holds on the FlightSQL and native Quack front door handshakes too, where such a name is refused as unauthenticated and binds no row.
+
+```bash
+QOD_MGMT_IDENTITY_SOURCE=oidc                       # system-scope (bare /ui/) SSO (default: db)
+
+# System / superuser scope (the bare /ui/ login uses this issuer):
+QOD_MGMT_OIDC_ISSUER_URL=https://idp.example.com/realms/qod
+QOD_MGMT_OIDC_CLIENT_ID=qod-admin
+QOD_MGMT_OIDC_CLIENT_SECRET=...                     # confidential client secret
+QOD_MGMT_OIDC_SCOPES="openid email profile"         # default "openid email profile"
+
+# Externally visible manager URL, used to build the redirect_uri of the bare /ui/ and
+# of every tenant's SSO. MUST match the redirect URI registered on the IdP client.
+# When unset it is http://localhost:<manager port>, NOT derived from the request:
+# set it for any non-localhost deploy.
+QOD_MGMT_PUBLIC_BASE_URL=https://qod.example.com
+```
+
+Register this **redirect URI** on each IdP client:
+
+```
+${QOD_MGMT_PUBLIC_BASE_URL}/api/auth/oidc/callback
+```
+
+The boot warning about an unset `QOD_MGMT_PUBLIC_BASE_URL` (logged at WARN, so printed only with `QOD_LOG_LEVEL=WARN` or lower) appears only when `auth.management.identitySource` is `oidc`, but a tenant's SSO runs under the default `db` as well, and builds its redirect URI the same way: set the URL before any tenant signs in through its IdP anywhere but on localhost. Otherwise the redirect URI the manager sends is `http://localhost:<manager port>/api/auth/oidc/callback` (the base plus the callback path; 20900 is the default port).
+
+### Login URLs and scope
+
+- `/ui/` (no tenant) is the **system / superuser** login. Its mode follows `QOD_MGMT_IDENTITY_SOURCE`; in `oidc` it authenticates against the manager-wide issuer above. Only a superuser (`qodstate_user.tenant IS NULL`, kind admin) may complete it; a non-superuser is rejected and must sign in through their tenant.
+- `/ui/?tenant=<id>` follows **that tenant's** `authProvider`: a `db` tenant gets the password form, an OIDC tenant authenticates against that tenant's OIDC client, whatever `QOD_MGMT_IDENTITY_SOURCE` says. The SSO login reads that tenant's `qodstate_user` rows only and needs an admin grant on one of them (a `kind=user` row answers `403 admin_required`), so the session it opens is never a superuser's: an SSO identity whose rows are all in other tenants, or whose only row is a superuser's, is refused `403 not_provisioned` (the callback lands on `/ui/?error=not_provisioned`). Superusers sign in through the bare `/ui/`. A `db` tenant's password login takes the authenticated user's own row instead: an admin lands on the operator console, a regular (`kind=user`) user on the [Profile page](./admin-ui.md#profile-page-regular-users). When the manager-wide Keycloak or Azure provider is enabled, its password-grant backend can also answer that login (the chain tries it whenever the database check fails, so the form accepts the IdP's passwords too), but it only proves who the user is: the login signs in as the QoD user of that tenant with the same user name as the IdP account (its `preferred_username`; the lookup is never retried with the email, and a name that fell back to an unverified email claim binds nothing), from that tenant's `qodstate_user` rows alone. It needs an admin row for the console or a `kind=user` row for the Profile page, whatever role claim the IdP issues, and an identity with no row in the tenant is refused `403 not_provisioned`; a login without a tenant reads the rows the user name holds in any realm. Since the user name picks the row, the IdP's user names must be assigned by an administrator, on the data plane too: a `superuser=true` FlightSQL or native Quack front door handshake binds the superuser row a token's `preferred_username` names. See [Identity source](./authentication.md#identity-source).
+
+### Per-tenant OIDC
+
+A tenant authenticates against its own issuer. Set these on the tenant's **Auth Provider** page in the admin UI, with `qod tenant set-auth`, or through `POST /api/tenant/setAuth`; all but the client secret live in `qodstate_tenant.authConfig`, and a save replaces that whole map:
+
+| Key | Meaning | Who may set it |
+|---|---|---|
+| `issuerUrl` | the tenant's OIDC issuer (discovery base) | tenant admins and superusers |
+| `clientId` | the tenant's OIDC client id | tenant admins and superusers |
+| `clientSecret` | the client secret, write-only and stored beside `authConfig`, never inside it (`setTenantAuth` field `clientSecret`, MCP `set_tenant_auth` argument `client_secret`); no response returns it, only `clientSecretSet` | tenant admins and superusers |
+| `clientSecretRef` | a reference resolved from the manager's own environment (`env:NAME`), used when no `clientSecret` is stored | superusers only |
+| `scopes` | optional; defaults to `openid email profile` | tenant admins and superusers |
+
+The tenant's console sign-in is on once `issuerUrl`, `clientId` and a secret (`clientSecret` or `clientSecretRef`) are set, under either `QOD_MGMT_IDENTITY_SOURCE`; a tenant with an OIDC provider that lacks one of them answers `tenant_oidc_misconfigured`, and until it is complete only a superuser, through the bare `/ui/`, can open that tenant's console. Register `${QOD_MGMT_PUBLIC_BASE_URL}/api/auth/oidc/callback` as a redirect URI on the tenant's IdP client. The secret never needs to touch the command line:
+
+```bash
+# --client-secret-prompt asks for the secret twice, hidden; --client-secret-stdin
+# reads it from standard input; --clear-client-secret removes the stored one.
+qod tenant set-auth acme --auth-provider keycloak \
+  --auth-config issuerUrl=https://idp.acme.com/realms/acme \
+  --auth-config clientId=qod-acme \
+  --client-secret-prompt
+```
+
+**The secret follows its issuer.** The manager sends the client secret to the token endpoint of the issuer named in the same configuration, so a stored secret is bound to the issuer it was saved with, as the tenant OPA token is bound to its URL. A save that changes `issuerUrl` removes the stored `clientSecret` unless it supplies a new one, and drops a `clientSecretRef` it carries unless a superuser makes the save: a superuser may pair a reference with the new issuer in one write, while a tenant admin's carried reference is dropped. Without a secret for the new issuer, the tenant's console sign-in answers `tenant_oidc_misconfigured` until one is saved; supply it in the same save to switch issuers in one step. The admin UI warns before a save that would drop the secret, and before one that would leave the sign-in incomplete. With the issuer unchanged, a save that omits the secret keeps it, an empty value removes it, and a value made only of whitespace is refused (`400 invalid_client_secret`).
+
+**A secret reference requires a superuser.** A `clientSecretRef` directs the manager to read a value from its **own** environment and send it to the tenant's issuer, so only a superuser may add or change one: a tenant admin's write that does gets `403 superuser_required` and nothing is stored. A tenant admin may still save the other fields while carrying an existing reference unchanged under the same issuer; the admin UI shows it read-only. A superuser who pairs a reference with a new issuer sends that environment secret to it: confirm that the issuer is the tenant's own identity provider (the admin UI warns about it before the save). A tenant has one secret source: storing a `clientSecret` removes the reference, a superuser's new reference removes the stored `clientSecret`, and a write that supplies a value and adds or changes a reference is refused (`400 secret_conflict`). `authConfig` may not hold a `clientSecret` key (`400 invalid_auth_config`, on `tenant/create` too). A manifest export writes a stored secret as `***REDACTED***` (see [Manifest](./manifest.md)).
+
+> **Upgrading to 0.11.0: tenant SSO and passwords.** Tenant SSO no longer needs `QOD_MGMT_IDENTITY_SOURCE=oidc`. Before 0.11.0, `/api/auth/oidc/start` answered `404 auth_mode_disabled` under the default `db`, so an OIDC tenant's admins signed in with passwords; those logins now answer `400 sso_required`, and the admins sign in through the tenant's IdP at `/ui/?tenant=<id>`. Before upgrading a manager that runs the default `identitySource=db`, set `QOD_MGMT_PUBLIC_BASE_URL` and register `${QOD_MGMT_PUBLIC_BASE_URL}/api/auth/oidc/callback` as a redirect URI on each tenant's IdP client: the boot warning about an unset base URL only appears under `identitySource=oidc`, and at WARN, below the default ERROR level, so nothing else tells you, and the redirect URI the manager sends is then `http://localhost:<manager port>/api/auth/oidc/callback`.
+
+> **Upgrading to 0.11.0: tenant SSO binds that tenant's rows only.** Before 0.11.0 a tenant's SSO matched the identity against the `qodstate_user` rows of every tenant and the superuser rows. It now matches that tenant's rows alone, so a superuser who holds no row of that tenant and signs in through its IdP gets `403 not_provisioned`: superusers sign in through the bare `/ui/`.
+
+> **Upgrading to 0.11.0: an email counts only when the IdP verified it.** The email claim was the fallback key when the user name matches no row, and the user name itself is the email claim when a token has no `preferred_username`. Before 0.11.0 both were always used; both now need the token's `email_verified` claim to be true, on a single sign-on and on an IdP password login alike (a login whose name is an unverified email is refused `403 not_provisioned`), because an address the account holder typed could otherwise name another user's row, the seeded superusers' included. The same holds on FlightSQL and the native Quack front door, where such a handshake is now refused as unauthenticated. This is breaking for a token that carries an `email` claim but no `preferred_username` and no true `email_verified` (a token with neither claim is named by its subject and is unaffected): have the tokens carry `preferred_username` (and name the rows by it) or `email_verified: true`. The two setups most likely to hit it: an operator-run external JWT signer (`JWT_SECRET_KEY` / `JWT_PUBLIC_KEY_PATH`, data plane only, so its naming changes for the first time in 0.11.0) whose tokens name users by `email`, which should add `preferred_username` or `email_verified: true` to the tokens it mints; and Azure AD (Entra ID), which never sends `email_verified`, so a v1 access token (no `preferred_username`) named by its `email` claim is always refused: issue v2 tokens (`accessTokenAcceptedVersion: 2` in the app registration's manifest), which carry `preferred_username`.
+
+> **Upgrading to 0.11.0: parked references.** Secret references saved before 0.11.0 are parked, because who saved them was not recorded. Changeset `0048` moves each tenant's `clientSecretRef` to `clientSecretRefUnconfirmed`, which nothing reads, so after the upgrade every tenant whose sign-in used a reference is misconfigured until a superuser restores it: its console sign-in answers `tenant_oidc_misconfigured` and its password login is refused too, so only a superuser, through the bare `/ui/`, can open its console. Every boot logs an error line per parked tenant: the tenant, the parked reference (a value that is not a reference is not printed, see below), a request to confirm that the tenant's `issuerUrl` is its own identity provider (the secret is sent to it), and the restore command. A superuser restores the reference by saving it again:
+>
+> ```bash
+> qod tenant set-auth <tenant> --auth-provider <provider> \
+>   --auth-config issuerUrl=... --auth-config clientId=... \
+>   --auth-config clientSecretRef=<reference>
+> ```
+>
+> The save replaces the whole `authConfig`, so repeat the tenant's other keys (`scopes`, `baseUrl`, `realm`, ...) too. The line prints the reference inside the command only when it is made of letters, digits and `_ : . / = -`; for any other value the command shows `clientSecretRef=...` and the printed copy is sanitized and may be cut: read the full value with `qod --json tenant list`, check that it is meant for this tenant, and type it by hand. If the parked value is not a secret reference (it starts with none of `env:`, `aws-sm:`, `gcp-sm:`, `azure-kv:`, `vault:`, for example a secret typed into the wrong key), the line does not print it: it shows `<not a secret reference, not shown>` and advises a superuser to set a secret source instead of restoring anything: the tenant's own client secret (`--client-secret-prompt`) or a reference (the command at the end of the line, where `clientSecretRef=...` is yours to fill in). The tenant's admins can store the secret itself with `--client-secret-prompt` instead, but only with a personal access token or a session they already hold, since their password login is refused until the sign-in is complete. The parked key goes with any save that carries a secret value or a reference, through any client (REST, MCP, the CLI or the admin UI), and with a save that changes the issuer URL or leaves the key out; a manifest import applies the same rule. That ends the error line, but a save that holds no secret source leaves the sign-in misconfigured until one is set. In an HA rolling upgrade, finish the rollout before tenant admins edit sign-in settings: a 0.10.1 replica still serving writes accepts a reference from a tenant admin without the superuser rule, and what it writes after the migration ran is not parked. Otherwise review the tenants' references afterwards (`qod --json tenant list`).
+
+### Logout
+
+Logout is **RP-initiated**: it clears the `qod_session` cookie and redirects to the IdP end-session endpoint so the IdP session is terminated as well.
+
+## Secure in production
+
+- [ ] Before you turn on account lockout (`QOD_AUTH_LOCKOUT_ENABLED=true`, `QOD_AUTH_LOCKOUT_MAX_FAILURES` default `10`), configure a real SMTP relay (`QOD_SMTP_HOST`, with `QOD_SMTP_STARTTLS` left at `true`): a locked user recovers by mail, and the manager refuses to boot with lockout on and no SMTP host.
+- [ ] Set `QOD_PUBLIC_BASE_URL` to the browser-visible `https://` origin, so the mailed reset links point at it; left empty, they are host-relative.
+- [ ] Set `QOD_ADMIN_USERNAME` to a real, deliverable address before the first boot, so the seeded superuser can recover by email. The default seeds `admin@localhost.local` and `admin`, neither of which receives mail.
+- [ ] Keep any custom `QOD_AUTH_DB_SYSTEM_QUERY` matching `tenant IS NULL` and `QOD_AUTH_DB_TENANT_QUERY` matching `tenant = ?`, both projecting `password_hash, kind, enabled, must_change_password`: the two queries are what keeps the system and tenant realms apart, and a shorter projection refuses boot.
+- [ ] With an [external JWT](#external-jwt) signer, set `JWT_ISSUER` and `JWT_AUDIENCE`: left empty, the check is skipped and any token signed with the key is accepted.
+- [ ] Have the identity provider assign user names (no self-registration, no self-chosen or "email as username" names) and never hand out `admin@localhost.local` or `admin`: the token's `preferred_username` picks the `qodstate_user` row, a superuser's on a `superuser=true` FlightSQL handshake. Tokens must carry `preferred_username`, or `email_verified: true` when they name users by email ([Identity source](./authentication.md#identity-source)).
+- [ ] Store each tenant's client secret with `qod tenant set-auth ... --client-secret-prompt` or `--client-secret-stdin`, never in a command line, and before a superuser pairs a `clientSecretRef` with a new `issuerUrl`, confirm that the issuer is the tenant's own identity provider: the manager sends that secret to it ([Per-tenant OIDC](#per-tenant-oidc)).
+
+See [Security hardening](./hardening.md) for the node-side enforcement and the rest of the production posture.
+
+---
+
+For the full reference of all authentication tunables, including `QOD_AUTH_ROLE_CLAIM` and `QOD_SESSION_TTL_SEC`, see [/reference/configuration](/qod/reference/configuration).
