@@ -212,6 +212,8 @@ A JDBC client (DBeaver, Spark) can't run an interactive OAuth flow in the Arrow 
 QOD_AUTH_OAUTH_SCOPES="openid profile email"      # default "openid profile email"
 ```
 
+The [QoD JDBC driver](../connecting/jdbc-driver.md)'s `authenticator=externalbrowser` signs in through this same client and redirect URI for a tenant without an identity provider of its own (a tenant with one signs in through its own client, at `/api/auth/oidc/callback`), so it needs no setup of its own.
+
 At least one OIDC provider (Keycloak, Google, or Azure AD) must be enabled for the page to function; AWS Cognito is not supported as an interactive backend. Because the page reuses the data-plane confidential client, the token already carries the audience the edge expects (no separate client or audience mapper needed). See [Connecting clients](/qod/connecting/clients#oauth-with-dbeaver) for the DBeaver recipe.
 
 ---

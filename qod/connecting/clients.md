@@ -90,7 +90,7 @@ jdbc:arrow-flight-sql://localhost:31338?useEncryption=true&disableCertificateVer
 
 ### OAuth with DBeaver
 
-When the edge is wired to an OIDC provider (Keycloak / Azure AD / Google), there are three ways to authenticate, all with the same driver:
+When the edge is wired to an OIDC provider (Keycloak / Azure AD / Google), the [QoD JDBC driver](./jdbc-driver.md) signs you in through the browser with `authenticator=externalbrowser`, at the tenant's identity provider, with no token to copy. With the Arrow driver itself, there are three ways:
 
 1. **Password (ROPC)** - put the user's IdP username/password in the `user` / `password` params. The edge exchanges them with the IdP (resource-owner-password grant). IdP side: a confidential client with *Direct access grants* enabled. No browser needed.
 
@@ -121,7 +121,7 @@ When the edge is wired to an OIDC provider (Keycloak / Azure AD / Google), there
 jdbc:arrow-flight-sql://localhost:31338?useEncryption=true&disableCertificateVerification=true&tenant=acme&pool=bi&token=<jwt>
 ```
 
-The interactive browser flow that ODBC drivers do in-process is not available from the Arrow Flight SQL JDBC driver, which is why the login page exists.
+The interactive browser flow that ODBC drivers do in-process is not available from the Arrow Flight SQL JDBC driver, which is why the login page exists; the [QoD JDBC driver](./jdbc-driver.md) adds it.
 
 Any JDBC-based tool uses the same driver and URL. For **Spark**, point the JDBC data source at this URL with the same driver class; each Spark task opens its own Flight SQL connection.
 
