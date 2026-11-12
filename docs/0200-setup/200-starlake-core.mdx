@@ -1,8 +1,8 @@
 ---
 id: starlake-core-setup
 title: "Install Starlake CLI"
-description: "Install Starlake CLI on Linux, macOS, Windows, or Docker. Requires Java 17+. Includes cloud credential setup for AWS, GCP, Azure and VS Code extension."
-keywords: [starlake installation, starlake cli, data pipeline setup, docker etl, cloud integration, java 17, vs code extension]
+description: "Install Starlake CLI on Linux, macOS, Windows, or Docker. Requires Java 25. Includes cloud credential setup for AWS, GCP, Azure and VS Code extension."
+keywords: [starlake installation, starlake cli, data pipeline setup, docker etl, cloud integration, java 25, vs code extension]
 ---
 
 import Head from '@docusaurus/Head';
@@ -18,7 +18,7 @@ import Head from '@docusaurus/Head';
           "name": "What are the prerequisites to install Starlake?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "None beyond a shell: the setup script checks for Java 17 or higher and, if none is found, installs an embedded portable JDK inside the Starlake directory (no root or administrator rights needed). Windows additionally needs PowerShell 5.0 or later. The Docker installation requires only Docker to be installed and running."
+            "text": "None beyond a shell: the setup script checks for Java 25 or higher and, if none is found, installs an embedded portable JDK inside the Starlake directory (no root or administrator rights needed). Windows additionally needs PowerShell 5.0 or later. The Docker installation requires only Docker to be installed and running."
           }
         },
         {
@@ -34,7 +34,7 @@ import Head from '@docusaurus/Head';
           "name": "Which Java version does Starlake require?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Starlake requires Java 17 or higher. If your machine has none, the setup script installs an embedded portable Temurin 17 JDK inside the Starlake directory automatically. You can also use your own Oracle JDK or OpenJDK; verify with 'java -version'."
+            "text": "Starlake 1.9 and later requires Java 25 or higher (1.8 and earlier run on Java 17 or 21). If your machine has none, the setup script installs an embedded portable Temurin 25 JDK inside the Starlake directory automatically. You can also use your own Oracle JDK or OpenJDK; verify with 'java -version'."
           }
         },
         {
@@ -62,7 +62,7 @@ import Head from '@docusaurus/Head';
       "@type": "HowTo",
       "name": "How to install Starlake CLI",
       "step": [
-        {"@type": "HowToStep", "name": "Choose an installation method", "text": "Select Docker, Linux/macOS, or Windows as your installation method. Docker requires only Docker installed. On Linux/macOS and Windows the setup script installs an embedded Java 17 JDK if none is found."},
+        {"@type": "HowToStep", "name": "Choose an installation method", "text": "Select Docker, Linux/macOS, or Windows as your installation method. Docker requires only Docker installed. On Linux/macOS and Windows the setup script installs an embedded Java 25 JDK if none is found."},
         {"@type": "HowToStep", "name": "Run the installation command", "text": "For Linux/macOS, run the setup.sh script via curl. For Windows, run setup.ps1 via PowerShell. For Docker, pull the starlakeai/starlake:latest image."},
         {"@type": "HowToStep", "name": "Verify the installation", "text": "Run 'starlake --version' to confirm the CLI is installed correctly. You should see the Starlake version number."},
         {"@type": "HowToStep", "name": "Start the Starlake Cockpit (optional)", "text": "Run 'starlake serve' to launch the Cockpit, then open http://localhost:9900 in your browser."}
@@ -76,7 +76,7 @@ import TabItem from '@theme/TabItem';
 
 # Install Starlake CLI
 
-Starlake CLI is the command-line interface for the Starlake data pipeline platform. It runs on Linux, macOS, and Windows, and is also available as a Docker image. The CLI requires Java 17 or higher; the setup script installs an embedded JDK automatically if none is found, and the Docker image includes all dependencies. Once installed, the CLI provides commands to bootstrap projects, load data, run SQL transformations, and start the Cockpit.
+Starlake CLI is the command-line interface for the Starlake data pipeline platform. It runs on Linux, macOS, and Windows, and is also available as a Docker image. The CLI requires Java 25 or higher (Java 17 or 21 up to 1.8); the setup script installs an embedded JDK automatically if none is found, and the Docker image includes all dependencies. Once installed, the CLI provides commands to bootstrap projects, load data, run SQL transformations, and start the Cockpit.
 
 ## Install Starlake on Linux, macOS, Windows, or Docker
 
@@ -87,7 +87,7 @@ Choose the method that matches your environment. Docker is the fastest option be
 <TabItem value="linux_macos" label="Linux/MacOS">
 
 ### Prerequisites for Linux and macOS
-- Java 17+ is recommended but not required: if `java -version` reports nothing or a version below 17, the installer downloads an embedded portable Temurin 17 JDK into the install directory (`starlake/jdk`), with no root rights needed. The `starlake` launcher picks it up automatically whenever `JAVA_HOME` is not set.
+- Java 25 is recommended but not required: if `java -version` reports nothing or a version below 25, the installer downloads an embedded portable Temurin 25 JDK into the install directory (`starlake/jdk`), with no root rights needed. The `starlake` launcher picks it up automatically whenever `JAVA_HOME` is not set.
 
 ### Install Starlake on Linux or macOS
 
@@ -122,7 +122,7 @@ starlake/
 
 ### Prerequisites for Windows
 - PowerShell 5.0 or later
-- Java 17+ is recommended but not required: if none is found, the installer downloads an embedded portable Temurin 17 JDK into the install directory (`starlake\jdk`), with no administrator rights needed. The `starlake` launcher picks it up automatically whenever `JAVA_HOME` is not set.
+- Java 25 is recommended but not required: if none is found, or one below 25, the installer downloads an embedded portable Temurin 25 JDK into the install directory (`starlake\jdk`), with no administrator rights needed. The `starlake` launcher picks it up automatically whenever `JAVA_HOME` is not set.
 
 ### Install Starlake on Windows
 
@@ -395,7 +395,7 @@ Common installation issues and solutions:
    ```bash
    # Check Java version
    java -version
-   # Install Java 17+ if needed from Oracle JDK or OpenJDK
+   # Install Java 25 if needed from Oracle JDK or OpenJDK
    ```
 
 2. **Permission issues on Linux/macOS**
@@ -429,13 +429,13 @@ Continue with the CLI by following the tutorials below:
 ## Frequently Asked Questions
 
 ### What are the prerequisites to install Starlake?
-None beyond a shell: the setup script checks for Java 17 or higher and, if none is found, installs an embedded portable JDK inside the Starlake directory (no root or administrator rights needed). Windows additionally needs PowerShell 5.0 or later. The Docker installation requires only Docker to be installed and running.
+None beyond a shell: the setup script checks for Java 25 or higher and, if none is found, installs an embedded portable JDK inside the Starlake directory (no root or administrator rights needed). Windows additionally needs PowerShell 5.0 or later. The Docker installation requires only Docker to be installed and running.
 
 ### Can I install Starlake using Docker?
 Yes, Docker is the fastest way to get started with Starlake. Pull the image with `docker pull starlakeai/starlake:latest` and run commands by mounting your project directory to `/starlake` in the container.
 
 ### Which Java version does Starlake require?
-Starlake requires Java 17 or higher. If your machine has none, the setup script installs an embedded portable Temurin 17 JDK inside the Starlake directory automatically. You can also use your own Oracle JDK or OpenJDK; verify with `java -version`.
+Starlake 1.9 and later requires Java 25 or higher (1.8 and earlier run on Java 17 or 21). If your machine has none, the setup script installs an embedded portable Temurin 25 JDK inside the Starlake directory automatically. You can also use your own Oracle JDK or OpenJDK; verify with `java -version`.
 
 ### How do I upgrade Starlake to a newer version?
 Run `starlake upgrade` and pick a version from the menu, or run `starlake upgrade --version X.Y.Z` non-interactively. The command works in both directions (upgrade and downgrade) and re-provisions the core JAR, connectors, and the Spark runtime when the target release pins a different Spark.

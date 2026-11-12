@@ -1,7 +1,7 @@
 ---
 sidebar_position: 260
 title: lineage
-description: "Generate task dependency graphs as DOT, SVG, PNG or JSON to visualize data lineage across your Starflow project."
+description: "Generate task dependency graphs as DOT or JSON to visualize data lineage across your Starflow project."
 keywords: [starlake lineage, data lineage, dependency graph, task dependencies, DAG visualization]
 ---
 
@@ -23,9 +23,7 @@ Parameter|Cardinality|Description
 --task `<value>`|*Optional*|Compute dependencies of these tasks only. If not specified, compute all jobs.
 --reload `<value>`|*Optional*|Should we reload the domains first ?
 --viz `<value>`|*Optional*|Should we generate a dot file ?
---svg `<value>`|*Optional*|Should we generate SVG files ?
 --json `<value>`|*Optional*|Should we generate JSON files ?
---png `<value>`|*Optional*|Should we generate PNG files ?
 --print `<value>`|*Optional*|Print dependencies as text
 --objects `<value>`|*Optional*|comma separated list of objects to display: task, table, view, unknown
 --all `<value>`|*Optional*|Include all tasks  in the dot file ? None by default
