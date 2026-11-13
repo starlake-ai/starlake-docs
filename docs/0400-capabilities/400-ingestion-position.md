@@ -23,6 +23,8 @@ table:
         last: 9
 ```
 
+Every line of a file is a record: unlike DSV files, POSITION files have no header line by default (`withHeader: false`). When each file starts with a header line, set `withHeader: true`: the first line of each file is then skipped, in Spark and in native mode. A `withHeader: true` set on the domain applies to its POSITION tables too, and Starlake logs a warning about it when it reads the project.
+
 ## 2. Encoding
 
 The file is read according to the configured encoding (default: `UTF-8`). Override with the `encoding` property in the table metadata. Particularly important for mainframe/COBOL exports which may use EBCDIC or other legacy encodings.
