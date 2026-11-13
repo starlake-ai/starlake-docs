@@ -110,7 +110,7 @@ Starlake validates every incoming record against a type schema before loading it
 Built-in types cover common SQL primitives (int, double, boolean, timestamp, date, etc.). You can also define custom types with domain-specific regex patterns for formats like email, phone number or zip code.
 
 :::tip
-Type validation runs in Spark mode only. [Native load mode](/starflow/guides/load/native) skips this step entirely. Use post-load [expectations](/starflow/guides/load/expectations) as an alternative quality gate when running in native mode.
+Type validation with the patterns of the types runs in Spark mode. In [native load mode](./170-native.mdx), the warehouse reads the values. On BigQuery, the patterns of the `date`, `timestamp`, `datetime`, `time` and `boolean` types are applied to DSV and POSITION files, and the rows whose values do not convert are rejected; JSON values are read by BigQuery's rules. On Snowflake and DuckDB, no pattern is applied, and a value that does not fit its type fails the load. The patterns of string and number types are never applied natively. Use post-load [expectations](./210-expectations.mdx) as an additional quality gate when running in native mode.
 :::
 
 ## How type validation works
