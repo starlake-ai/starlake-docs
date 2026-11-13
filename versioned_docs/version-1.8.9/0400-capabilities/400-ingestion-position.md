@@ -57,21 +57,21 @@ Common patterns:
 
 For pattern-based skipping you need a regex predicate — for example, keep only lines whose first 8 bytes are a valid `YYYYMMDD` date and drop everything else (banners, summaries, blanks):
 
-```yaml title="BigQuery native mode"
-table:
-  loader: native
-  filter: "REGEXP_CONTAINS(value, r'^[0-9]{8}')"
-```
-
 ```yaml title="Spark mode"
 table:
   filter: "value RLIKE '^[0-9]{8}'"
 ```
 
-Both expressions skip the same rows; only the function name differs between the engines.
+In BigQuery native mode (`loader: native`), the filter runs in the second step, once the line is sliced: it reads the attributes, under their final names, not the raw line. Write it on the attributes, in BigQuery SQL, for example:
+
+```yaml title="BigQuery native mode"
+table:
+  loader: native
+  filter: "record_type != '99' AND REGEXP_CONTAINS(account, r'^[0-9]{8}$')"
+```
 
 :::note Dialect portability
-The expression is passed through to the active engine without dialect translation. `LIKE`, `SUBSTR`, and `LENGTH` work the same in Spark and BigQuery. Regex predicates differ: Spark accepts `value RLIKE 'pattern'`, BigQuery requires `REGEXP_CONTAINS(value, r'pattern')`. Keep expressions portable, or maintain one variant per mode if you may switch between Spark and native modes.
+The expression is passed through to the active engine without dialect translation. A Spark filter reads the raw line (`value`) in Spark SQL, for example `value RLIKE 'pattern'`. A native BigQuery filter reads the attributes in BigQuery SQL, for example `REGEXP_CONTAINS(account, r'pattern')`. Keep one variant per mode if you may switch between Spark and native modes.
 :::
 
 ## 4. Trimming per Attribute
