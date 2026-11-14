@@ -1,9 +1,9 @@
 ---
 id: introduction
-title: "Quack on Demand: multi-tenant SQL gateway for DuckDB and DuckLake"
+title: "Quack on Demand: the agent-safe data plane for DuckDB and DuckLake"
 sidebar_label: "Introduction"
-description: "Quack on Demand puts an authenticated, access-controlled, autoscaled SQL endpoint in front of DuckDB and DuckLake, over Flight SQL or native ATTACH."
-keywords: ["duckdb gateway", "duckdb server", "multi-tenant duckdb", "duckdb access control", "ducklake", "flight sql", "adbc"]
+description: "Quack on Demand puts one governed, multi-tenant SQL endpoint in front of DuckDB and DuckLake for people, BI tools and AI agents, over Flight SQL, MCP or native ATTACH, on any cloud or on-prem."
+keywords: ["duckdb gateway", "duckdb server", "multi-tenant duckdb", "duckdb access control", "ducklake", "flight sql", "adbc", "ai agents", "mcp"]
 ---
 
 import ThemedImage from '@theme/ThemedImage';
@@ -17,7 +17,7 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
   />
 </div>
 
-**Quack on Demand** is a multi-tenant SQL gateway for [DuckDB](https://duckdb.org) and [DuckLake](https://ducklake.select). It puts a single, governed, horizontally-scaled SQL endpoint in front of many DuckDB engines that share DuckLake catalogs, so a fast embedded database becomes a service that teams and applications can query together.
+**Quack on Demand** is the open-source, agent-safe data plane for [DuckDB](https://duckdb.org) and [DuckLake](https://ducklake.select): a multi-tenant SQL gateway that puts a single, governed, horizontally-scaled SQL endpoint in front of many DuckDB engines that share DuckLake catalogs, so a fast embedded database becomes a service that teams, applications and AI agents can query together. It runs wherever your data lives, from a laptop to your own cloud account, and your bucket stays yours.
 
 It serves two wires from that one endpoint: [Arrow Flight SQL](https://arrow.apache.org/docs/format/FlightSql.html) for the JDBC / ODBC / ADBC estate, and DuckDB's own **Quack** protocol, so any DuckDB carrying the `quack` extension can `ATTACH` the gateway as a database with no driver in between.
 
@@ -45,6 +45,7 @@ Reach for Quack on Demand when you want to:
 - **Keep the clients you already have**: Arrow Flight SQL covers JDBC, ADBC, ODBC, PyArrow, DBeaver, and Spark, which all connect the same way.
 - **Attach the gateway from DuckDB itself** over DuckDB's native Quack protocol (`ATTACH 'quack:host:9494' AS qod`), so a laptop DuckDB, a notebook, or an embedded engine joins its local tables with governed shared tables in one query, with no driver to install. See [DuckDB (native Quack)](/qod/connecting/duckdb).
 - **Give AI agents governed data access**: an embedded [MCP server](/qod/connecting/mcp) lets agents such as Claude Code discover schemas and run SQL with the same per-statement access control as any other client.
+- **Let agents write without touching main**: an agent writes on a [branch](/qod/operating/branching), a writable copy of a DuckLake database that copies no data; you review the diff, and another user merges it as one tagged snapshot. A branch-only token keeps that agent off the live database.
 
 ## When not to use it
 
