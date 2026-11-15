@@ -1,7 +1,7 @@
 ---
 id: extending
 title: Extending the manager
-description: "Extend Quack on Demand with a new runtime backend or a new authentication provider through the two seams designed for it."
+description: "Extend QoD with a new runtime backend or a new authentication provider through the two seams designed for it."
 keywords: ["extending", "runtime backend", "authentication provider", "plugin"]
 ---
 

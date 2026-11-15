@@ -2,7 +2,7 @@
 id: starflow
 title: Run Starflow with QoD
 sidebar_label: Starflow
-description: "Run Starflow next to Quack on Demand on any deployment: a native install, a single Docker container, a fleet or Kubernetes. What the pairing needs, and the steps for each setup."
+description: "Run Starflow next to QoD on any deployment: a native install, a single Docker container, a fleet or Kubernetes. What the pairing needs, and the steps for each setup."
 keywords: ["starflow", "starlake", "workbench", "sso", "qod start --with-starflow", "docker", "kubernetes", "fleet"]
 ---
 
@@ -123,7 +123,7 @@ With several managers, run one Starflow, give every manager the same four [manag
 
 The Helm chart does not deploy Starflow. Run it as a Deployment of your own, in the release's namespace, and turn the pairing on through the chart's values. The examples use a release named `qod`, whose Services are `qod-quack-on-demand` (REST) and `qod-quack-on-demand-flightsql` (FlightSQL).
 
-**1. Build the image and push it to your registry.** The published `starlakeai/starlake-*-api` images carry the API without the UI, so build `docker/starflow` from the [QoD repository](https://github.com/starlake-ai/quack-on-demand):
+**1. Build the image and push it to your registry.** The published `starlakeai/starlake-*-api` images carry the API without the UI, so build `docker/starflow` from the [QoD repository](https://github.com/starlake-ai/qod):
 
 ```bash
 docker build --build-arg STARFLOW_VERSION=1.8.8 -t registry.example.com/qod-starflow:1.8.8 docker/starflow

@@ -82,7 +82,7 @@ flowchart LR
     py[Python ADBC]
     jdbc[JDBC / ODBC tools]
   end
-  subgraph qod["Quack on Demand · your machine or server"]
+  subgraph qod["QoD · your machine or server"]
     edge["FlightSQL edge<br/>TLS · authn · ACL · rewrites · audit"]
     node["One DuckDB node<br/>ATTACH 'sales.duckdb' (read-write)"]
     pg[("Embedded Postgres<br/>control plane")]
@@ -194,10 +194,10 @@ The move stays inside the same gateway: `qod serve` with no target creates a fre
 
 - DuckDB documentation, "Concurrency": duckdb.org/docs/stable/connect/concurrency
 - DuckDB documentation, "ATTACH": duckdb.org/docs/stable/sql/statements/attach
-- Quack on Demand repository and README: github.com/starlake-ai/quack-on-demand
+- QoD repository and README: github.com/starlake-ai/qod
 - QoD documentation, "DuckLake catalogs" (the three database kinds): docs.starlake.ai/qod/concepts/catalogs
 - QoD documentation, "RBAC model": docs.starlake.ai/qod/operating/rbac-model
 - QoD documentation, "Access control": docs.starlake.ai/qod/administration/access-control
 - QoD quickstart and client connection guides: docs.starlake.ai/qod/getting-started/quickstart
 
-**See also:** [DuckDB access control](https://docs.starlake.ai/qod/duckdb/access-control), [Multi-tenant DuckDB](https://docs.starlake.ai/qod/duckdb/multi-tenant) and [A Flight SQL server for DuckDB](https://docs.starlake.ai/qod/duckdb/flight-sql-server) in the Quack on Demand documentation.
+**See also:** [DuckDB access control](https://docs.starlake.ai/qod/duckdb/access-control), [Multi-tenant DuckDB](https://docs.starlake.ai/qod/duckdb/multi-tenant) and [A Flight SQL server for DuckDB](https://docs.starlake.ai/qod/duckdb/flight-sql-server) in the QoD documentation.

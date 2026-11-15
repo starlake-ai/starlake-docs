@@ -1,17 +1,17 @@
 ---
 title: "Multi-tenant DuckDB and DuckLake: tenants, databases and pools"
 sidebar_label: Multi-tenant
-description: "Run many teams or customers on one DuckDB deployment. Quack on Demand isolates tenants, databases (each its own DuckLake catalog) and pools of DuckDB nodes."
+description: "Run many teams or customers on one DuckDB deployment. QoD isolates tenants, databases (each its own DuckLake catalog) and pools of DuckDB nodes."
 keywords: [multi-tenant duckdb, duckdb multi tenant, duckdb saas, tenant isolation duckdb, ducklake multi-tenant, shared duckdb, duckdb pools]
 ---
 
-Multi-tenant DuckDB means several teams or customers query one deployment while each sees only its own databases, users and compute. Quack on Demand models that as tenants that own databases (DuckLake catalogs) and pools of DuckDB nodes, and enforces the boundary at the edge on every connection and statement.
+Multi-tenant DuckDB means several teams or customers query one deployment while each sees only its own databases, users and compute. QoD models that as tenants that own databases (DuckLake catalogs) and pools of DuckDB nodes, and enforces the boundary at the edge on every connection and statement.
 
 ## The problem
 
 One DuckDB process serves one file for one caller. Giving each team its own file and its own machine multiplies operations and still shares nothing safely, while putting everyone on one file shares everything. What you want is one governed endpoint where a tenant is a real isolation boundary, compute scales per tenant, and idle tenants cost nothing.
 
-## How Quack on Demand does it
+## How QoD does it
 
 Three nested objects organize the deployment. A **tenant** is the isolation boundary and selects its users' authentication provider. A **tenant-db** is a database: a DuckLake catalog in its own Postgres database with its own data path on the filesystem or an S3-compatible store. A **pool** is a set of DuckDB nodes bound to one tenant-db, and it is what clients connect to. A client names its tenant and pool at connection time; the gateway resolves the database server-side and never trusts token claims for routing.
 
@@ -22,7 +22,7 @@ ATTACH 'quack:qod.example.com:9494' AS qod
 SELECT count(*) FROM qod.tpch1.orders;
 ```
 
-Pools scale within an autoscale band and can be suspended to zero nodes; a suspended pool wakes on the first query. Automatic idle suspend runs in the hosted service. Usage is metered per tenant, pool and user, and the audit log and statement history are tenant-scoped. Federation lets a tenant attach Postgres, MySQL, S3 or Iceberg sources under the same access-control model. Quack on Demand runs as a single Docker container on one node, ideal for a single tenant, or on Kubernetes for multi-host fleets.
+Pools scale within an autoscale band and can be suspended to zero nodes; a suspended pool wakes on the first query. Automatic idle suspend runs in the hosted service. Usage is metered per tenant, pool and user, and the audit log and statement history are tenant-scoped. Federation lets a tenant attach Postgres, MySQL, S3 or Iceberg sources under the same access-control model. QoD runs as a single Docker container on one node, ideal for a single tenant, or on Kubernetes for multi-host fleets.
 
 ## Go deeper
 

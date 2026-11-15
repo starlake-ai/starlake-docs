@@ -1,7 +1,7 @@
 ---
 id: cli
 title: Manager jar
-description: "The manager uber-jar of Quack on Demand: boot the manager, run the self-contained demo, and the manifest subcommands for scripting."
+description: "The manager uber-jar of QoD: boot the manager, run the self-contained demo, and the manifest subcommands for scripting."
 keywords: ["manager jar", "demo", "manifest"]
 ---
 

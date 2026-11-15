@@ -1,11 +1,11 @@
 ---
 id: agent-skill
 title: Operator skill (AI agents)
-description: "Install the Quack on Demand agent skill so Claude Code, Copilot or Gemini CLI can operate your DuckDB gateway through the qod CLI."
+description: "Install the QoD agent skill so Claude Code, Copilot or Gemini CLI can operate your DuckDB gateway through the qod CLI."
 keywords: ["agent skill", "claude code", "ai agents", "duckdb automation"]
 ---
 
-Quack on Demand ships its operator runbook as an agent skill: a `SKILL.md` playbook that coding agents such as Claude Code, GitHub Copilot, and Gemini CLI load on demand and follow. With the skill installed, asking your agent "create a pool for tenant acme" or "why is auth failing" makes it drive a live manager through the [`qod` CLI](/qod/cli/) with the project's own recipes: boot and stop (`qod start` / `qod stop`), tenant, database, and pool lifecycle, RBAC grants and row/column policies, node health and telemetry, ad-hoc SQL through `qod sql`, and the known failure modes with their fixes.
+QoD ships its operator runbook as an agent skill: a `SKILL.md` playbook that coding agents such as Claude Code, GitHub Copilot, and Gemini CLI load on demand and follow. With the skill installed, asking your agent "create a pool for tenant acme" or "why is auth failing" makes it drive a live manager through the [`qod` CLI](/qod/cli/) with the project's own recipes: boot and stop (`qod start` / `qod stop`), tenant, database, and pool lifecycle, RBAC grants and row/column policies, node health and telemetry, ad-hoc SQL through `qod sql`, and the known failure modes with their fixes.
 
 The skill is self-contained: it assumes only an installed `qod` CLI (it checks the version, installs or upgrades it when needed, and logs in before operating), never a source checkout.
 
@@ -42,7 +42,7 @@ New agent sessions pick the skill up automatically. Re-run `qod skill install` a
 For Claude Code specifically, the same skill is also published as a plugin, which manages its own updates:
 
 ```
-/plugin marketplace add starlake-ai/quack-on-demand
+/plugin marketplace add starlake-ai/qod
 /plugin install quack-on-demand@quack-on-demand
 ```
 

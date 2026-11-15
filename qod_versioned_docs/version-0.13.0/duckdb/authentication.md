@@ -1,17 +1,17 @@
 ---
 title: "DuckDB authentication: passwords, tokens and OAuth for SQL clients"
 sidebar_label: Authentication
-description: "Give DuckDB a login. Quack on Demand authenticates every JDBC, ADBC, ODBC or native DuckDB connection with passwords, JWT bearer tokens or OAuth."
+description: "Give DuckDB a login. QoD authenticates every JDBC, ADBC, ODBC or native DuckDB connection with passwords, JWT bearer tokens or OAuth."
 keywords: [duckdb authentication, duckdb auth, duckdb login, duckdb password, duckdb bearer token, duckdb oauth, duckdb jwt, flight sql authentication]
 ---
 
-DuckDB has no login: opening the file is the credential. Quack on Demand authenticates every connection at the edge, with a built-in password store, external JWT bearer tokens, or OAuth and OIDC providers, before a single statement is routed to a DuckDB node.
+DuckDB has no login: opening the file is the credential. QoD authenticates every connection at the edge, with a built-in password store, external JWT bearer tokens, or OAuth and OIDC providers, before a single statement is routed to a DuckDB node.
 
 ## The problem
 
 As soon as DuckDB data is reachable over a network, you need to know who is asking. A shared file or an unauthenticated proxy gives everyone the same identity, which makes access control, auditing and per-user row filters impossible. BI tools expect a username and password or a bearer token in the connection dialog, and notebooks expect the same in a connection string.
 
-## How Quack on Demand does it
+## How QoD does it
 
 Every connection carries a tenant and a pool, and the edge validates the credential against that tenant's configured provider. Providers can be enabled together, and the first to accept wins:
 
@@ -27,7 +27,7 @@ jdbc:arrow-flight-sql://gateway:31338?useEncryption=true&user=alice&password=dem
 
 The example assumes the edge presents a certificate the client trusts. Against the default self-signed certificate, see [TLS](/qod/operating/tls) for the client-side setting.
 
-Superusers authenticate against the manager's global providers with `superuser=true` and bypass the per-statement gate. Quack on Demand runs as a single Docker container on one node, or on Kubernetes for multi-host fleets.
+Superusers authenticate against the manager's global providers with `superuser=true` and bypass the per-statement gate. QoD runs as a single Docker container on one node, or on Kubernetes for multi-host fleets.
 
 ## Go deeper
 

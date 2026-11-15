@@ -140,7 +140,7 @@ const config = {
         },
         !isBlog ? {
           to: "/qod",
-          label: "Quack on Demand",
+          label: "QoD",
           position: "left",
         } : null,
         !isBlog ? {
@@ -173,7 +173,7 @@ const config = {
                 */
         {
           // No href: the link follows the section being browsed, so /qod
-          // points at quack-on-demand and everything else at starlake.
+          // points at the qod repo and everything else at starlake.
           type: "custom-iconLink",
           icon: "github",
           position: "right",
@@ -225,8 +225,8 @@ const config = {
     },
     image: "img/social-card.png",
     metadata: [
-      {name: 'keywords', content: 'starlake, etl, data pipeline, data transformation, quack on demand, duckdb, ducklake, duckdb access control, duckdb acl, duckdb adbc, duckdb sso, duckdb authentication, duckdb multi-tenant, flight sql server'},
-      {name: 'description', content: 'Documentation for Starlake, the declarative ETL platform, and Quack on Demand, the multi-tenant DuckDB gateway with access control, SSO, ADBC and Flight SQL.'},
+      {name: 'keywords', content: 'starlake, etl, data pipeline, data transformation, QoD, duckdb, ducklake, duckdb access control, duckdb acl, duckdb adbc, duckdb sso, duckdb authentication, duckdb multi-tenant, flight sql server'},
+      {name: 'description', content: 'Documentation for Starlake, the declarative ETL platform, and QoD, the multi-tenant DuckDB gateway with access control, SSO, ADBC and Flight SQL.'},
     ],
     structuredData: {
       "@context": "https://schema.org",
@@ -257,7 +257,7 @@ const config = {
         },
         {
           "@type": "SoftwareApplication",
-          "name": "Quack on Demand",
+          "name": "QoD",
           "applicationCategory": "Database Gateway",
           "operatingSystem": "Linux, macOS, Windows, Docker, Kubernetes",
           "url": "https://docs.starlake.ai/qod",
@@ -327,21 +327,21 @@ const config = {
       {
         title: "Starlake",
         description:
-          "Open-source declarative data pipeline platform for Extract, Load, and Transform operations using YAML and SQL, and Quack on Demand, a multi-tenant SQL gateway for DuckDB and DuckLake.",
+          "Open-source declarative data pipeline platform for Extract, Load, and Transform operations using YAML and SQL, and QoD, a multi-tenant SQL gateway for DuckDB and DuckLake.",
         rootContent: [
           "Starlake lets data engineers build production data pipelines without writing Python or Scala. Define schemas, connections, and transformations in YAML and SQL. Starlake handles loading files (CSV, JSON, XML, fixed-width) into warehouses, extracting data from databases, running SQL/Python transforms, and auto-generating Airflow/Dagster DAGs from SQL dependency analysis. Supports BigQuery, Snowflake, Databricks, Spark, PostgreSQL, and DuckDB.",
           "",
-          "Quack on Demand turns DuckDB and DuckLake into a governed service with authentication, single sign-on, role-based access control with row and column security, and ADBC, JDBC and ODBC access over Arrow Flight SQL.",
+          "QoD turns DuckDB and DuckLake into a governed service with authentication, single sign-on, role-based access control with row and column security, and ADBC, JDBC and ODBC access over Arrow Flight SQL.",
           "",
-          "The Quack on Demand REST API is described by an OpenAPI 3.1 spec at https://docs.starlake.ai/openapi.yaml, with a browsable reference at https://docs.starlake.ai/api/.",
+          "The QoD REST API is described by an OpenAPI 3.1 spec at https://docs.starlake.ai/openapi.yaml, with a browsable reference at https://docs.starlake.ai/api/.",
           "",
-          `These files cover Quack on Demand ${latestQodVersion} and Starflow ${latestStarflowVersion}. Every page link points to a Markdown copy of the page; drop the .md suffix for the HTML version. The full text of every page is in https://docs.starlake.ai/llms-full.txt.`,
+          `These files cover QoD ${latestQodVersion} and Starflow ${latestStarflowVersion}. Every page link points to a Markdown copy of the page; drop the .md suffix for the HTML version. The full text of every page is in https://docs.starlake.ai/llms-full.txt.`,
         ].join("\n"),
         docsDir: [
           {
             path: `qod_versioned_docs/version-${latestQodVersion}`,
             routeBasePath: "qod",
-            label: "Quack on Demand",
+            label: "QoD",
           },
           {
             path: `versioned_docs/version-${latestStarflowVersion}`,

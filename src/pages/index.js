@@ -18,7 +18,7 @@ const PRODUCTS = [
     accentClass: styles.cardStarflow,
   },
   {
-    name: 'Quack on Demand',
+    name: 'QoD',
     tagline: 'Autoscaling DuckDB fleets',
     description:
       'A multi-tenant SQL gateway for DuckDB and DuckLake: one governed, ' +
@@ -54,7 +54,7 @@ export default function Home() {
   return (
     <Layout
       title="Documentation"
-      description="Documentation for the Starlake open-source data platform: Starflow, declarative YAML data pipelines, and Quack on Demand, autoscaling DuckDB fleets.">
+      description="Documentation for the Starlake open-source data platform: Starflow, declarative YAML data pipelines, and QoD, autoscaling DuckDB fleets.">
       <main>
         <section className={styles.hero}>
           <div className="container">

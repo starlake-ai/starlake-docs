@@ -7,15 +7,15 @@ import styles from "./styles.module.css";
 
 // Navbar item (type: "custom-iconLink") for the GitHub and Discord links at
 // the top right. Without an explicit href, a GitHub link follows the section
-// being browsed, so /qod points at quack-on-demand and everything else at the
+// being browsed, so /qod points at the qod repo and everything else at the
 // main starlake repository.
 const ICONS = { github: FaGithub, discord: FaDiscord };
 
 const SECTION_REPOS = [
   {
     prefix: "/qod",
-    name: "Quack on Demand",
-    href: "https://github.com/starlake-ai/quack-on-demand",
+    name: "QoD",
+    href: "https://github.com/starlake-ai/qod",
   },
   {
     prefix: "/starflow",

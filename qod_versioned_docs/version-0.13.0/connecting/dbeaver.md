@@ -6,7 +6,7 @@ description: "Connect DBeaver to a shared DuckDB through the Arrow Flight SQL JD
 keywords: ["dbeaver duckdb", "flight sql jdbc", "dbeaver arrow flight"]
 ---
 
-DBeaver connects to Quack on Demand through the Apache Arrow Flight SQL JDBC driver. There is no custom plugin to install: you register the driver jar once, then point a normal JDBC connection at the edge. The whole connection (target, routing, credentials) is expressed in the JDBC URL plus, for OAuth, one driver property.
+DBeaver connects to QoD through the Apache Arrow Flight SQL JDBC driver. There is no custom plugin to install: you register the driver jar once, then point a normal JDBC connection at the edge. The whole connection (target, routing, credentials) is expressed in the JDBC URL plus, for OAuth, one driver property.
 
 ```
 DBeaver ──JDBC──▶ Arrow Flight SQL JDBC driver ──Flight SQL──▶ Quack edge (:31338, TLS)
@@ -22,7 +22,7 @@ DBeaver does not ship the Arrow Flight SQL driver, so add it once:
 
 1. **Database -> Driver Manager -> New**.
 2. **Settings**:
-   - Driver Name: `Quack on Demand` (anything memorable).
+   - Driver Name: `QoD` (anything memorable).
    - Class Name: `org.apache.arrow.driver.jdbc.ArrowFlightJdbcDriver`.
    - URL Template: `jdbc:arrow-flight-sql://{host}:{port}`.
    - Default Port: `31338`.
@@ -35,7 +35,7 @@ DBeaver does not ship the Arrow Flight SQL driver, so add it once:
 
 ## 2. Create the connection
 
-1. **Database -> New Database Connection**, pick **Quack on Demand**.
+1. **Database -> New Database Connection**, pick **QoD**.
 2. On the **Main** tab, set the **URL** directly (the simplest path, since every QoD parameter rides the URL):
 
    ```
@@ -60,7 +60,7 @@ Set `user` / `password` in the URL (above). With Basic auth the edge BCrypt-veri
 When the edge is wired to an OIDC provider (Keycloak / Azure AD / Google) and you want interactive SSO / MFA, the Arrow Flight SQL JDBC driver cannot run the browser flow in-process. The [QoD JDBC driver](./jdbc-driver.md) can (`authenticator=externalbrowser`). With the Arrow driver, the manager serves a browser **token page**:
 
 1. Open `https://<gateway>:20900/api/auth/sql-token/start` in a browser. The manager redirects you to the provider's login (resolved via OIDC discovery, so the URL is reachable from your host).
-2. Log in. The callback renders the **"Quack on Demand token"** page; click **Copy**.
+2. Log in. The callback renders the **"QoD token"** page; click **Copy**.
 3. In DBeaver, open the connection's **Driver properties** tab and add a property named **`token`** with the copied JWT as its value. Leave `user` / `password` unset.
 
    Equivalently, append `&token=<jwt>` to the URL and drop `user` / `password`:

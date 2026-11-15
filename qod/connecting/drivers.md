@@ -2,11 +2,11 @@
 id: drivers
 title: "Drivers and connectors: what to download for each client"
 sidebar_label: "Drivers and downloads"
-description: "Where to download every driver and connector that connects to DuckDB through Quack on Demand: the QoD JDBC driver, the Arrow Flight SQL JDBC driver, the Power BI connector, ADBC, ODBC, DuckDB and the qod CLI."
+description: "Where to download every driver and connector that connects to DuckDB through QoD: the QoD JDBC driver, the Arrow Flight SQL JDBC driver, the Power BI connector, ADBC, ODBC, DuckDB and the qod CLI."
 keywords: ["duckdb jdbc driver download", "flight sql odbc driver", "adbc flight sql", "power bi duckdb connector", "qod.mez", "duckdb driver"]
 ---
 
-Quack on Demand serves queries on two wires: Arrow Flight SQL (`:31338`) and DuckDB's own Quack protocol (`:9494`). Every client below speaks one of them. QoD itself ships the JDBC driver with browser sign-in, the Power BI connector and the `qod` CLI; everything else is a standard driver from its own project.
+QoD serves queries on two wires: Arrow Flight SQL (`:31338`) and DuckDB's own Quack protocol (`:9494`). Every client below speaks one of them. QoD itself ships the JDBC driver with browser sign-in, the Power BI connector and the `qod` CLI; everything else is a standard driver from its own project.
 
 ## By client
 

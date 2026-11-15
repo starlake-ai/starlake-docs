@@ -173,7 +173,7 @@ Never add `NUKE=1` to this file. Under systemd there is no terminal, so the conf
 
 ```ini
 [Unit]
-Description=Quack on Demand manager
+Description=QoD manager
 After=network-online.target postgresql.service
 Wants=network-online.target
 StartLimitIntervalSec=0

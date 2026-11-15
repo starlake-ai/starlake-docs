@@ -5,7 +5,7 @@ description: "Security hardening checklist for exposing a DuckDB gateway to untr
 keywords: ["duckdb security", "hardening", "production security"]
 ---
 
-Quack on Demand runs tenant-supplied SQL on shared infrastructure. Since 0.11.0
+QoD runs tenant-supplied SQL on shared infrastructure. Since 0.11.0
 the nodes enforce what tenant SQL may reach on every pool, with no switch to turn
 it off. This page describes that enforcement and collects the controls you add
 before exposing the gateway to untrusted tenants: pod security, network policy,

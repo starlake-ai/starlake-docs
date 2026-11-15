@@ -2,7 +2,7 @@
 id: jdbc-driver
 title: "The QoD JDBC driver: browser sign-in for DBeaver and Java tools"
 sidebar_label: "QoD JDBC driver"
-description: "Connect DBeaver and other JDBC tools to DuckDB through Quack on Demand with a browser sign-in at your identity provider: authenticator=externalbrowser, as with Snowflake."
+description: "Connect DBeaver and other JDBC tools to DuckDB through QoD with a browser sign-in at your identity provider: authenticator=externalbrowser, as with Snowflake."
 keywords: ["duckdb jdbc sso", "jdbc externalbrowser", "dbeaver sso duckdb", "flight sql jdbc oauth", "qod-jdbc"]
 ---
 
@@ -84,7 +84,7 @@ The manager keeps nothing between the start of a sign-in and its end, so with se
 ## DBeaver
 
 1. **Database -> Driver Manager -> New**:
-   - Driver Name: `Quack on Demand (SSO)`.
+   - Driver Name: `QoD (SSO)`.
    - Class Name: `ai.starlake.qod.jdbc.QodDriver`.
    - URL Template: `jdbc:qod://{host}:{port}`.
    - Default Port: `31338`.

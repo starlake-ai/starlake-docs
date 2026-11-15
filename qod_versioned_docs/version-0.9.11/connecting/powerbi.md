@@ -6,7 +6,7 @@ description: "Connect Power BI and Microsoft Fabric to DuckDB with the QoD conne
 keywords: ["power bi duckdb", "adbc power bi", "directquery duckdb", "microsoft fabric", "flight sql adbc"]
 ---
 
-Power BI / Microsoft Fabric connects to Quack on Demand through the **QoD custom connector** (v2.0.0+), built on `Adbc.Connection` and the **FlightSQL ADBC driver that ships in-box with Power BI Desktop** - no driver installation on the client. The connector supports **Import and DirectQuery**, with query folding: filters, projections, joins, aggregations, and top-N push down as SQL to the Quack edge.
+Power BI / Microsoft Fabric connects to QoD through the **QoD custom connector** (v2.0.0+), built on `Adbc.Connection` and the **FlightSQL ADBC driver that ships in-box with Power BI Desktop** - no driver installation on the client. The connector supports **Import and DirectQuery**, with query folding: filters, projections, joins, aggregations, and top-N push down as SQL to the Quack edge.
 
 ```
 Power BI ──M──▶ QoD.mez ──Adbc.Connection──▶ FlightSQL ADBC driver (in-box) ──Flight SQL──▶ Quack edge (:31338, TLS)
@@ -46,7 +46,7 @@ The OAuth endpoints and client ID are **compiled into the `.mez`** (`OAuthConfig
 2. Copy it into `%UserProfile%\Documents\Power BI Desktop\Custom Connectors\` (create the folder if missing).
 3. In Power BI Desktop, open **File -> Options and settings -> Options -> Security -> Data Extensions** and select **`(Not Recommended) Allow any extension to load without validation or warning.`** *(In a French UI: **Fichier -> Options et paramètres -> Options -> Sécurité -> Extensions du connecteur de données**, then the `(Non recommandé) Autoriser le chargement de toutes les extensions sans validation et avertissement` option.)*
 4. **Restart Power BI Desktop fully** - close every running `PBIDesktop.exe`. Connectors load at startup; the security change does not apply to an already-running session.
-5. **Get Data -> search "Quack" -> Quack on Demand**. *(French UI: **Obtenir les données -> Plus...** then search.)*
+5. **Get Data -> search "Quack" -> QoD**. *(French UI: **Obtenir les données -> Plus...** then search.)*
 
 ### Option 2 - Only if you need OAuth
 
@@ -107,7 +107,7 @@ Signing is unchanged from v1: pack the `.mez` into a signed `.pqx` with `MakePQX
 
 ## Connect
 
-Open **Get Data -> Quack on Demand** and provide:
+Open **Get Data -> QoD** and provide:
 
 | Field | Example | Notes |
 |-------|---------|-------|

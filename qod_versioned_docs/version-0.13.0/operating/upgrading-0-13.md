@@ -1,7 +1,7 @@
 ---
 id: upgrading-0-13
 title: Upgrading to 0.13
-description: "The checklist for upgrading a Quack on Demand manager from 0.12.x to 0.13.0: Java 25, read-only tokens that are read-only everywhere, and stricter database defaults."
+description: "The checklist for upgrading a QoD manager from 0.12.x to 0.13.0: Java 25, read-only tokens that are read-only everywhere, and stricter database defaults."
 keywords: ["upgrade", "release notes", "0.13.0", "0.12.2", "java 25", "migration", "breaking changes"]
 ---
 

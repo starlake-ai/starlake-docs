@@ -1,7 +1,7 @@
 ---
 id: state-storage
 title: State storage
-description: "Where Quack on Demand keeps control-plane state (tenants, pools, RBAC graph) in Postgres, separate from tenant data in DuckLake catalogs."
+description: "Where QoD keeps control-plane state (tenants, pools, RBAC graph) in Postgres, separate from tenant data in DuckLake catalogs."
 keywords: ["state storage", "postgres", "control plane", "metastore"]
 ---
 

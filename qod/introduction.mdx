@@ -1,8 +1,8 @@
 ---
 id: introduction
-title: "Quack on Demand: the agent-safe data plane for DuckDB and DuckLake"
+title: "QoD: the agent-safe data plane for DuckDB and DuckLake"
 sidebar_label: "Introduction"
-description: "Quack on Demand puts one governed, multi-tenant SQL endpoint in front of DuckDB and DuckLake for people, BI tools and AI agents, over Flight SQL, MCP or native ATTACH, on any cloud or on-prem."
+description: "QoD puts one governed, multi-tenant SQL endpoint in front of DuckDB and DuckLake for people, BI tools and AI agents, over Flight SQL, MCP or native ATTACH, on any cloud or on-prem."
 keywords: ["duckdb gateway", "duckdb server", "multi-tenant duckdb", "duckdb access control", "ducklake", "flight sql", "adbc", "ai agents", "mcp"]
 ---
 
@@ -11,13 +11,13 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <div style={{textAlign: 'center', margin: '0.5rem 0 2rem'}}>
   <ThemedImage
-    alt="Quack on Demand"
+    alt="QoD"
     sources={{ light: useBaseUrl('/img/lockupA-light.svg'), dark: useBaseUrl('/img/lockupA-dark.svg') }}
     style={{ maxWidth: '460px', width: '100%' }}
   />
 </div>
 
-**Quack on Demand** is the open-source, agent-safe data plane for [DuckDB](https://duckdb.org) and [DuckLake](https://ducklake.select): a multi-tenant SQL gateway that puts a single, governed, horizontally-scaled SQL endpoint in front of many DuckDB engines that share DuckLake catalogs, so a fast embedded database becomes a service that teams, applications and AI agents can query together. It runs wherever your data lives, from a laptop to your own cloud account, and your bucket stays yours.
+**QoD** is the open-source, agent-safe data plane for [DuckDB](https://duckdb.org) and [DuckLake](https://ducklake.select): a multi-tenant SQL gateway that puts a single, governed, horizontally-scaled SQL endpoint in front of many DuckDB engines that share DuckLake catalogs, so a fast embedded database becomes a service that teams, applications and AI agents can query together. It runs wherever your data lives, from a laptop to your own cloud account, and your bucket stays yours.
 
 It serves two wires from that one endpoint: [Arrow Flight SQL](https://arrow.apache.org/docs/format/FlightSql.html) for the JDBC / ODBC / ADBC estate, and DuckDB's own **Quack** protocol, so any DuckDB carrying the `quack` extension can `ATTACH` the gateway as a database with no driver in between.
 
@@ -31,11 +31,11 @@ In other words, it adds the things a single embedded DuckDB does not have on its
 
 ## Why it exists
 
-DuckDB is excellent for fast analytics, and DuckLake gives it a durable, object-store-backed catalog. But on their own they are single-process: there is no shared endpoint, no notion of tenants or users, no access control on a query, and no way to spread load across nodes. Teams that want to expose DuckDB/DuckLake data to many users or applications end up rebuilding the same gateway concerns each time. Quack on Demand is that gateway, built once: connection management, identity, authorization, routing, failover, and observability around the engine you already use.
+DuckDB is excellent for fast analytics, and DuckLake gives it a durable, object-store-backed catalog. But on their own they are single-process: there is no shared endpoint, no notion of tenants or users, no access control on a query, and no way to spread load across nodes. Teams that want to expose DuckDB/DuckLake data to many users or applications end up rebuilding the same gateway concerns each time. QoD is that gateway, built once: connection management, identity, authorization, routing, failover, and observability around the engine you already use.
 
 ## When to use it
 
-Reach for Quack on Demand when you want to:
+Reach for QoD when you want to:
 
 - **Serve many users or applications** from shared DuckDB/DuckLake data through one governed endpoint, instead of handing out database files.
 - **Enforce access control** on every query: role-based permissions on tables, columns and files with tenant isolation, decided inside the engine on what DuckDB resolved, before the statement runs.
@@ -81,7 +81,7 @@ The [DuckDB how-tos](/qod/duckdb) answer the questions people arrive with, one p
 - **[Connecting clients](/qod/connecting/clients)** - JDBC, ADBC, ODBC, and DuckDB's own `ATTACH`.
 - **[Operating](/qod/operating/deploy-local)** - deploy, provision tenants and pools, govern access.
 
-Questions or feedback? Join the [community on Discord](https://discord.gg/xHj9D6Rebp) or open an issue on [GitHub](https://github.com/starlake-ai/quack-on-demand).
+Questions or feedback? Join the [community on Discord](https://discord.gg/xHj9D6Rebp) or open an issue on [GitHub](https://github.com/starlake-ai/qod).
 
 ## QoD and Starflow
 

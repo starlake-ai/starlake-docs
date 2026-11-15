@@ -97,7 +97,7 @@ When the edge is wired to an OIDC provider (Keycloak / Azure AD / Google), there
 2. **Bearer token from the login page** - the manager serves a browser token page on its own port; no extra service and no Python on the client. Walk through:
 
    1. Open `https://<gateway>:20900/api/auth/sql-token/start` in a browser. The manager 302-redirects you to the provider's browser-facing login (the URL is resolved via OIDC discovery, so it is reachable from your host even when the manager reaches the IdP at a different in-cluster address).
-   2. Log in (SSO / MFA). The provider redirects back to `/api/auth/sql-token/callback`, which renders the **"Quack on Demand token"** page.
+   2. Log in (SSO / MFA). The provider redirects back to `/api/auth/sql-token/callback`, which renders the **"QoD token"** page.
    3. Click **Copy** and paste the token into DBeaver's **`token`** driver property (Driver Properties tab) - or append `&token=<jwt>` to the URL.
 
    The page mints an **id token** whose `aud` is the edge's own client id, which is exactly what the edge requires (it rejects access tokens whose audience is the provider's resource). The edge then validates the bearer against the provider's JWKS. Because the page logs in against the edge's own OIDC provider, the returned token already carries the audience and issuer the edge expects.
@@ -163,7 +163,7 @@ Below is a sample `odbc.ini` entry for the Dremio / Apache Arrow Flight SQL ODBC
 
 ```ini
 [QoD]
-Description       = Quack-on-Demand FlightSQL edge
+Description       = QoD FlightSQL edge
 Driver            = /opt/dremio/lib/libarrow-odbc.so   ; Windows: ArrowFlightSQLODBCDriver
 HOST              = localhost
 PORT              = 31338

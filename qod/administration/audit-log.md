@@ -1,7 +1,7 @@
 ---
 id: audit-log
 title: Audit log
-description: "How Quack on Demand records a tenant-scoped audit trail of admin actions, auth events, denials and data-plane writes on DuckDB."
+description: "How QoD records a tenant-scoped audit trail of admin actions, auth events, denials and data-plane writes on DuckDB."
 keywords: ["audit log", "duckdb audit trail", "compliance", "telemetry"]
 ---
 
