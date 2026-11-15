@@ -264,11 +264,12 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | Key | Env var | Default | Sensitive | Description |
 | --- | --- | --- | --- | --- |
 | `quack-on-demand.maintenance.enabled` | `QOD_MAINT_ENABLED` | `true` |  | Enable the maintenance scheduler + drain-loop fibers. |
-| `quack-on-demand.maintenance.tickSec` | `QOD_MAINT_TICK_SEC` | `60` |  | Seconds between maintenance scheduler ticks (cadence + threshold checks). |
-| `quack-on-demand.maintenance.maxConcurrent` | `QOD_MAINT_MAX_CONCURRENT` | `2` |  | Max maintenance runs executing concurrently across the manager. |
+| `quack-on-demand.maintenance.tickSec` | `QOD_MAINT_TICK_SEC` | `60` |  | Seconds between maintenance scheduler ticks (cadence + threshold checks). Under HA, the executing replica writes a run's liveness heartbeat every tick, and the leader fails a run silent for three ticks (at least 60 s) and stops its node. |
+| `quack-on-demand.maintenance.maxConcurrent` | `QOD_MAINT_MAX_CONCURRENT` | `2` |  | Max maintenance runs executing concurrently on each replica (under HA, every replica drains). |
 | `quack-on-demand.maintenance.minIntervalMin` | `QOD_MAINT_MIN_INTERVAL_MIN` | `30` |  | Minimum minutes between non-manual maintenance runs of the same tenant-db. |
-| `quack-on-demand.maintenance.runTimeoutMin` | `QOD_MAINT_RUN_TIMEOUT_MIN` | `60` |  | Minutes without a heartbeat before a running maintenance run is swept as failed. |
+| `quack-on-demand.maintenance.runTimeoutMin` | `QOD_MAINT_RUN_TIMEOUT_MIN` | `240` |  | Minutes a maintenance run may take from its start (lock wait included) before the leader fails it as timed out; its replica then stops its node. |
 | `quack-on-demand.maintenance.nodeReadyTimeoutSec` | `QOD_MAINT_NODE_READY_TIMEOUT_SEC` | `180` |  | Seconds to wait for the ephemeral maintenance node to accept connections after spawn before the run is failed as 'node spawn failed'. Covers cold-start extension installs. |
+| `quack-on-demand.maintenance.leaderGraceSec` | `QOD_MAINT_LEADER_GRACE_SEC` | `0` |  | Under HA, seconds a queued maintenance run waits before the leader may take it: followers take runs at once, the leader only those no follower took in time. 0 (the default) means three ticks (3 x QOD_MAINT_TICK_SEC); a set value must be at least QOD_MAINT_TICK_SEC. A single manager takes every run at once. |
 
 ## `quack-on-demand.managedObjectStore`
 
