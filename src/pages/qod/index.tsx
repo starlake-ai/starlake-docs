@@ -17,20 +17,20 @@ function Hero() {
     <header className={styles.hero}>
       <div className={styles.heroGrid}>
         <div className={styles.heroCopy}>
-          <span className={styles.kicker}>DuckDB control plane</span>
+          <span className={styles.kicker}>Open source, Apache 2.0</span>
           <h1 className={styles.title}>
-            Autoscale DuckDB fleets
+            The agent-safe data plane
             <br />
-            <span className={styles.titleAccent}>on demand.</span>
+            <span className={styles.titleAccent}>for DuckDB and DuckLake.</span>
           </h1>
           <p className={styles.subtitle}>
-            From a single Docker container on one node to fleets of DuckDB Quack
-            nodes on your own Kubernetes. Per-tenant isolation, fine-grained ACLs,
-            federated queries. Query it from any ODBC/JDBC/ADBC client, or
-            <code>ATTACH</code> it straight from DuckDB. Works with any ETL.
+            One governed endpoint for people, BI tools and AI agents. Every statement
+            is authorized inside the engine, agents write on branches a human merges,
+            and it runs in your own cloud, AWS or any other, or on a laptop. Connect
+            over JDBC, ODBC, ADBC or MCP, or <code>ATTACH</code> it straight from DuckDB.
           </p>
           <p className={styles.demoChip}>
-            <code>uvx qod start --demo</code>
+            <code>uvx qod@latest serve --demo</code>
             <span> no install, no Postgres</span>
           </p>
           <div className={styles.ctaRow}>
@@ -137,6 +137,18 @@ const ORDER_PRIORITY_QUERY = `qod> SELECT o_orderpriority, count(*) FROM orders 
 +-----------------+----------+
 3 rows in 0.04s`;
 
+const BRANCH_FLOW = `$ qod branch create --tenant acme --db acme_tpch \\
+    --name agent-fix --ttl-hours 24
+# the agent writes on agent-fix, never on main
+
+$ qod branch changes --tenant acme --db acme_tpch --branch agent-fix
+$ qod branch diff --tenant acme --db acme_tpch --branch agent-fix \\
+    --schema tpch1 --table customer
+
+$ qod branch propose --tenant acme --db acme_tpch --branch agent-fix
+$ qod branch merge --tenant acme --db acme_tpch --branch agent-fix \\
+    --proposal <id>      # a different user approves`;
+
 function FeatureRows() {
   return (
     <section className={styles.features}>
@@ -153,8 +165,8 @@ function FeatureRows() {
         >
           <p>
             One command boots the whole platform: manager, FlightSQL endpoint, native Quack
-            front door, admin UI, and demo data. No cluster, no YAML, no prerequisites beyond
-            Python and a JVM.
+            front door, admin UI, and demo data. No cluster, no YAML, nothing to install
+            beyond <code>uv</code>: the launcher fetches the rest.
           </p>
           <p>
             The boot banner hands you working JDBC, ADBC, and ODBC connection strings and a
@@ -207,9 +219,28 @@ function FeatureRows() {
             The same query, two users, two answers: that is the access-control model working.
           </p>
           <p>
-            Tenant isolation at the edge, per-table grants (read, write, DDL), row-level
-            security filters, and column masking are all enforced before a statement ever
-            reaches a node.
+            Per-table grants (read, write, DDL), row-level security filters and column
+            masking apply to every client, agents included. Each node decides a statement on
+            what DuckDB actually resolved for it (tables, views, columns, functions, files)
+            before it runs, against the user's grants or the tenant's own OPA policy.
+          </p>
+        </FeatureRow>
+
+        <FeatureRow
+          title="Agents work on branches. Humans approve merges."
+          visual={<Terminal title="qod branch">{BRANCH_FLOW}</Terminal>}
+        >
+          <p>
+            A branch is a writable copy of a DuckLake database that copies no data and is
+            served by its own pool. An agent connects with the{' '}
+            <code>branch</code> header or the MCP <code>branch</code> argument and writes
+            there, as its own user, under its own grants.
+          </p>
+          <p>
+            You review the change set and the row diff, and someone other than the proposer
+            merges it into main as one tagged snapshot, cell by cell, with conflicts refused
+            unless the proposal names a winner. A branch-only token makes writes to the live
+            database impossible for that agent.
           </p>
         </FeatureRow>
 
@@ -274,8 +305,9 @@ function Closing() {
         <div>
           <h2 className={styles.closingTitle}>Reach for it when sharing matters.</h2>
           <p className={styles.closingBody}>
-            Many users on shared DuckDB/DuckLake data, access control on every query,
-            horizontal scale, tenant isolation, or federation. Querying one local file?
+            Many users and agents on shared DuckDB/DuckLake data, access control on every
+            query, writes you can review before they land, tenant isolation, your own cloud.
+            Querying one local file?
             Use DuckDB directly.
           </p>
           <p className={styles.closingBody}>
@@ -313,8 +345,8 @@ function Comparison() {
 export default function Home(): React.ReactElement {
   return (
     <Layout
-      title="Multi-tenant SQL gateway for DuckDB and DuckLake: Arrow Flight SQL and native Quack"
-      description="Quack on Demand turns DuckDB into a governed service: authentication, SSO, per-statement access control, ADBC, JDBC and ODBC over Flight SQL."
+      title="The agent-safe data plane for DuckDB and DuckLake"
+      description="Quack on Demand is an open-source, governed endpoint for DuckDB and DuckLake: per-statement access control inside the engine, branch-based writes for AI agents, Arrow Flight SQL, ADBC, MCP and native Quack, on any cloud or on-prem."
     >
       <Hero />
       <FeatureRows />
