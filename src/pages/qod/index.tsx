@@ -19,7 +19,7 @@ function Hero() {
         <div className={styles.heroCopy}>
           <span className={styles.kicker}>Open source, Apache 2.0</span>
           <h1 className={styles.title}>
-            The agent-safe data plane
+            The agent‑safe data plane
             <br />
             <span className={styles.titleAccent}>for DuckDB and DuckLake.</span>
           </h1>
@@ -46,9 +46,6 @@ function Hero() {
         <div className={styles.terminalWrap}>
           <div className={styles.terminal}>
             <div className={styles.termBar}>
-              <span className={styles.dot} data-c="r" />
-              <span className={styles.dot} data-c="y" />
-              <span className={styles.dot} data-c="g" />
               <span className={styles.termTitle}>client.py</span>
             </div>
             <pre className={styles.termBody}>
@@ -182,7 +179,7 @@ function FeatureRows() {
         >
           <p>
             Two wires, one gateway. Arrow FlightSQL serves the driver estate: JDBC and ODBC for
-            BI tools, ADBC and Python for notebooks, the qod CLI for your terminal. DuckDB's own
+            BI tools, ADBC and Python for notebooks, the qod CLI for your terminal. DuckDB’s own
             Quack protocol serves DuckDB itself, so a laptop, a notebook, or an embedded engine
             runs <code>ATTACH 'quack:host:9494'</code> and joins local tables with governed
             shared ones, no driver to install.

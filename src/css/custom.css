@@ -1,99 +1,370 @@
-/**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
- */
+/* Hallmark · shape: kept · genre: modern-minimal · theme: brand · redesign: restyle
+ * paper: hsl(40 20% 99%) · accent: hsl(170 34% 34%) · display: Inter · body: Inter · hero: kept · nav: kept · footer: kept · signature: kept
+ * axes: light/grotesk-sans/chromatic-teal · posture: kept · contrast: pass · fold: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P3 H4 E4 S4 R4 V3 · weakest: P, a restyle carries the website's argument rather than making its own; the docs now read as the same company, which is the point of the run */
+/* Hallmark · waive 1 · --font-display is Inter, read from starlake-website/src/app/layout.tsx · the docs take the website's brand face; a new display face is a website decision */
+@import url("./tokens.css");
+@import url("./base.css");
 
-/* You can override the default Infima variables here. */
-:root {
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
-  --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
-  --rouge: var(--ifm-color-primary);
-  --bleu-nuit: #000;
-}
-
-/* For readability concerns, you should choose a lighter palette in dark mode. */
+/* ==========================================================
+   Infima, mapped onto the brand tokens
+   ========================================================== */
+:root,
 [data-theme="dark"] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-color-primary: var(--color-accent);
+  --ifm-color-primary-dark: color-mix(in oklab, var(--color-accent), var(--color-ink) 10%);
+  --ifm-color-primary-darker: color-mix(in oklab, var(--color-accent), var(--color-ink) 15%);
+  --ifm-color-primary-darkest: color-mix(in oklab, var(--color-accent), var(--color-ink) 30%);
+  --ifm-color-primary-light: color-mix(in oklab, var(--color-accent), var(--color-paper) 10%);
+  --ifm-color-primary-lighter: color-mix(in oklab, var(--color-accent), var(--color-paper) 15%);
+  --ifm-color-primary-lightest: color-mix(in oklab, var(--color-accent), var(--color-paper) 30%);
+
+  --ifm-background-color: var(--color-paper);
+  --ifm-background-surface-color: var(--color-paper);
+  --ifm-font-color-base: var(--color-ink);
+  --ifm-heading-color: var(--color-ink);
+  --ifm-font-color-secondary: var(--color-muted);
+  --ifm-link-color: var(--color-accent-text);
+  --ifm-link-hover-color: var(--color-accent-text);
+  --ifm-menu-color: var(--color-ink-2);
+  --ifm-menu-color-active: var(--color-accent-text);
+  --ifm-menu-color-background-active: var(--color-accent-soft);
+  --ifm-menu-color-background-hover: var(--color-paper-3);
+  --ifm-navbar-background-color: var(--color-paper);
+  --ifm-navbar-link-color: var(--color-ink-2);
+  --ifm-navbar-link-hover-color: var(--color-ink);
+  --ifm-footer-background-color: var(--color-paper-2);
+  --ifm-toc-border-color: var(--color-rule);
+  --ifm-hr-background-color: var(--color-rule);
+  --ifm-table-border-color: var(--color-rule);
+  --ifm-table-stripe-background: var(--color-paper-2);
+  --ifm-table-head-background: var(--color-paper-2);
+  --ifm-tabs-color-active: var(--color-ink);
+  --ifm-tabs-color-active-border: var(--color-accent);
+  --ifm-card-background-color: var(--color-paper);
+  --ifm-dropdown-background-color: var(--color-paper);
+  --ifm-dropdown-link-color: var(--color-ink-2);
+  --ifm-dropdown-hover-background-color: var(--color-paper-3);
+  --ifm-breadcrumb-item-background-active: var(--color-accent-soft);
+  --ifm-color-content: var(--color-ink);
+  --ifm-color-content-secondary: var(--color-ink-2);
+
+  /* Warm the emphasis scale Infima uses for borders, hovers and muted text */
+  --ifm-color-emphasis-0: var(--color-paper);
+  --ifm-color-emphasis-100: var(--color-paper-2);
+  --ifm-color-emphasis-200: var(--color-rule);
+  --ifm-color-emphasis-300: color-mix(in oklab, var(--color-ink) 18%, var(--color-paper));
+  --ifm-color-emphasis-400: color-mix(in oklab, var(--color-ink) 32%, var(--color-paper));
+  --ifm-color-emphasis-500: color-mix(in oklab, var(--color-ink) 48%, var(--color-paper));
+  --ifm-color-emphasis-600: var(--color-muted);
+  --ifm-color-emphasis-700: var(--color-ink-2);
+  --ifm-color-emphasis-800: color-mix(in oklab, var(--color-ink) 88%, var(--color-paper));
+  --ifm-color-emphasis-900: var(--color-ink);
+  --ifm-color-emphasis-1000: var(--color-ink);
+
+  /* Type: the website's faces and heading voice */
+  --ifm-font-family-base: var(--font-body);
+  --ifm-heading-font-family: var(--font-display);
+  --ifm-font-family-monospace: var(--font-mono);
+  --ifm-heading-font-weight: var(--display-weight);
+  --ifm-font-weight-bold: 600;
+  --ifm-code-font-size: 90%;
+  --ifm-code-background: var(--color-paper-3);
+  --ifm-code-border-radius: 4px;
+  --ifm-global-radius: var(--radius-card);
+  --ifm-button-border-radius: var(--radius-control);
+  --ifm-transition-fast: var(--dur-micro);
+  --ifm-transition-timing-default: var(--ease-out);
+  --docusaurus-highlighted-code-line-bg: color-mix(in oklab, var(--color-accent) 14%, transparent);
+
+  /* Legacy names the pages still read */
+  --sl-color-accent: var(--color-accent);
+  --sl-color-accent-light: var(--color-accent-soft);
+  --sl-color-surface: var(--color-paper-2);
+  --sl-color-border: var(--color-rule);
+  --sl-color-text-muted: var(--color-muted);
+  --sl-color-primary: var(--color-accent);
+  --rouge: var(--color-accent);
+  --bleu-nuit: var(--color-ink);
 }
 
+/* Inside the QoD docs the product lane is orange, as on starlake.ai */
+html.plugin-id-qod {
+  --color-accent: var(--color-qod);
+  --color-accent-text: var(--color-qod-text);
+  --color-accent-soft: var(--color-qod-soft);
+  --color-accent-bright: var(--color-qod-bright);
+  --color-on-accent: var(--color-qod-on);
+  --color-focus: var(--color-qod-text);
+}
 
+body {
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  font-optical-sizing: auto;
+}
 
+h1, h2, h3, h4 {
+  letter-spacing: var(--tracking-display);
+}
+
+/* ==========================================================
+   Navbar and search
+   ========================================================== */
+.navbar {
+  box-shadow: none;
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+}
+
+.navbar__brand {
+  font-weight: 600;
+}
+
+.navbar__link,
+.menu__link,
+.table-of-contents__link,
+.pagination-nav__link,
+.breadcrumbs__link {
+  transition: color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out);
+}
+
+/* The search field: its edge must read against the navbar (3:1 or better) */
+.navbar__search-input,
+.navbar .navbar__search input {
+  background-color: var(--color-paper);
+  border: var(--rule-hair) solid var(--color-muted);
+  color: var(--color-ink);
+}
+
+.navbar__search {
+  position: relative;
+}
+
+/* Infima paints the magnifier as a currentColor data URI, which renders black
+   in both modes; draw it as a mask filled with a token instead. */
+.navbar__search-input,
+.navbar .navbar__search input {
+  background-image: none !important;
+}
+
+.navbar__search::before {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  transform: translateY(-50%);
+  background-color: var(--color-muted);
+  -webkit-mask: var(--ifm-navbar-search-input-icon) no-repeat center / contain;
+  mask: var(--ifm-navbar-search-input-icon) no-repeat center / contain;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.navbar__search-input::placeholder,
+.navbar .navbar__search input::placeholder {
+  color: var(--color-muted);
+}
+
+.navbar__search-input:focus-visible,
+.navbar .navbar__search input:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* The skip link stays on one line at 320px */
+[class*="skipToContent"] {
+  white-space: nowrap;
+}
+
+/* ==========================================================
+   Articles
+   ========================================================== */
+/* Prose keeps a readable measure; tables, code and diagrams keep the column */
+.markdown > p,
+.markdown > ul,
+.markdown > ol,
+.markdown > blockquote,
+.markdown > .admonition,
+.markdown header > p {
+  max-width: 72ch;
+}
+
+.markdown h1 {
+  text-wrap: pretty;
+  font-size: clamp(2rem, 1.25rem + 2.5vw, 2.75rem);
+  line-height: 1.1;
+}
+
+.markdown h2 {
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 1.875rem);
+  line-height: 1.2;
+}
+
+.markdown h3 {
+  font-size: clamp(1.1875rem, 1rem + 0.5vw, 1.375rem);
+  line-height: 1.3;
+}
+
+.markdown code {
+  border: 0;
+}
+
+.markdown a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+  text-decoration-color: color-mix(in oklab, currentColor 40%, transparent);
+}
+
+.markdown a:hover {
+  text-decoration-color: currentColor;
+}
+
+/* Code blocks: one surface for both modes, in the warm neutrals */
+.theme-code-block {
+  --prism-background-color: var(--color-paper-2);
+  border: var(--rule-hair) solid var(--color-rule);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .theme-code-block {
+  --prism-background-color: var(--color-terminal-2);
+}
+
+/* Syntax colours, both modes: Prism's themes set comments at 2.7:1 on paper
+   and VS Code's blues in dark. Two tones of the product lane plus the inks. */
+.prism-code .token.comment,
+.prism-code .token.prolog,
+.prism-code .token.doctype,
+.prism-code .token.cdata {
+  color: var(--color-muted) !important;
+}
+
+.prism-code .token.tag,
+.prism-code .token.attr-name,
+.prism-code .token.key,
+.prism-code .token.atrule,
+.prism-code .token.property,
+.prism-code .token.selector,
+.prism-code .token.number,
+.prism-code .token.boolean,
+.prism-code .token.constant {
+  color: var(--color-accent-text) !important;
+}
+
+.prism-code .token.string,
+.prism-code .token.attr-value,
+.prism-code .token.char,
+.prism-code .token.regex {
+  color: var(--color-ink-2) !important;
+}
+
+.prism-code .token.keyword,
+.prism-code .token.builtin,
+.prism-code .token.function,
+.prism-code .token.class-name,
+.prism-code .token.punctuation,
+.prism-code .token.operator,
+.prism-code .token.plain {
+  color: var(--color-ink) !important;
+}
+
+.prism-code .token.keyword {
+  font-weight: 500;
+}
+
+.theme-admonition {
+  border-radius: var(--radius-card);
+}
+
+.breadcrumbs__item--active .breadcrumbs__link {
+  color: var(--ifm-link-color);
+}
+
+/* ==========================================================
+   Footer
+   ========================================================== */
 .footer {
-  background-color: #f8f9fa !important;
-  text-align: center;
-  padding: 3rem 0;
-  padding-bottom: 0px;
-  margin-top: 5rem;
-}
-
-.footer-section {
-  margin-top: 1.8rem;
+  background-color: var(--color-paper-2);
+  border-top: var(--rule-hair) solid var(--color-rule);
+  color: var(--color-ink-2);
+  padding: var(--space-2xl) 0 0;
+  margin-top: var(--space-3xl);
 }
 
 .footer-container {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  padding: 0 2rem;
+  padding: 0 var(--space-xl);
+  max-width: var(--container);
+  margin-inline: auto;
 }
 
 .footer-col {
   flex: 1 1 200px;
-  margin: 1rem;
+  margin: var(--space-md);
 }
 
 .footer-title {
-  text-transform: uppercase;
-  margin-bottom: 1rem;
-  font-weight: 700 !important;
-  font-size: 1rem;
+  margin-bottom: var(--space-md);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+}
+
+.footer-col p {
+  margin-bottom: var(--space-xs);
 }
 
 .footer-description {
-  color: #6c757d;
+  color: var(--color-muted);
 }
 
 .footer-link {
-  color: #000;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--color-ink-2);
   text-decoration: none;
-  margin-right: 10px;
+  margin-right: var(--space-sm);
+  transition: color var(--dur-micro) var(--ease-out);
 }
 
 .footer-link:hover {
+  color: var(--color-ink);
   text-decoration: underline;
 }
 
-.footer-social-icons {
-  font-size: 1.25rem;
-  margin-top: 0.5rem;
+.footer-link:active {
+  transform: translateY(1px);
 }
 
-.social-icon {
-  margin-right: 0.5rem;
-  cursor: pointer;
+.footer-social-icons {
+  display: flex;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+.footer-social-icons .footer-link {
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+  margin-right: 0;
 }
 
 .footer-bottom {
-  padding: 1rem 0;
+  padding: var(--space-lg) var(--space-xl);
+  margin-top: var(--space-xl);
+  border-top: var(--rule-hair) solid var(--color-rule);
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  text-align: center;
 }
 
 .footer-link-bold {
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .tl {
@@ -114,134 +385,104 @@
 }
 
 /* ==========================================================
-   Starlake Skills Homepage Styles
+   Landing-page pieces shared by /, /starflow
    ========================================================== */
 
-:root {
-  --sl-color-accent: #2e8555;
-  --sl-color-accent-light: #e8f5e0;
-  --sl-color-surface: #f8faf7;
-  --sl-color-border: #e2e8de;
-  --sl-color-text-muted: #5a6a52;
-}
-
-[data-theme='dark'] {
-  --sl-color-surface: #22223a;
-  --sl-color-border: #33334a;
-  --sl-color-text-muted: #a0a8b8;
-  --sl-color-accent-light: #2a3a22;
-}
-
-/* Hero Section */
-.hero--starlake {
-  background: linear-gradient(135deg, var(--sl-color-surface) 0%, #f0f7ec 50%, #e8f0e4 100%);
-  padding: 4rem 2rem;
-  text-align: center;
-}
-
-[data-theme='dark'] .hero--starlake {
-  background: linear-gradient(135deg, #1a1a2e 0%, #1e2a1a 50%, #1a1a2e 100%);
-}
-
-.hero--starlake .hero__title {
-  font-size: 3rem;
-  font-weight: 800;
-  color: var(--ifm-heading-color);
-  margin-bottom: 0.5rem;
-}
-
-.hero--starlake .hero__subtitle {
-  font-size: 1.4rem;
-  color: var(--sl-color-text-muted);
-  max-width: 700px;
-  margin: 0 auto 2rem;
-  line-height: 1.6;
-}
-
-/* CTA Buttons */
-.hero__buttons {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 2rem;
-}
-
+/* Buttons: one primary style, one secondary, 44 to 52px tall */
 .button--starlake {
-  border-radius: 8px;
-  padding: 0.75rem 2rem;
-  font-weight: 600;
-  font-size: 1rem;
-  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: var(--radius-control);
+  padding: var(--space-sm) var(--space-lg);
+  font-weight: 500;
+  font-size: var(--text-md);
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
+}
+
+.button--starlake:hover {
+  text-decoration: none;
+}
+
+.button--starlake:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  transition: none;
+}
+
+.button--starlake:active {
+  transform: translateY(1px);
 }
 
 .button--starlake-primary {
-  background-color: var(--sl-color-accent);
-  color: #ffffff;
-  border: 2px solid var(--sl-color-accent);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  border: var(--rule-hair) solid var(--color-accent);
 }
 
 .button--starlake-primary:hover {
-  background-color: var(--ifm-color-primary-dark);
-  border-color: var(--ifm-color-primary-dark);
-  color: #ffffff;
-  text-decoration: none;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(46, 133, 85, 0.3);
+  background-color: var(--color-accent-text);
+  border-color: var(--color-accent-text);
+  color: var(--color-on-accent);
+}
+
+[data-theme="dark"] .button--starlake-primary:hover {
+  background-color: var(--color-accent-bright);
+  border-color: var(--color-accent-bright);
 }
 
 .button--starlake-secondary {
   background-color: transparent;
-  color: var(--sl-color-accent);
-  border: 2px solid var(--sl-color-accent);
+  color: var(--color-ink);
+  border: var(--rule-hair) solid var(--color-rule-strong);
 }
 
 .button--starlake-secondary:hover {
-  background-color: var(--sl-color-accent-light);
-  color: var(--sl-color-accent);
-  text-decoration: none;
-  transform: translateY(-1px);
+  background-color: var(--color-paper-3);
+  color: var(--color-ink);
 }
 
-/* Install Command */
 .install-command {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  background: var(--ifm-background-color);
-  border: 1px solid var(--sl-color-border);
-  border-radius: 8px;
-  padding: 0.75rem 1.5rem;
-  font-family: var(--ifm-font-family-monospace);
-  font-size: 0.95rem;
-  margin-top: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  gap: var(--space-sm);
+  background: var(--color-paper);
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  padding: var(--space-sm) var(--space-lg);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  margin-top: var(--space-md);
 }
 
 .install-command code {
   background: none;
   border: none;
   padding: 0;
-  color: var(--ifm-font-color-base);
+  color: var(--color-ink);
 }
 
-/* Feature Grid */
+/* Sections */
 .features-section {
-  padding: 4rem 2rem;
+  padding: var(--space-3xl) var(--space-xl);
 }
 
 .features-section__title {
   text-align: center;
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+  font-size: var(--text-section);
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
 }
 
 .features-section__subtitle {
   text-align: center;
-  color: var(--sl-color-text-muted);
-  font-size: 1.1rem;
-  margin-bottom: 3rem;
+  color: var(--color-muted);
+  font-size: var(--text-lead);
+  margin-bottom: var(--space-2xl);
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
@@ -249,93 +490,120 @@
 
 .feature-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: var(--space-lg);
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .feature-card {
-  background: var(--ifm-background-color);
-  border: 1px solid var(--sl-color-border);
-  border-radius: 12px;
-  padding: 1.75rem;
-  transition: all 0.2s ease;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-sm);
+  align-items: baseline;
+  color: var(--color-ink);
+  background: var(--color-paper);
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
+  transition: border-color var(--dur-micro) var(--ease-out);
 }
 
+a:hover > .feature-card,
 .feature-card:hover {
-  border-color: var(--sl-color-accent);
-  box-shadow: 0 4px 16px rgba(46, 133, 85, 0.1);
-  transform: translateY(-2px);
+  border-color: var(--color-rule-strong);
 }
 
+a:has(> .feature-card):focus-visible,
+a:has(> .skill-category-card):focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 4px;
+  border-radius: var(--radius-card);
+}
+
+a:has(> .feature-card):active,
+a:has(> .skill-category-card):active {
+  transform: translateY(1px);
+}
+
+/* The icon sits inline-start of the title, in the accent; the rest spans both columns */
 .feature-card__icon {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  display: block;
+  display: inline-flex;
+  align-self: center;
+  color: var(--color-accent);
+  font-size: 1.25rem;
+}
+
+.feature-card > :not(.feature-card__icon):not(.feature-card__title) {
+  grid-column: 1 / -1;
 }
 
 .feature-card__title {
-  font-size: 1.15rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  color: var(--ifm-heading-color);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+  color: var(--color-ink);
 }
 
 .feature-card__description {
-  color: var(--sl-color-text-muted);
-  font-size: 0.95rem;
+  color: var(--color-muted);
+  font-size: var(--text-md);
   line-height: 1.6;
   margin: 0;
 }
 
-/* Skills Grid */
+/* Skills */
 .skills-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+  gap: var(--space-lg);
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .skill-category-card {
-  background: var(--ifm-background-color);
-  border: 1px solid var(--sl-color-border);
-  border-radius: 12px;
-  padding: 1.75rem;
-  transition: all 0.2s ease;
+  height: 100%;
+  color: var(--color-ink);
+  background: var(--color-paper);
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
+  transition: border-color var(--dur-micro) var(--ease-out);
 }
 
+a:hover > .skill-category-card,
 .skill-category-card:hover {
-  border-color: var(--sl-color-accent);
-  box-shadow: 0 4px 16px rgba(46, 133, 85, 0.1);
+  border-color: var(--color-rule-strong);
 }
 
 .skill-category-card__header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
 }
 
 .skill-category-card__icon {
-  font-size: 1.5rem;
+  display: inline-flex;
+  color: var(--color-accent);
+  font-size: 1.25rem;
 }
 
 .skill-category-card__title {
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-size: var(--text-lg);
+  font-weight: 600;
   margin: 0;
 }
 
 .skill-category-card__count {
-  background: var(--sl-color-accent-light);
-  color: var(--sl-color-accent);
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.15rem 0.6rem;
-  border-radius: 20px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-text);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  padding: var(--space-3xs) var(--space-xs);
+  border-radius: var(--radius-pill);
   margin-left: auto;
+  font-variant-numeric: tabular-nums;
 }
 
 .skill-category-card__list {
@@ -345,46 +613,33 @@
 }
 
 .skill-category-card__list li {
-  padding: 0.3rem 0;
-  font-size: 0.9rem;
-  color: var(--sl-color-text-muted);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  padding: var(--space-2xs) 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-2);
+  font-family: var(--font-mono);
 }
 
-.skill-category-card__list li::before {
-  content: '>';
-  color: var(--sl-color-accent);
-  font-family: var(--ifm-font-family-monospace);
-  font-weight: 700;
-  font-size: 0.8rem;
-}
-
-/* Demo Section */
+/* Demo */
 .demo-section {
-  background: var(--sl-color-surface);
-  padding: 4rem 2rem;
-}
-
-[data-theme='dark'] .demo-section {
-  background: var(--sl-color-surface);
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  padding: var(--space-3xl) var(--space-xl);
 }
 
 .demo-section pre {
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   max-width: 800px;
   margin: 0 auto;
 }
 
-/* Stats Bar */
+/* Stats */
 .stats-bar {
   display: flex;
   justify-content: center;
-  gap: 3rem;
+  gap: var(--space-2xl);
   flex-wrap: wrap;
-  padding: 2rem;
-  margin: 2rem auto;
+  padding: var(--space-xl);
+  margin: var(--space-xl) auto;
   max-width: 800px;
 }
 
@@ -393,107 +648,88 @@
 }
 
 .stat-item__number {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: var(--sl-color-accent);
+  font-size: var(--text-3xl);
+  font-weight: 600;
+  color: var(--color-accent-text);
   display: block;
   line-height: 1.2;
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-item__label {
-  font-size: 0.9rem;
-  color: var(--sl-color-text-muted);
-  margin-top: 0.25rem;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  margin-top: var(--space-2xs);
 }
 
-/* Supported Platforms */
+/* Platforms */
 .platforms-grid {
   display: flex;
   justify-content: center;
-  gap: 2rem;
+  gap: var(--space-xl);
   flex-wrap: wrap;
-  padding: 1rem 0;
+  padding: var(--space-md) 0;
 }
 
 .platform-badge {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: var(--ifm-background-color);
-  border: 1px solid var(--sl-color-border);
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  gap: var(--space-xs);
+  background: var(--color-paper);
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--text-sm);
   font-weight: 500;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
-  .hero--starlake .hero__title {
-    font-size: 2rem;
-  }
-
-  .hero--starlake .hero__subtitle {
-    font-size: 1.1rem;
-  }
-
-  .feature-grid,
-  .skills-grid {
-    grid-template-columns: 1fr;
+  .features-section,
+  .demo-section {
+    padding: var(--space-2xl) var(--space-md);
   }
 
   .stats-bar {
-    gap: 1.5rem;
-  }
-
-  .stat-item__number {
-    font-size: 2rem;
+    gap: var(--space-lg);
   }
 }
-/* ---------------------------------------------------------------------------
- * Tabs (<Tabs>/<TabItem> in MDX)
- * Light grey panel so the tabbed block stands out from the page background.
- * ------------------------------------------------------------------------ */
-:root {
-  --sl-tabs-bg: #f5f6f8;
-  --sl-tabs-border: var(--ifm-color-emphasis-200);
-  --sl-tabs-active-bg: #ffffff;
-}
 
-[data-theme="dark"] {
-  --sl-tabs-bg: #242526;
-  --sl-tabs-border: var(--ifm-color-emphasis-300);
-  --sl-tabs-active-bg: #2e2e30;
-}
-
+/* ==========================================================
+   Tabs (<Tabs>/<TabItem> in MDX)
+   ========================================================== */
 .markdown .tabs-container {
-  background-color: var(--sl-tabs-bg);
-  border: 1px solid var(--sl-tabs-border);
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
+  background-color: var(--color-paper-2);
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  margin-bottom: var(--space-lg);
   overflow: hidden;
 }
 
 .markdown .tabs-container > .tabs {
-  border-bottom: 1px solid var(--sl-tabs-border);
-  padding: 0.35rem 0.5rem 0;
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+  padding: var(--space-xs) var(--space-xs) 0;
   margin-bottom: 0;
 }
 
 .markdown .tabs-container > .tabs .tabs__item {
-  border-radius: 6px 6px 0 0;
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
   border-bottom: 2px solid transparent;
 }
 
 .markdown .tabs-container > .tabs .tabs__item--active {
-  background-color: var(--sl-tabs-active-bg);
+  background-color: var(--color-paper);
   border-bottom-color: var(--ifm-tabs-color-active-border);
+}
+
+.tabs__item:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
 }
 
 /* Tab panel wrapper (Docusaurus renders .margin-top--md around the panels) */
 .markdown .tabs-container > .margin-top--md {
   margin-top: 0 !important;
-  padding: 1rem 1.25rem;
+  padding: var(--space-md) var(--space-lg);
 }
 
 .markdown .tabs-container [role="tabpanel"] > :last-child {

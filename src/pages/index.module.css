@@ -1,97 +1,127 @@
+/* Hallmark · shape: kept · genre: modern-minimal · theme: brand · redesign: restyle · system: src/css/tokens.css */
 .hero {
-  padding: 4.5rem 0 4rem;
-  background: linear-gradient(180deg, var(--sl-color-surface) 0%, #ffffff 100%);
-  min-height: calc(100vh - var(--ifm-navbar-height));
+  padding: var(--space-3xl) 0 var(--space-3xl);
+  background: var(--color-paper);
+  min-height: calc(100svh - var(--ifm-navbar-height));
 }
 
+/* The page label: body face, a step smaller, sentence case */
 .eyebrow {
   display: block;
   text-align: center;
-  font-family: var(--ifm-font-family-monospace);
-  font-size: 0.8rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--sl-color-accent);
-  margin-bottom: 1rem;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-accent-text);
+  margin-bottom: var(--space-md);
 }
 
 .title {
   text-align: center;
-  font-size: 2.6rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  margin-bottom: 0.9rem;
+  font-size: var(--text-display);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: var(--tracking-display);
+  margin-bottom: var(--space-md);
 }
 
 .lede {
   text-align: center;
   max-width: 44rem;
-  margin: 0 auto 3rem;
-  font-size: 1.1rem;
-  line-height: 1.6;
-  color: var(--sl-color-text-muted);
+  margin: 0 auto var(--space-2xl);
+  font-size: var(--text-lead);
+  line-height: 1.55;
+  color: var(--color-muted);
 }
 
 .cardGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.5rem;
+  gap: var(--space-lg);
   max-width: 62rem;
   margin: 0 auto;
 }
 
+/* Each product keeps its lane colour, as on starlake.ai: teal for Starflow, orange for QoD */
 .card {
   display: flex;
   flex-direction: column;
-  padding: 2rem 1.8rem;
-  border: 1px solid var(--sl-color-border);
-  border-top-width: 3px;
-  border-radius: 12px;
-  background: #ffffff;
+  padding: var(--space-xl) var(--space-xl) var(--space-lg);
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  background: var(--color-paper);
 }
 
 .cardStarflow {
-  border-top-color: var(--sl-color-accent);
+  --lane: var(--color-accent);
+  --lane-ink: var(--color-accent-text);
 }
 
 .cardQod {
-  border-top-color: #b98c00;
+  --lane: var(--color-qod);
+  --lane-ink: var(--color-qod-text);
 }
 
 .cardTagline {
-  font-family: var(--ifm-font-family-monospace);
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--sl-color-text-muted);
-  margin-bottom: 0.4rem;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--lane-ink);
+  margin-bottom: var(--space-xs);
 }
 
 .cardName {
-  font-size: 1.6rem;
-  margin-bottom: 0.7rem;
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
 }
 
 .cardDescription {
-  font-size: 0.95rem;
+  font-size: var(--text-md);
   line-height: 1.6;
-  color: var(--sl-color-text-muted);
+  color: var(--color-muted);
   flex-grow: 1;
-  margin-bottom: 1.4rem;
+  margin-bottom: var(--space-lg);
 }
 
 .cardActions {
   display: flex;
-  gap: 0.7rem;
+  gap: var(--space-sm);
   flex-wrap: wrap;
+}
+
+/* The QoD card's primary action takes the QoD lane */
+.cardQod :global(.button--starlake-primary) {
+  background-color: var(--color-qod);
+  border-color: var(--color-qod);
+  color: var(--color-qod-on);
+}
+
+.cardQod :global(.button--starlake-primary:hover) {
+  background-color: var(--color-qod-bright);
+  border-color: var(--color-qod-bright);
+  color: var(--color-qod-on);
+}
+
+.cardActions a:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.cardActions a:active {
+  transform: translateY(1px);
 }
 
 @media (max-width: 900px) {
   .cardGrid {
     grid-template-columns: minmax(0, 1fr);
   }
+}
 
-  .title {
-    font-size: 2rem;
+@media (max-width: 400px) {
+  .card {
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  .cardActions :global(.button--starlake) {
+    white-space: normal;
   }
 }

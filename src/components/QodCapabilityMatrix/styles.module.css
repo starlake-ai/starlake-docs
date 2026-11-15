@@ -1,56 +1,57 @@
-/* QoD capability matrix. Brand: navy #0E1B26, green #23B26D, cream #FAFAF7.
-   Green is a fill and border colour only; small green text would not clear
-   4.5:1 on white, so text uses --green-ink. Dark mode rides the site theme
-   ([data-theme='dark']) rather than prefers-color-scheme, because the site
-   pins the light theme. */
+/* Hallmark · shape: kept · genre: modern-minimal · theme: brand · redesign: restyle · system: src/css/tokens.css */
+/* QoD capability matrix. Rides the brand tokens in src/css/tokens.css, which
+   flip for dark mode under [data-theme='dark'] on their own. The QoD lane colour
+   marks the checks, through --color-qod-text, the text-safe tone on paper. */
 .wrap {
   /* The matrix sits in a column flex container on Docusaurus pages. Without a
      definite width the box is sized to its min-content, and the table pushes
      the whole page sideways instead of scrolling inside its own container. */
   width: 100%;
   min-width: 0;
-  --green: #23b26d;
-  --green-ink: #0f7a4a;
-  --line: var(--ifm-color-emphasis-300);
-  --surface: var(--ifm-background-surface-color, #fff);
-}
-[data-theme='dark'] .wrap {
-  --green: #2fc47c;
-  --green-ink: #2fc47c;
-  --surface: var(--ifm-background-surface-color);
 }
 
 .matrixTitle {
-  font-size: 1.4rem;
-  letter-spacing: -0.01em;
-  margin: 0 0 1rem;
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: var(--tracking-display);
+  color: var(--color-ink);
+  margin: 0 0 var(--space-md);
 }
 .scroller {
   overflow-x: auto;
   max-width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-card);
+  background: var(--color-paper);
 }
 .scroller:focus-visible {
-  outline: 2px solid var(--green);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 .table {
   border-collapse: collapse;
   width: 100%;
   min-width: 640px;
-  font-size: 0.9rem;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
   margin: 0;
   display: table;
+}
+.table tr {
+  border: 0;
+  background: transparent;
 }
 .table th,
 .table td {
   border: 0;
-  border-bottom: 1px solid var(--line);
-  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid var(--color-rule);
+  padding: var(--space-xs) var(--space-sm);
   text-align: center;
   vertical-align: middle;
-  background: var(--surface);
+  color: var(--color-ink);
+  background: var(--color-paper);
 }
 .table tr:last-child th,
 .table tr:last-child td {
@@ -65,7 +66,7 @@
   text-align: left;
   font-weight: 500;
   min-width: 17rem;
-  border-right: 1px solid var(--line);
+  border-right: 1px solid var(--color-rule);
 }
 .table .setupHead {
   font-weight: 600;
@@ -73,20 +74,25 @@
 }
 .table .groupCell {
   text-align: left;
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ifm-color-emphasis-700);
-  background: var(--ifm-color-emphasis-100);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-ink-2);
+  background: var(--color-paper-2);
   position: sticky;
   left: 0;
 }
-.yes {
-  color: var(--green-ink);
+.table .yes {
+  color: var(--color-qod-text);
   font-weight: 700;
 }
 .caption {
-  margin: 0.8rem 0 0;
-  font-size: 0.83rem;
-  color: var(--ifm-color-emphasis-700);
+  margin: var(--space-sm) 0 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+/* The scroller is the only focusable piece; pressing it changes nothing */
+.scroller:active {
+  cursor: grabbing;
 }

@@ -1,6 +1,9 @@
+/* Hallmark · shape: kept · genre: modern-minimal · theme: brand · redesign: restyle · system: src/css/tokens.css */
 .main {
-  min-height: 100vh;
-  background-color: #ffffff;
+  min-height: 100dvh;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
 }
 
 .container {
@@ -14,8 +17,9 @@
 .sidebar {
   width: 280px;
   flex-shrink: 0;
-  background-color: #f8f9fa;
-  border-radius: 8px;
+  background-color: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-card);
   padding: 1.5rem;
   height: fit-content;
   position: sticky;
@@ -25,10 +29,10 @@
 .filterTitle {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #000;
+  color: var(--color-ink);
   margin: 0 0 1.5rem 0;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--ifm-color-primary);
+  border-bottom: 2px solid var(--color-accent);
 }
 
 .filterSection {
@@ -38,7 +42,7 @@
 .filterSectionTitle {
   font-size: 1rem;
   font-weight: 500;
-  color: #333;
+  color: var(--color-ink);
   margin: 0 0 1rem 0;
 }
 
@@ -55,19 +59,24 @@
   gap: 0.5rem;
   cursor: pointer;
   font-size: 0.9rem;
-  color: #555;
-  transition: color 0.2s ease;
+  color: var(--color-ink-2);
+  transition: color var(--dur-micro) var(--ease-out);
 }
 
 .filterOption:hover {
-  color: var(--ifm-color-primary);
+  color: var(--color-accent-text);
 }
 
 .checkbox {
   width: 16px;
   height: 16px;
-  accent-color: var(--ifm-color-primary);
+  accent-color: var(--color-accent);
   cursor: pointer;
+}
+
+.checkbox:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .checkboxLabel {
@@ -77,22 +86,34 @@
 .selectAllButton,
 .clearAllButton {
   background: none;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius-control);
   padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  color: #666;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-ink-2);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
   width: 100%;
   margin-bottom: 0.5rem;
 }
 
 .selectAllButton:hover,
 .clearAllButton:hover {
-  background-color: var(--ifm-color-primary);
-  color: white;
-  border-color: var(--ifm-color-primary);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  border-color: var(--color-accent);
+}
+
+.selectAllButton:active,
+.clearAllButton:active {
+  transform: translateY(1px);
+}
+
+.selectAllButton:focus-visible,
+.clearAllButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .content {
@@ -107,10 +128,10 @@
 .sectionTitle {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #000;
+  color: var(--color-ink);
   margin: 0 0 1.5rem 0;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-rule);
 }
 
 .cardGrid {
@@ -120,11 +141,11 @@
 }
 
 .card {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-card);
   padding: 1.5rem;
-  transition: all 0.2s ease;
+  transition: border-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -132,9 +153,16 @@
 }
 
 .card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: var(--ifm-color-primary);
-  transform: translateY(-2px);
+  border-color: var(--color-rule-strong);
+}
+
+.card:active {
+  transform: translateY(1px);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .cardHeader {
@@ -163,22 +191,31 @@
   border: none;
   cursor: pointer;
   padding: 0.25rem;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  border-radius: var(--radius-control);
+  transition: background-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
 }
 
 .favoriteButton:hover {
-  background-color: #f0f0f0;
+  background-color: var(--color-paper-3);
+}
+
+.favoriteButton:active {
+  transform: translateY(1px);
+}
+
+.favoriteButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .favoriteIcon {
   font-size: 1.25rem;
-  color: #ffd700;
-  transition: color 0.2s ease;
+  color: var(--color-accent);
+  transition: color var(--dur-micro) var(--ease-out);
 }
 
 .favoriteButton:hover .favoriteIcon {
-  color: #ffed4e;
+  color: var(--color-accent-bright);
 }
 
 .cardContent {
@@ -189,21 +226,21 @@
 .cardTitle {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #000;
+  color: var(--color-ink);
   margin: 0 0 0.5rem 0;
   line-height: 1.3;
 }
 
 .cardDescription {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--color-ink-2);
   margin: 0 0 0.75rem 0;
   line-height: 1.4;
 }
 
 .cardSummary {
   font-size: 0.85rem;
-  color: #888;
+  color: var(--color-muted);
   margin: 0;
   line-height: 1.4;
 }
@@ -214,21 +251,30 @@
 }
 
 .startButton {
-  background-color: var(--ifm-color-primary);
-  color: white;
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
   border: none;
-  border-radius: 24px;
+  border-radius: var(--radius-control);
+  min-height: 44px;
   padding: 0.75rem 1.5rem;
-  font-size: .8rem;
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  text-transform: uppercase;
+  transition: background-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
 }
 
 .startButton:hover {
-  background-color: var(--ifm-color-primary-dark);
-  transform: translateY(-1px);
+  background-color: var(--color-accent-text);
+}
+
+.startButton:active {
+  transform: translateY(1px);
+}
+
+.startButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 @media (max-width: 768px) {
@@ -289,7 +335,7 @@
   align-items: flex-start;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-rule);
 }
 
 .guideHeaderLeft {
@@ -301,19 +347,29 @@
 .backLink {
   background: none;
   border: none;
-  color: var(--ifm-color-primary);
+  color: var(--color-accent-text);
   text-decoration: none;
+  font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
   text-align: left;
   padding: 0;
 }
 
 .backLink:hover {
-  color: var(--ifm-color-primary-dark);
+  color: var(--color-ink);
   text-decoration: underline;
+}
+
+.backLink:active {
+  transform: translateY(1px);
+}
+
+.backLink:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .tags {
@@ -323,10 +379,10 @@
 }
 
 .tag {
-  background-color: #f0f0f0;
-  color: #666;
+  background-color: var(--color-paper-3);
+  color: var(--color-ink-2);
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   font-size: 0.8rem;
   font-weight: 500;
 }
@@ -340,8 +396,9 @@
 .guideSidebar {
   width: 300px;
   flex-shrink: 0;
-  background-color: #f8f9fa;
-  border-radius: 8px;
+  background-color: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-card);
   padding: 1.5rem;
   height: fit-content;
   position: sticky;
@@ -351,7 +408,7 @@
 .guideTitle {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #000;
+  color: var(--color-ink);
   margin: 0 0 1.5rem 0;
   line-height: 1.3;
 }
@@ -369,22 +426,32 @@
   padding: 0.75rem 1rem;
   background: none;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-control);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
   text-align: left;
-  color: #666;
+  color: var(--color-ink-2);
+  font-family: var(--font-body);
   font-size: 0.9rem;
 }
 
 .tab:hover {
-  background-color: #e9ecef;
-  color: #333;
+  background-color: var(--color-paper-3);
+  color: var(--color-ink);
+}
+
+.tab:active {
+  transform: translateY(1px);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .tab.activeTab {
-  background-color: var(--ifm-color-primary);
-  color: white;
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .tabNumber {
@@ -393,14 +460,14 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--color-paper-3);
   border-radius: 50%;
   font-size: 0.8rem;
   font-weight: 600;
 }
 
 .activeTab .tabNumber {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: color-mix(in oklab, var(--color-on-accent) 24%, transparent);
 }
 
 .tabLabel {
@@ -419,21 +486,21 @@
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-rule);
 }
 
 .stepTitle {
   font-size: 2rem;
   font-weight: 600;
-  color: #000;
+  color: var(--color-ink);
   margin: 0;
 }
 
 .stepIndicator {
-  background-color: #f0f0f0;
-  color: #666;
+  background-color: var(--color-paper-3);
+  color: var(--color-ink-2);
   padding: 0.5rem 1rem;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   font-size: 0.9rem;
   font-weight: 500;
 }
@@ -441,7 +508,7 @@
 .stepBody {
   margin-bottom: 2rem;
   line-height: 1.6;
-  color: #333;
+  color: var(--color-ink);
 }
 
 .stepBody h1,
@@ -450,7 +517,7 @@
 .stepBody h4,
 .stepBody h5,
 .stepBody h6 {
-  color: #000;
+  color: var(--color-ink);
   margin-top: 2rem;
   margin-bottom: 1rem;
 }
@@ -482,17 +549,18 @@
 }
 
 .stepBody code {
-  background-color: #f0f0f0;
+  background-color: var(--color-paper-3);
   padding: 0.2rem 0.4rem;
-  border-radius: 4px;
+  border-radius: var(--radius-control);
+  font-family: var(--font-mono);
   font-size: 0.9rem;
-  color: #d63384;
+  color: var(--color-accent-text);
 }
 
 .stepBody pre {
-  background-color: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
+  background-color: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-control);
   padding: 1rem;
   overflow-x: auto;
   margin: 1rem 0;
@@ -501,14 +569,14 @@
 .stepBody pre code {
   background: none;
   padding: 0;
-  color: #333;
+  color: var(--color-ink);
 }
 
 .stepBody blockquote {
-  border-left: 4px solid var(--ifm-color-primary);
+  border-left: 4px solid var(--color-accent);
   padding-left: 1rem;
   margin: 1rem 0;
-  color: #666;
+  color: var(--color-ink-2);
   font-style: italic;
 }
 
@@ -517,7 +585,7 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 2rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--color-rule);
 }
 
 .navButton {
@@ -525,20 +593,30 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: white;
-  color: #666;
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-paper);
+  color: var(--color-ink-2);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 500;
 }
 
 .navButton:hover:not(:disabled) {
-  background-color: var(--ifm-color-primary);
-  color: white;
-  border-color: var(--ifm-color-primary);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  border-color: var(--color-accent);
+}
+
+.navButton:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.navButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .navButton:disabled {
@@ -621,5 +699,12 @@
 
   .stepTitle {
     font-size: 1.3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

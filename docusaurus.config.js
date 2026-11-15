@@ -2,7 +2,7 @@
 // Note: type annotations allow type checking and IDEs autocompletion
 
 const lightCodeTheme = require("prism-react-renderer").themes.github;
-const darkCodeTheme = require("prism-react-renderer").themes.dracula;
+const darkCodeTheme = require("prism-react-renderer").themes.vsDark;
 const {GlobExcludeDefault} = require('@docusaurus/utils');
 const isBlog = process.env.IS_BLOG === 'true';
 
@@ -40,6 +40,15 @@ const config = {
   projectName: "starlake", // Usually your repo name.
 
   onBrokenLinks: "throw",
+
+  // The website's faces (starlake.ai self-hosts the same two families).
+  headTags: [
+    { tagName: "link", attributes: { rel: "preconnect", href: "https://fonts.googleapis.com" } },
+    { tagName: "link", attributes: { rel: "preconnect", href: "https://fonts.gstatic.com", crossorigin: "anonymous" } },
+  ],
+  stylesheets: [
+    "https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=JetBrains+Mono:wght@400;500&display=swap",
+  ],
   trailingSlash: false,
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
@@ -103,19 +112,20 @@ const config = {
     prism: {
       additionalLanguages: ["java", "scala", "sql", "powershell", "python"],
       theme: lightCodeTheme,
+      darkTheme: darkCodeTheme,
     },
     // Replace with your project's social card
     colorMode: {
       defaultMode: "light",
-      disableSwitch: true,
-      respectPrefersColorScheme: false,
+      disableSwitch: false,
+      respectPrefersColorScheme: true,
     },
     navbar: {
       title: "Starlake",
       logo: {
         alt: "Starlake",
         src: "img/starlake-logo.png",
-        srcDark: "img/starlake-logo.png",
+        srcDark: "img/starlake_icon_white.svg",
         href: "https://starlake.ai",
       },
       items: [

@@ -1,265 +1,258 @@
-/* Quack on Demand landing page. Brand: navy #0E1B26, green #23B26D,
-   orange #F97316, cream #FAFAF7. The hero is intentionally dark in both
-   themes for impact; the feature grid adapts to the active theme. */
+/* Hallmark · shape: kept · genre: modern-minimal · theme: brand · redesign: restyle · system: src/css/tokens.css */
+/* Quack on Demand landing page. Rides the brand tokens in src/css/tokens.css:
+   warm paper, warm ink, Inter, and the QoD lane colour. Code samples sit on
+   the warm near-black terminal surface. Every token flips for dark mode, so
+   this file carries no theme overrides. */
 
 .hero {
-  --navy: #0e1b26;
-  --navy-2: #0a141d;
-  --green: #23b26d;
-  --orange: #f97316;
-  --cream: #fafaf7;
   position: relative;
-  overflow: hidden;
-  background:
-    radial-gradient(1100px 520px at 78% -8%, rgba(35, 178, 109, 0.16), transparent 60%),
-    radial-gradient(720px 420px at 6% 12%, rgba(249, 115, 22, 0.1), transparent 60%),
-    linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
-  color: var(--cream);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-/* faint grid texture */
-.hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(110% 80% at 50% 0%, #000 38%, transparent 78%);
-  pointer-events: none;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  border-bottom: 1px solid var(--color-rule);
 }
 
 .heroGrid {
   position: relative;
   max-width: 1180px;
   margin: 0 auto;
-  padding: 5.5rem 1.5rem 5rem;
+  padding: var(--space-3xl) var(--space-lg);
   display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 3rem;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: var(--space-2xl);
   align-items: center;
 }
 
 .heroCopy {
-  animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: rise var(--dur-long) var(--ease-out) both;
 }
 
 .kicker {
   display: inline-block;
-  font-family: var(--ifm-font-family-monospace);
-  font-size: 0.74rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--green);
-  padding: 0.3rem 0.7rem;
-  border: 1px solid rgba(35, 178, 109, 0.35);
-  border-radius: 999px;
-  background: rgba(35, 178, 109, 0.08);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--color-qod-text);
 }
 
 .title {
-  margin: 1.4rem 0 0;
-  font-size: clamp(2.4rem, 5.2vw, 3.85rem);
-  line-height: 1.02;
-  letter-spacing: -0.03em;
-  font-weight: 800;
-  color: var(--cream);
+  margin: var(--space-md) 0 0;
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-display);
+  font-weight: 600;
+  color: var(--color-ink);
 }
 
+/* Kept as an element for structure; renders in the same ink as the heading. */
 .titleAccent {
-  background: linear-gradient(92deg, var(--green) 0%, #5fd39a 60%, var(--orange) 130%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: inherit;
 }
 
 .subtitle {
-  margin: 1.3rem 0 0;
+  margin: var(--space-lg) 0 0;
   max-width: 34rem;
-  font-size: 1.16rem;
+  font-family: var(--font-body);
+  font-size: var(--text-lead);
   line-height: 1.6;
-  color: rgba(250, 250, 247, 0.74);
+  color: var(--color-ink-2);
 }
 
-/* The hero stays dark in both themes, so inline code must not fall back to
-   Infima's light `--ifm-code-background` (near-white on near-white). */
 .subtitle code {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: var(--cream);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--color-paper-3);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-control);
+  padding: var(--space-3xs) var(--space-2xs);
+  color: var(--color-ink);
 }
 
 .ctaRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.8rem;
-  margin-top: 2.1rem;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
 }
 
 .ctaPrimary,
 .ctaGhost {
   display: inline-flex;
   align-items: center;
-  font-weight: 650;
-  font-size: 0.98rem;
-  padding: 0.72rem 1.4rem;
-  border-radius: 10px;
-  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease,
-    border-color 0.2s ease;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 var(--space-lg);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  font-weight: 600;
+  line-height: 1;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
   text-decoration: none;
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
 }
 
 .ctaPrimary {
-  color: #06140d;
-  background: linear-gradient(180deg, #2cc77b 0%, var(--green) 100%);
-  box-shadow: 0 8px 24px rgba(35, 178, 109, 0.32);
+  color: var(--color-qod-on);
+  background: var(--color-qod);
 }
 .ctaPrimary:hover {
-  color: #06140d;
+  color: var(--color-qod-on);
   text-decoration: none;
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(35, 178, 109, 0.42);
+  background: var(--color-qod-bright);
 }
 
 .ctaGhost {
-  color: var(--cream);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-ink);
+  background: transparent;
+  border-color: var(--color-rule-strong);
 }
 .ctaGhost:hover {
-  color: var(--cream);
+  color: var(--color-ink);
   text-decoration: none;
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--color-paper-2);
+  border-color: var(--color-ink);
+}
+
+.ctaPrimary:focus-visible,
+.ctaGhost:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.ctaPrimary:active,
+.ctaGhost:active {
+  transform: translateY(1px);
 }
 
 /* ---- terminal ---- */
 .terminalWrap {
   position: relative;
-  animation: rise 0.8s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: rise var(--dur-long) var(--ease-out) 80ms both;
 }
 
 .terminal {
-  border-radius: 14px;
+  border-radius: var(--radius-card);
   overflow: hidden;
-  background: rgba(8, 14, 20, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 30px 60px -24px rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background: var(--color-terminal);
+  border: 1px solid var(--color-terminal-rule);
+  box-shadow: none;
 }
 
 .termBar {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.7rem 0.9rem;
-  background: rgba(255, 255, 255, 0.04);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--color-terminal-2);
+  border-bottom: 1px solid var(--color-terminal-rule);
 }
-.dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.dot[data-c='r'] { background: #ff5f57; }
-.dot[data-c='y'] { background: #febc2e; }
-.dot[data-c='g'] { background: #28c840; }
 .termTitle {
-  margin-left: 0.4rem;
-  font-family: var(--ifm-font-family-monospace);
-  font-size: 0.78rem;
-  color: rgba(250, 250, 247, 0.5);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-terminal-muted);
 }
 
 .termBody {
   margin: 0;
-  padding: 1.1rem 1.2rem 1.3rem;
+  padding: var(--space-md) var(--space-lg) var(--space-lg);
   background: transparent;
-  font-size: 0.84rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
   line-height: 1.65;
-  color: rgba(250, 250, 247, 0.92);
+  color: var(--color-terminal-ink);
+  border-radius: 0;
   overflow-x: auto;
 }
 .termBody code {
+  font-family: inherit;
+  font-size: inherit;
   background: transparent;
   border: 0;
   padding: 0;
   color: inherit;
 }
-.cComment { color: #6b8294; }
-.cStr { color: #f6b17a; }
-.cKey { color: var(--green); }
-.cOut { color: #7fd6a6; }
+.cComment { color: var(--color-terminal-muted); }
+.cStr { color: var(--color-qod-bright); }
+.cKey { color: var(--color-terminal-ink); font-weight: 600; }
+.cOut { color: var(--color-terminal-muted); }
 
+/* The mark carries light dots, so it sits on the terminal surface, tucked in
+   the card's lower right corner. */
 .mark {
   position: absolute;
-  right: -10px;
-  bottom: -34px;
-  width: 92px;
-  opacity: 0.9;
-  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.4));
+  right: var(--space-md);
+  bottom: var(--space-md);
+  width: 56px;
   pointer-events: none;
 }
 
 /* ---- features ---- */
 .features {
-  background: var(--ifm-background-color);
-  padding: 5rem 1.5rem;
+  background: var(--color-paper);
+  padding: var(--space-3xl) var(--space-lg) var(--space-2xl);
 }
 .featuresInner {
   max-width: 1180px;
   margin: 0 auto;
 }
 .sectionTitle {
-  font-size: clamp(1.7rem, 3vw, 2.2rem);
-  letter-spacing: -0.02em;
-  margin: 0 0 2.4rem;
+  font-family: var(--font-display);
+  font-size: var(--text-section);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: var(--tracking-display);
+  color: var(--color-ink);
+  margin: 0 0 var(--space-xl);
   text-align: center;
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
 }
 .card {
   position: relative;
-  padding: 1.6rem 1.5rem;
-  border-radius: 14px;
-  border: 1px solid var(--ifm-color-emphasis-200);
-  background: var(--ifm-card-background-color, var(--ifm-background-surface-color));
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  padding: var(--space-lg);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-rule);
+  background: var(--color-paper);
+  transition: border-color var(--dur-micro) var(--ease-out);
 }
 .card:hover {
-  transform: translateY(-4px);
-  border-color: var(--ifm-color-primary);
-  box-shadow: 0 16px 36px -22px rgba(35, 178, 109, 0.55);
+  border-color: var(--color-rule-strong);
 }
 .cardNum {
-  font-family: var(--ifm-font-family-monospace);
-  font-size: 0.8rem;
-  color: var(--ifm-color-primary);
-  letter-spacing: 0.06em;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-qod-text);
 }
 .cardTitle {
-  margin: 0.6rem 0 0.5rem;
-  font-size: 1.18rem;
-  letter-spacing: -0.01em;
+  margin: var(--space-xs) 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: var(--tracking-display);
+  color: var(--color-ink);
 }
 .cardBody {
   margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.58;
-  color: var(--ifm-color-emphasis-700);
+  font-size: var(--text-md);
+  line-height: 1.6;
+  color: var(--color-ink-2);
 }
 
 /* ---- capability comparison ---- */
 .comparison {
-  background: var(--ifm-background-color);
-  padding: 0 1.5rem 5rem;
+  background: var(--color-paper);
+  border-top: 1px solid var(--color-rule);
+  padding: var(--space-3xl) var(--space-lg);
 }
 .comparisonInner {
   max-width: 1180px;
@@ -268,21 +261,10 @@
 
 /* ---- closing band ---- */
 .closing {
-  /* Re-declare the brand vars here so .ctaPrimary's
-     `background: ... var(--green)` resolves in this scope too -- the .hero
-     scope above is the only other place they're defined. Without this the
-     gradient is invalid and the CTA renders transparent, hiding the dark
-     text against the navy band. */
-  --navy: #0e1b26;
-  --navy-2: #0a141d;
-  --green: #23b26d;
-  --orange: #f97316;
-  --cream: #fafaf7;
-  background:
-    radial-gradient(700px 300px at 90% 0%, rgba(35, 178, 109, 0.14), transparent 60%),
-    linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
-  color: var(--cream);
-  padding: 4rem 1.5rem;
+  background: var(--color-paper-2);
+  border-top: 1px solid var(--color-rule);
+  color: var(--color-ink);
+  padding: var(--space-2xl) var(--space-lg);
 }
 .closingInner {
   max-width: 1180px;
@@ -290,34 +272,60 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 2rem;
+  gap: var(--space-xl);
   flex-wrap: wrap;
 }
 .closingTitle {
-  font-size: clamp(1.6rem, 3vw, 2.1rem);
-  letter-spacing: -0.02em;
-  margin: 0 0 0.6rem;
+  font-family: var(--font-display);
+  font-size: var(--text-section);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: var(--tracking-display);
+  color: var(--color-ink);
+  margin: 0 0 var(--space-sm);
 }
 .closingBody {
-  margin: 0;
+  margin: 0 0 var(--space-sm);
   max-width: 40rem;
-  color: rgba(250, 250, 247, 0.72);
+  color: var(--color-ink-2);
   line-height: 1.6;
+}
+.closingBody:last-child {
+  margin-bottom: 0;
+}
+.closingBody a {
+  color: var(--color-qod-text);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  border-radius: 2px;
+  transition: color var(--dur-micro) var(--ease-out);
+}
+.closingBody a:hover {
+  color: var(--color-ink);
+  text-decoration: underline;
+}
+.closingBody a:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.closingBody a:active {
+  transform: translateY(1px);
 }
 .closingCtas {
   display: flex;
-  gap: 0.8rem;
+  gap: var(--space-sm);
   flex-wrap: wrap;
 }
 
 @keyframes rise {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 900px) {
-  .heroGrid { grid-template-columns: 1fr; gap: 2.4rem; padding-top: 3.5rem; }
-  .grid { grid-template-columns: 1fr; }
+  .heroGrid { grid-template-columns: minmax(0, 1fr); gap: var(--space-xl); padding-top: var(--space-2xl); padding-bottom: var(--space-2xl); }
+  .grid { grid-template-columns: minmax(0, 1fr); }
   .mark { display: none; }
 }
 
@@ -326,23 +334,26 @@
 }
 
 .demoChip {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.6rem;
-  margin: 0 0 1.4rem;
-  font-family: var(--ifm-font-family-monospace);
-  font-size: 0.85rem;
+  gap: var(--space-sm);
+  margin: var(--space-lg) 0 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
 }
 
 .demoChip code {
-  background: rgba(35, 178, 109, 0.12);
-  border: 1px solid rgba(35, 178, 109, 0.35);
-  border-radius: 8px;
-  padding: 0.45rem 0.8rem;
-  color: var(--green);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background: var(--color-terminal);
+  border: 1px solid var(--color-terminal-rule);
+  border-radius: var(--radius-control);
+  padding: var(--space-xs) var(--space-sm);
+  color: var(--color-terminal-ink);
 }
 
 .demoChip span {
-  font-size: 0.75rem;
-  color: var(--ifm-color-emphasis-600);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
 }

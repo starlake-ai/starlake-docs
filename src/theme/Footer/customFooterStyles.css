@@ -1,5 +1,6 @@
+/* Hallmark · shape: kept · genre: modern-minimal · theme: brand · redesign: restyle · system: src/css/tokens.css */
 .custom_footer {
-  background: #f8f9fa;
+  background: var(--color-paper-2);
   padding: 30px 0px 0px 0px;
 }
 
@@ -38,7 +39,7 @@
 }
 
 .custom_footer-link {
-  color: #6c757d;
+  color: var(--color-muted);
   text-decoration: none;
 }
 
@@ -58,6 +59,6 @@
 }
 
 .custom_footer-copyright {
-  background: #e9ecef;
+  background: var(--color-paper-3);
   padding: 10px;
 }

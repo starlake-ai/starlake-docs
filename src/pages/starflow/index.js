@@ -2,6 +2,28 @@ import React from 'react';
 import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
 import CodeBlock from '@theme/CodeBlock';
+import {
+  LuActivity,
+  LuArrowDown,
+  LuBadgeCheck,
+  LuBuilding2,
+  LuCalendarClock,
+  LuCompass,
+  LuDownload,
+  LuGitFork,
+  LuLock,
+  LuRepeat,
+  LuRocket,
+  LuRuler,
+  LuSearch,
+  LuSettings2,
+  LuSlidersHorizontal,
+  LuTable2,
+  LuUpload,
+  LuWorkflow,
+  LuWrench,
+  LuZap,
+} from 'react-icons/lu';
 import styles from './index.module.css';
 
 const HAND_WRITTEN = `-- merge_orders.sql, one warehouse of three
@@ -79,7 +101,7 @@ function HeroSection() {
             </Link>
           </div>
           <p className={styles.proofLine}>
-            Apache-2.0 · In production at BPCE Payment Services, Estreem, Axereal, ZE Energy, Asendia, and Carrefour Banque
+            Apache-2.0. In production at BPCE Payment Services, Estreem, Axereal, ZE Energy, Asendia, and Carrefour Banque
           </p>
         </div>
         <div className={styles.compare}>
@@ -174,19 +196,19 @@ function PipelineSection() {
 function LocalFirstSection() {
   const points = [
     {
-      icon: '🔁',
+      icon: <LuRepeat aria-hidden="true" />,
       title: 'No SQL rewriting',
       description:
         'Your warehouse dialect is transpiled to DuckDB, not reimplemented by hand. The SQL you test is the SQL you ship.',
     },
     {
-      icon: '📥',
+      icon: <LuDownload aria-hidden="true" />,
       title: 'Loads are tested too',
       description:
         'Parsing, type validation, merge strategy, and rejected rows, not just transforms. The half no SQL-only tool can reach.',
     },
     {
-      icon: '🎚️',
+      icon: <LuSlidersHorizontal aria-hidden="true" />,
       title: 'One project, any engine',
       description:
         'SL_ENV=DUCKDB on the laptop, SL_ENV=BQ in production. Same YAML, same SQL, same tests.',
@@ -239,7 +261,7 @@ function LocalFirstSection() {
 function TwoPathsSection() {
   const paths = [
     {
-      icon: '🧭',
+      icon: <LuCompass aria-hidden="true" />,
       title: 'Starflow',
       description:
         'Guided methodology layer. Five expert personas (Lea, Winston, Amelia, Quinn, Max) walk you through Discovery → Architecture → Pipeline Design → Implementation, with adversarial code review and end-of-epic retrospectives.',
@@ -247,7 +269,7 @@ function TwoPathsSection() {
       link: '/starflow/skills/starflow',
     },
     {
-      icon: '⚡',
+      icon: <LuZap aria-hidden="true" />,
       title: 'Direct CLI Skills',
       description:
         'One skill per Starlake command: load, transform, extract, dag-generate, and 45 more. Ask in natural language; get production-ready YAML, SQL, or shell.',
@@ -285,77 +307,77 @@ function TwoPathsSection() {
 function SkillsOverviewSection() {
   const categories = [
     {
-      icon: '📥',
+      icon: <LuDownload aria-hidden="true" />,
       title: 'Ingestion & Loading',
       count: 8,
       skills: ['autoload', 'load', 'cnxload', 'esload', 'kafkaload', 'ingest', 'preload', 'stage'],
       link: '/starflow/skills/catalog/ingestion',
     },
     {
-      icon: '🔄',
+      icon: <LuWorkflow aria-hidden="true" />,
       title: 'Transformation',
       count: 2,
       skills: ['transform', 'job'],
       link: '/starflow/skills/catalog/transformation',
     },
     {
-      icon: '📤',
+      icon: <LuUpload aria-hidden="true" />,
       title: 'Extraction',
       count: 7,
       skills: ['extract', 'extract-schema', 'extract-data', 'extract-bq-schema', 'extract-rest-schema', 'extract-rest-data', 'extract-script'],
       link: '/starflow/skills/catalog/extraction',
     },
     {
-      icon: '📋',
+      icon: <LuTable2 aria-hidden="true" />,
       title: 'Schema Management',
       count: 6,
       skills: ['bootstrap', 'infer-schema', 'xls2yml', 'xls2ymljob', 'yml2ddl', 'yml2xls'],
       link: '/starflow/skills/catalog/schema-management',
     },
     {
-      icon: '✅',
+      icon: <LuBadgeCheck aria-hidden="true" />,
       title: 'Data Quality',
       count: 1,
       skills: ['expectations'],
       link: '/starflow/skills/catalog/data-quality',
     },
     {
-      icon: '🔗',
+      icon: <LuGitFork aria-hidden="true" />,
       title: 'Lineage',
       count: 4,
       skills: ['lineage', 'col-lineage', 'table-dependencies', 'acl-dependencies'],
       link: '/starflow/skills/catalog/lineage',
     },
     {
-      icon: '🛫',
+      icon: <LuCalendarClock aria-hidden="true" />,
       title: 'Orchestration',
       count: 2,
       skills: ['dag-generate', 'dag-deploy'],
       link: '/starflow/skills/catalog/orchestration',
     },
     {
-      icon: '⚙️',
+      icon: <LuActivity aria-hidden="true" />,
       title: 'Operations',
       count: 7,
       skills: ['validate', 'metrics', 'freshness', 'console', 'serve', 'settings', 'migrate'],
       link: '/starflow/skills/catalog/operations',
     },
     {
-      icon: '🔒',
+      icon: <LuLock aria-hidden="true" />,
       title: 'Security',
       count: 2,
       skills: ['secure', 'iam-policies'],
       link: '/starflow/skills/catalog/security',
     },
     {
-      icon: '🛠️',
+      icon: <LuSettings2 aria-hidden="true" />,
       title: 'Configuration',
       count: 2,
       skills: ['config', 'connection'],
       link: '/starflow/skills/catalog/configuration',
     },
     {
-      icon: '🧰',
+      icon: <LuWrench aria-hidden="true" />,
       title: 'Utilities',
       count: 6,
       skills: ['bq-info', 'compare', 'parquet2csv', 'site', 'summarize', 'test'],
@@ -396,25 +418,25 @@ function SkillsOverviewSection() {
 function StarflowSection() {
   const phases = [
     {
-      icon: '🔍',
+      icon: <LuSearch aria-hidden="true" />,
       title: '1. Discovery',
       description: 'Map data domains, sources, and ownership before writing any configuration.',
       skills: ['domain-discovery', 'source-analysis'],
     },
     {
-      icon: '🏗️',
+      icon: <LuBuilding2 aria-hidden="true" />,
       title: '2. Architecture',
       description: 'Design the platform, layers, engines, and table schemas that will support your pipelines.',
       skills: ['create-data-architecture', 'schema-design'],
     },
     {
-      icon: '📐',
+      icon: <LuRuler aria-hidden="true" />,
       title: '3. Pipeline Design',
       description: 'Specify pipelines end-to-end (extract, load, transform, orchestrate) before implementation.',
       skills: ['create-pipeline-spec', 'transform-design', 'orchestration-design'],
     },
     {
-      icon: '🚀',
+      icon: <LuRocket aria-hidden="true" />,
       title: '4. Implementation',
       description: 'Build, review, deploy, and reflect. Adversarial parallel code review and end-of-epic retros.',
       skills: ['sprint-planning', 'dev-pipeline', 'code-review', 'retrospective'],
@@ -468,17 +490,7 @@ function DemoSection() {
         <p className="features-section__subtitle">
           Natural-language commands that produce production-ready configurations.
         </p>
-        <pre style={{
-          background: '#1e1e2e',
-          color: '#cdd6f4',
-          borderRadius: '12px',
-          padding: '2rem',
-          maxWidth: '800px',
-          margin: '0 auto',
-          fontSize: '0.9rem',
-          lineHeight: '1.8',
-          overflow: 'auto',
-        }}>
+        <pre className={styles.demoTerminal}>
           <code>{`# Bootstrap a new project targeting BigQuery with Airflow
 > /bootstrap a new project targeting BigQuery with Airflow orchestration
 
@@ -536,60 +548,25 @@ function PlatformsSection() {
         <p className="features-section__subtitle">
           One bundle, every layer.
         </p>
-        <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+        <div className={styles.stack}>
           {layers.map((layer, idx) => (
             <React.Fragment key={idx}>
-              <div style={{
-                background: layer.highlight
-                  ? 'linear-gradient(135deg, var(--sl-color-primary, #4f46e5), #7c3aed)'
-                  : 'var(--sl-color-surface)',
-                color: layer.highlight ? '#fff' : 'inherit',
-                border: layer.highlight ? 'none' : '1px solid var(--ifm-color-emphasis-200)',
-                borderRadius: '14px',
-                padding: '1.25rem 1.5rem',
-                boxShadow: layer.highlight
-                  ? '0 6px 20px rgba(79, 70, 229, 0.25)'
-                  : '0 1px 2px rgba(0,0,0,0.04)',
-              }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                  marginBottom: '0.75rem',
-                  flexWrap: 'wrap',
-                  gap: '0.5rem',
-                }}>
-                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>{layer.title}</h3>
-                  <span style={{ fontSize: '0.85rem', opacity: 0.75 }}>{layer.sub}</span>
+              <div className={`${styles.layer} ${layer.highlight ? styles.layerHighlight : ''}`}>
+                <div className={styles.layerHead}>
+                  <h3 className={styles.layerTitle}>{layer.title}</h3>
+                  <span className={styles.layerSub}>{layer.sub}</span>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <div className={styles.layerItems}>
                   {layer.items.map((item, i) => (
-                    <span key={i} style={{
-                      background: layer.highlight
-                        ? 'rgba(255,255,255,0.2)'
-                        : 'var(--ifm-background-color)',
-                      border: layer.highlight
-                        ? '1px solid rgba(255,255,255,0.25)'
-                        : '1px solid var(--ifm-color-emphasis-200)',
-                      padding: '0.35rem 0.75rem',
-                      borderRadius: '6px',
-                      fontSize: '0.9rem',
-                      fontWeight: 500,
-                    }}>
+                    <span key={i} className={styles.layerItem}>
                       {item}
                     </span>
                   ))}
                 </div>
               </div>
               {idx < layers.length - 1 && (
-                <div style={{
-                  textAlign: 'center',
-                  color: 'var(--ifm-color-emphasis-500)',
-                  fontSize: '1.4rem',
-                  lineHeight: 1,
-                  margin: '0.4rem 0',
-                }}>
-                  ↓
+                <div className={styles.layerJoin}>
+                  <LuArrowDown aria-hidden="true" size={20} />
                 </div>
               )}
             </React.Fragment>
