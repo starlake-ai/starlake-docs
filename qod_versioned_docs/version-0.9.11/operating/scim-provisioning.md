@@ -6,7 +6,7 @@ description: "SCIM 2.0 endpoints so Okta, Microsoft Entra or Google Workspace pr
 keywords: ["scim", "duckdb scim", "okta", "entra", "user provisioning", "sso"]
 ---
 
-Quack-on-Demand exposes a SCIM 2.0 (RFC 7643/7644) endpoint set so an enterprise IdP (Okta, Microsoft Entra, Google) can provision, update, and deprovision users and groups automatically. It complements per-tenant OIDC SSO: SSO authenticates people, SCIM keeps the tenant's user and group inventory in sync with the IdP directory. Available since 0.7.2.
+QoD exposes a SCIM 2.0 (RFC 7643/7644) endpoint set so an enterprise IdP (Okta, Microsoft Entra, Google) can provision, update, and deprovision users and groups automatically. It complements per-tenant OIDC SSO: SSO authenticates people, SCIM keeps the tenant's user and group inventory in sync with the IdP directory. Available since 0.7.2.
 
 The base URL is per tenant:
 

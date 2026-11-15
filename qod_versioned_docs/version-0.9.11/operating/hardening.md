@@ -5,7 +5,7 @@ description: "Security hardening checklist for exposing a DuckDB gateway to untr
 keywords: ["duckdb security", "hardening", "production security"]
 ---
 
-Quack on Demand runs tenant-supplied SQL on shared infrastructure. The defaults
+QoD runs tenant-supplied SQL on shared infrastructure. The defaults
 are tuned for first-run smoke tests, not for exposing the gateway to untrusted
 tenants. This page collects the isolation controls you turn on before that: node
 lockdown, pod security, network policy, and catalog-reader bounding. All of them
@@ -64,7 +64,7 @@ Denied statements return a `lockdown: ...` error and appear in the
 [audit log](../administration/audit-log.md). Superuser sessions bypass the edge
 screen (operators use the REST surface, not raw node SQL).
 
-**Engine layer (settings).** Before a node starts serving, Quack on Demand runs
+**Engine layer (settings).** Before a node starts serving, QoD runs
 a lockdown block that disables the settings a tenant could otherwise use to pull
 in untrusted code: `SET autoinstall_known_extensions = false` (no fetching
 extensions over the network), `SET allow_community_extensions = false`, and

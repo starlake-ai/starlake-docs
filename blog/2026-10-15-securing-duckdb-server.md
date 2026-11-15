@@ -1,7 +1,7 @@
 ---
 date: 2026-10-15
 title: "Securing a DuckDB server in production"
-description: "DuckDB was built to run inside one process for one user. Put it behind a server and every SQL user shares its files, credentials and settings. What we had to close when Quack on Demand moved to DuckDB 2.0, and how it now handles all of it by default."
+description: "DuckDB was built to run inside one process for one user. Put it behind a server and every SQL user shares its files, credentials and settings. What we had to close when QoD moved to DuckDB 2.0, and how it now handles all of it by default."
 slug: securing-duckdb-server-in-production
 authors: [starlake]
 tags: [qod, duckdb, ducklake, security, engineering]
@@ -11,7 +11,7 @@ tags: [qod, duckdb, ducklake, security, engineering]
 
 DuckDB is an in-process database. Its defaults assume that whoever writes the SQL is the person who owns the process: they can read the files it can read, use the cloud keys it can use, and change any setting. That assumption is right on a laptop. It is wrong the moment DuckDB sits behind a server (Quack, Arrow Flight SQL, an HTTP endpoint) and several users send it SQL.
 
-When we moved Quack on Demand to DuckDB 2.0, we audited every way a SQL user of a shared DuckDB node could reach something the operator did not mean to share. This post is the result: eight classes of exposure, a concrete example for each, and what to do about it. We close with how Quack on Demand handles all eight by default, on the DuckDB nodes and in the gateway that checks every statement before it reaches them.
+When we moved QoD to DuckDB 2.0, we audited every way a SQL user of a shared DuckDB node could reach something the operator did not mean to share. This post is the result: eight classes of exposure, a concrete example for each, and what to do about it. We close with how QoD handles all eight by default, on the DuckDB nodes and in the gateway that checks every statement before it reaches them.
 
 <!-- truncate -->
 
@@ -91,7 +91,7 @@ Quoted names count too. `FROM "s3://bucket/data/*.parquet"` and ``FROM `file:///
 **What to do:**
 
 - **Start every DuckDB process in an empty, private working directory.** Relative names then have nothing to find.
-- **Decide who may touch files by path, and refuse it to everyone else.** In Quack on Demand, tenant users cannot read or write files by path at all, whatever their table grants. Federated sources and administrators do it on their behalf.
+- **Decide who may touch files by path, and refuse it to everyone else.** In QoD, tenant users cannot read or write files by path at all, whatever their table grants. Federated sources and administrators do it on their behalf.
 - **Know what the built-in switches cost.**
   - `enable_external_access = false` is the strongest switch and cannot be turned back on, but it also stops extension loading and remote reads the server itself may need.
   - `allowed_directories` / `allowed_paths` narrow access instead of closing it.
@@ -189,6 +189,6 @@ We ended up porting DuckDB's tokenizer into the gateway so that the comment stri
 - Remote databases attached `READ_ONLY` and through a role without write privileges.
 - stdin closed, `-init` used, no transaction held open to stay alive.
 
-## How Quack on Demand applies this
+## How QoD applies this
 
-Quack on Demand serves DuckDB and DuckLake to many users through Arrow Flight SQL, the native Quack protocol and MCP. Every item above is enforced by default on the DuckDB 2.0 release: on the nodes themselves (secret handling, working directory, settings), and in the gateway, which reads each statement with DuckDB's own tokenizer before checking it against the user's grants. Per-pool lockdown applies the same rules to administrators. The [Quack on Demand documentation](https://docs.starlake.ai/qod/next/introduction) covers how to turn each of them on and what they refuse.
+QoD serves DuckDB and DuckLake to many users through Arrow Flight SQL, the native Quack protocol and MCP. Every item above is enforced by default on the DuckDB 2.0 release: on the nodes themselves (secret handling, working directory, settings), and in the gateway, which reads each statement with DuckDB's own tokenizer before checking it against the user's grants. Per-pool lockdown applies the same rules to administrators. The [QoD documentation](https://docs.starlake.ai/qod/next/introduction) covers how to turn each of them on and what they refuse.

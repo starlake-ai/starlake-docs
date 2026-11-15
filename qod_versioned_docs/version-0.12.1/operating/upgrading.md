@@ -1,7 +1,7 @@
 ---
 id: upgrading
 title: Upgrading to 0.11.0
-description: "The ordered checklist for upgrading a Quack on Demand manager from 0.10.x to 0.11.0, where every authorization decision moves into the DuckDB node."
+description: "The ordered checklist for upgrading a QoD manager from 0.10.x to 0.11.0, where every authorization decision moves into the DuckDB node."
 keywords: ["upgrade", "release notes", "0.11.0", "migration", "breaking changes"]
 ---
 

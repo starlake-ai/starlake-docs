@@ -9,7 +9,7 @@ type Props = {
 };
 
 /**
- * What each Quack on Demand setup includes, rendered from capabilities.json.
+ * What each QoD setup includes, rendered from capabilities.json.
  * The DuckDB column is what plain DuckDB serves to others, not what it can
  * read locally; see the caption.
  */

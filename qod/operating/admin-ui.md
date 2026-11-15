@@ -1,7 +1,7 @@
 ---
 id: admin-ui
 title: Admin UI guide
-description: "Tour of the Quack on Demand admin console: tenants, databases, pools, users, access control, and live node and statement telemetry."
+description: "Tour of the QoD admin console: tenants, databases, pools, users, access control, and live node and statement telemetry."
 keywords: ["admin ui", "console", "duckdb administration"]
 ---
 
@@ -22,7 +22,7 @@ There is no separate superuser checkbox; the field's presence is the only signal
 
 The UI always shows a login: a manager on which nothing could create a session refuses to boot, so there is no no-auth mode. The signed-in user and role appear in the user pill at the bottom of the sidebar.
 
-![The Quack on Demand admin login screen](/img/ui/login.png)
+![The QoD admin login screen](/img/ui/login.png)
 
 For how credentials are validated and how to wire an external provider, see [Authentication](/qod/operating/authentication) and [Authentication providers](/qod/operating/auth-providers).
 

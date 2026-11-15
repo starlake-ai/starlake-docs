@@ -1,7 +1,7 @@
 ---
 id: catalogs
 title: Catalogs
-description: "The three database kinds behind a Quack on Demand database, how a DuckLake catalog separates metadata from Parquet data, and how external catalogs such as Iceberg attach alongside it."
+description: "The three database kinds behind a QoD database, how a DuckLake catalog separates metadata from Parquet data, and how external catalogs such as Iceberg attach alongside it."
 keywords: ["ducklake catalog", "duckdb catalog", "iceberg catalog", "federation", "parquet", "metadata", "data path"]
 ---
 

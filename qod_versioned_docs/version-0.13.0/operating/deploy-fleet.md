@@ -218,7 +218,7 @@ The binding is by IP address, with the limits that implies: machines behind the 
 
 ```ini
 [Unit]
-Description=quack-on-demand fleet join
+Description=QoD fleet join
 After=network-online.target
 Wants=network-online.target
 StartLimitIntervalSec=0

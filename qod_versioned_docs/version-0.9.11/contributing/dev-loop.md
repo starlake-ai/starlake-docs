@@ -1,7 +1,7 @@
 ---
 id: dev-loop
 title: Development loop
-description: "Day-to-day developer workflow for Quack on Demand: build, test, run locally and regenerate the documentation from the source tree."
+description: "Day-to-day developer workflow for QoD: build, test, run locally and regenerate the documentation from the source tree."
 keywords: ["contributing", "build", "test", "development"]
 ---
 

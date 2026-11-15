@@ -81,7 +81,7 @@ function BootBanner() {
       <span className={landing.tGreen}>
         <span aria-hidden="true">{'==============================================================================\n'}</span>
       </span>
-      {' Quack on Demand 0.5.0 is up\n'}
+      {' QoD 0.5.0 is up\n'}
       {'   control plane : '}
       <span className={landing.tBlue}>jdbc:postgresql://localhost:5432/qod</span>
       {'\n'}
@@ -343,7 +343,7 @@ export default function Home(): React.ReactElement {
   return (
     <Layout
       title="The agent-safe data plane for DuckDB and DuckLake"
-      description="Quack on Demand is an open-source, governed endpoint for DuckDB and DuckLake: per-statement access control inside the engine, branch-based writes for AI agents, Arrow Flight SQL, ADBC, MCP and native Quack, on any cloud or on-prem."
+      description="QoD is an open-source, governed endpoint for DuckDB and DuckLake: per-statement access control inside the engine, branch-based writes for AI agents, Arrow Flight SQL, ADBC, MCP and native Quack, on any cloud or on-prem."
     >
       <Hero />
       <FeatureRows />

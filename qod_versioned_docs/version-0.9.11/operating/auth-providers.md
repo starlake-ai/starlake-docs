@@ -6,7 +6,7 @@ description: "Enable and configure each authentication provider for DuckDB clien
 keywords: ["duckdb sso", "duckdb oauth", "keycloak", "azure ad", "google", "cognito", "oidc", "jwt"]
 ---
 
-Quack-on-Demand supports multiple authentication providers that can be enabled independently. Any combination may be active at the same time: the edge tries each enabled provider in order and accepts the first success. The full chain logic, session TTL, and how tenant identity is derived from claims are covered in the Authentication page. This page focuses on enabling and configuring each provider.
+QoD supports multiple authentication providers that can be enabled independently. Any combination may be active at the same time: the edge tries each enabled provider in order and accepts the first success. The full chain logic, session TTL, and how tenant identity is derived from claims are covered in the Authentication page. This page focuses on enabling and configuring each provider.
 
 See [/reference/configuration](/qod/reference/configuration) for the complete list of tunables.
 

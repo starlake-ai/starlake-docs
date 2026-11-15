@@ -22,7 +22,7 @@
   --color-accent-ink: var(--color-on-accent);
   --color-focus: hsl(170 34% 34%);
 
-  /* Quack on Demand lane: orange */
+  /* QoD lane: orange */
   --color-qod: hsl(24 94% 50%); --color-qod-text: hsl(24 80% 36%); --color-qod-soft: hsl(24 90% 95%); --color-qod-bright: hsl(24 95% 62%);
   --color-qod-on: hsl(30 6% 10%);
 

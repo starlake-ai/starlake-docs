@@ -1,17 +1,17 @@
 ---
 title: "Connect to DuckDB with ADBC from Python, Go and Power BI"
 sidebar_label: ADBC
-description: "Query a shared DuckDB with ADBC over Arrow Flight SQL. Quack on Demand serves the standard Flight SQL ADBC driver for Python, Go and Power BI."
+description: "Query a shared DuckDB with ADBC over Arrow Flight SQL. QoD serves the standard Flight SQL ADBC driver for Python, Go and Power BI."
 keywords: [duckdb adbc, adbc flight sql, adbc_driver_flightsql, duckdb python client, duckdb go client, power bi adbc, arrow database connectivity duckdb]
 ---
 
-ADBC, Arrow Database Connectivity, is the Arrow-native way to talk to a database from Python, Go, C++ and Power BI. Quack on Demand exposes DuckDB behind an Arrow Flight SQL endpoint, so the standard Flight SQL ADBC driver connects to it with no DuckDB-specific client and results arrive as Arrow batches with no row conversion.
+ADBC, Arrow Database Connectivity, is the Arrow-native way to talk to a database from Python, Go, C++ and Power BI. QoD exposes DuckDB behind an Arrow Flight SQL endpoint, so the standard Flight SQL ADBC driver connects to it with no DuckDB-specific client and results arrive as Arrow batches with no row conversion.
 
 ## The problem
 
 DuckDB's own Python and Go bindings talk to an engine inside your process, not to a shared one on another machine. When the data lives on a server, you want a driver that speaks a standard wire, streams columnar results, and works the same from a notebook, a Go service and Power BI.
 
-## How Quack on Demand does it
+## How QoD does it
 
 The gateway's Flight SQL edge on `:31338` is what the ADBC Flight SQL driver expects. The connection needs a URI, a username and password or bearer token, and two call headers naming the tenant and the pool; the edge applies no defaults. Results are Arrow record batches all the way from the DuckDB node to your DataFrame.
 
@@ -35,7 +35,7 @@ cur.execute("SELECT count(*) FROM tpch1.customer")
 print(cur.fetchall())
 ```
 
-Power BI Desktop ships the Flight SQL ADBC driver in-box, and the Quack on Demand connector rides it for Import and DirectQuery with query folding. The Go driver takes the same URI and headers. Whatever the client, the per-statement access control, row filters and column masks apply. Quack on Demand runs as a single Docker container on one node, or on Kubernetes for multi-host fleets.
+Power BI Desktop ships the Flight SQL ADBC driver in-box, and the QoD connector rides it for Import and DirectQuery with query folding. The Go driver takes the same URI and headers. Whatever the client, the per-statement access control, row filters and column masks apply. QoD runs as a single Docker container on one node, or on Kubernetes for multi-host fleets.
 
 ## Go deeper
 

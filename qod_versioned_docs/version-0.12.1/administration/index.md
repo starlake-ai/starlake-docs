@@ -1,7 +1,7 @@
 ---
 id: index
 title: Administration
-description: "Superuser and tenant admin roles in Quack on Demand, and where each administrative task on your DuckDB gateway lives in the UI and CLI."
+description: "Superuser and tenant admin roles in QoD, and where each administrative task on your DuckDB gateway lives in the UI and CLI."
 keywords: ["duckdb administration", "superuser", "tenant admin", "control plane"]
 ---
 

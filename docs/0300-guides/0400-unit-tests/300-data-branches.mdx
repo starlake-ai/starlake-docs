@@ -9,7 +9,7 @@ keywords: [starlake, data branch, zero-copy clone, bigquery clone, snowflake clo
 [Unit tests](./050-concepts.mdx) run your pipeline on DuckDB against fixture data. Sometimes you need more: validating a new transform on the real production volume, or checking that a schema change does not break a MERGE on last month's data. A **data branch** does that. Set `SL_DATA_BRANCH` and Starlake redirects every write of the job into a sandbox built from zero-copy clones of your production tables. Production tables are never modified.
 
 :::note
-This page covers branches on BigQuery and Snowflake, driven by `SL_DATA_BRANCH`. DuckLake databases served by Quack-on-Demand have their own branching, with row-level diffs and reviewed merges: see [QoD branching](/qod/operating/branching).
+This page covers branches on BigQuery and Snowflake, driven by `SL_DATA_BRANCH`. DuckLake databases served by QoD have their own branching, with row-level diffs and reviewed merges: see [QoD branching](/qod/operating/branching).
 :::
 
 ## Supported engines

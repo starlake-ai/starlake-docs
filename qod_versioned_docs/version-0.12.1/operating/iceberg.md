@@ -1,5 +1,5 @@
 ---
-description: "Attach an external Iceberg REST catalog, such as Glue, S3 Tables or Polaris, to a Quack on Demand database and query it under the same access control."
+description: "Attach an external Iceberg REST catalog, such as Glue, S3 Tables or Polaris, to a QoD database and query it under the same access control."
 id: iceberg
 title: External Iceberg catalogs
 ---

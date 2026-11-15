@@ -1,7 +1,7 @@
 ---
 id: upgrading-0-12
 title: Upgrading to 0.12
-description: "The checklists for upgrading a Quack on Demand manager from 0.11.0 to 0.12.0 and from 0.12.0 to 0.12.1, with the requests that are refused from 0.12.1 on."
+description: "The checklists for upgrading a QoD manager from 0.11.0 to 0.12.0 and from 0.12.0 to 0.12.1, with the requests that are refused from 0.12.1 on."
 keywords: ["upgrade", "release notes", "0.12.0", "0.12.1", "migration", "breaking changes"]
 ---
 

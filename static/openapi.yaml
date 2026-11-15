@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Quack on Demand REST API
+  title: QoD REST API
   version: 0.13.0
 paths:
   /api/scim/v2/{tenant}/Groups/{id}:
