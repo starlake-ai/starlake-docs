@@ -1,0 +1,48 @@
+/* Brand tokens, read from starlake-website/src/app/globals.css (the website is
+   the source of truth). Keep the two in step: a change there lands here. */
+:root {
+  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px; --space-4xl: 144px;
+  --text-xs: 0.8125rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.25rem; --text-xl: 1.5625rem; --text-2xl: 1.953rem; --text-3xl: 2.441rem;
+  --text-display-s: clamp(2.25rem, 4vw + 0.5rem, 3.75rem); --text-display: clamp(2.5rem, 1.5rem + 3.5vw, 3.5rem);
+  --text-section: clamp(1.625rem, 1.25rem + 1.25vw, 2rem); --text-title: clamp(1.25rem, 1rem + 0.8vw, 1.5rem); --text-lead: clamp(1.0625rem, 0.35vw + 1rem, 1.25rem);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --ease-in: cubic-bezier(0.7, 0, 0.84, 0); --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms; --dur-short: 220ms; --dur-long: 420ms;
+  --color-error: hsl(0 72% 45%); --color-success: hsl(150 45% 32%);
+  --container: 1200px; --gutter: 64px; --gap-columns: 32px; --section-gap-s: 96px; --section-gap: 120px; --section-gap-l: 144px;
+  --z-base: 1; --z-raised: 10; --z-dropdown: 100; --z-sticky: 200; --z-sticky-nav: 300; --z-modal: 400; --z-toast: 500; --z-tooltip: 600;
+
+  /* Surfaces and ink: warm neutrals */
+  --color-paper: hsl(40 20% 99%); --color-paper-2: hsl(40 12% 97%); --color-paper-3: hsl(40 12% 95%);
+  --color-ink: hsl(30 6% 10%); --color-ink-2: hsl(30 5% 24%); --color-muted: hsl(30 4% 42%);
+  --color-rule: hsl(30 6% 88%); --color-rule-strong: hsl(30 4% 62%);
+  --color-on-accent: hsl(0 0% 100%);
+
+  /* Starflow lane: teal, the brand accent */
+  --color-accent: hsl(170 34% 34%); --color-accent-text: hsl(170 40% 26%); --color-accent-soft: hsl(170 30% 95%); --color-accent-bright: hsl(170 40% 58%);
+  --color-accent-ink: var(--color-on-accent);
+  --color-focus: hsl(170 34% 34%);
+
+  /* Quack on Demand lane: orange */
+  --color-qod: hsl(24 94% 50%); --color-qod-text: hsl(24 80% 36%); --color-qod-soft: hsl(24 90% 95%); --color-qod-bright: hsl(24 95% 62%);
+  --color-qod-on: hsl(30 6% 10%);
+
+  /* Terminal: warm near-black, the same in both modes */
+  --color-terminal: hsl(30 6% 8%); --color-terminal-2: hsl(30 5% 13%); --color-terminal-rule: hsl(30 5% 20%);
+  --color-terminal-ink: hsl(40 10% 92%); --color-terminal-muted: hsl(36 6% 62%);
+
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif; --font-body: "Inter", ui-sans-serif, system-ui, sans-serif; --font-outlier: var(--font-body);
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --radius-card: 8px; --radius-control: 6px; --radius-pill: 999px; --rule-hair: 1px; --shadow-card: none;
+  --tracking-display: -0.02em; --display-weight: 600;
+}
+
+[data-theme="dark"] {
+  --color-paper: hsl(30 6% 7%); --color-paper-2: hsl(30 6% 10%); --color-paper-3: hsl(30 5% 14%);
+  --color-ink: hsl(40 10% 95%); --color-ink-2: hsl(40 6% 80%); --color-muted: hsl(30 4% 62%);
+  --color-rule: hsl(30 5% 18%); --color-rule-strong: hsl(30 4% 40%);
+  --color-on-accent: hsl(30 6% 7%);
+  --color-accent: hsl(170 34% 44%); --color-accent-text: hsl(170 40% 62%); --color-accent-soft: hsl(170 34% 44% / 0.12); --color-accent-bright: hsl(170 40% 62%);
+  --color-focus: hsl(170 40% 58%);
+  --color-qod: hsl(24 94% 55%); --color-qod-text: hsl(24 95% 66%); --color-qod-soft: hsl(24 94% 55% / 0.12); --color-qod-bright: hsl(24 95% 66%);
+  --color-terminal: hsl(30 6% 5%); --color-terminal-2: hsl(30 5% 10%); --color-terminal-rule: hsl(30 5% 18%);
+}

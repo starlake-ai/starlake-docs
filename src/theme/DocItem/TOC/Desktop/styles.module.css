@@ -1,3 +1,4 @@
+/* Hallmark · shape: kept · genre: modern-minimal · theme: brand · redesign: restyle · system: src/css/tokens.css */
 /* Take over the TOC's sticky positioning so the page actions stick with it;
    the TOC then scrolls within the remaining height. */
 .aside {
@@ -5,7 +6,7 @@
   top: calc(var(--ifm-navbar-height) + 1rem);
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - (var(--ifm-navbar-height) + 2rem));
+  max-height: calc(100dvh - (var(--ifm-navbar-height) + 2rem));
 }
 
 .aside :global(.theme-doc-toc-desktop) {

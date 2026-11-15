@@ -1,0 +1,10 @@
+/* The Floor's base rules, cut to what Docusaurus and Infima do not already set.
+   Layout, heading sizes and .container stay Infima's: this is a restyle. */
+html, body { overflow-x: clip; }
+html { scrollbar-color: var(--color-rule-strong) var(--color-paper); }
+::selection { background: color-mix(in oklab, var(--color-accent) 22%, transparent); color: var(--color-ink); }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+h1, h2, h3, h4 { overflow-wrap: break-word; min-width: 0; text-wrap: balance; font-synthesis: none; }
+p, li { text-wrap: pretty; }
+.num, .figure, td.num { font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { *:not(.keep-motion), *:not(.keep-motion)::before, *:not(.keep-motion)::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }

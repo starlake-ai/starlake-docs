@@ -293,7 +293,19 @@ function GuideCard({ guide, isFavorite, onToggleFavorite, onStartAction }) {
   };
 
   return (
-    <div className={styles.card} onClick={handleCardClick}>
+    <div
+      className={styles.card}
+      onClick={handleCardClick}
+      role="link"
+      tabIndex={0}
+      aria-label={guide.title}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleCardClick();
+        }
+      }}>
       <div className={styles.cardHeader}>
         <div className={styles.cardIcon}>
           <img 

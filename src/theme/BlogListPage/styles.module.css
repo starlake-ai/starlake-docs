@@ -1,21 +1,8 @@
+/* Hallmark · shape: kept · genre: modern-minimal · theme: brand · redesign: restyle · system: src/css/tokens.css */
 .wrapper {
-  --blog-card-bg: #ffffff;
-  --blog-card-border: #e8e8e8;
-  --blog-card-shadow: 0 1px 4px rgba(26, 26, 46, 0.08);
-  --blog-card-shadow-hover: 0 6px 16px rgba(26, 26, 46, 0.14);
-  --blog-chip-bg: #e6f7f2;
-  --blog-chip-text: #1a8870;
-  --blog-meta-text: var(--ifm-color-emphasis-600);
-}
-
-[data-theme='dark'] .wrapper {
-  --blog-card-bg: #1e1e2e;
-  --blog-card-border: #2e2e42;
-  --blog-card-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-  --blog-card-shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.5);
-  --blog-chip-bg: rgba(37, 194, 160, 0.15);
-  --blog-chip-text: #4fddbf;
-  --blog-meta-text: var(--ifm-color-emphasis-500);
+  --blog-chip-bg: var(--color-accent-soft);
+  --blog-chip-text: var(--color-accent-text);
+  --blog-meta-text: var(--color-muted);
 }
 
 .grid {
@@ -29,18 +16,22 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  background: var(--blog-card-bg);
-  border: 1px solid var(--blog-card-border);
-  border-top: 3px solid var(--ifm-color-primary);
-  border-radius: 8px;
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+  border-top: 3px solid var(--color-accent);
+  border-radius: var(--radius-card);
   padding: 1.25rem;
-  box-shadow: var(--blog-card-shadow);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--color-ink) 8%, transparent);
+  transition: border-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
 }
 
 .card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--blog-card-shadow-hover);
+  border-color: var(--color-rule-strong);
+  border-top-color: var(--color-accent);
+}
+
+.card:active {
+  transform: translateY(1px);
 }
 
 .cardTags {
@@ -51,10 +42,11 @@
   display: inline-block;
   background: var(--blog-chip-bg);
   color: var(--blog-chip-text);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.1rem 0.6rem;
+  font-family: var(--font-body);
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
   margin-right: 0.35rem;
 }
 
@@ -65,7 +57,7 @@
 }
 
 .cardTitle a {
-  color: var(--ifm-heading-color);
+  color: var(--color-ink);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -74,7 +66,7 @@
 
 .cardTitle a:hover {
   text-decoration: none;
-  color: var(--ifm-color-primary);
+  color: var(--color-accent-text);
 }
 
 /* Stretched link: makes the whole card clickable without nesting anchors */
@@ -82,11 +74,21 @@
   content: '';
   position: absolute;
   inset: 0;
+  border-radius: var(--radius-card);
+}
+
+.cardLink:focus-visible {
+  outline: none;
+}
+
+.cardLink:focus-visible::after {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .cardDescription {
   font-size: 0.85rem;
-  color: var(--ifm-color-emphasis-700);
+  color: var(--color-ink-2);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -102,16 +104,28 @@
 
 .hero {
   display: block;
-  background: linear-gradient(135deg, #1a1a2e 0%, #1e2a1a 55%, #1a1a2e 100%);
+  background: var(--color-terminal);
+  border: 1px solid var(--color-terminal-rule);
   border-radius: 12px;
   padding: 2.5rem;
   margin-bottom: 1.5rem;
-  color: #ffffff;
+  color: var(--color-terminal-ink);
+  transition: border-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
 }
 
 .hero:hover {
   text-decoration: none;
-  color: #ffffff;
+  color: var(--color-terminal-ink);
+  border-color: var(--color-terminal-muted);
+}
+
+.hero:active {
+  transform: translateY(1px);
+}
+
+.hero:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .heroPills {
@@ -120,30 +134,30 @@
 
 .latestPill {
   display: inline-block;
-  background: #25c2a0;
-  color: #ffffff;
-  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border-radius: var(--radius-pill);
   padding: 0.15rem 0.7rem;
+  font-family: var(--font-body);
   font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-weight: 600;
   margin-right: 0.5rem;
 }
 
 .heroTag {
   display: inline-block;
-  background: rgba(255, 255, 255, 0.12);
-  color: #cdd6e0;
-  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-terminal-ink) 12%, transparent);
+  color: var(--color-terminal-ink);
+  border-radius: var(--radius-pill);
   padding: 0.15rem 0.7rem;
+  font-family: var(--font-body);
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
   margin-right: 0.35rem;
 }
 
 .heroTitle {
-  color: #ffffff;
+  color: var(--color-terminal-ink);
   font-size: 2rem;
   line-height: 1.25;
   margin-bottom: 0.5rem;
@@ -154,7 +168,7 @@
 }
 
 .heroDescription {
-  color: rgba(255, 255, 255, 0.75);
+  color: color-mix(in oklab, var(--color-terminal-ink) 80%, transparent);
   font-size: 1rem;
   max-width: 48rem;
   margin-bottom: 1rem;
@@ -169,7 +183,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-terminal-muted);
   font-size: 0.85rem;
 }
 
@@ -205,14 +219,32 @@
 .chip {
   background: var(--blog-chip-bg);
   color: var(--blog-chip-text);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.25rem 0.85rem;
+  font-family: var(--font-body);
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 500;
+  transition: color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
 }
 
 .chip:hover {
   text-decoration: none;
-  background: var(--ifm-color-primary);
-  color: #ffffff;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.chip:active {
+  transform: translateY(1px);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

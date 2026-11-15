@@ -21,7 +21,7 @@
 const content = {
   footer: {
     company: {
-      name: "STARLAKE.AI",
+      name: "Starlake.ai",
       description: "StarLake",
     },
     copyright: {
@@ -111,23 +111,15 @@ import { FaGithub, FaLinkedin, FaDiscord } from "react-icons/fa"; // Using react
 
 // import "./Footer.css"; // Import the custom CSS file
 
-export default function Footer() {
-  const handleClickJoin = () => {
-    window.open(
-      "https://discord.gg/6tNa7yCNqw",
-      "_blank"
-    );
-  };
-  const handleClickTry = () => {
-    window.open("https://github.com/starlake-ai/starlake", "_blank");
-  };
-  const handleClickLink = () => {
-    window.open(
-      "https://www.linkedin.com/company/starlake-ai/",
-      "_blank"
-    );
-  };
+// Social links are real anchors so they take focus and open with the keyboard;
+// they replace the window.open click handlers that had no href.
+const SOCIAL = [
+  { href: "https://www.linkedin.com/company/starlake-ai/", label: "Starlake on LinkedIn", Icon: FaLinkedin },
+  { href: "https://discord.gg/6tNa7yCNqw", label: "Starlake on Discord", Icon: FaDiscord },
+  { href: "https://github.com/starlake-ai/starlake", label: "Starlake on GitHub", Icon: FaGithub },
+];
 
+export default function Footer() {
   return (
     <footer className="footer">
       <section className="footer-section">
@@ -149,15 +141,18 @@ export default function Footer() {
               </a>
             </p>
             <div className="footer-social-icons tl">
-              <a onClick={handleClickLink} className="footer-link">
-                <FaLinkedin size={24} className="me-2" />
-              </a>
-              <a onClick={handleClickJoin} className="footer-link">
-                <FaDiscord size={24} className="me-2" />
-              </a>
-              <a onClick={handleClickTry} className="footer-link">
-                <FaGithub size={24} className="me-2" />
-              </a>
+              {SOCIAL.map(({ href, label, Icon }) => (
+                <a
+                  key={href}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="footer-link"
+                >
+                  <Icon size={22} aria-hidden="true" />
+                </a>
+              ))}
             </div>
           </div>
         </div>
