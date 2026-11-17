@@ -132,7 +132,7 @@ Every row in `qodstate_audit` carries:
 | `action` | dotted verb (see taxonomy above) | |
 | `target` | resource identifier or null | Pool key, role id, node id, table name, etc. |
 | `outcome` | `ok`, `denied`, `error` | `denied` for scope-gate rejections; `error` for unexpected failures |
-| `origin` | `rest`, `flightsql` | Where the event originated |
+| `origin` | `rest`, `flightsql`, `rest-data` | Where the event originated; `rest-data` is the [REST data edge](../connecting/rest-data-edge.md) |
 | `detail` | key-value map | Whitelisted context (see Sanitization) |
 | `pat_id` | token id or null | The personal access token the call presented, as `patId` in the API |
 

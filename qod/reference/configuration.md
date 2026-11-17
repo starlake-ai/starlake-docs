@@ -8,6 +8,17 @@ sidebar_label: Configuration
 
 Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable override. Sensitive defaults (passwords, secrets, keys) are flagged; rotate them before any non-local deployment.
 
+## `quack-data-edge`
+
+| Key | Env var | Default | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `quack-data-edge.enabled` | `QOD_DATA_EDGE_ENABLED` | `false` |  | Serve the read-only REST data edge under /data/v1 on the manager port (PAT bearer, GET only). |
+| `quack-data-edge.defaultLimit` | `QOD_DATA_EDGE_DEFAULT_LIMIT` | `1000` |  | Rows returned by /rows when the request gives no limit. |
+| `quack-data-edge.maxRows` | `QOD_DATA_EDGE_MAX_ROWS` | `100000` |  | Server row cap for /rows and the listings; a request limit or a token's maxRows can only lower it. |
+| `quack-data-edge.maxResponseBytes` | `QOD_DATA_EDGE_MAX_RESPONSE_BYTES` | `16777216` |  | Largest /rows body, in bytes (at most 64 MiB); a page that would exceed it is cut at a row boundary and flagged X-QoD-Truncated. |
+| `quack-data-edge.stmtTimeoutSec` | `QOD_DATA_EDGE_STMT_TIMEOUT_SEC` | `90` |  | Bounded wait per statement, in seconds (a token's stmtTimeoutMs can only lower it); past it the edge answers 504, or 503 pool_resuming when the pool was cold. Must exceed PROXY_RESUME_HOLD_TIMEOUT_SEC. |
+| `quack-data-edge.maxConcurrentRequests` | `QOD_DATA_EDGE_MAX_CONCURRENT_REQUESTS` | `256` |  | Most data edge requests answered at once; past it a request gets 503 edge_busy. Keeps the edge from taking all of the manager listener's work. |
+
 ## `quack-flightsql`
 
 | Key | Env var | Default | Sensitive | Description |

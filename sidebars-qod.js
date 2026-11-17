@@ -112,6 +112,7 @@ const sidebars = {
         'connecting/authenticating',
         'connecting/sql',
         'connecting/mcp',
+        'connecting/rest-data-edge',
         'connecting/agent-skill',
         'connecting/jdbc-driver',
         'connecting/dbeaver',

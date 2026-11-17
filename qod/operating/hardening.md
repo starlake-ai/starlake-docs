@@ -285,6 +285,8 @@ holes:
 
 The rules match the release namespace only.
 
+A NetworkPolicy works per port, so with the [REST data edge](../connecting/rest-data-edge.md) on (`dataEdge.enabled`) it cannot tell `/data/` from the admin API on 20900: a peer admitted on that port reaches both. Publish the edge through a reverse proxy that routes the `/data/` prefix alone, see [Exposing the data edge](../connecting/rest-data-edge.md#exposing-the-data-edge).
+
 Tune the reachable targets through the values block:
 
 ```yaml
@@ -375,6 +377,9 @@ For a gateway exposed to tenants you do not fully trust:
   from an external secret store when control-plane backups are less trusted than
   the manager. Automation uses personal access tokens: the static API key is gone.
 - Keep manager-to-node traffic on a private network.
+- With the [REST data edge](../connecting/rest-data-edge.md) on, expose only `/data/` through a
+  reverse proxy that terminates TLS and rate-limits per client and per `Authorization`
+  value; keep the admin API, the console, `/mcp`, `/health`, `/ready` and `/metrics` internal.
 - On Kubernetes: `networkPolicy.enabled=true` with real CIDRs, the default pod
   security context left on, and one namespace per tenant if you need hard
   isolation.

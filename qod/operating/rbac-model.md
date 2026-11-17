@@ -168,6 +168,8 @@ Tenant users are always refused, whatever their grants: `CREATE MACRO`, trigger 
 
 A tenant user's catalog listings are always narrowed to the objects they are granted: `information_schema.schemata`, `tables`, `columns` and `views`, named so in the statement itself, and `duckdb_schemas()`, `duckdb_tables()`, `duckdb_views()` and `duckdb_columns()`. Each grant is pinned to the catalog it covers, so a grant on `lake.main.*` does not list another attached catalog's `main`, a grant naming a federated catalog (`pgsrc.public.*`) lists that catalog's objects, and a wildcard catalog lists the pool's own catalog only. An `RO` grant on `information_schema` gives a principal unfiltered listings.
 
+The filter replaces such a read with one of its own, so for a user whose listings are filtered a clause it cannot keep is refused: a sample (`TABLESAMPLE`, `USING SAMPLE`), a `PIVOT` or `UNPIVOT`, or `WITH ORDINALITY` on `information_schema.tables` (and its other filtered views) or on a `duckdb_*()` catalog function. A subquery works around the sample and the pivot: `FROM (SELECT * FROM information_schema.tables) USING SAMPLE 10%`.
+
 DuckDB's other built-in listing views are refused to every non-superuser, however they are named or nested (bare, `pg_catalog.` or `system.`, in a subquery, a CTE, a `query()` string or a view body): `pg_catalog`'s views (`pg_tables`, `pg_views`, `pg_attribute`, ...), `sqlite_master`, the parenless `duckdb_tables` / `duckdb_views`, `system.information_schema.*`, bare `SHOW` and `DESCRIBE`, `SHOW TABLES FROM ...`, `SHOW SCHEMAS`, `SHOW DATABASES` and `SHOW VARIABLES` (`SELECT * FROM duckdb_variables()` lists the session's variables instead). A grant covering them, `*.*.*` included, does not admit them. The gateway answers a top-level `SHOW TABLES` / `SHOW ALL TABLES`, `DESCRIBE <table>`, `SHOW <table>`, `PRAGMA table_info('<table>')` and `SUMMARIZE <table>` from the filtered listings plus a read of the object, so they need a read grant on it (DESCRIBE's `key` and table_info's `pk` come back NULL; on an OPA tenant these answers are empty and SUMMARIZE is refused).
 
 ### Files
@@ -181,7 +183,7 @@ A DuckLake table read at an earlier snapshot (`AT (VERSION => n)`, `AT (TIMESTAM
 - **Renamed since:** judged as the table it is now, on its current name's grant. A grant on a table that later took the old name does not cover it.
 - **Replaced since** (`CREATE OR REPLACE`, a QoD restore): the same table, so its history is judged on the current name's grant.
 - **Dropped since:** judged as a read of its last live name, allowed while no live table or view holds that name and the grant covers it. Once the name is reused, only a superuser reads it.
-- **Users with column or row policies** are refused all three, on any table: the policy rewriters match the names a statement writes, not the table's id. The reason ends `not available to principals with column or row policies`.
+- **Users with column or row policies** read a table at a snapshot only when its name has always named that same table, with the same column names, in every snapshot the catalog holds, and never named a view. The policies match today's names while a snapshot read binds its own, so only then are the masks and row filters sure to hit the right table and columns. A table renamed, dropped or recreated since, or with a column renamed or dropped, is refused on every door until those snapshots expire: `<table>, or one of its columns, was renamed, dropped or recreated in the history the catalog holds; under a column or row policy it cannot be read with time travel`. The change feed stays refused to them (below).
 
 A `TIMESTAMP` is resolved in the client's `TimeZone`. A dropped table read `AT (TIMESTAMP => ...)` can be refused when the node cannot pin the timestamp to the same snapshot DuckLake reads (sub-microsecond rounding, a session `TimeZone` it cannot apply): read it `AT (VERSION => n)` instead, which is never affected.
 
@@ -387,6 +389,23 @@ The rewriter only runs for SELECT-shaped statements; DML and DDL pass through un
 ### Row-level security guarantees
 
 Every table occurrence reachable from the statement is considered: the top-level `FROM` item, each `JOIN` right-hand item, parenthesised subqueries, and CTE (`WITH`) bodies are recursed into. A table matches a policy when its `(catalog, schema, table)` - resolved against the session's default catalog/schema for bare names - equals the policy tuple component-wise, with `*` matching anything. When a table matches more than one of the principal's policies (e.g. a wildcard tenant-id policy plus a specific-table policy, or policies from two different roles), the predicates are combined (see "Combining policies").
+
+### Clauses the row filter cannot keep
+
+The rewrite replaces a protected table with `(SELECT * FROM <table> WHERE <predicate>) <alias>`, so a clause written on the table itself would be lost. A time-travel clause is kept: `SELECT * FROM customer AT (VERSION => 42)` or `AT (TIMESTAMP => '...')` reads the snapshot it names, filtered, under the name-history rule of [Earlier snapshots and the change feed](#earlier-snapshots-and-the-change-feed). Any other clause on a row-policy table is refused rather than dropped, and the reason names the clause:
+
+```
+a row-policy table is read with a sample clause (TABLESAMPLE, USING SAMPLE), which the row filter cannot keep; read the table without it
+```
+
+| Refused on a row-policy table | Write instead |
+|---|---|
+| `TABLESAMPLE`, `USING SAMPLE` | A sample of a subquery: `FROM (SELECT * FROM customer) USING SAMPLE 10%` |
+| A `PIVOT` or `UNPIVOT` written after the table (`FROM customer PIVOT (...)`) | A pivot of a subquery: `PIVOT (SELECT * FROM customer) ON ...` |
+| A table hint (`USE INDEX`, `WITH (...)`) | The table without the hint |
+| `FOR TIMESTAMP AS OF`, `FOR SYSTEM_TIME AS OF`, a time-travel clause DuckDB does not take | `AT (TIMESTAMP => ...)` or `AT (VERSION => n)` |
+
+Tables without a row policy for the user, and users without row policies, are not affected.
 
 ### Kill switch (feature flag)
 

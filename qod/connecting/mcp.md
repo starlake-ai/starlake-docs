@@ -10,7 +10,7 @@ The manager embeds an MCP (Model Context Protocol) server at `POST /mcp` on the 
 
 The transport is stateless Streamable HTTP: each POST carries one JSON-RPC message and the response is plain JSON. There is no SSE, no server push, and no session id, so any HA replica answers any request. `GET /mcp` returns 405.
 
-MCP gives an agent tools on the manager; the [operator skill](/qod/connecting/agent-skill) gives it the operational playbook for the `qod` CLI. They combine well.
+MCP gives an agent tools on the manager; the [operator skill](/qod/connecting/agent-skill) gives it the operational playbook for the `qod` CLI. They combine well. A tool that only needs rows over plain HTTP, with no JSON-RPC, uses the read-only [REST data edge](./rest-data-edge.md) instead, with the same tokens.
 
 ## Authentication
 
@@ -36,7 +36,7 @@ A token can be minted narrower than its owner, so an agent holds a credential it
 | `roles` | `--role` (repeatable) | Restrict the token to these roles |
 | `databases` | `--database` (repeatable) | Restrict the token to these databases |
 | `pools` | `--pool` (repeatable) | Restrict the token to these pools |
-| `tools` | `--tool` (repeatable) | Restrict the MCP tool surface the token may call |
+| `tools` | `--tool` (repeatable) | Restrict the MCP tool surface the token may call. `rest` is the reserved name for the [REST data edge](./rest-data-edge.md): a token restricted on this axis reaches the edge only when it lists `rest` |
 | `verbCeiling` | `--verb-ceiling` | Cap write power: `RO`, `RW`, `DDL` or `ALL`. `RO` also makes the token read-only on REST and MCP, see below |
 | `dropAdmin` | `--drop-admin` | Strip the owner's superuser/admin standing from this token |
 | `stmtTimeoutMs` | `--stmt-timeout-ms` | Per-statement timeout, milliseconds |
