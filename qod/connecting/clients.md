@@ -6,7 +6,7 @@ description: "Connect JDBC, ADBC, ODBC, Python and DuckDB itself to a governed D
 keywords: ["duckdb jdbc", "duckdb adbc", "duckdb odbc", "flight sql", "connect to duckdb", "python duckdb client"]
 ---
 
-Queries never go through the REST API. The gateway serves them on two dedicated wires, and a client picks whichever one it already speaks:
+SQL never goes through the REST API. The gateway serves it on two dedicated wires, and a client picks whichever one it already speaks:
 
 | Wire | Port | Who speaks it |
 |---|---|---|
@@ -24,6 +24,8 @@ ATTACH 'quack:host:9494' AS qod (TYPE quack, TOKEN 'tenant=acme&pool=bi&user=ali
 See [DuckDB (native Quack)](/qod/connecting/duckdb) for the token format, TLS, and what the client sees. The rest of this page covers the FlightSQL connection target and per-client recipes; see [Authenticating](/qod/connecting/authenticating) for credentials and TLS, and [Supported SQL](/qod/connecting/sql) for what you can run.
 
 **AI agents** (Claude Code, Claude Desktop, Cursor) are the exception: they connect to the manager's embedded [MCP server](/qod/connecting/mcp) on the REST port.
+
+**HTTP-only tools** (n8n, Zapier, a spreadsheet import, a cache) read tables and views without a driver or SQL through the read-only [REST data edge](./rest-data-edge.md), under `/data/v1` on the same port, once an operator turns it on.
 
 ## Get a driver
 

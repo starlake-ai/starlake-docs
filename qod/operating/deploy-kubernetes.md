@@ -124,7 +124,8 @@ Top-level keys in `values.yaml`:
 | `drainTimeoutSec` | Seconds the manager waits for in-flight statements before shutting down (default 60); the pod's `terminationGracePeriodSeconds` is derived as this plus 15. |
 | `service` | Services for the REST/UI listener (`rest`), the FlightSQL edge (`flightsql`) and the native Quack front door (`quack`, port 9494), each with `type`, `port`, and `annotations`. |
 | `quack` | The native Quack front door DuckDB clients `ATTACH` to: `enabled` (default `true`) and `tls.enabled` (default `false`; the DuckDB client only speaks plain HTTP to loopback hosts, so enable TLS or front the port with an Ingress before exposing it). With `replicaCount > 1` the balancer in front must be session-sticky. See [DuckDB (native Quack)](/qod/connecting/duckdb). |
-| `ingress` | Ingress for the REST/UI; FlightSQL (gRPC) is not covered here. |
+| `ingress` | Ingress for the REST/UI; FlightSQL (gRPC) is not covered here. The default `path: /` exposes the whole manager port; to publish only the REST data edge, route `path: /data/` with `pathType: Prefix`. |
+| `dataEdge` | `dataEdge.enabled` (default `false`, `QOD_DATA_EDGE_ENABLED`) serves the read-only [REST data edge](../connecting/rest-data-edge.md) under `/data/v1` on the manager port, plain HTTP like the rest of that port, personal access tokens only. Expose it by routing only the `/data/` prefix, never the whole port, and rate-limit per client and per `Authorization` value at the proxy. A NetworkPolicy cannot tell `/data/` from the admin API on the same port, so in-cluster callers reach both. |
 | `probes` | Liveness and readiness probe tuning. |
 | `serviceMonitor` | Prometheus Operator ServiceMonitor toggle. |
 | `pdb` | PodDisruptionBudget (only useful when `replicaCount > 1`). |
