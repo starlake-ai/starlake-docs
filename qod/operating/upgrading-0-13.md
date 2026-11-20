@@ -5,7 +5,7 @@ description: "The checklist for upgrading a QoD manager from 0.12.x to 0.13.0: J
 keywords: ["upgrade", "release notes", "0.13.0", "0.12.2", "java 25", "migration", "breaking changes"]
 ---
 
-Coming from 0.12.0 or earlier, first apply [Upgrading to 0.12](./upgrading-0-12.md).
+Coming from 0.12.0 or earlier, first apply [Upgrading to 0.12](./upgrading-0-12.md). Already on 0.13.0 or later? See [Upgrading to 0.14](./upgrading-0-14.md).
 
 0.12.2 needs no step of its own. It lets the manager boot on Linux distributions with a glibc older than 2.34 (Ubuntu 20.04, Debian 11, RHEL 8 and its rebuilds), which refused it with ``version `GLIBC_2.34' not found``. The bundled `qod-node` and `libquackwire` now need at most glibc 2.28.
 
