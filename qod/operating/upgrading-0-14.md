@@ -1,8 +1,8 @@
 ---
 id: upgrading-0-14
 title: Upgrading to 0.14
-description: "The checklist for upgrading a QoD manager from 0.13.x to 0.14.0: restart every node, and from this release on the manager checks the upgrade path at boot."
-keywords: ["upgrade", "release notes", "0.14.0", "0.13.1", "release gate", "migration", "rollback"]
+description: "The checklists for upgrading a QoD manager from 0.13.x to 0.14.0 (restart every node; the manager now checks the upgrade path at boot) and from 0.14.0 to 0.14.1 (a disabled tenant is now fully inert)."
+keywords: ["upgrade", "release notes", "0.14.0", "0.14.1", "0.13.1", "release gate", "migration", "rollback", "disabled tenant"]
 ---
 
 Coming from 0.12.x or earlier, first apply [Upgrading to 0.13](./upgrading-0-13.md).
@@ -65,3 +65,35 @@ See [Day-2 operations](../administration/day-2-operations.md) for the errors a c
 - A read-only REST data edge serves tables and views as HTTP resources, off by default: see [REST data edge](../connecting/rest-data-edge.md).
 - One Linux host can keep several releases installed and switch between them offline: see [Deploy on a single server](./deploy-single-server.md).
 - The Docker images check the sha256 of every DuckDB archive they download.
+
+## From 0.14.0 to 0.14.1
+
+0.14.1 upgrades directly from 0.10.0 or later, and rolls back to 0.14.0 without a restore of the control-plane database. Coming from 0.13.x, apply the 0.14.0 checklist above first.
+
+### Checklist
+
+**Before upgrading**
+
+1. **Enable every disabled tenant still in use.** From 0.14.1 a disabled tenant is fully inert, and at the first boot its nodes stop. See [Disabled tenants](#disabled-tenants).
+2. **Narrow an upgrade agent's sudo rule.** If an agent runs `deploy/host/install.sh` through sudo with a rule that allows any argument, narrow the rule to the version argument (the repository's [`deploy/host/README.md`](https://github.com/starlake-ai/qod/tree/main/deploy/host), "An upgrade agent"). `install.sh` now takes `--wheel FILE`, which chooses code that runs as root.
+
+### Disabled tenants
+
+Before 0.14.1, disabling a tenant only refused its new FlightSQL and native Quack connections. Now, while a tenant is disabled:
+
+- its open FlightSQL and native Quack sessions are refused on their next statement;
+- its users' password and SSO logins answer `403 tenant_disabled`, their console sessions are refused everything but signing out, and their personal access tokens are refused on REST, MCP, SCIM and the REST data edge;
+- its pools' nodes are stopped and none starts: a pool create or scale-up answers `409 tenant_disabled`, a resume or node restart fails, a maintenance run due meanwhile fails with that reason, and the pool list says why in each pool's `statusDetail`;
+- superusers keep full access to it.
+
+Enabling it brings every pool back with its own settings. Nothing is deleted. Only a superuser disables or enables a tenant: a tenant admin's attempt answers `403 superuser_required`, and the console's toggle is greyed out for them.
+
+### What changes for operators
+
+- **Deleting a tenant deletes its users.** Before, `tenant/delete` left the tenant's users in the control plane, with their tokens and S3 credentials, and a tenant created again under the same name got them back. Creating a tenant now first removes users an earlier delete left under its name, which also clears what a delete on an earlier release left behind.
+- **Deletes ask for the name.** On a terminal, `qod tenant delete` and `qod database delete` list what goes with the delete and send nothing until the name is typed back. Without a terminal (a script, an agent, CI) they ask nothing, and no flag skips the question on a terminal. The console's two deletes open a dialog whose **Delete** button stays off until the name is typed. The REST API and the MCP tools are unchanged.
+
+### New in 0.14.1
+
+- `QOD_TENANT_DELETE_ENABLED=false` turns tenant deletion off for everyone, superusers included (`403 tenant_delete_disabled`): see [Tenants and databases](./tenants-databases.md#list-disable-change-auth-delete).
+- `deploy/host/install.sh VERSION --wheel FILE [--sha256 HEX]` installs a wheel the caller already checked: see [Deploy on a single server](./deploy-single-server.md).

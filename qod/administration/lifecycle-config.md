@@ -167,12 +167,14 @@ The import response is a JSON count: `{"tenants":2,"tenantDbs":3,"pools":4,...}`
 **Prerequisites**:
 
 - To delete a tenant, all of its pools must already be deleted. Attempting to delete a tenant that still has pools returns an error.
+- Deleting a tenant deletes its users too, with their tokens and S3 credentials. To keep a tenant's data and accounts while shutting it off, disable it instead (superusers only).
+- With `QOD_TENANT_DELETE_ENABLED=false` no tenant can be deleted, by anyone (`403 tenant_delete_disabled`).
 - Deleting a pool with `force: true` stops nodes immediately; outstanding queries fail. Use **Drain** first if you need a graceful stop.
 
 **Steps (UI)**:
 
 1. **Delete a pool**: Pick the tenant in the sidebar's tenant switcher, open **Tenant > Pools**, click the pool name to open its detail page, and click the **Delete** (trash) button in the header. This stops all nodes and removes the pool from the registry. To stop nodes temporarily without removing the pool, use **Suspend** -> **Drain** instead.
-2. **Delete a tenant**: Once all pools are removed, choose **Manage tenants...** in the tenant switcher and click the delete action on the tenant's row.
+2. **Delete a tenant**: Once all pools are removed, choose **Manage tenants...** in the tenant switcher and click the delete action on the tenant's row, then type the tenant's name in the dialog to turn on its **Delete** button.
 3. **Remove a user, role, or group**: Pick the tenant in the tenant switcher, open **Users**, **Groups**, or **Roles** under **Users & Access Controls**, find the object, and click **Delete**.
 
 **Manifest (YAML):** Declaratively, drop a pool from a tenant that is still in the manifest and re-import; nested collections are replaced, so the omitted pool is pruned. Top-level tenants are upsert-only, so deleting a whole tenant uses the CLI delete below, not omission. See [Manage by manifest](/qod/administration/manage-by-manifest).
@@ -183,7 +185,7 @@ The import response is a JSON count: `{"tenants":2,"tenantDbs":3,"pools":4,...}`
 # Delete a pool: stops nodes AND removes the pool from the registry
 qod pool delete --tenant acme --db acme_tpch --pool bi --force
 
-# Delete a tenant (must have no pools first)
+# Delete a tenant (must have no pools first); on a terminal, type its name to confirm
 qod tenant delete acme
 ```
 

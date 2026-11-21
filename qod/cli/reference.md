@@ -33,8 +33,8 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 |---|---|
 | `qod tenant list` | List tenants. |
 | `qod tenant create` | Create a tenant. |
-| `qod tenant delete` | Delete a tenant (must have no pools). |
-| `qod tenant set-disabled` | Enable or disable a tenant. |
+| `qod tenant delete` | Delete a tenant and its users (must have no pools; on a terminal, type the name to confirm). |
+| `qod tenant set-disabled` | Enable or disable a tenant (superusers only). |
 | `qod tenant set-auth` | Change a tenant's auth provider/config (`--auth-provider`, repeatable `--auth-config KEY=VALUE`). The write-only OIDC client secret never goes on argv: `--client-secret-prompt` (hidden, asked twice) or `--client-secret-stdin`; `--clear-client-secret` removes it (at most one of the three). Adding or changing a `clientSecretRef` needs a superuser. |
 | `qod tenant set-acl` | Choose the tenant's data-access authorization: `--mode qod\|opa`, `--opa-url`, `--opa-policy-path`, write-only `--opa-token`. `--send-statement-text` is kept for compatibility and has no effect. |
 | `qod tenant opa-test` | Dry-run an OPA decision for `--user` on `--pool`: pool access, or with `--sql` one statement run on a node of the running pool as that user and judged, never executed. Prints the input the node sends OPA (accesses with `kind`, `columns` and `via`, `locations`; never the SQL text) and the decision. Refusals: `409 pool_not_running` (it never wakes a pool), `400 single_statement_required`, `opa_mode_required`, `refused_before_opa` (a superuser), `nothing_to_authorize`, and `503 authz_unavailable` when the node cannot reach the manager. An OPA it cannot reach shows a non-superuser only "OPA unreachable or returned an error (see the manager log)". |
@@ -47,7 +47,7 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | `qod database list` | List databases for a tenant. |
 | `qod database create` | Create a tenant database. |
 | `qod database update` | Update a tenant database's metastore/object-store/init settings. A tenant admin's `--init-sql` runs under an allowlist; a superuser re-saving it trusts it. |
-| `qod database delete` | Delete a tenant database. |
+| `qod database delete` | Delete a tenant database (on a terminal, type the name to confirm). |
 
 ## pool
 
