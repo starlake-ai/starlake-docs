@@ -106,7 +106,7 @@ A **Recent statements** table at the bottom shows the last statements routed thr
 
 ## Tenants
 
-The tenant list (`/ui/tenants`, reached through **Manage tenants...** in the [tenant switcher](#tenant-switcher)) shows every tenant with an enable/disable toggle per row (the disabled state is the data-plane kill switch: the edge rejects fresh handshakes for a disabled tenant), a delete action (refused while the tenant still has active pools), and a **+ New tenant** form (also opened by **New tenant** in the switcher). Clicking a tenant name opens its Databases page.
+The tenant list (`/ui/tenants`, reached through **Manage tenants...** in the [tenant switcher](#tenant-switcher)) shows every tenant with an enable/disable toggle per row (superusers only, greyed out for tenant admins: a disabled tenant is fully inert, its nodes stopped and its sessions, logins and tokens refused, until it is enabled again), a delete action (refused while the tenant still has active pools, and greyed out with the reason when `QOD_TENANT_DELETE_ENABLED=false`) that opens a dialog whose **Delete** button stays off until the tenant's name is typed, and a **+ New tenant** form (also opened by **New tenant** in the switcher). Clicking a tenant name opens its Databases page.
 
 What used to be the tabs of a tenant detail page are now separate sidebar pages under **Tenant**, each working on the tenant picked in the switcher and headed with its display name and id:
 
