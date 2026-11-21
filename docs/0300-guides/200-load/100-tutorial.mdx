@@ -41,7 +41,7 @@ import Head from '@docusaurus/Head';
           "name": "Where do files go after being loaded by Starlake?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Once loaded, files are moved to the $SL_ROOT/datasets/archive folder if the SL_ARCHIVE environment variable is set to true (which is the default). You can replay them by moving them back to the incoming folder."
+            "text": "Once loaded, files are moved to the $SL_ROOT/datasets/archive folder if the SL_ARCHIVE environment variable is set to true (which is the default), and deleted otherwise. A domain or a table can decide for itself with the archive key of its metadata. You can replay archived files by moving them back to the incoming folder."
           }
         },
         {
@@ -164,7 +164,7 @@ Starlake looks at files present in the `$SL_ROOT/datasets/incoming` folder.
 The default incoming folder can be changed by setting the `SL_INCOMING` environment variable or by configuring the `application.area.incoming` property in `metadata/application.sl.yml`.
 :::
 
-Once loaded, files are moved to `$SL_ROOT/datasets/archive/` if the `SL_ARCHIVE` environment variable is set to `true` (the default). To replay a load, move the files back to the `incoming/` folder.
+Once loaded, files are moved to `$SL_ROOT/datasets/archive/` if the `SL_ARCHIVE` environment variable is set to `true` (the default), and deleted otherwise. A domain or a table can decide for itself with the `archive` key of its `metadata`: see [Archive or Delete the Loaded Files](./106-load.mdx#archive-or-delete-the-loaded-files). To replay a load, move the archived files back to the `incoming/` folder.
 
 ## Query Loaded Data with DuckDB
 
@@ -280,7 +280,7 @@ The `autoload` command is a shortcut that combines `infer-schema`, `stage`, and 
 Yes. Starlake validates every record against the inferred or user-defined schema. Valid records go to the target table. Rejected records are stored in the `audit.rejected` table with the rejection reason.
 
 ### Where do files go after being loaded by Starlake?
-Once loaded, files are moved to the `$SL_ROOT/datasets/archive` folder if the `SL_ARCHIVE` environment variable is set to `true` (the default). You can replay them by moving them back to the `incoming` folder.
+Once loaded, files are moved to the `$SL_ROOT/datasets/archive` folder if the `SL_ARCHIVE` environment variable is set to `true` (the default), and deleted otherwise. A domain or a table can decide for itself with the `archive` key of its `metadata`: see [Archive or Delete the Loaded Files](./106-load.mdx#archive-or-delete-the-loaded-files). You can replay archived files by moving them back to the `incoming` folder.
 
 ### How does Starlake map files to database schemas and tables?
 The folder name under `incoming/` becomes the database schema (domain). Each file name (minus extension and date suffix) becomes the target table name.

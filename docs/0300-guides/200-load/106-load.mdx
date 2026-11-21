@@ -51,6 +51,14 @@ import Head from '@docusaurus/Head';
             "@type": "Answer",
             "text": "Manual load supports CSV/DSV, JSON, XML, and fixed-width (positional) files. Each format has its own configuration page with parsing options."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I delete the files of a table once they are loaded, instead of archiving them?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Set archive: false in the metadata of the table, or in the metadata of its domain in _config.sl.yml for all its tables. The key of a table wins over the key of its domain, and both win over the SL_ARCHIVE setting of the application, which applies when neither sets it. Only the files of a successful load are concerned."
+          }
         }
       ]
     })}
@@ -152,6 +160,29 @@ The `{{incoming_path}}` variable is resolved from the environment file (`metadat
 
 Since the directory is set at the domain level, all tables within this domain share the same incoming path.
 
+## Archive or Delete the Loaded Files
+
+After a successful load, Starlake moves the loaded files to the archive area, `$SL_ROOT/datasets/archive/<domain>/`, when the `archive` setting of the application (`SL_ARCHIVE`) is `true`, which is the default, and deletes them otherwise. A domain or a table can decide for itself with the `archive` key of its `metadata`:
+
+```yaml title="metadata/load/starbake/_config.sl.yml"
+load:
+  metadata:
+    directory: "{{incoming_path}}/starbake"
+    archive: true        # archive the files of its tables, unless a table says otherwise
+```
+
+```yaml title="metadata/load/starbake/exports.sl.yml"
+table:
+  name: exports
+  pattern: "exports.*.csv"
+  metadata:
+    archive: false       # delete the files of this table once loaded
+```
+
+- The key of a table wins over the key of its domain, and both win over the setting of the application, which applies when neither sets the key.
+- Only the files of a successful load are concerned. A failed load gives its files back to the stage area, or leaves them in the ingesting area when it may have written rows, and a load in test mode keeps them.
+- Only the files are concerned. The rows that `SL_ARCHIVE_TABLE` copies into the archive table of each table (`<domain>_archive.<table>_archive` by default), and the rejected lines that `SL_SINK_REPLAY_TO_FILE` writes to the replay area, are still kept.
+
 ## Table Configuration by File Format
 
 Each table requires a `<table>.sl.yml` file that defines the file pattern, format, separator, and attribute schema. Configuration differs by file format:
@@ -187,3 +218,6 @@ The `_config.sl.yml` file under `metadata/load/<domain>/` defines domain-level s
 
 ### What file formats are supported for manual load?
 Manual load supports CSV/DSV, JSON, XML, and fixed-width (positional) files. Each format has its own configuration page with parsing options.
+
+### How do I delete the files of a table once they are loaded, instead of archiving them?
+Set `archive: false` in the `metadata` of the table, or in the `metadata` of its domain in `_config.sl.yml` for all its tables. The key of a table wins over the key of its domain, and both win over the `SL_ARCHIVE` setting of the application, which applies when neither sets it. Only the files of a successful load are concerned. See [Archive or Delete the Loaded Files](#archive-or-delete-the-loaded-files).
