@@ -47,7 +47,7 @@ Grafana:       http://localhost:3000            (anonymous admin; no login)
                Dashboard: "QoD - Single Node"
 ```
 
-Grafana runs anonymous-admin for zero-login local use; do not expose port 3000 to a public network without disabling that. See the [Docker deployment](/qod/operating/deploy-docker) page for the profile mechanics. Tear down with `docker compose -f docker-compose.yml --profile observability down`.
+Grafana runs anonymous-admin for zero-login local use; do not expose port 3000 to a public network without disabling that. See the [Docker deployment](/qod/operating/deploy-docker) page for the profile mechanics. Tear down with `docker compose --project-directory . -f deploy/docker/docker-compose.yml --profile observability down`.
 
 ### Standalone Prometheus + Grafana
 
