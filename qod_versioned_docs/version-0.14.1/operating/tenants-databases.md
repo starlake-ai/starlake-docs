@@ -52,15 +52,21 @@ See [Per-tenant OIDC](./auth-providers.md#per-tenant-oidc) for the console sign-
 # List every tenant (with its pools and auth provider)
 qod tenant list
 
-# Disable a tenant: the edge rejects fresh handshakes for all its pools
+# Disable a tenant (superusers only): its nodes stop, its sessions, logins
+# and tokens are refused; enabling it brings every pool back
 qod tenant set-disabled acme --disabled
 
 # Switch the auth provider after creation
 qod tenant set-auth acme --auth-provider db
 
-# Delete a tenant (remove its pools first, else 409 has_pools)
+# Delete a tenant and its users (remove its pools first, else 409 has_pools);
+# on a terminal it asks for the tenant's name to be typed back
 qod tenant delete acme
 ```
+
+While a tenant is disabled, its open FlightSQL and native Quack sessions are refused on their next statement, its users' logins answer `403 tenant_disabled`, their console sessions and personal access tokens are refused, and its pools' nodes are stopped, each pool keeping its settings: a pool create or scale-up answers `409 tenant_disabled`, and the pool list says why in each pool's `statusDetail`. Superusers keep full access to it. Nothing is deleted, and enabling it brings every pool back. Only a superuser disables or enables a tenant (`403 superuser_required` for a tenant admin).
+
+Deleting a tenant removes its databases, roles, groups, pool grants, authorized folders and users, with the users' tokens and S3 credentials. On a terminal, `qod tenant delete` and `qod database delete` print what goes with the delete and send nothing until the name is typed back; without a terminal they ask nothing, and no flag skips the question. To keep tenants from being deleted at all, set `QOD_TENANT_DELETE_ENABLED=false`: every `tenant/delete` (REST, MCP, the CLI, the console) then answers `403 tenant_delete_disabled`, a superuser's included, and tenant responses carry `deleteEnabled: false`. Disable a tenant instead; its databases, pools and users can still be deleted one by one.
 
 ### Authorized folders and users' own S3 keys
 

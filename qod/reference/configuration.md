@@ -128,6 +128,7 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.reconcileIntervalSec` | `QOD_RECONCILE_INTERVAL_SEC` | `30` |  | Seconds between supervisor reconcile passes that respawn dead nodes. 0 disables the periodic loop (reconcile still runs once at boot). |
 | `quack-on-demand.publicBaseUrl` | `QOD_PUBLIC_BASE_URL` | _(unset)_ |  | Externally visible base URL (e.g. https&#58;//qod.example.com) used to build password-reset links mailed to users. When empty the link is host-relative (/ui/reset-password?...) and Main logs a boot warning. |
 | `quack-on-demand.requireEncryption` | `QOD_REQUIRE_ENCRYPTION` | `false` |  | Refuse `database/create` unless the caller asks for encryption at rest. Gates creates only: existing databases are untouched, so turning this on never bricks a running deployment. |
+| `quack-on-demand.tenantDeleteEnabled` | `QOD_TENANT_DELETE_ENABLED` | `true` |  | Whether `tenant/delete` (REST, MCP, `qod tenant delete`, the console) may delete a tenant. `false` refuses every delete, a superuser's included, with `403 tenant_delete_disabled`; disable the tenant instead. Nothing else is gated: databases, pools and users can still be deleted one by one. |
 | `quack-on-demand.sessionIdleTtlSec` | `QOD_SESSION_IDLE_TTL_SEC` | `28800` |  | UI session idle TTL in seconds. A session unused for this long is dropped on the next access; each successful access slides the window. Manager restart still invalidates everything (sessions are heap-only). |
 
 ## `quack-on-demand.admin`

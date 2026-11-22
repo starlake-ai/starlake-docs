@@ -20,7 +20,7 @@ The client sends a username and password (the `user` / `password` JDBC params, o
 
 The client presents a validated JWT as the bearer token. The user is taken from the token's `sub` claim. The `tenant` and `pool` headers are always required - the edge does NOT read a tenant claim from the JWT; the URL is authoritative.
 
-In both paths the owning database (tenant-db) is resolved server-side from `(tenant, pool)`; the client never names it. A disabled tenant or pool causes the handshake to fail as unauthenticated.
+In both paths the owning database (tenant-db) is resolved server-side from `(tenant, pool)`; the client never names it. A disabled tenant or pool causes the handshake to fail as unauthenticated, and a session that is already open on a tenant when it is disabled is refused on its next statement.
 
 ## Auth realm: tenant vs. system superuser
 

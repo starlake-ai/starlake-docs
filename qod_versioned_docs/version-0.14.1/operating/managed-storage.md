@@ -88,7 +88,7 @@ curl -sS -X POST "$MGR/api/database/delete" \
   -d '{"tenant":"acme","name":"acme_sales","purgeManagedData":true}'
 ```
 
-The admin UI asks a second time on a `ducklake` delete ("Also purge managed object storage now?"); confirming sets the same flag. "Immediately" means immediately *eligible*: the delete call still returns as fast as a plain delete, and the worker removes the objects on its next sweep. The flag is ignored, with a warning in the log, on a database that has no managed prefix.
+In the admin UI, the delete dialog of a `ducklake` database has a checkbox, "Also purge its managed object storage now", unticked by default; ticking it sets the same flag. "Immediately" means immediately *eligible*: the delete call still returns as fast as a plain delete, and the worker removes the objects on its next sweep. The flag is ignored, with a warning in the log, on a database that has no managed prefix.
 
 ### Inventory
 
