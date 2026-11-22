@@ -680,7 +680,7 @@ Reference configs ship in the repo under `observability/` (`prometheus.yml` for 
 
 ### 7.3 Grafana data source
 
-Add a standard **Prometheus** data source pointing at your Prometheus server. If you use the shipped provisioning file (`observability/grafana-provisioning/datasources/prometheus.yaml`) the data source is named `Prometheus` with UID `prometheus-local`, which is what the shipped dashboards bind to by default; on manual import you simply pick your own Prometheus data source instead.
+Add a standard **Prometheus** data source pointing at your Prometheus server. If you use the shipped provisioning file (`deploy/observability/grafana-provisioning/datasources/prometheus.yaml`) the data source is named `Prometheus` with UID `prometheus-local`, which is what the shipped dashboards bind to by default; on manual import you simply pick your own Prometheus data source instead.
 
 ### 7.4 What you get
 
@@ -692,7 +692,7 @@ No alerting rules ship with the product; author your own. Useful starting points
 
 ## 8. Installing the predefined Grafana dashboards
 
-The dashboard for this deployment is `observability/grafana-dashboard-single.json` (title **QoD - Single Node**, a Grafana 10.x JSON model with 32 panels).
+The dashboard for this deployment is `deploy/observability/grafana-dashboard-single.json` (title **QoD - Single Node**, a Grafana 10.x JSON model with 32 panels).
 
 Panels cover: overview stats (total QPS, error rate, active sessions, sessions in transaction, node count), statement latency percentiles, QPS by tenant, outcomes by status, DuckDB engine memory/spill/temp per node, DuckLake maintenance, security policy rewrites, and JVM health.
 
@@ -705,7 +705,7 @@ Panels cover: overview stats (total QPS, error rate, active sessions, sessions i
 
 ### Option B: file provisioning (existing Grafana, managed as config)
 
-1. Copy `observability/grafana-provisioning/dashboards/qod.yaml` into `/etc/grafana/provisioning/dashboards/`.
+1. Copy `deploy/observability/grafana-provisioning/dashboards/qod.yaml` into `/etc/grafana/provisioning/dashboards/`.
 2. Copy `grafana-dashboard-single.json` into `/var/lib/grafana/dashboards/`.
 3. Restart Grafana (the provider re-scans every 10 seconds thereafter, and UI edits are allowed).
 
