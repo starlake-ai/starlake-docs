@@ -136,7 +136,7 @@ Set `QOD_METRICS_SINK=none`: no `/metrics` endpoint is mounted, no cloud push oc
 
 Two deployment-shaped dashboards ship under `observability/`, both ready to import (Grafana 10.x: **Dashboards → New → Import → Upload JSON file**, then pick your Prometheus datasource; the `${datasource}` variable resolves to its UID):
 
-- **`grafana-dashboard-single.json`** ("QoD - Single Node") - for the single-box docker-compose stack. Mounted by the top-level `docker-compose.yml` observability profile.
+- **`grafana-dashboard-single.json`** ("QoD - Single Node") - for the single-box docker-compose stack. Mounted by the observability profile of `deploy/docker/docker-compose.yml`.
 - **`grafana-dashboard-k8s.json`** ("QoD - Kubernetes") - the single-node content plus the Pool Occupancy, Node Health, and Routing Locality rows. Mounted by the standalone `observability/docker-compose.yml` and rebuilt into the kind smoke rig's ConfigMap.
 
 Rows common to both, top to bottom:

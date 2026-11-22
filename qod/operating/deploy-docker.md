@@ -46,7 +46,13 @@ QOD_VERSION=LOCAL ./scripts/docker/run-docker-compose.sh
 
 Settings come from a `.env` file (copied from `.env.example` on first run). Edit it before booting, or pass the same keys as environment variables. The admin UI is at `http://localhost:20900/ui/`; log in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` (defaults `admin` / `admin`).
 
-Plain `docker compose up --build` also works if you do not want the wrapper's preflight and seeding.
+The compose files live in `deploy/docker/` (`docker-compose.yml`, plus `docker-compose.fleet.yml` for [fleet mode](#fleet-mode-manager-and-workers-as-containers)). Without the wrapper, run Compose from the repository root and pass `--project-directory .`, so that the bind mounts (`./pgdata`, `./ducklake`, ...), the `.env` file and the project name all come from the root:
+
+```bash
+docker compose --project-directory . -f deploy/docker/docker-compose.yml up --build
+```
+
+Without `--project-directory .`, Compose ignores the root `.env` and creates its data folders under `deploy/docker/`. Every `docker compose` command on this page is meant in that form.
 
 ## Data folders (external bind mounts)
 
@@ -114,9 +120,9 @@ NUKE=1 DEMO=minimal LOAD_TPCH=1 ./scripts/docker/run-docker-compose.sh
 You can also seed a running stack directly:
 
 ```bash
-docker compose exec -e PG_HOST=postgres -e DB_NAME=acme_tpch -e SCHEMA_NAME=tpch1 \
+docker compose --project-directory . -f deploy/docker/docker-compose.yml exec -e PG_HOST=postgres -e DB_NAME=acme_tpch -e SCHEMA_NAME=tpch1 \
   -e DATA_PATH=/app/ducklake/acme_tpch -e SF=1 quack /app/scripts/load-tpch-dbgen.sh
-docker compose exec -e PG_HOST=postgres -e DB_NAME=globex_tpcds -e SCHEMA_NAME=tpcds1 \
+docker compose --project-directory . -f deploy/docker/docker-compose.yml exec -e PG_HOST=postgres -e DB_NAME=globex_tpcds -e SCHEMA_NAME=tpcds1 \
   -e DATA_PATH=/app/ducklake/globex_tpcds -e SF=1 quack /app/scripts/load-tpcds-dbgen.sh
 ```
 
@@ -128,7 +134,7 @@ Activate with `--profile` on `docker compose`, or via `PROFILES=...` on the wrap
 
 Set `QOD_DUCKLAKE_DATA_PATH` to an `s3://` URL and fill in the `QOD_S3_*` credentials to write DuckLake Parquet to a bucket instead of the `./ducklake` bind mount. Two options:
 
-- **Bundled SeaweedFS** (no external dependency). Bring it up with `docker compose --profile seaweedfs up -d`; the wrapper auto-activates this profile when `QOD_S3_ENDPOINT` (exported, or in `.env`) points at `seaweedfs:8333`. Pair with `QOD_DUCKLAKE_DATA_PATH=s3://${S3_BUCKET}/<db>`. SeaweedFS auto-creates buckets on first write, so no separate bucket step is needed. The Filer UI on `:8888` doubles as a file browser.
+- **Bundled SeaweedFS** (no external dependency). Bring it up with `docker compose --project-directory . -f deploy/docker/docker-compose.yml --profile seaweedfs up -d`; the wrapper auto-activates this profile when `QOD_S3_ENDPOINT` (exported, or in `.env`) points at `seaweedfs:8333`. Pair with `QOD_DUCKLAKE_DATA_PATH=s3://${S3_BUCKET}/<db>`. SeaweedFS auto-creates buckets on first write, so no separate bucket step is needed. The Filer UI on `:8888` doubles as a file browser.
 - **External S3** (AWS, R2, MinIO, GCS HMAC). Leave the profile off and set the bucket plus credentials; omit `QOD_S3_ENDPOINT` to use the AWS default.
 
 The `.env.example` file has ready-to-uncomment blocks for both. The `spawn-quack-node.sh` and TPC-H loader detect the `s3://` scheme, install DuckDB's `httpfs`, and `CREATE SECRET` scoped to each database's data path, so every node reads and writes that database's Parquet in the bucket. Those keys sign nothing else: users who read or write their own files register S3 keys of their own (`qod profile s3 add`), and an endpoint other than AWS's (SeaweedFS, MinIO) must then be listed in `QOD_USER_S3_ALLOWED_ENDPOINTS`.
@@ -136,7 +142,7 @@ The `.env.example` file has ready-to-uncomment blocks for both. The `spawn-quack
 ### Observability
 
 ```bash
-docker compose --profile observability up -d
+docker compose --project-directory . -f deploy/docker/docker-compose.yml --profile observability up -d
 # or: PROFILES=observability ./scripts/docker/run-docker-compose.sh
 ```
 
@@ -152,7 +158,7 @@ The `starflow` profile runs [Starflow](/starflow/overview) (the Starlake API + U
 STARFLOW_ENABLED=true ./scripts/docker/run-docker-compose.sh
 ```
 
-The wrapper activates the profile, generates the shared session secret `SESSION_JWT_SECRET` into `.env` when it is missing (printed by name only), picks the edge URL Starflow uses from `TLS`, and waits for Starflow before printing its URL (`http://localhost:9900` by default). The first run builds the Starflow image locally (`docker/starflow`), which downloads a Starflow release of several hundred MB.
+The wrapper activates the profile, generates the shared session secret `SESSION_JWT_SECRET` into `.env` when it is missing (printed by name only), picks the edge URL Starflow uses from `TLS`, and waits for Starflow before printing its URL (`http://localhost:9900` by default). The first run builds the Starflow image locally (`deploy/docker/starflow`), which downloads a Starflow release of several hundred MB.
 
 With plain `docker compose`, set the secret yourself; it must stay stable across restarts, or SSO and Starflow's calls to the manager break:
 
@@ -162,7 +168,7 @@ STARFLOW_ENABLED=true
 COMPOSE_PROFILES=starflow
 SESSION_JWT_SECRET=$(openssl rand -hex 48)
 EOF
-docker compose up -d --build
+docker compose --project-directory . -f deploy/docker/docker-compose.yml up -d --build
 ```
 
 A one-shot `starflow-db-init` service creates the `starlake` metadata database on the compose Postgres, then the `starflow` service starts. If `STARFLOW_ENABLED` or `SESSION_JWT_SECRET` is missing, `starflow-db-init` exits with an error naming it and Starflow does not start. Without the profile, the manager runs with the Starlake integration off, exactly as before.
@@ -180,11 +186,11 @@ A one-shot `starflow-db-init` service creates the `starlake` metadata database o
 
 ### Fleet mode (manager and workers as containers)
 
-`docker-compose.fleet.yml` layers on the base file and runs the stack with the [fleet runtime](deploy-fleet.md#run-servers-as-docker-containers): the manager schedules nodes onto two worker containers (`fleet-worker-1` on port `21901`, `fleet-worker-2` on `21902`) instead of spawning them itself. It needs a join token in `.env` and the SeaweedFS profile; it sets `QOD_INTERNAL_URL=http://host.docker.internal:20901` and publishes that port, the manager's verdict listener, so the worker nodes can call the manager back for their authorization verdicts (fleet mode refuses to boot without it):
+`deploy/docker/docker-compose.fleet.yml` layers on the base file and runs the stack with the [fleet runtime](deploy-fleet.md#run-servers-as-docker-containers): the manager schedules nodes onto two worker containers (`fleet-worker-1` on port `21901`, `fleet-worker-2` on `21902`) instead of spawning them itself. It needs a join token in `.env` and the SeaweedFS profile; it sets `QOD_INTERNAL_URL=http://host.docker.internal:20901` and publishes that port, the manager's verdict listener, so the worker nodes can call the manager back for their authorization verdicts (fleet mode refuses to boot without it):
 
 ```bash
 echo "FLEET_JOIN_TOKEN=$(openssl rand -hex 24)" >> .env
-docker compose -f docker-compose.yml -f docker-compose.fleet.yml --profile seaweedfs up -d --build
+docker compose --project-directory . -f deploy/docker/docker-compose.yml -f deploy/docker/docker-compose.fleet.yml --profile seaweedfs up -d --build
 ```
 
 ## Corporate proxy

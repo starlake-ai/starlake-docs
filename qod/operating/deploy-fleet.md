@@ -334,7 +334,7 @@ The repository's compose files run the whole stack in fleet mode on one host, wi
 
 ```bash
 echo "FLEET_JOIN_TOKEN=$(openssl rand -hex 24)" >> .env
-docker compose -f docker-compose.yml -f docker-compose.fleet.yml --profile seaweedfs up -d --build
+docker compose --project-directory . -f deploy/docker/docker-compose.yml -f deploy/docker/docker-compose.fleet.yml --profile seaweedfs up -d --build
 qod fleet servers    # fleet-worker-1 and fleet-worker-2, approved
 ```
 
