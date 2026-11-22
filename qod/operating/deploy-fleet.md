@@ -294,7 +294,7 @@ Anything else exported on the join process never reaches a node.
 
 ## Run servers as Docker containers
 
-The manager and the servers can all be containers. Each server is one container from `starlakeai/quack-on-demand-worker`, an image that bundles `qod-node` and its `libduckdb` (same release as the manager) and runs `qod fleet join` as a non-root user:
+The manager and the servers can all be containers, from the same image. `starlakeai/quack-on-demand` runs the manager by default and a fleet server with the `worker` argument: `qod fleet join` as a non-root user, with `qod-node`, its `libduckdb` and every DuckDB extension a node loads, so a server needs no outbound network. Each server is one container, at the manager's version:
 
 ```bash
 docker run -d --name qod-worker --restart unless-stopped --stop-timeout 70 \
@@ -305,8 +305,10 @@ docker run -d --name qod-worker --restart unless-stopped --stop-timeout 70 \
   -e QOD_FLEET_ADVERTISE_HOST=10.0.3.17 \
   -e QOD_FLEET_NODE_PORT=21900 \
   -e QOD_S3_ENDPOINT=... -e QOD_S3_ACCESS_KEY_ID=... -e QOD_S3_SECRET_ACCESS_KEY=... \
-  starlakeai/quack-on-demand-worker:latest
+  starlakeai/quack-on-demand:latest worker
 ```
+
+`starlakeai/quack-on-demand-worker` is a deprecated alias of the same image in its worker role, published for two releases after 0.14.2. In Docker Compose, use the image with `command: [worker]`.
 
 | Variable | Required | Meaning |
 |---|---|---|
@@ -319,6 +321,14 @@ docker run -d --name qod-worker --restart unless-stopped --stop-timeout 70 \
 | `QOD_S3_*`, `QOD_AZURE_*` | for object storage | Passed to the node: each server sets an endpoint it can reach. |
 
 The container stays in the foreground under `tini`; `docker stop` stops the node before the join process exits, which takes up to 60 seconds, hence `--stop-timeout 70`.
+
+**Healthchecks.** The image has no `curl`. `qod healthcheck worker` exits 0 while `qod fleet join` runs and its last heartbeat was accepted within three heartbeat intervals (at least 30 seconds); `qod healthcheck manager` exits 0 when the manager's `/ready` answers 200. Give each a `timeout:` (5 seconds): without one, Docker waits 30 seconds per try.
+
+```yaml
+healthcheck: { test: [CMD, qod, healthcheck, worker], interval: 15s, timeout: 5s, retries: 4 }
+```
+
+**Spill.** A node spills to `/duckdb-tmp` when that directory is writable, so mount a fast disk there, one folder per server. Set `QOD_FLEET_SPILL_DIR=/duckdb-tmp` and `qod fleet join` removes, at start, the spill folders a node of an earlier run left there: a node killed with its container leaves its folder behind. Never set it on a folder several servers share.
 
 **Publish the node port with the same number inside and out.** The node binds the port it advertises, so `-p 21901:21901 -e QOD_FLEET_NODE_PORT=21901` works and `-p 21901:21900` does not. Several worker containers on one host each take their own port.
 
