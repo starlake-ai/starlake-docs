@@ -322,7 +322,7 @@ docker run -d --name qod-worker --restart unless-stopped --stop-timeout 70 \
 
 The container stays in the foreground under `tini`; `docker stop` stops the node before the join process exits, which takes up to 60 seconds, hence `--stop-timeout 70`.
 
-**Healthchecks.** The image has no `curl`. `qod healthcheck worker` exits 0 while `qod fleet join` runs and its last heartbeat was accepted within three heartbeat intervals (at least 30 seconds); `qod healthcheck manager` exits 0 when the manager's `/ready` answers 200. Give each a `timeout:` (5 seconds): without one, Docker waits 30 seconds per try.
+**Healthchecks.** The image has no `curl`. `qod healthcheck worker` exits 0 while `qod fleet join` runs and keeps heartbeating, whatever the manager answers (a manager that is down or hung leaves its workers healthy, as restarting them would only stop their nodes); `qod healthcheck manager` exits 0 when the manager's `/ready` answers 200. Give each a `timeout:` (5 seconds): without one, Docker waits 30 seconds per try.
 
 ```yaml
 healthcheck: { test: [CMD, qod, healthcheck, worker], interval: 15s, timeout: 5s, retries: 4 }
