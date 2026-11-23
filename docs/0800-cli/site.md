@@ -23,5 +23,5 @@ Parameter|Cardinality|Description
 --clean `<value>`|*Optional*|Delete the output directory before generating the site
 --stats `<value>`|*Optional*|Query each connection's metadata (row count, size, last modified, actual column types) and write sl-stats.json. Never reads table data.
 --statsTimeout `<value>`|*Optional*|Per-connection timeout in seconds for --stats (default: 120)
---serve `<value>`|*Optional*|After generating, serve the site on `http://127.0.0.1:<port>/` until Ctrl-C
+--serve `<value>`|*Optional*|After generating, serve the site on 127.0.0.1, on the --port port, until Ctrl-C
 --port `<value>`|*Optional*|Port used by --serve (default: 8080)
