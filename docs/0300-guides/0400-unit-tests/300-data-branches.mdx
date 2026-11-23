@@ -153,7 +153,7 @@ To find the tasks downstream of your change, run [`starlake impact`](../../0800-
 starlake impact --base origin/main
 ```
 
-Starlake does not run them for you: run each reported task, select them with `--tags`, or run the whole DAG with `SL_DATA_BRANCH` set.
+Starlake does not run them for you: run each reported task, select them with `--tags`, or run the whole DAG with `SL_DATA_BRANCH` set. To run the same check on every pull request, see [Check change impact in CI](../600-deploy/200-change-impact.mdx).
 
 **4. Validate.** Compare the branch output with production:
 

@@ -97,11 +97,24 @@ Purposes below are one line each; run `qod <noun> <verb> --help` for the full fl
 | Command | Purpose |
 |---|---|
 | `qod user list` | List users. |
-| `qod user create` | Create a user (tenant-scoped, or `--superuser` for tenant-less); `--kind admin\|user` (management rights, default `user`), repeatable `--role` / `--group` (RBAC role and group names, default `qod_all_tables` / `qod_all_pools`), `--email` for password-reset links. |
-| `qod user update` | Update a user's tenant, password, kind (`--kind`), or email; `--no-enabled` locks the account, `--enabled` unlocks. |
+| `qod user create` | Create a user: tenant-scoped with `--tenant`, a superuser with `--superuser` (no tenant, kind `admin`; earlier releases created kind `user`), or a [platform staff](../operating/platform-staff.md) user with `--kind staff` (no tenant) and repeatable `--platform-role NAME`. `--kind admin\|user\|staff` (default `user`, or `admin` with `--superuser`), repeatable `--role` / `--group` for a tenant user (RBAC role and group names, default `qod_all_tables` / `qod_all_pools`; refused on a tenant-less account), `--email` for password-reset links. |
+| `qod user update` | Update a user's tenant, password, kind (`--kind`), or email; `--no-enabled` locks the account, `--enabled` unlocks. For a staff user, repeatable `--platform-role NAME` replaces its platform roles and `--clear-platform-roles` removes them all; a kind change away from `staff` drops them. |
 | `qod user delete` | Delete a user. |
 | `qod user effective` | Closure of roles, groups, table permissions, and pool grants. |
 | `qod user s3 list\|remove` | A user's own S3 credentials as an admin sees them (secrets never shown); only the user adds them, with `qod profile s3 add`. |
+
+## platform
+
+Superuser only; see [Platform staff](../operating/platform-staff.md).
+
+| Command | Purpose |
+|---|---|
+| `qod platform permission list` | The permissions the loaded manager modules declare, then any a stored role holds that no loaded module declares (`declared: false`). |
+| `qod platform role list` | List platform roles with their permissions. |
+| `qod platform role create` | Create a platform role: `--name`, optional `--description`, repeatable `--permission` (each one a loaded module declares). |
+| `qod platform role update ID` | Change only the given fields: `--name`, `--description` (`""` clears it), repeatable `--permission` (replaces the whole set) or `--clear-permissions`. |
+| `qod platform role delete ID` | Delete a platform role and its assignments. |
+| `qod platform staff list` | List staff users with their platform roles. |
 
 ## role
 
@@ -281,12 +294,21 @@ The admin commands are superuser only; the manager must run the [fleet runtime](
 
 | Command | Purpose |
 |---|---|
-| `qod fleet join` | Join this server (Linux, macOS) to a fleet and run the node the manager assigns: `--manager URL`, join token from `QOD_FLEET_JOIN_TOKEN` (or `--join-token`, visible in `ps`), `--name`, `--advertise-host`, `--bind-host`, `--node-port` (default 21900; each also read from `QOD_FLEET_NAME` / `QOD_FLEET_ADVERTISE_HOST` / `QOD_FLEET_BIND_HOST` / `QOD_FLEET_NODE_PORT`), `--qod-node-bin` (default: the qod-node the wheel bundles), `--state-dir`, `--insecure` (allow an `http://` manager URL). Long-running, meant for systemd or launchd; see [Fleet deployment](/qod/operating/deploy-fleet#join-a-server). |
+| `qod fleet join` | Join this server (Linux, macOS) to a fleet and run the node the manager assigns: `--manager URL`, join token from `QOD_FLEET_JOIN_TOKEN` (or `--join-token`, visible in `ps`), `--name`, `--advertise-host`, `--bind-host`, `--node-port` (default 21900; each also read from `QOD_FLEET_NAME` / `QOD_FLEET_ADVERTISE_HOST` / `QOD_FLEET_BIND_HOST` / `QOD_FLEET_NODE_PORT`), `--qod-node-bin` (`QOD_NODE_BIN`; default: the qod-node the wheel bundles), `--spawn-script` (`QOD_SPAWN_SCRIPT`; a pre-installed spawn script instead of the bundled one), `--spill-dir` (`QOD_FLEET_SPILL_DIR`; at start, removes the spill folders an earlier node left in this server's own spill directory, only for a directory no other server shares), `--state-dir`, `--insecure` (allow an `http://` manager URL). Long-running, meant for systemd or launchd; see [Fleet deployment](/qod/operating/deploy-fleet#join-a-server). |
 | `qod fleet servers` | List joined servers with liveness (`reachable` / `unreachable` / `dead`), approval (`approved` / `pending`) and heartbeat source address, capacity, and the node each runs. |
 | `qod fleet approve NAME` | Let a server that joined from outside `QOD_FLEET_AUTO_APPROVE` take nodes ([join approval](/qod/operating/deploy-fleet#join-approval)). |
 | `qod fleet drain NAME` | Stop scheduling onto a server and move its node elsewhere (or leave the slot pending). |
 | `qod fleet undrain NAME` | Make a drained server schedulable again. |
 | `qod fleet remove NAME` | Forget a server: a pending one at any time, an approved one once drained or unreachable. Stop its `qod fleet join` process too, or it rejoins. |
+
+## healthcheck
+
+Container healthchecks of the one image; they read no profile and exit 1 with the reason on stderr when unhealthy.
+
+| Command | Purpose |
+|---|---|
+| `qod healthcheck manager` | Healthy when the manager's `/ready` answers 200 (`--url`, default `http://127.0.0.1:$QOD_ON_DEMAND_PORT/ready`; `--timeout`, default 4 s). |
+| `qod healthcheck worker` | Healthy when `qod fleet join` runs and its heartbeat loop ran recently (within three waits, at least 60 s), whatever the manager answered (`--state-dir`, the join's state directory). |
 
 ## sql
 

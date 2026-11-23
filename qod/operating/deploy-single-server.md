@@ -10,6 +10,8 @@ Scenario: one large server, multiple concurrent users, an existing PostgreSQL in
 
 > **In a hurry?** Jump straight to [Appendix A](#appendix-a-full-provisioning-script-one-pool-of-three-dual-nodes): one commented script that takes a fresh server to a served database (three dual nodes on rustfs), then [Appendix B](#appendix-b-roles-and-groups-scripts) for the roles and groups scripts. Come back to the sections when you need the why behind a line.
 
+> **Two ways to run one host.** Sections 0 to 8 describe the native layout: the manager runs from the `qod` CLI under systemd and spawns its nodes as child processes (the local runtime). [Section 9](#9-one-host-as-containers) describes the container layout of `deploy/host/container/`: the manager and its fleet workers as containers from one image, each with its own CPU and memory limits, under systemd. The Postgres, object store, provisioning, authentication and monitoring sections apply to both.
+
 > **Outgrowing one server but no Kubernetes?** The [fleet runtime](deploy-fleet.md) spreads the nodes over several Linux or macOS servers that join with `qod fleet join`, one node per server. The Postgres, object store, provisioning, authentication and monitoring sections of this page carry over; node sizing moves from shared-host budgets to one node per server.
 
 ---
@@ -111,7 +113,7 @@ rustfs caveats to respect:
 
 ### 0.2 Boot and verify
 
-Use the native `qod` CLI, not Docker. The manager spawns Quack nodes as local subprocesses, so running natively keeps the per-node CPU/memory budgets of section 3 exact; a single container would put the manager and every node under one shared cgroup. The docker-compose stack is an evaluation rig that bundles its own Postgres, rustfs, and Grafana (all already in place here) with insecure demo defaults.
+Use the native `qod` CLI, not a single Docker container. The manager spawns Quack nodes as local subprocesses, so running natively keeps the per-node CPU/memory budgets of section 3 exact; a single container would put the manager and every node under one shared cgroup. The [container layout](#9-one-host-as-containers) avoids that by giving each node a worker container of its own. The docker-compose stack is an evaluation rig that bundles its own Postgres, rustfs, and Grafana (all already in place here) with insecure demo defaults.
 
 | Step | Command | Expected result |
 |---|---|---|
@@ -140,7 +142,7 @@ sudo apt-get install lsof procps     # or your distribution's equivalent
 sudo useradd --system --create-home --home-dir /var/lib/qod --shell /usr/sbin/nologin qod
 
 sudo python3 -m venv /opt/qod
-sudo /opt/qod/bin/pip install qod==0.14.1
+sudo /opt/qod/bin/pip install qod==0.14.2
 sudo ln -s /opt/qod/bin/qod /usr/local/bin/qod
 ```
 
@@ -181,7 +183,7 @@ StartLimitIntervalSec=0
 [Service]
 User=qod
 EnvironmentFile=/etc/qod/qod.env
-ExecStart=/usr/local/bin/qod start --version 0.14.1
+ExecStart=/usr/local/bin/qod start --version 0.14.2
 Restart=always
 RestartSec=5
 KillMode=mixed
@@ -210,7 +212,7 @@ curl -fsS http://localhost:20900/ready
 
 | Setting | Why |
 |---|---|
-| `--version 0.14.0` | Without a pin, every start asks GitHub for the latest release, so a reboot or a crash restart can upgrade the manager with nobody watching, and an upgrade can require [steps of its own](upgrading-0-13.md). From 0.13.2, once `qod start --version <release> --download-only` has run as the `qod` user, a start of that release needs no network at all: the jar, the JRE, DuckDB and the node extensions are all in the cache, and a pinned start no longer asks PyPI about a newer CLI. |
+| `--version 0.14.2` | Without a pin, every start asks GitHub for the latest release, so a reboot or a crash restart can upgrade the manager with nobody watching, and an upgrade can require [steps of its own](upgrading-0-13.md). From 0.13.2, once `qod start --version <release> --download-only` has run as the `qod` user, a start of that release needs no network at all: the jar, the JRE, DuckDB and the node extensions are all in the cache, and a pinned start no longer asks PyPI about a newer CLI. |
 | `Restart=always`, `RestartSec=5`, `StartLimitIntervalSec=0` | Restarts the manager after any exit and keeps retrying, for example while Postgres is down. `systemctl stop` is not restarted. |
 | `KillMode=mixed` | Sends SIGTERM to `qod start` alone, which runs the same stop sequence as `qod stop`. Anything still alive at the end gets SIGKILL, so no node stays behind holding a port in the `21900+` range, even if the CLI itself is killed. |
 | `TimeoutStopSec=150` | Leaves room for that sequence. From 0.14.0 it lets running statements finish first: it waits for the manager's drain and exit (`QOD_DRAIN_TIMEOUT_SEC`, 60 s by default, plus 20 s), then gives leftover nodes `FORCE_AFTER` seconds (default 10) before SIGKILL, and waits up to `FORCE_AFTER` again for the JVM to exit, about 102 s at worst. A shorter timeout makes systemd kill the unit during the drain, which cuts the statements it waits for. If you raise `QOD_DRAIN_TIMEOUT_SEC` or `FORCE_AFTER`, raise this value with them. On 0.13.1 and earlier the sequence takes seconds and 60 is enough. |
@@ -226,6 +228,7 @@ curl -fsS http://localhost:20900/ready
 - **To let native-protocol statements finish before a planned restart** (or any statement, on 0.13.1 and earlier), suspend each pool first with `qod pool suspend --tenant <t> --db <db> --pool <pool>`. It waits for running statements for up to `QOD_POOL_DRAIN_TIMEOUT_SEC` (default 20 s, see [how a graceful drain works](pools-cohorts.md)). A suspended pool stays suspended across the restart and wakes on its first statement, or with `qod pool resume`.
 - **To upgrade**, read the release's upgrade notes: from 0.14.0 each release's notes open with an *Upgrading* block that says which releases upgrade directly to it (`min_from_version`), its manual steps, and whether it rolls back without a restore of the control-plane database. The same fields are in the release's `release.json` asset, for a script. Back up the control-plane database before an upgrade that does not roll back. Then install the new CLI (`sudo /opt/qod/bin/pip install qod==<release>`), fetch what it needs while the old release still runs (`sudo -u qod -H qod start --version <release> --download-only`, 0.13.2 and later), change `--version` in the unit, and run `sudo systemctl daemon-reload` and `sudo systemctl restart qod-manager`. The CLI and the manager should stay on the same release. From 0.13.2 the manager refuses to start, with a message naming the way out, when it would jump past its `min_from_version`, or when it is older than a release that changed the schema one way: run the release it names, or restore the backup.
 - **To keep several releases installed and switch between them** (0.14.0 and later), use the layout in the repository's [`deploy/host/`](https://github.com/starlake-ai/qod/tree/main/deploy/host) instead of the single venv above. Its unit carries the settings above and reads the same `/etc/qod/qod.env`, so an install that follows this section moves to it without changing its settings. Each release gets its own CLI under `/opt/qod/versions/<release>/`, the unit reads the release to run from `/etc/qod/version.env` in place of `--version`, `install.sh <release>` installs a release and fetches everything it needs ahead of time, and `switch.sh <release>` writes the pin and restarts. An upgrade is then `install.sh <new>` followed by `switch.sh <new>`, with no unit edit and no network at restart. From 0.14.1, `install.sh <release> --wheel FILE [--sha256 HEX]` installs a wheel you already checked (named `qod-<release>-*.whl`; a sha256 other than HEX is refused before anything is written), so a caller holding a signed record of the release installs exactly those bytes; pip still resolves the dependencies from the index. Whoever may pass `--wheel` chooses code that runs as root, so a sudo rule for an upgrade agent should allow the version argument alone (the directory's README, "An upgrade agent"). Switching back with `switch.sh <old>` is safe only when the newer release says it rolls back without a restore; otherwise restore the backup first.
+- **Behind a proxy, with the `deploy/host/` layout**, set `HTTPS_PROXY` (and `NO_PROXY`) in `/etc/qod/qod.env`: `install.sh` hands it to the run that downloads the jar, the Java runtime, DuckDB and the extensions as the service user. That run gets the values of `qod.env` through a file only the service user reads, deleted once read, never on a command line, so a proxy password in `HTTPS_PROXY=http://user:password@proxy:3128` (special characters percent-encoded) does not show in `ps`, and DuckDB receives the user and password as `http_proxy_username` / `http_proxy_password`. A proxy that re-signs TLS with a company CA also needs `SSL_CERT_FILE` in `qod.env`, which `install.sh` hands to the same run (and `PIP_CERT` in root's environment for pip). That file replaces the default list of CAs, so it must hold the public CAs as well as the company's (for example the system bundle with the company CA added), and the service user must be able to read it (for example mode 0644). The directory's README, "What needs the network", says which download reads what.
 
 **Other ways to run it.** In a [single Docker container](deploy-docker.md), Docker is the supervisor: use `restart: unless-stopped`. On [Kubernetes](deploy-kubernetes.md), the Helm chart's `Deployment` restarts the manager and sets its termination grace period. The [fleet runtime](deploy-fleet.md#run-qod-fleet-join-under-systemd-linux) has its own unit for the servers that run the nodes.
 
@@ -288,7 +291,17 @@ Sizing validation and the known limitations to plan around live in [Appendix C](
 
 ## 3. Configuring CPU, threads, and memory limits
 
-**The single most important single-server fact:** nothing caps a node by default. DuckDB's own defaults read the host: each node would claim about 80% of the machine's RAM and all its cores. With several nodes on one server you **must** set explicit per-node budgets.
+**The single most important single-server fact:** nothing caps a node by default. DuckDB's own defaults read the host: each node would claim about 80% of the machine's RAM and all its cores. With several nodes on one server you **must** set explicit per-node budgets, per pool with `cpu` and `memory` (section 3.0) or in `initSql` (section 3.1).
+
+### 3.0 Per-pool budgets with `cpu` and `memory`
+
+From 0.14.2 the local runtime sizes nodes from a pool's `cpu` and `memory`, as the fleet runtime does: `cpu` becomes DuckDB's `threads` (rounded up, at least 1) and `memory` its `memory_limit` (rounded down to MiB, at least 64 MiB). They apply when a node next starts.
+
+```bash
+qod pool set-resources --tenant acme --db acme_sales --pool bi --cpu 6 --memory 24Gi
+```
+
+These `SET`s run before the database's and the pool's `initSql`, so a `SET threads` or `SET memory_limit` there still wins. A pool that sets neither keeps DuckDB's defaults. See [Node sizing](./pools-cohorts.md#node-sizing-cpu-and-memory).
 
 ### 3.1 Per-node DuckDB budgets via initSql
 
@@ -337,8 +350,8 @@ Interactive pools can be modestly oversubscribed on CPU (not every node is busy 
 
 | What | Knob | Default |
 |---|---|---|
-| Node memory | `SET memory_limit` in db/pool `initSql` | ~80% of host RAM per node (unbounded in practice): **always set it** |
-| Node threads | `SET threads` in db/pool `initSql` | all host cores per node: **always set it** |
+| Node memory | the pool's `memory` (`qod pool set-resources --memory`), or `SET memory_limit` in db/pool `initSql`, which wins | ~80% of host RAM per node (unbounded in practice): **always set one** |
+| Node threads | the pool's `cpu` (`qod pool set-resources --cpu`), or `SET threads` in db/pool `initSql`, which wins | all host cores per node: **always set one** |
 | Node spill dir | `SET temp_directory` in a superuser's `initSql` (no environment variable) | a per-node folder under `.tmp` of the directory nodes are started from |
 | Manager heap | `JAVA_OPTS=-Xmx2g` (hard rule: never more than 2g) | none (JVM default) |
 | Arrow allocator | `-Darrow.allocation.manager.type=Unsafe` | already set by the start scripts; required |
@@ -712,6 +725,137 @@ Panels cover: overview stats (total QPS, error rate, active sessions, sessions i
 ### Option C: bundled full stack (evaluation only)
 
 `PROFILES=observability ./scripts/docker/run-docker-compose.sh` starts manager + Postgres + Prometheus (`:9090`) + Grafana (`:3000`) with everything pre-wired. Note the bundled Grafana runs with anonymous admin access; do not expose it publicly.
+
+---
+
+## 9. One host as containers
+
+The repository's [`deploy/host/container/`](https://github.com/starlake-ai/qod/tree/main/deploy/host/container) installs QoD on one Linux server as containers instead of the native layout above: the manager and its [fleet](deploy-fleet.md) workers, all from the one image `starlakeai/quack-on-demand`, on Docker Engine, under systemd. Each node runs in a worker container of its own, so each gets its own memory and CPU limits, and a node that hits its memory cap loses only itself. It needs a release of 0.14.2 or later, whose image also runs the worker role.
+
+```
+one host: Docker Engine 24+, compose v2, cgroup v2
+  qod-manager      network host, the fleet runtime
+                   :31338 Flight SQL and :9494 Quack, TLS by QoD
+                   127.0.0.1:20900 REST and console, 127.0.0.1:20901 verdict listener
+  qod-worker-1..N  network host, one node each, on 127.0.0.1:21901..2190N
+  qod-postgres     only with --postgres bundled, 127.0.0.1:5432
+  systemd          qod.service, qod-health.timer (and qod-backup.timer with bundled PostgreSQL)
+```
+
+Every container runs with host networking (Docker publishes no port and writes no firewall rule), a read-only root filesystem, every capability dropped, and its own memory and CPU limits. Fleet traffic stays on loopback: the workers join from `127.0.0.1`, the only source auto-approved. The REST port and the console listen on loopback only, so reach them from elsewhere through a TLS reverse proxy on the host.
+
+### 9.1 Install
+
+As root, from `deploy/host/container/` of a checkout at the release tag you install:
+
+```bash
+./install.sh --version 0.14.2 --settings /root/qod-settings.env
+```
+
+`--settings` holds the manager's own settings, one `KEY=VALUE` per line: `QOD_PG_*` for an external PostgreSQL, `QOD_DUCKLAKE_DATA_PATH` and `QOD_S3_*` for object storage, and any other `QOD_*` or `PROXY_*` setting. For an external PostgreSQL and S3:
+
+```ini
+QOD_PG_HOST=pg.internal
+QOD_PG_PORT=5432
+QOD_PG_USER=qod
+QOD_PG_PASSWORD=...
+QOD_DUCKLAKE_DATA_PATH=s3://ducklake/qod
+QOD_S3_ENDPOINT=rustfs.internal:9000
+QOD_S3_ACCESS_KEY_ID=...
+QOD_S3_SECRET_ACCESS_KEY=...
+QOD_S3_REGION=us-east-1
+```
+
+`QOD_PG_USER` is a role with `CREATEDB`, not a superuser. The script copies these lines into `/etc/qod/qod.env`, then adds the lines the layout owns (fleet mode, loopback binds, TLS paths, the join token, a generated admin password), which win over the same keys in your file.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--version V` | required | The image tag the manager and every worker run. |
+| `--settings FILE` | required | The manager's settings, as above. |
+| `--workers N` | from RAM | Worker containers, one of them a spare: maintenance and branch merges need a free worker. |
+| `--worker-size <cpus>cpu,<GiB>g` | the rest of the host | The size of each worker, for example `4cpu,16g`. |
+| `--postgres bundled` | `external` | A `postgres:16` container on `127.0.0.1:5432` with a daily dump. **Preview**, single host only: the durable state then lives on this host. Leave `QOD_PG_HOST`, `QOD_PG_USER` and `QOD_PG_PASSWORD` out of the settings file. |
+| `--data-dir DIR` | none | A filesystem data path, mounted at the same path in every container, instead of object storage. Exclusive with `QOD_DUCKLAKE_DATA_PATH`; no managed storage, and no second host until the data moves to S3. |
+| `--spill-root DIR` | `/fastdisk/qod-spill` | One spill folder per worker under it, mounted at `/duckdb-tmp`. Its parent must exist: mount a fast local disk there. |
+| `--image REPO`, `--no-pull` | `starlakeai/quack-on-demand` | Another image repository, or an image already on the host. |
+| `--no-verify` | | Skip the image's signature check, for an image you built yourself. |
+| `--name NAME` | the short host name | Prefix of the worker names (`NAME-w1`, ...). |
+| `--skip-smoke` | | Skip the smoke test at the end. |
+
+The script first checks the host and refuses, naming each rule it breaks: Docker Engine 24 or later with compose v2, cgroup v2, `curl`, `jq`, `openssl` and `ss` installed, the ports free, the spill disk's parent present, PostgreSQL and the object store reachable, and the sizing rules below. Then it pulls and verifies the image, writes the files below, starts `qod.service`, creates the host's access token, waits for every worker to be approved and heartbeating, and runs `smoke-test.sh`.
+
+The admin password is `QOD_ADMIN_PASSWORD` in `/etc/qod/qod.env`, read at the first boot only: change it (`qod auth change-password`), then remove that line.
+
+**Storage keys.** The workers hold none. The manager sends each node the keys of the store it reads, its own `QOD_S3_*` for the default data path included, in the node's assignment (see [Object-store keys come from the manager](./deploy-fleet.md#object-store-keys-come-from-the-manager)). On one host the nodes reach the store at the manager's own address, so `QOD_FLEET_NODE_S3_ENDPOINT` is not needed.
+
+### 9.2 Sizing rules
+
+| Rule | |
+|---|---|
+| Manager | 4 CPUs, 4 GiB (2 GiB heap). At 2 CPUs a burst of logins times out. |
+| Worker | At least 2 CPUs and 2 GiB, and at least 1 vCPU per 4 GiB. |
+| CPUs | The manager's plus every worker's but the spare's, at most the host's. |
+| Memory | The manager's plus every worker's, at most the host's minus max(4 GiB, 10%). |
+| A pool's DuckDB `threads` | One less than its worker's CPUs: `qod-node` runs about 33 threads of its own. Set it with the pool's `cpu` (section 3.0). |
+| A pool's `memory_limit` | At most 80% of its worker's memory, so DuckDB spills before the kernel kills the node. Set it with the pool's `memory`. |
+
+By default the script makes one worker per 24 GiB left after the manager and the reserve, plus the spare, and at least two. The CPUs left after the manager are shared by the workers but the spare, and the memory left by all of them. An 8 vCPU / 32 GiB host gets 2 workers of 4 CPUs and 12 GiB; a 32 vCPU / 128 GiB host, 5 workers of 7 CPUs and 22 GiB. A branch holds a worker for its whole TTL, so count one worker per live branch.
+
+### 9.3 Files
+
+| Path | Owner, mode | Content |
+|---|---|---|
+| `/etc/qod/version.env` | root, 644 | `QOD_VERSION=<tag>`, the release every container runs |
+| `/etc/qod/qod.env` | root, 600 | The manager's settings, the join token, the first-boot admin password |
+| `/etc/qod/worker.env` | root, 600 | What every worker shares: the manager's address and the join token. No PostgreSQL password, no storage key |
+| `/etc/qod/postgres.env` | root, 600 | Bundled PostgreSQL only: its superuser password |
+| `/etc/qod/host.env` | root, 644 | The sizing and layout the compose file is rendered from. No secret |
+| `/etc/qod/compose.yaml` | root, 644 | Generated: edit `host.env` (then `qod-host render`) or run `qod-host scale`, never this file |
+| `/etc/qod/host.token` | root, 600 | The host's access token (an admin's personal access token), used by `qod-host` and the smoke test |
+| `/etc/qod/tls/` | UID 1000, 700 | `server-cert.pem` and `server-key.pem` (600) for Flight SQL and Quack |
+| `/var/lib/qod/state` | UID 1000 | The manager's state |
+| `/var/lib/qod/pgdata` | | Bundled PostgreSQL only |
+| `/var/lib/qod/backups` | root, 700 | Dumps (600), the 7 latest of each kind (`QOD_BACKUP_KEEP`) |
+| `<spill root>/w<i>` | UID 1000, 700 | Worker i's spill folder, under a root-owned spill root |
+| `/opt/qod/host/` | root | The scripts; `/usr/local/sbin/qod-host` links to `qod-host` |
+
+The TLS pair is self-signed until you replace it with the host's own certificate: put the files in `/etc/qod/tls/` under the same names, then `systemctl restart qod`. Anyone in the `docker` group reads every container's settings with `docker inspect`, secrets included: treat that group as root.
+
+### 9.4 Day two
+
+```bash
+qod-host status                                   # containers, workers, pools, pending slots, branches
+qod-host scale --workers 4                        # add a worker; reconcile fills a pending slot
+qod-host scale --workers 3                        # remove a free worker (drained, then stopped)
+qod-host scale --remove myhost-w2 --move          # retire a worker that runs a node, restarting the node elsewhere first
+qod-host scale --worker-size 6cpu,20g             # resize, one worker at a time
+qod-host backup [--all] [--encrypt-to age1...]    # dump the control plane
+/opt/qod/host/switch.sh <release>                 # another release, after a dump
+qod-host uninstall [--purge]
+```
+
+- **`status`** lists the containers, each worker's approval, liveness and node, the pools with their pending slots, and the live branches. When slots are pending it prints the `scale` command that fills them while keeping a spare.
+- **`scale`** checks the sizing rules first. It never removes the last spare, refuses to remove a worker that runs a pool's node unless `--move` is given, and never moves a maintenance or merge node (retry once it ends). A resize recreates the workers one at a time, free ones first: each is drained, its node restarted on another worker, then the worker is recreated at the new size and undrained, so a pool with two nodes keeps serving.
+- **`backup`** dumps the control-plane database (`pg_dump -Fc`). `--all` dumps every database of the bundled PostgreSQL, the DuckLake catalogs included (`pg_dumpall`); back up an external server with its own tools. With the bundled PostgreSQL, `qod-backup.timer` runs `qod-host backup` (the control-plane dump, not `--all`) daily; run `--all` yourself for the catalogs. `--encrypt-to` also writes an `age`-encrypted copy beside the dump: only that copy should leave the host, since a dump holds every secret PostgreSQL holds.
+- **`uninstall`** removes the containers and the units and keeps `/etc/qod`, `/var/lib/qod`, the spill folders and the image. `--purge` deletes those too, after you type the host name, from a terminal only (with the bundled PostgreSQL, that is the control plane).
+
+**Changing release.** `switch.sh VERSION` pulls and verifies the release, dumps the control plane (`qod-host backup`), then stops and recreates every container: running statements drain for up to 60 s first, so a switch is a short outage. It reads the release manifest in the image and refuses:
+
+- an upgrade from a release older than the target's `min_from_version`: switch to that release first;
+- a rollback across a release that changed the schema one way, as the older manager would refuse to start on the newer schema. `switch.sh OLD --restore-backup FILE` restores a control-plane dump taken before the upgrade (a `qod-*.dump` of `/var/lib/qod/backups`), after you type the host name, from a terminal only. Only the control-plane database is restored: a DuckLake catalog an upgrade migrated stays migrated.
+
+0.14.2 is itself a one-way release: going back from it to 0.14.1 needs the dump taken before the upgrade. See [Upgrading from 0.14.1 to 0.14.2](./upgrading-0-14.md#from-0141-to-0142). When the new release does not come up healthy, `switch.sh` says so and names the command back.
+
+**Signatures.** `install.sh` and `switch.sh` check the image's cosign signature when `cosign` is installed on the host, and refuse an image without a valid signature from the QoD release or snapshot workflows; without `cosign` they print a warning and go on. `--no-verify` skips the check for an image you built yourself. To check one by hand, see [Docker Compose](./deploy-docker.md#signed-images).
+
+**Restarts.** `restart: unless-stopped` brings back an exited container, a manager JVM that ran out of heap (it runs with `-XX:+ExitOnOutOfMemoryError`) and everything after a reboot. A worker that hits its memory cap loses its node only, which its `qod fleet join` restarts. Docker marks a hung container unhealthy (the image's `qod healthcheck manager|worker`) but never restarts it, so `qod-health.timer` checks every 30 s and restarts an unhealthy container, within about two minutes of the hang.
+
+### 9.5 Smoke test
+
+`install.sh` ends with both checks; run them again after a change with `/opt/qod/host/smoke-test.sh --manager`, `--queries` or `--all`. Each prints one `PASS` or `FAIL` line per check and exits 1 when any fails.
+
+- `--manager` checks `/ready`, TLS on 31338 and 9494 (and 443 when a reverse proxy listens there), the host's token, that 20900, 20901, the node ports and 5432 listen on loopback only, that no container publishes a port, and that no secret of `qod.env` shows in a worker's processes or settings, on a command line of the host or in the containers' journal.
+- `--queries` creates a throwaway tenant with a one-node pool and three users, checks a write and a read, a refusal, a masked column and a time-travel read through MCP `run_sql`, then deletes the tenant.
 
 ---
 

@@ -47,7 +47,7 @@ Grafana:       http://localhost:3000            (anonymous admin; no login)
                Dashboard: "QoD - Single Node"
 ```
 
-Grafana runs anonymous-admin for zero-login local use; do not expose port 3000 to a public network without disabling that. See the [Docker deployment](/qod/operating/deploy-docker) page for the profile mechanics. Tear down with `docker compose -f docker-compose.yml --profile observability down`.
+Grafana runs anonymous-admin for zero-login local use; do not expose port 3000 to a public network without disabling that. See the [Docker deployment](/qod/operating/deploy-docker) page for the profile mechanics. Tear down with `docker compose --project-directory . -f deploy/docker/docker-compose.yml --profile observability down`.
 
 ### Standalone Prometheus + Grafana
 
@@ -55,7 +55,7 @@ When the manager runs outside compose (for example in Kubernetes, reached by `ku
 
 ```bash
 kubectl -n qod port-forward svc/qod-quack-on-demand 20900:20900 &
-docker compose -f observability/docker-compose.yml up -d
+docker compose -f deploy/observability/docker-compose.yml up -d
 ```
 
 The preprovisioning (datasource UID, auto-loaded dashboard) is identical to the integrated path.
@@ -136,8 +136,8 @@ Set `QOD_METRICS_SINK=none`: no `/metrics` endpoint is mounted, no cloud push oc
 
 Two deployment-shaped dashboards ship under `observability/`, both ready to import (Grafana 10.x: **Dashboards → New → Import → Upload JSON file**, then pick your Prometheus datasource; the `${datasource}` variable resolves to its UID):
 
-- **`grafana-dashboard-single.json`** ("QoD - Single Node") - for the single-box docker-compose stack. Mounted by the top-level `docker-compose.yml` observability profile.
-- **`grafana-dashboard-k8s.json`** ("QoD - Kubernetes") - the single-node content plus the Pool Occupancy, Node Health, and Routing Locality rows. Mounted by the standalone `observability/docker-compose.yml` and rebuilt into the kind smoke rig's ConfigMap.
+- **`grafana-dashboard-single.json`** ("QoD - Single Node") - for the single-box docker-compose stack. Mounted by the observability profile of `deploy/docker/docker-compose.yml`.
+- **`grafana-dashboard-k8s.json`** ("QoD - Kubernetes") - the single-node content plus the Pool Occupancy, Node Health, and Routing Locality rows. Mounted by the standalone `deploy/observability/docker-compose.yml` and rebuilt into the kind smoke rig's ConfigMap.
 
 Rows common to both, top to bottom:
 

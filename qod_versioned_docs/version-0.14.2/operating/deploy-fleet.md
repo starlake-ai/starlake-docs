@@ -77,7 +77,7 @@ The manager never starts a process on a server. Each `qod fleet join` connects o
 
 - **Linux or macOS servers, or Docker containers.** `qod fleet join` is not available on Windows yet. To run servers (and the manager) as containers, see [Run servers as Docker containers](#run-servers-as-docker-containers).
 - **The `qod` CLI on every server** (`pip install qod`, or run it through `uvx qod fleet join ...`). The node runs `qod-node`, QoD's own executable, which the qod wheel bundles; the join process installs it in its cache beside the pinned `libduckdb` on first start. Pass `--qod-node-bin /path/to/qod-node` to use another build. The join process refuses (exit 2) a binary built for another node protocol, so upgrade `qod` on every server together with the manager.
-- **Shared object storage for every DuckLake data path.** A node can land on any server, so every database's `dataPath` must be an object-store URL (`s3://...`, `gs://...`, `az://...`) reachable from all servers. A local path would only exist on one of them. [Managed storage](managed-storage.md) satisfies this by construction.
+- **Shared object storage for every DuckLake data path.** A node can land on any server, so every database's `dataPath` must be an object-store URL (`s3://...`, `gs://...`, `az://...`) reachable from all servers. A local path would only exist on one of them. [Managed storage](managed-storage.md) satisfies this by construction. The servers need no storage keys of their own: the manager sends its default store's keys with each assignment (see [Object-store keys come from the manager](#object-store-keys-come-from-the-manager)).
 - **The metastore PostgreSQL reachable from every server.** Nodes attach their DuckLake catalog directly, so each server must reach the Postgres host and port of every database it may serve.
 - **A private network between managers and servers** (VPC, VLAN, WireGuard). The manager talks to nodes over plain HTTP; see [Security](#security).
 - **An HTTPS URL for the manager's REST port.** The join process refuses a plain `http://` manager URL, because each assignment it receives carries database credentials. Put a TLS-terminating reverse proxy or load balancer in front of `:20900` (you need one under HA anyway), and list it in `QOD_FLEET_TRUSTED_PROXIES` so [join approval](#join-approval) sees each server's real address. Point `--manager` at that proxy (`https://mgr.internal`), never `https://` at `:20900` itself: the REST port speaks plain HTTP, and `qod fleet join` stops with a hint on that mismatch. `--insecure` accepts an `http://` URL such as `http://mgr.internal:20900`; reserve it for tests on a trusted network.
@@ -101,6 +101,7 @@ Set `QOD_RUNTIME_TYPE=fleet`, a join token and this manager's internal URL. Ever
 | `quack-on-demand.fleet.trustedProxies` | `QOD_FLEET_TRUSTED_PROXIES` | (none) | Comma-separated CIDRs of the proxies and load balancers in front of the manager. Only their `X-Forwarded-For` header is believed when resolving a heartbeat's address. |
 | `quack-on-demand.fleet.nodePgHost` | `QOD_FLEET_NODE_PG_HOST` | (none) | Address servers dial for the managed Postgres when it differs from the manager's own, for example when the manager reaches it by a container-only name. Replaces `pgHost` in the assignments of databases on the default metastore only. |
 | `quack-on-demand.fleet.nodePgPort` | `QOD_FLEET_NODE_PG_PORT` | (none) | Port servers dial for the managed Postgres. Replaces `pgPort` only where it equals the default metastore's port. |
+| `quack-on-demand.fleet.nodeS3Endpoint` | `QOD_FLEET_NODE_S3_ENDPOINT` | (none) | S3 endpoint (`host[:port]`) servers dial for the manager's default store when it differs from the manager's own `QOD_S3_ENDPOINT`. Replaces `QOD_S3_ENDPOINT` in the store settings of assignments only, for nodes whose database has no store of its own. |
 
 Invalid combinations (a timeout not above the heartbeat, an unknown `ephemeral` value, a malformed CIDR) are refused at boot with a message naming the key.
 
@@ -118,7 +119,7 @@ QOD_FLEET_AUTO_APPROVE=10.0.3.0/24
 QOD_FLEET_TRUSTED_PROXIES=10.0.3.1/32
 ```
 
-The first three are required. The last two are the production settings from the [checklist](#secure-in-production). `QOD_DUCKLAKE_DATA_PATH` must be an object-store URL that every server can reach.
+The first three are required. The last two are the production settings from the [checklist](#secure-in-production). `QOD_DUCKLAKE_DATA_PATH` must be an object-store URL that every server can reach. The store's keys (`QOD_S3_*`, `QOD_AZURE_*` or `QOD_GCS_*`) go in this file too, on the manager only: it sends them to each node in its assignment.
 
 Two things differ from a single-server deployment:
 
@@ -148,8 +149,10 @@ The first heartbeat is the join. The server appears in `qod fleet servers` a few
 | `--advertise-host` | env `QOD_FLEET_ADVERTISE_HOST`, else the first non-loopback IPv4 | Address the manager dials to reach the node. Set it explicitly on hosts with more than one network interface. |
 | `--bind-host` | env `QOD_FLEET_BIND_HOST`, else the advertise host | Interface the node listens on. `0.0.0.0` listens on every interface. |
 | `--node-port` | env `QOD_FLEET_NODE_PORT`, else `21900` | Port the node listens on. |
-| `--qod-node-bin` | the one qod bundles, installed in the qod cache | `qod-node` executable the node runs. It must speak the manager's node protocol. |
-| `--state-dir` | the qod cache | Where the node pidfile lives. |
+| `--qod-node-bin` | env `QOD_NODE_BIN`, else the one qod bundles, installed in the qod cache | `qod-node` executable the node runs. It must speak the manager's node protocol. |
+| `--spawn-script` | env `QOD_SPAWN_SCRIPT`, else the one qod bundles, copied into the qod cache | A pre-installed `spawn-quack-node.sh` the node starts through. |
+| `--spill-dir` | env `QOD_FLEET_SPILL_DIR`, else none | This server's own spill directory. At start, the join process removes the spill folders a node of an earlier run left there. Only for a directory no other server shares. |
+| `--state-dir` | the qod cache | Where the node pidfile and the last heartbeat record (`heartbeat.json`) live. |
 | `--insecure` | off | Accept a plain `http://` manager URL. |
 
 **Pick the advertise host deliberately.** On a host with a management interface and a data interface, the default guess can pick the wrong one, silently. The join process logs its choice at start (`advertise host 10.0.3.17 ... override with --advertise-host / --bind-host if this is not the data interface`); check that line, or always pass `--advertise-host`. Because `--bind-host` defaults to the advertise host, the node never listens on the management interface by accident.
@@ -279,7 +282,7 @@ sudo launchctl bootstrap system /Library/LaunchDaemons/ai.starlake.qod-fleet-joi
 
 ### What the node inherits from the join process
 
-The node does not inherit the join process's whole environment: the join process holds the join token, and a node runs tenant SQL. It receives only `PATH`, `HOME`, `TMPDIR`, `LANG`, `LC_ALL`, `TZ`, `USER`, `LOGNAME`, `SHELL`, the proxy variables (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` and their lowercase forms), the object-storage settings `QOD_S3_*` and `QOD_AZURE_*`, plus the assignment the manager sends. The assignment's secrets (the database credentials, the node token, the node's authorization key `QOD_NODE_AUTHZ_KEY`, and the tenant's init SQL with its trust) reach the node as files of a private directory the node deletes after reading, never as environment variables.
+The node does not inherit the join process's whole environment: the join process holds the join token, and a node runs tenant SQL. It receives only `PATH`, `HOME`, `TMPDIR`, `LANG`, `LC_ALL`, `TZ`, `USER`, `LOGNAME`, `SHELL`, the proxy variables (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` and their lowercase forms) and the metastore connection settings below, plus the assignment the manager sends. The assignment's secrets (the database credentials, the default store's keys, the node token, the node's authorization key `QOD_NODE_AUTHZ_KEY`, and the tenant's init SQL with its trust) reach the node as files of a private directory the node deletes after reading, never as environment variables.
 
 Metastore connection settings that a server needs go on the join process's unit and are passed through:
 
@@ -292,9 +295,28 @@ Metastore connection settings that a server needs go on the join process's unit 
 
 Anything else exported on the join process never reaches a node.
 
+### Object-store keys come from the manager
+
+A fleet server holds no storage keys. For a node whose database has no store of its own (no `objectStore` keys, so it signs with the manager's default store), each heartbeat reply's assignment carries the manager's store, read from the manager's own environment:
+
+| Assignment field | Holds | Reaches the node as |
+|---|---|---|
+| `storeSecrets` | The non-empty `QOD_S3_ACCESS_KEY_ID`, `QOD_S3_SECRET_ACCESS_KEY`, `QOD_AZURE_CONNECTION_STRING`, `QOD_GCS_KEY_ID` and `QOD_GCS_SECRET` | Secret files of its private directory, like the database credentials |
+| `storeEnv` | The non-empty `QOD_S3_ENDPOINT`, `QOD_S3_REGION`, `QOD_S3_URL_STYLE` and `QOD_S3_USE_SSL`, with `QOD_FLEET_NODE_S3_ENDPOINT` in place of `QOD_S3_ENDPOINT` when it is set | Environment variables laid over the node's environment |
+
+A node whose database has a store of its own gets neither: it signs with that database's keys only, never the manager's.
+
+- **`qod fleet join` reads none of them from its own environment.** It ignores every `QOD_S3_*`, `QOD_AZURE_*` and `QOD_GCS_*` it holds and prints one WARN at start naming them (never their values): remove them from the server's unit, plist or container.
+- **Servers that reach the store at another address than the manager** (a compose service name the servers cannot resolve, a different network path) need `QOD_FLEET_NODE_S3_ENDPOINT` on the manager, set to the address the servers dial.
+- **Every HA replica must hold the same `QOD_S3_*`.** The keys are not stored in the control plane: whichever replica answers a heartbeat sends its own environment's values. The manager's DuckLake initializer needs them on every replica already.
+- **A rotated key reaches a node at its next start.** A server receives the new values on its next heartbeat, but a running node keeps the secret it started with until it restarts, as on Kubernetes. Restart the pools' nodes after rotating.
+- **The keys ride the heartbeat reply**, like the node token and the node key, so the [private network and HTTPS rules](#security) apply to them too.
+
+The server and the manager must run the same release: a server on an earlier release does not read these fields, and a server of this release takes no store keys from an earlier manager. See [Upgrading from 0.14.1 to 0.14.2](./upgrading-0-14.md#from-0141-to-0142).
+
 ## Run servers as Docker containers
 
-The manager and the servers can all be containers. Each server is one container from `starlakeai/quack-on-demand-worker`, an image that bundles `qod-node` and its `libduckdb` (same release as the manager) and runs `qod fleet join` as a non-root user:
+The manager and the servers can all be containers, from the same image. `starlakeai/quack-on-demand` runs the manager by default and a fleet server with the `worker` argument: `qod fleet join` as a non-root user, with `qod-node`, its `libduckdb` and every DuckDB extension a node loads, so a server needs no outbound network. Each server is one container, at the manager's version:
 
 ```bash
 docker run -d --name qod-worker --restart unless-stopped --stop-timeout 70 \
@@ -304,9 +326,10 @@ docker run -d --name qod-worker --restart unless-stopped --stop-timeout 70 \
   -e QOD_FLEET_NAME=srv-07 \
   -e QOD_FLEET_ADVERTISE_HOST=10.0.3.17 \
   -e QOD_FLEET_NODE_PORT=21900 \
-  -e QOD_S3_ENDPOINT=... -e QOD_S3_ACCESS_KEY_ID=... -e QOD_S3_SECRET_ACCESS_KEY=... \
-  starlakeai/quack-on-demand-worker:latest
+  starlakeai/quack-on-demand:latest worker
 ```
+
+`starlakeai/quack-on-demand-worker` is a deprecated alias of the same image in its worker role, published for two releases after 0.14.2. In Docker Compose, use the image with `command: [worker]`.
 
 | Variable | Required | Meaning |
 |---|---|---|
@@ -316,15 +339,25 @@ docker run -d --name qod-worker --restart unless-stopped --stop-timeout 70 \
 | `QOD_FLEET_ADVERTISE_HOST` | yes | The **host's** address the manager can dial. The container's own address is a bridge address no other host can reach. |
 | `QOD_FLEET_NODE_PORT` | no (`21900`) | The node port, published with the same number on both sides. |
 | `QOD_FLEET_INSECURE` | no | `true` accepts a plain `http://` manager URL. Same caveat as `--insecure`. |
-| `QOD_S3_*`, `QOD_AZURE_*` | for object storage | Passed to the node: each server sets an endpoint it can reach. |
+| `QOD_FLEET_SPILL_DIR` | no | The server's own spill directory (`/duckdb-tmp`), swept at start. See **Spill** below. |
+
+No storage keys: the manager sends them in each assignment, and the worker ignores any `QOD_S3_*`, `QOD_AZURE_*` or `QOD_GCS_*` it is given, with a WARN (see [Object-store keys come from the manager](#object-store-keys-come-from-the-manager)).
 
 The container stays in the foreground under `tini`; `docker stop` stops the node before the join process exits, which takes up to 60 seconds, hence `--stop-timeout 70`.
+
+**Healthchecks.** The image has no `curl`. `qod healthcheck worker` exits 0 while `qod fleet join` runs and keeps heartbeating, whatever the manager answers (a manager that is down or hung leaves its workers healthy, as restarting them would only stop their nodes); `qod healthcheck manager` exits 0 when the manager's `/ready` answers 200. Give each a `timeout:` (5 seconds): without one, Docker waits 30 seconds per try.
+
+```yaml
+healthcheck: { test: [CMD, qod, healthcheck, worker], interval: 15s, timeout: 5s, retries: 4 }
+```
+
+**Spill.** A node spills to `/duckdb-tmp` when that directory is writable, so mount a fast disk there, one folder per server. Set `QOD_FLEET_SPILL_DIR=/duckdb-tmp` and `qod fleet join` removes, at start, the spill folders a node of an earlier run left there: a node killed with its container leaves its folder behind. Never set it on a folder several servers share.
 
 **Publish the node port with the same number inside and out.** The node binds the port it advertises, so `-p 21901:21901 -e QOD_FLEET_NODE_PORT=21901` works and `-p 21901:21900` does not. Several worker containers on one host each take their own port.
 
 **Capacity follows the container's limits.** The server reports the smaller of the host's resources and the container's cgroup limits (v1 or v2), so `docker run --memory 8g --cpus 4` reports 8 GiB and 4 CPUs, and a pool asking for `--memory 16Gi` is never placed there.
 
-**The manager as a container.** Run `starlakeai/quack-on-demand` with `QOD_RUNTIME_TYPE=fleet`, the same `QOD_FLEET_JOIN_TOKEN`, and an object-storage data path. When the manager reaches the metastore Postgres by a name the servers cannot resolve (a compose service name such as `postgres`), set `QOD_FLEET_NODE_PG_HOST` (and `QOD_FLEET_NODE_PG_PORT` if the published port differs) to the address the servers use. Only assignments change: the manager keeps its own address, and a database on its own Postgres is left as is, so that Postgres and any object-store endpoint a database sets must be reachable from the manager and every server under the same address.
+**The manager as a container.** Run `starlakeai/quack-on-demand` with `QOD_RUNTIME_TYPE=fleet`, the same `QOD_FLEET_JOIN_TOKEN`, an object-storage data path and the store's keys. When the manager reaches the metastore Postgres by a name the servers cannot resolve (a compose service name such as `postgres`), set `QOD_FLEET_NODE_PG_HOST` (and `QOD_FLEET_NODE_PG_PORT` if the published port differs) to the address the servers use; likewise `QOD_FLEET_NODE_S3_ENDPOINT` for the default store's endpoint. Only assignments change: the manager keeps its own address, and a database on its own Postgres is left as is, so that Postgres and any object-store endpoint a database sets must be reachable from the manager and every server under the same address.
 
 **Approval behind Docker NAT.** The manager may see a gateway address as a server's source rather than its advertised host. The default `QOD_FLEET_AUTO_APPROVE` admits it; a narrowed list must include that address (`qod fleet servers` shows it in the source column).
 
@@ -334,11 +367,11 @@ The repository's compose files run the whole stack in fleet mode on one host, wi
 
 ```bash
 echo "FLEET_JOIN_TOKEN=$(openssl rand -hex 24)" >> .env
-docker compose -f docker-compose.yml -f docker-compose.fleet.yml --profile seaweedfs up -d --build
+docker compose --project-directory . -f deploy/docker/docker-compose.yml -f deploy/docker/docker-compose.fleet.yml --profile seaweedfs up -d --build
 qod fleet servers    # fleet-worker-1 and fleet-worker-2, approved
 ```
 
-The manager runs maintenance and merge nodes itself (`QOD_FLEET_EPHEMERAL=local`), nodes call it back at `QOD_INTERNAL_URL=http://host.docker.internal:20901` (the verdict listener, published on the host), and the workers publish ports `21901` and `21902`. Docker Compose 2.24 or later is required. See [Docker Compose](deploy-docker.md) for the base stack.
+The manager runs maintenance and merge nodes itself (`QOD_FLEET_EPHEMERAL=local`), nodes call it back at `QOD_INTERNAL_URL=http://host.docker.internal:20901` (the verdict listener, published on the host), and the workers publish ports `21901` and `21902`. Only the manager holds the SeaweedFS keys; `QOD_FLEET_NODE_S3_ENDPOINT` points the nodes at SeaweedFS's host-published port. Docker Compose 2.24 or later is required. See [Docker Compose](deploy-docker.md) for the base stack.
 
 ## How scheduling works
 
@@ -472,7 +505,7 @@ Two ways to size for this:
 
 ## Security
 
-**The join token is as sensitive as the control-plane Postgres password.** Whoever holds it can join a server and, once that server is approved, will receive the credentials of every pool scheduled onto it: the metastore `pgPassword` and, for encrypted databases, the encryption key. With the default [join approval](#join-approval) setting every joining server is approved at once, so the token alone is enough. Restricting `QOD_FLEET_AUTO_APPROVE` to your server networks limits a leaked token to those networks: from anywhere else it only yields a pending entry with no node and no credential. Handle the token accordingly:
+**The join token is as sensitive as the control-plane Postgres password.** Whoever holds it can join a server and, once that server is approved, will receive the credentials of every pool scheduled onto it: the metastore `pgPassword`, for encrypted databases the encryption key, and the manager's default-store keys for every database without a store of its own. With the default [join approval](#join-approval) setting every joining server is approved at once, so the token alone is enough. Restricting `QOD_FLEET_AUTO_APPROVE` to your server networks limits a leaked token to those networks: from anywhere else it only yields a pending entry with no node and no credential. Handle the token accordingly:
 
 - Pass it through the environment, never on the command line.
 - Keep unit files and plists readable by root only.
@@ -484,11 +517,11 @@ Two ways to size for this:
 
 **The manager-to-node hop is plain HTTP**, carrying the node token, result rows, and users' own S3 keys (signed, not encrypted). The node-to-manager hop, the nodes' verdict calls to `QOD_INTERNAL_URL`, is plain HTTP too. That is true in every runtime; in local and Kubernetes modes the hop stays on one host or one cluster network, in fleet mode it crosses whatever sits between managers and servers. Fleet mode therefore requires a private network between them, and nodes bind only the advertised interface. Do not route this traffic over the internet.
 
-The server-to-manager hop carries the assignments, so the join process insists on HTTPS (see [Prerequisites](#prerequisites)).
+The server-to-manager hop carries the assignments, database credentials and default-store keys included, so the join process insists on HTTPS (see [Prerequisites](#prerequisites)). Between the proxy and the manager's REST port the reply is plain HTTP, node token, node key and store keys alike, so keep that hop on the private network too.
 
 ## High availability
 
-Fleet is an HA-capable runtime, like Kubernetes: `QOD_HA_ENABLED=true` with `QOD_RUNTIME_TYPE=fleet` runs several active-active managers against the same control-plane Postgres. Point every server at a load-balanced URL in front of the managers; any replica accepts heartbeats and claims, because both are Postgres writes. List that load balancer in `QOD_FLEET_TRUSTED_PROXIES` on every replica, with the same `QOD_FLEET_AUTO_APPROVE` everywhere, so [join approval](#join-approval) sees each server's real address whichever replica answers. Approval is stored in the shared control plane, so an approval made on one replica holds on all of them. Reconcile, and with it pending-slot filling, grace expiry and respawns, runs on the elected leader only. See [Resilience and recovery](resilience.md) for the HA model.
+Fleet is an HA-capable runtime, like Kubernetes: `QOD_HA_ENABLED=true` with `QOD_RUNTIME_TYPE=fleet` runs several active-active managers against the same control-plane Postgres. Point every server at a load-balanced URL in front of the managers; any replica accepts heartbeats and claims, because both are Postgres writes. List that load balancer in `QOD_FLEET_TRUSTED_PROXIES` on every replica, with the same `QOD_FLEET_AUTO_APPROVE` everywhere, so [join approval](#join-approval) sees each server's real address whichever replica answers. Approval is stored in the shared control plane, so an approval made on one replica holds on all of them. Give every replica the same `QOD_S3_*` (and `QOD_AZURE_*` / `QOD_GCS_*`): each answers heartbeats with the store keys of its own environment. Reconcile, and with it pending-slot filling, grace expiry and respawns, runs on the elected leader only. See [Resilience and recovery](resilience.md) for the HA model.
 
 ### Load balancer configuration
 
@@ -594,6 +627,7 @@ Then point each server at the balancer with `qod fleet join --manager https://mg
 - [ ] Keep managers and servers on a private network: set each replica's `QOD_INTERNAL_URL` to its own address there (the verdict listener's port, by default the REST port plus one), pass `--advertise-host` (and `--bind-host` if needed) for the data interface, and firewall the node port (`QOD_FLEET_NODE_PORT`, `21900`) to the managers only.
 - [ ] Pass `QOD_FLEET_JOIN_TOKEN` through the environment of a root-only unit file or plist, never `--join-token`, and rotate it on any suspicion (see [Security](#security)).
 - [ ] Set `QOD_NODE_KEY_SECRET` (at least 32 characters) to the same value on every replica, from an external secret store, when control-plane backups are less trusted than the managers.
+- [ ] Keep storage keys off the servers: set `QOD_S3_*` (or `QOD_AZURE_*` / `QOD_GCS_*`) on the managers only, the same on every replica, and remove any a server still holds (its join process names them in a WARN at start).
 - [ ] Set `QOD_NODE_ALLOW_LOCAL_FILES=false`: every fleet data path is already on object storage, and nodes then open no local file on the servers for anyone.
 
 See [Security hardening](./hardening.md#node-keys-and-the-decide-url) for how node keys and the decide URL work, and the rest of that page for the controls on tenant SQL.

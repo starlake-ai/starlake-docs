@@ -1,0 +1,134 @@
+---
+title: "Check Change Impact in CI"
+description: "Use starlake impact to see, before anything runs, which load tables and transforms a change touches, whether it is breaking, and which downstream tasks it impacts through column-level lineage. Gate pull requests with --fail-on and post the report as a PR comment."
+keywords: [starlake, impact, change impact, breaking change, column lineage, CI, pull request, GitHub Actions, data pipeline review]
+---
+
+# Check change impact in CI
+
+`starlake impact` compares two versions of your project and tells you, before anything runs, what a change touches:
+
+- which load tables and transforms changed, and how: `BREAKING`, `NON_BREAKING`, `ADDED` or `METADATA`;
+- which downstream tasks are impacted, column by column, through the lineage of their SQL;
+- where the analysis could not be precise and fell back to table level.
+
+It is offline and read-only: no connection is opened, nothing is executed, and your project is never written. That makes it safe to run on every pull request.
+
+## Quick start
+
+From the root of your project (the folder that contains `metadata/`), inside its git repository:
+
+```bash
+starlake impact --base origin/main
+```
+
+The old side is the merge-base of `origin/main` with your current branch. The new side is your project directory as it is, uncommitted edits included. A typical report:
+
+```text
+Change impact: merge-base of origin/main (8458822) -> working tree
+
+Direct changes (1)
+  BREAKING      task  starbake_analytics.order_items_analysis [total_order_value]
+                column total_order_value expression changed
+
+Impacted downstream (1)
+  BREAKING      task  starbake_kpis.overall_kpis [avg_order_value, daily_revenue, total_revenue]
+                path: starbake_analytics.order_items_analysis[total_order_value] -> starbake_kpis.overall_kpis[avg_order_value, daily_revenue, total_revenue]
+
+Unresolved (0)
+
+Other changes, not traced (0)
+
+Summary: 1 direct, 1 impacted, 0 likely failures, breaking: yes
+```
+
+Only the expression of `total_order_value` changed, so only the columns of `overall_kpis` computed from it are impacted. A task that reads `order_items_analysis` but not that column would not be listed.
+
+## Choosing what to compare
+
+| You want to compare | Command |
+|---|---|
+| Your branch, with uncommitted edits, against `main` | `starlake impact --base origin/main` |
+| A commit or branch against another one | `starlake impact --base v1.2.0 --head feature/new-kpis` |
+| Two directories | `starlake impact --path1 /tmp/before --path2 /tmp/after` |
+
+`--base` always uses the merge-base, so commits added to `main` after your branch started are not reported as your changes. `--path1` / `--path2` cannot be combined with `--base` / `--head`.
+
+## How changes are classified
+
+| Change | Class | Downstream effect |
+|---|---|---|
+| Comment, tags, ACL / RLS, expectations only | `METADATA` | None |
+| New output column or attribute | `NON_BREAKING` | Only consumers using `SELECT *` |
+| Column expression, type, script, privacy or default changed | `BREAKING` for that column | Tasks reading that column, recursively |
+| Column removed or renamed | `BREAKING` for that column | Same, and consumers still mentioning it are flagged as likely failures |
+| WHERE, JOIN, GROUP BY or DISTINCT, source table, write strategy, merge key, partition, `required` attributes, presql / postsql, parsing settings | `BREAKING` for all columns | Every downstream task |
+| SQL that does not parse, Python task | `BREAKING` (unresolved) | Table level, listed in the Unresolved section |
+| Task or table added | `ADDED` | None |
+| Task or table deleted | `BREAKING` | Every consumer, flagged as likely failures |
+
+An impacted task takes the most severe class among the changes that reach it, and the report shows one path that reached it. The columns listed for a task are the ones impacted; the path is a route, not the cause of each column.
+
+When the analysis cannot tell, it reports more rather than less. The **Unresolved** section lists every place it fell back to table level: SQL that does not parse, Python tasks (their inputs are unknown), tables whose columns are not declared, ambiguous table names, objects defined twice. **Other changes, not traced** lists changed files that are not followed downstream, such as DAG definitions, connections, env files, or fields the analysis does not classify.
+
+## Report formats
+
+| `--format` | Use |
+|---|---|
+| `text` (default) | Terminal |
+| `markdown` | Pull request comments |
+| `json` | Tooling; the structure is stable |
+| `html` | Sharing; `--template` replaces the built-in Jinja template, which receives HTML-escaped values |
+
+Write the report with `--output <file>` in CI rather than reading stdout: the launcher can print its own lines on stdout.
+
+## Gating a pull request
+
+`--fail-on` turns the report into a CI check:
+
+| Exit code | Meaning |
+|---|---|
+| `0` | Report written, `--fail-on` not matched |
+| `1` | `--fail-on breaking`: a direct change or an impacted task is `BREAKING`. `--fail-on non-breaking`: any change other than `METADATA` |
+| `2` | Usage error, git error, or a project that cannot be loaded. No report is written |
+
+A GitHub Actions job that comments the report on the pull request and fails on breaking changes:
+
+```yaml
+name: change-impact
+on: pull_request
+
+jobs:
+  impact:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the merge-base needs the history of both branches
+
+      # Install the Starlake CLI here, as in your other workflows
+
+      - name: Change impact
+        id: impact
+        run: |
+          starlake impact --base origin/${{ github.base_ref }} \
+            --format markdown --output impact.md --fail-on breaking
+
+      - name: Comment the report
+        if: always() && hashFiles('impact.md') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment ${{ github.event.pull_request.number }} --body-file impact.md
+```
+
+The comment step runs even when the impact step exits 1, so reviewers see why the check failed.
+
+## Getting precise results
+
+- Declare the `attributes` of tables and tasks read with `SELECT *`, or of external tables: the analysis is offline, so it only knows the columns your YAML declares, plus the ones it can derive from the SQL of upstream tasks.
+- Qualify table names with their domain (`sales.orders` rather than `orders`) when two domains have a table of the same name.
+- Use `--env` when your SQL renders differently per environment.
+
+See the [`impact` command reference](../../0800-cli/impact.md) for every option.

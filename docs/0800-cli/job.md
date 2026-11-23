@@ -39,3 +39,4 @@ Parameter|Cardinality|Description
 --options `k1=v1,k2=v2...`|*Optional, Unbounded*|Job arguments to be used as substitutions
 --scheduledDate `<value>`|*Optional*|Scheduled date for the job, in format yyyy-MM-dd'T'HH:mm:ss.SSSZ
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+-- `<value>`|*Optional*|

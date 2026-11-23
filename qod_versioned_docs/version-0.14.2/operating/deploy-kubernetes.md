@@ -45,7 +45,7 @@ Every pod receives the following labels:
 | `quack-node-id` | Unique node identifier; used as the pod name and the Service name. |
 | `quack-max-concurrent` | Maximum concurrent queries this node accepts. |
 
-Each pod runs `qod-node`, QoD's own executable on the official DuckDB library: the node image (`docker/quack-node`) ships it with its `libduckdb` under `/opt/qod-node` and carries no DuckDB CLI. The image must match the manager's release: nodes speak node protocol 6 with session handle v4, the image build fails on a binary of another protocol, and a pod running an earlier image refuses every handle, the health probe's included, so it stays unhealthy and is never routed to. After upgrading the manager, pull this release's node image and restart every node.
+Each pod runs `qod-node`, QoD's own executable on the official DuckDB library: the node image (`deploy/docker/quack-node`) ships it with its `libduckdb` under `/opt/qod-node` and carries no DuckDB CLI. The image must match the manager's release: nodes speak node protocol 6 with session handle v4, the image build fails on a binary of another protocol, and a pod running an earlier image refuses every handle, the health probe's included, so it stays unhealthy and is never routed to. After upgrading the manager, pull this release's node image and restart every node.
 
 Node pods do not mount the service account's API token, and a pod template cannot turn it back on. Tokens projected for IRSA or workload identity are separate mounts and stay.
 
@@ -105,7 +105,7 @@ Variables that are already set explicitly in `defaultMetastore` (via pool or glo
 
 ## Helm chart
 
-A Helm chart is provided at `charts/quack-on-demand/`. It deploys the manager pod, three Services (REST/UI on port 20900, FlightSQL on port 31338, and the native Quack front door on port 9494 when `quack.enabled` is true), and the RBAC Role + RoleBinding that lets the manager call the Kubernetes API to create, watch, and delete node pods and services within its own namespace.
+A Helm chart is provided at `deploy/charts/quack-on-demand/`. It deploys the manager pod, three Services (REST/UI on port 20900, FlightSQL on port 31338, and the native Quack front door on port 9494 when `quack.enabled` is true), and the RBAC Role + RoleBinding that lets the manager call the Kubernetes API to create, watch, and delete node pods and services within its own namespace.
 
 Top-level keys in `values.yaml`:
 

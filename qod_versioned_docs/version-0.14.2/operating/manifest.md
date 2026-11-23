@@ -5,7 +5,7 @@ description: "Export the entire control-plane configuration as one YAML manifest
 keywords: ["manifest", "backup", "restore", "yaml", "configuration"]
 ---
 
-The config manifest is the entire control-plane configuration serialized as one YAML document: every tenant, database, pool, federated source, role, group, user, and grant. Export it to back up or version-control your configuration, then import it to restore, clone an environment, or apply a reviewed change. The manifest holds configuration only; it does not contain table data or the DuckLake catalogs.
+The config manifest is the entire control-plane configuration serialized as one YAML document: every tenant, database, pool, federated source, role, group, user, grant, and platform role. Export it to back up or version-control your configuration, then import it to restore, clone an environment, or apply a reviewed change. The manifest holds configuration only; it does not contain table data or the DuckLake catalogs.
 
 Manifest export and import are cross-tenant operations and are **restricted to superusers**. A tenant-scoped session or PAT is rejected with `403 superuser_required`; a superuser's session or PAT is admitted. The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a superuser session, or `QOD_TOKEN` holds a personal access token for CI scripts.
 
@@ -37,7 +37,8 @@ The document mirrors the object hierarchy:
   - `identities[]` - external identity mappings for the tenant.
 - `roles[]` - each `(tenant, name)` with its `permissions[]` (catalog/schema/table/verb).
 - `groups[]` - each `(tenant, name)` with its assigned `roles[]`.
-- `users[]` - `tenant` (omitted/null for a superuser), `username`, `passwordHash`, `kind` (`admin` or `user`; the key was named `role` before the [built-in RBAC release](/qod/operating/rbac-model#upgrading-to-the-built-in-rbac-release), and a manifest still using `role` is refused), `enabled`, `mustChangePassword` (optional, default `false`), and the user's `roles[]`, `groups[]`, and `poolGrants[]`.
+- `users[]` - `tenant` (omitted/null for a superuser or a staff user), `username`, `passwordHash`, `kind` (`admin`, `user`, or `staff` for a tenant-less [platform staff](./platform-staff.md) user; the key was named `role` before the [built-in RBAC release](/qod/operating/rbac-model#upgrading-to-the-built-in-rbac-release), and a manifest still using `role` is refused), `enabled`, `mustChangePassword` (optional, default `false`), and the user's `roles[]`, `groups[]`, and `poolGrants[]`. A staff user also carries `platformRoles[]`, the names of its platform roles.
+- `platformRoles[]` - every platform role, each with its `name`, `description` and `permissions[]`, a permission no loaded module declares included. See [Platform roles and staff users](#platform-roles-and-staff-users).
 
 The four [built-in roles and groups](/qod/operating/rbac-model#built-in-roles-and-groups) (`qod_all_tables`, `qod_no_tables`, `qod_all_pools`, `qod_no_pools`) are not exported: every tenant carries them, and users and groups reference them by name. While any tenant holds a user-made role or group whose name starts with `qod_` (left from before the prefix was reserved, or renamed `<name>_renamed` by the upgrade backfill), the whole export is refused with `400 reserved_name`, listing the offending rows: such a manifest could not be imported. Rename those rows, then export again.
 
@@ -77,7 +78,7 @@ qod manifest import manifest.yaml
 Import validates the whole document before writing anything. On failure it returns `400` and changes nothing:
 
 - `invalid-yaml` - the body did not parse as YAML.
-- `invalid-manifest` - validation failed: a wrong `apiVersion` (must be `quack-on-demand/v1`), duplicate keys (tenant name, `(tenant, role)`, `(tenant, group)`, `(tenant, user)`, or a nested duplicate), a user/role/group that references a tenant not present in the manifest or already in the database, a user still carrying the old `role` key, or a role or group named with the reserved `qod_` prefix (only a built-in in its exact built-in shape is accepted, as a no-op).
+- `invalid-manifest` - validation failed: a wrong `apiVersion` (must be `quack-on-demand/v1`), duplicate keys (tenant name, `(tenant, role)`, `(tenant, group)`, `(tenant, user)`, or a nested duplicate), a user/role/group that references a tenant not present in the manifest or already in the database, a user still carrying the old `role` key, a role or group named with the reserved `qod_` prefix (only a built-in in its exact built-in shape is accepted, as a no-op), or a `platformRoles` entry or staff user that breaks the rules of [Platform roles and staff users](#platform-roles-and-staff-users).
 
 ### One tenant's roles and groups
 
@@ -97,6 +98,28 @@ This is the part to understand before importing a hand-edited file. The rules di
 :::caution Nested omissions delete
 Because nested collections are replaced, omitting a child under a parent you do include removes it. If you export, then hand-edit a tenant to drop one pool from its `pools` list and re-import, that pool is deleted. A role's `permissions` are fully replaced; a user's `poolGrants` are fully replaced. To change one tenant safely, keep all of its databases, pools, roles, and grants in the file, or edit a full export rather than a partial document.
 :::
+
+### Platform roles and staff users
+
+The top-level `platformRoles` section and each tenant-less user's `platformRoles` carry [platform staff](./platform-staff.md):
+
+```yaml
+platformRoles:
+  - name: support
+    description: Support desk
+    permissions: [hosted.tenants.read, hosted.signups.read]
+users:
+  - username: ana@example.com
+    kind: staff
+    platformRoles: [support]
+```
+
+- **Roles are upserted by name, ignoring case.** A stored role with the same name is updated (its description and permissions become the manifest's, and its name takes the manifest's spelling); any other is created. A stored role the manifest does not list is left in place.
+- **A listed tenant-less user gets exactly its listed roles.** A staff user's assignments are replaced by its `platformRoles` (none when the list is empty or absent); any other tenant-less user, a superuser included, is left with none.
+- **Permissions are not checked against the loaded modules**, so a backup always restores. A permission no loaded module declares is kept and grants nothing until a module declares it again; boot prints a `WARN:` line for it.
+- **Validation refuses the whole import**, writing nothing, when a role name is empty, has leading or trailing spaces, is `superuser` (any case) or repeats another ignoring case; when a staff user has a tenant; when a user that is not a tenant-less staff user lists `platformRoles`; or when a staff user names a role the manifest's own `platformRoles` does not define (a role stored but not in the file does not count).
+
+The import summary counts no platform roles.
 
 ### Replaying an old manifest over an Iceberg source
 
