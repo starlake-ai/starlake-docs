@@ -159,6 +159,10 @@ Each test produces a `{test-name}.db` file containing:
 
 In addition to test-level assertions, data quality expectations defined in the table YAML (`expectations` section) are also evaluated during test execution. See the full [Expectations reference](./700-expectations.md) for all 53 built-in macros.
 
+## 16. Tests on Production Data (Data Branches)
+
+When fixtures are not enough, set `SL_DATA_BRANCH` to run a load or transform against production data on BigQuery or Snowflake. Every write lands in a sandbox built from zero-copy clones of the production tables, cloned on first use, and production is never modified. See [Testing on production data with data branches](../0300-guides/0400-unit-tests/300-data-branches.mdx).
+
 ---
 
 ## Summary
@@ -181,3 +185,4 @@ In addition to test-level assertions, data quality expectations defined in the t
 | JUnit XML reports (CI/CD integration) | Reporting |
 | HTML report website (`--site`) | Reporting |
 | DuckDB artifact databases | Reporting |
+| Data branches on production data (BigQuery, Snowflake) | Runtime |
