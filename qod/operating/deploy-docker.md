@@ -13,7 +13,7 @@ The Docker Compose stack runs the whole control plane as containers: the manager
 - A reproducible demo or evaluation host that boots with one command and no Java, sbt, or Node toolchain on the box.
 - Running off a dedicated data disk or NFS mount: the persistent folders are bind-mounted and each one accepts an external host path (see [Data folders](#data-folders-external-bind-mounts) below).
 
-For first-boot-to-first-query, see the [Quickstart](/qod/getting-started/quickstart). For a single manager container pointed at an external Postgres you already run, see the Docker section of [Installation](/qod/getting-started/install). For multi-host or orchestrated deployments, use the [Kubernetes backend](/qod/operating/deploy-kubernetes).
+For first-boot-to-first-query, see the [Quickstart](/qod/getting-started/quickstart). For a single manager container pointed at an external Postgres you already run, see the Docker section of [Installation](/qod/getting-started/install). For one host with each node in a container of its own, see the [container layout](/qod/operating/deploy-single-server#9-one-host-as-containers). For multi-host or orchestrated deployments, use the [fleet runtime](/qod/operating/deploy-fleet) or the [Kubernetes backend](/qod/operating/deploy-kubernetes).
 
 ## What comes up
 
@@ -192,6 +192,34 @@ A one-shot `starflow-db-init` service creates the `starlake` metadata database o
 echo "FLEET_JOIN_TOKEN=$(openssl rand -hex 24)" >> .env
 docker compose --project-directory . -f deploy/docker/docker-compose.yml -f deploy/docker/docker-compose.fleet.yml --profile seaweedfs up -d --build
 ```
+
+## The image
+
+`starlakeai/quack-on-demand` is one image for every role, chosen by its first argument:
+
+| Argument | Runs |
+|---|---|
+| none, or `manager` | The manager (`java -jar /app/quack-on-demand.jar`), what the compose file's `quack` service runs |
+| `worker` | A [fleet server](deploy-fleet.md#run-servers-as-docker-containers): `qod fleet join`, one node per container (compose `command: [worker]`) |
+| anything else | Passed to the jar |
+
+`starlakeai/quack-on-demand-worker` is a deprecated alias, the same image in its worker role, published for two releases after 0.14.2: move fleet servers to `starlakeai/quack-on-demand` with `command: [worker]`.
+
+The image needs nothing from the network and nothing writable at run time, so it can run with a read-only root filesystem and no access to the internet. It ships every DuckDB extension a node or the manager's own DuckDB loads, and `qod-node` with its `libduckdb` at `/opt/qod-node` (`QOD_NODE_BIN`). It carries the `qod` CLI for its healthchecks (`qod healthcheck manager|worker`) and the worker role, without the dependencies of `qod sql`. The image has no `curl`, so a healthcheck uses those commands, with a `timeout:` (5 seconds) of its own.
+
+The manager always runs with `-XX:+ExitOnOutOfMemoryError` ahead of `JAVA_OPTS`, so a heap out-of-memory error ends the JVM and the container's restart policy brings it back, instead of leaving a manager that no longer answers.
+
+### Signed images
+
+Every release and snapshot of `starlakeai/quack-on-demand`, `starlakeai/quack-on-demand-node` and the `starlakeai/quack-on-demand-worker` alias is signed keyless with cosign by the GitHub workflow that built it, and carries an SBOM and SLSA provenance as attestations. Verify an image before you run it:
+
+```bash
+cosign verify starlakeai/quack-on-demand:<tag> \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github.com/starlake-ai/(qod|quack-on-demand)/\.github/workflows/(release|snapshot)\.yml@'
+```
+
+A snapshot of `starlakeai/quack-on-demand-node` is signed by its own workflow: verify it with `(release|quack-node-snapshot)` in place of `(release|snapshot)`. The [container layout for one host](deploy-single-server.md#9-one-host-as-containers) runs this check itself when `cosign` is installed.
 
 ## Corporate proxy
 

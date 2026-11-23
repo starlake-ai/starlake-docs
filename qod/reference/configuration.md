@@ -137,7 +137,7 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | --- | --- | --- | --- | --- |
 | `quack-on-demand.admin.username` | `QOD_ADMIN_USERNAME` | `admin@localhost.local,admin` |  | Comma-separated admin usernames seeded into qodstate_user. |
 | `quack-on-demand.admin.password` | `QOD_ADMIN_PASSWORD` | `***` | yes | Bootstrap admin password, used only when the admin row does not exist yet; empty (the default) seeds nothing. |
-| `quack-on-demand.admin.kind` | `QOD_ADMIN_KIND` | `admin` |  | Account kind (qodstate_user.kind) assigned to the bootstrap admin user. |
+| `quack-on-demand.admin.kind` | `QOD_ADMIN_KIND` | `admin` |  | Account kind (qodstate_user.kind) assigned to the bootstrap admin user. Must be admin (any case): the seeded accounts have no tenant, and boot refuses any other value. |
 
 ## `quack-on-demand.auth`
 
@@ -239,6 +239,7 @@ Every scalar accepts the listed `QOD_*` / `PROXY_*` environment-variable overrid
 | `quack-on-demand.fleet.trustedProxies` | `QOD_FLEET_TRUSTED_PROXIES` | _(unset)_ |  | Comma-separated CIDRs of proxies / load balancers whose X-Forwarded-For is believed when resolving a heartbeat's client address. Empty = believe none. |
 | `quack-on-demand.fleet.nodePgHost` | `QOD_FLEET_NODE_PG_HOST` | _(unset)_ |  | Address fleet servers dial for the managed Postgres, when it differs from the manager's own (e.g. the manager reaches it by a container-only name). Replaces pgHost in fleet assignments of databases on the default metastore only. Empty = unchanged. |
 | `quack-on-demand.fleet.nodePgPort` | `QOD_FLEET_NODE_PG_PORT` | _(unset)_ |  | Port fleet servers dial for the managed Postgres; replaces pgPort only where it equals the default metastore's. Empty = unchanged. |
+| `quack-on-demand.fleet.nodeS3Endpoint` | `QOD_FLEET_NODE_S3_ENDPOINT` | _(unset)_ |  | S3 endpoint (host[:port]) fleet servers dial for the manager's default store, when it differs from the manager's own QOD_S3_ENDPOINT. Replaces QOD_S3_ENDPOINT in the store settings of fleet assignments only, for nodes whose database has no store of its own. Empty = unchanged. |
 
 ## `quack-on-demand.ha`
 

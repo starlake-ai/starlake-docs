@@ -92,6 +92,7 @@ const sidebars = {
             'operating/oauth-server-setup',
             'operating/rbac-model',
             'operating/rbac-admin',
+            'operating/platform-staff',
             'operating/scim-provisioning',
           ],
         },
