@@ -115,7 +115,7 @@ See [Split-horizon issuer](#split-horizon-issuer-qod_auth_keycloak_issuer). The 
 
 ## Worked example: Power BI via Keycloak
 
-This is the configuration the bundled kind rig (`charts/quack-on-demand/local-stack-k8s`) uses end to end. It is a local test rig, which is why its public URLs are plain `http://`; in production they are `https://`.
+This is the configuration the bundled kind rig (`deploy/charts/quack-on-demand/local-stack-k8s`) uses end to end. It is a local test rig, which is why its public URLs are plain `http://`; in production they are `https://`.
 
 1. **Data-plane provider** (manager): Keycloak enabled, JWKS in-cluster, issuer overridden to the browser host:
    ```bash

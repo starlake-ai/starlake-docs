@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Quack on Demand REST API
-  version: 0.14.1
+  version: 0.14.2
 paths:
   /api/scim/v2/{tenant}/Groups/{id}:
     get:
@@ -2539,6 +2539,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/console/pages:
+    get:
+      operationId: getApiConsolePages
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsolePagesResponse'
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
+            qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/database/list:
     get:
       operationId: getApiDatabaseList
@@ -3100,6 +3134,108 @@ paths:
         '400':
           description: 'Invalid value for: query parameter limit, Invalid value for:
             header X-API-Key, Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/platform/permission/list:
+    get:
+      operationId: getApiPlatformPermissionList
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformPermissionListResponse'
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
+            qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/platform/role/list:
+    get:
+      operationId: getApiPlatformRoleList
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformRoleListResponse'
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
+            qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/platform/staff/list:
+    get:
+      operationId: getApiPlatformStaffList
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffListResponse'
+        '400':
+          description: 'Invalid value for: header X-API-Key, Invalid value for: cookie
+            qod_session'
           content:
             text/plain:
               schema:
@@ -6300,6 +6436,122 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/platform/role/create:
+    post:
+      operationId: postApiPlatformRoleCreate
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlatformRoleCreateRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformRoleView'
+        '400':
+          description: 'Invalid value for: body, Invalid value for: header X-API-Key,
+            Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/platform/role/delete:
+    post:
+      operationId: postApiPlatformRoleDelete
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlatformRoleDeleteRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: body, Invalid value for: header X-API-Key,
+            Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/platform/role/update:
+    post:
+      operationId: postApiPlatformRoleUpdate
+      parameters:
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: qod_session
+        in: cookie
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlatformRoleUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformRoleView'
+        '400':
+          description: 'Invalid value for: body, Invalid value for: header X-API-Key,
+            Invalid value for: cookie qod_session'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/pool/create:
     post:
       operationId: postApiPoolCreate
@@ -8812,6 +9064,34 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ConfigEntryView'
+    ConsolePageView:
+      title: ConsolePageView
+      type: object
+      required:
+      - module
+      - id
+      - label
+      - path
+      - bundle
+      properties:
+        module:
+          type: string
+        id:
+          type: string
+        label:
+          type: string
+        path:
+          type: string
+        bundle:
+          type: string
+    ConsolePagesResponse:
+      title: ConsolePagesResponse
+      type: object
+      properties:
+        pages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsolePageView'
     CreateColumnPolicyRequest:
       title: CreateColumnPolicyRequest
       type: object
@@ -9210,6 +9490,8 @@ components:
       - tenantDbInitTrusted
       - tenantPoolInitSql
       - tenantPoolInitTrusted
+      - storeSecrets
+      - storeEnv
       properties:
         epoch:
           type: integer
@@ -9249,6 +9531,10 @@ components:
           type: string
         tenantPoolInitTrusted:
           type: boolean
+        storeSecrets:
+          $ref: '#/components/schemas/Map_String'
+        storeEnv:
+          $ref: '#/components/schemas/Map_String'
     FleetHeartbeatRequest:
       title: FleetHeartbeatRequest
       type: object
@@ -9780,6 +10066,7 @@ components:
       - username
       - superuser
       - admin
+      - staff
       properties:
         token:
           type: string
@@ -9794,6 +10081,8 @@ components:
           items:
             type: string
         admin:
+          type: boolean
+        staff:
           type: boolean
     MaintenanceEffectiveEntry:
       title: MaintenanceEffectiveEntry
@@ -10464,6 +10753,92 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PatToolEntry'
+    PlatformPermissionListResponse:
+      title: PlatformPermissionListResponse
+      type: object
+      properties:
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlatformPermissionView'
+    PlatformPermissionView:
+      title: PlatformPermissionView
+      type: object
+      required:
+      - name
+      - declared
+      properties:
+        name:
+          type: string
+        module:
+          type: string
+        description:
+          type: string
+        declared:
+          type: boolean
+    PlatformRoleCreateRequest:
+      title: PlatformRoleCreateRequest
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+    PlatformRoleDeleteRequest:
+      title: PlatformRoleDeleteRequest
+      type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+    PlatformRoleListResponse:
+      title: PlatformRoleListResponse
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlatformRoleView'
+    PlatformRoleUpdateRequest:
+      title: PlatformRoleUpdateRequest
+      type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+    PlatformRoleView:
+      title: PlatformRoleView
+      type: object
+      required:
+      - id
+      - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
     PoolCohortDto:
       title: PoolCohortDto
       type: object
@@ -11335,6 +11710,14 @@ components:
       properties:
         ticket:
           type: string
+    StaffListResponse:
+      title: StaffListResponse
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
     StatementHistoryEntry:
       title: StatementHistoryEntry
       type: object
@@ -12013,6 +12396,10 @@ components:
           type: array
           items:
             type: string
+        platformRoles:
+          type: array
+          items:
+            type: string
     UserDeleteRequest:
       title: UserDeleteRequest
       type: object
@@ -12077,6 +12464,10 @@ components:
           type: array
           items:
             type: string
+        platformRoles:
+          type: array
+          items:
+            type: string
     UserRoleMembershipRequest:
       title: UserRoleMembershipRequest
       type: object
@@ -12127,6 +12518,10 @@ components:
           type: string
         enabled:
           type: boolean
+        platformRoles:
+          type: array
+          items:
+            type: string
     WhoamiResponse:
       title: WhoamiResponse
       type: object
@@ -12134,6 +12529,7 @@ components:
       - username
       - role
       - superuser
+      - staff
       properties:
         username:
           type: string
@@ -12144,6 +12540,12 @@ components:
         superuser:
           type: boolean
         manageableTenants:
+          type: array
+          items:
+            type: string
+        staff:
+          type: boolean
+        permissions:
           type: array
           items:
             type: string

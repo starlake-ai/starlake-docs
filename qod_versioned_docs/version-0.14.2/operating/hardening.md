@@ -195,6 +195,19 @@ database's own data path: a superuser reading another bucket registers keys too
 other buckets needs its own `CREATE SECRET`. On Kubernetes, node pods do not mount
 the service account's API token, so a node cannot call the cluster API.
 
+**A proxy's password.** Nodes take their HTTP proxy from `HTTP_PROXY` / `HTTPS_PROXY`
+(or the lowercase forms) in their environment, and so does the manager's DuckLake
+initializer. A proxy URL holding a user and password
+(`HTTPS_PROXY=http://user:password@proxy:3128`, special characters percent-encoded)
+is split: DuckDB's `http_proxy` gets the host and port only, and the user and
+password, percent-decoded, go in `http_proxy_username` and `http_proxy_password`,
+which DuckDB sends as the proxy's credentials. The password therefore never
+appears in a statement's error, which DuckDB would otherwise quote back to
+whoever ran a statement reading over HTTPS or S3. Nodes apply this at their next
+start: restart them after an upgrade (see
+[Upgrading from 0.14.1 to 0.14.2](./upgrading-0-14.md#from-0141-to-0142)).
+Tenant users cannot set or reset any proxy setting (above).
+
 ### Extension settings
 
 `allow_community_extensions`, `allow_unsigned_extensions` and

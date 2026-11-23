@@ -5,7 +5,7 @@ description: "Tour of the QoD admin console: tenants, databases, pools, users, a
 keywords: ["admin ui", "console", "duckdb administration"]
 ---
 
-The manager serves a React console at `http://<host>:20900/ui/`. Superusers and tenant admins get the full operator console: it manages tenants, databases, pools, users, and access control, and surfaces live node and statement telemetry. Regular (`kind=user`) tenant users can log in too, but land on a self-service [Profile page](#profile-page-regular-users) instead of the operator console. Neither view is an end-user query tool; clients run SQL over the FlightSQL edge, not through this UI.
+The manager serves a React console at `http://<host>:20900/ui/`. Superusers and tenant admins get the full operator console: it manages tenants, databases, pools, users, and access control, and surfaces live node and statement telemetry. Regular (`kind=user`) tenant users can log in too, but land on a self-service [Profile page](#profile-page-regular-users) instead of the operator console, and [platform staff](./platform-staff.md) get a [staff layout](#staff-layout) holding only the module pages their roles allow. Neither view is an end-user query tool; clients run SQL over the FlightSQL edge, not through this UI.
 
 Every screen here is backed by a REST endpoint documented in the [REST API reference](pathname:///api/); the UI is a thin front end over the same `/api/*` calls shown on the operator pages. Where a screen maps to a task already covered in prose, this guide links there rather than repeating it.
 
@@ -15,7 +15,7 @@ The screenshots below are from a local demo deployment with the bootstrap TPC-H 
 
 The login screen takes a username, password, and an optional **Tenant ID**. The tenant field is the realm signal:
 
-- **Leave it blank** to log in as a system superuser. Credentials are validated against the manager's global auth providers (`quack-flightsql.auth.*`) and the matching `qodstate_user` row must have `tenant IS NULL`. This path (and the OIDC single sign-on login) is admin-only.
+- **Leave it blank** to log in as a system superuser. Credentials are validated against the manager's global auth providers (`quack-flightsql.auth.*`) and the matching `qodstate_user` row must have `tenant IS NULL`. This path (and the OIDC single sign-on login) serves superusers and [platform staff](./platform-staff.md) (a tenant-less row of kind `staff`); an identity holding an admin grant signs in as that admin.
 - **Fill it in** (e.g. `t-02d0e86e`) to log in as a tenant user. Credentials are validated against THAT tenant's configured provider, and the matching `qodstate_user` row must have `tenant = <id>`. A tenant admin lands on the operator console scoped to that tenant; a regular (`kind=user`) principal with a database-backed password login lands on the [Profile page](#profile-page-regular-users) instead. A tenant whose sign-in is OIDC takes no password here: the form answers `sso_required`, and `/ui/?tenant=<id>` starts that tenant's single sign-on, which binds only that tenant's rows (an identity without one gets `not_provisioned`; superusers leave the field blank).
 
 There is no separate superuser checkbox; the field's presence is the only signal. Pre-existing scripts that called `/api/auth/login` with a `tenant` value for the bootstrap admin need to drop the field (or send an empty string) after upgrading.
@@ -40,14 +40,15 @@ The console is laid out as a left sidebar and a content column. From top to bott
 
 The navigation tree, for an admin:
 
+- **Platform** - for a superuser, at the top of the tree, one entry per [module page](#platform-section-and-module-pages) when a loaded module adds any; absent otherwise.
 - **Dashboard** - the live [node dashboard](#dashboard). Under it, **Fleet servers** (see [Servers (fleet)](#servers-fleet)) appears only for a superuser on a manager running the fleet runtime.
 - **Tenant** - **Databases** (with **Catalog**, the [catalog browser](#catalog-browser), nested under it), **Pools**, **Maintenance**, **Branches**, **Auth Provider**, and **Access Control**.
 - **Users & Access Controls** - **Users**, **Groups**, and **Roles** (see [Users and access control](#users-and-access-control)).
 - **Audit** - **Control Plane**, **Statements**, and **Usage**. The whole group is hidden when `QOD_TELEMETRY_STORE=none`; deep links to the three pages keep working and render a "telemetry is disabled" state.
 - **Workbench** - only when the Starlake integration is configured; see [Workbench](#workbench).
-- **Settings** - **Config** (superusers only) and **Profile** (your own password change, usage, and statements).
+- **Settings** - **Config** and **Staff** (superusers only), and **Profile** (your own password change, usage, and statements).
 
-Visibility in the sidebar is a convenience only: the server enforces every gate itself, so a deep link to a page you may not use 403s on its first fetch (or, for **Config** and **Fleet servers**, is not even routed for a non-superuser).
+Visibility in the sidebar is a convenience only: the server enforces every gate itself, so a deep link to a page you may not use 403s on its first fetch (or, for **Config**, **Staff**, **Fleet servers** and the module pages, is not even routed for a non-superuser).
 
 ### Tenant switcher
 
@@ -78,7 +79,8 @@ The tenant is part of the URL, so every page is bookmarkable and shareable:
 | Control Plane, Statements, Usage | `/ui/t/<tenant>/audit/control-plane`, `.../audit/statements`, `.../audit/usage` (or under `/ui/all/`) |
 | Tenants list | `/ui/tenants` |
 | Fleet servers | `/ui/servers` |
-| Config, Profile | `/ui/settings/config`, `/ui/settings/profile` |
+| Config, Staff, Profile | `/ui/settings/config`, `/ui/settings/staff`, `/ui/settings/profile` |
+| Module pages | `/ui/x/<module>/<page>` (and any path below it) |
 
 `<tenant>` is the tenant id (slug), for example `/ui/t/acme/pools`; the switcher shows the display name. The unscoped pages (tenants, servers, settings) keep the sidebar links pointing at the last tenant you worked in.
 
@@ -91,6 +93,18 @@ The collapse toggle in the sidebar footer shrinks the sidebar to an icon rail; t
 ### Workbench
 
 When the Starlake integration is configured, a **Workbench** entry opens Starlake in a new tab, signed in through a single-use SSO ticket minted for your session. It is the only entry besides Profile and Sign out that a regular (non-admin) user also gets. `qod start --with-starflow` and the Docker Compose [`starflow` profile](/qod/operating/deploy-docker#starflow) both configure it for you. On any other setup, see [Run Starflow with QoD](./starflow.md).
+
+## Platform section and module pages
+
+A [manager module](../contributing/extending.md#manager-modules-platform-permissions-and-console-pages) can add pages to the console. Each page belongs to the module, names one of the permissions the module declares, and lives at `/ui/x/<module>/<page>`. The console lists the pages the caller may open from `GET /api/console/pages`: a superuser holds every permission and sees every page, a [staff user](./platform-staff.md) sees the pages whose permission one of their platform roles grants, and a tenant admin or user sees none. The pages appear in a **Platform** section of the sidebar, in module load order and then in the order each module declares them.
+
+A module page renders inside the console's layout and session: the sidebar stays, and the page calls the REST API with the same session cookie as the rest of the console. If the page's script fails to load, speaks another console contract, or fails while mounting, an error panel naming the module replaces the page and the rest of the console keeps working. A URL naming a page the caller may not open redirects to their landing page.
+
+With no module loaded, or none that adds a page, the Platform section is not shown.
+
+### Staff layout
+
+A staff user signs in through the blank (system) login and gets a layout of their own: no tenant switcher, a **Platform** section with the pages their roles allow, and **Settings > Profile**, where they change their password and manage their personal access tokens. Nothing tenant-scoped is shown or routed: no dashboard, tenants, users, audit or Workbench. They land on their first page, or on Profile when their roles grant no page, and any other URL redirects there. The server enforces the same limits on its side (see [What a staff user reaches](./platform-staff.md#what-a-staff-user-reaches)).
 
 ## Dashboard
 
@@ -343,3 +357,12 @@ The full API reference, CSV column contract, retention knob, and scoping rules a
 - **Manifest** - export the entire control-plane configuration as YAML (**Download YAML**) and re-import an edited file via a drag-and-drop dropzone with an explicit **Apply** step; a summary grid reports what the import touched (tenants, tenant-dbs, pools, roles, groups, users). The semantics, redaction, and apply rules are on the [Manifest backup and restore](/qod/operating/manifest) page.
 
 ![The Config page resolved-configuration table](/img/ui/config.png)
+
+## Staff (superuser only)
+
+**Settings > Staff** (`/ui/settings/staff`) manages [platform staff](./platform-staff.md). It has two parts:
+
+- **Platform roles** - every role with its description and permissions, with **Edit** and **Delete** actions, and a form to create or edit a role. The form lists the permissions grouped by the module that declares them, each with its description. A permission no loaded module declares any more is shown as "(no module declares it)": a role that holds it keeps it, but it cannot be added to another role.
+- **Staff users** - every tenant-less `staff` account with its enabled state and platform roles. **Edit roles** replaces a user's roles, **Disable** / **Enable** locks or unlocks the account (a disabled staff user's session stops on its next request), and **Create a staff user** takes a username, a password and the roles to give.
+
+The same operations are available over REST and the CLI (`qod platform ...`, `qod user create --kind staff`); see [Platform staff](./platform-staff.md#managing-platform-roles-and-staff-users).

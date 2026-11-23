@@ -1,8 +1,8 @@
 ---
 id: upgrading-0-14
 title: Upgrading to 0.14
-description: "The checklists for upgrading a QoD manager from 0.13.x to 0.14.0 (restart every node; the manager now checks the upgrade path at boot) and from 0.14.0 to 0.14.1 (a disabled tenant is now fully inert)."
-keywords: ["upgrade", "release notes", "0.14.0", "0.14.1", "0.13.1", "release gate", "migration", "rollback", "disabled tenant"]
+description: "The checklists for upgrading a QoD manager from 0.13.x to 0.14.0 (restart every node; the manager now checks the upgrade path at boot), from 0.14.0 to 0.14.1 (a disabled tenant is now fully inert) and from 0.14.1 to 0.14.2 (one way: back up first; names match as DuckDB binds them; fleet servers hold no storage keys)."
+keywords: ["upgrade", "release notes", "0.14.0", "0.14.1", "0.14.2", "0.13.1", "release gate", "migration", "rollback", "disabled tenant", "staff", "non-ascii names", "fleet storage keys"]
 ---
 
 Coming from 0.12.x or earlier, first apply [Upgrading to 0.13](./upgrading-0-13.md).
@@ -97,3 +97,91 @@ Enabling it brings every pool back with its own settings. Nothing is deleted. On
 
 - `QOD_TENANT_DELETE_ENABLED=false` turns tenant deletion off for everyone, superusers included (`403 tenant_delete_disabled`): see [Tenants and databases](./tenants-databases.md#list-disable-change-auth-delete).
 - `deploy/host/install.sh VERSION --wheel FILE [--sha256 HEX]` installs a wheel the caller already checked: see [Deploy on a single server](./deploy-single-server.md).
+
+## From 0.14.1 to 0.14.2
+
+0.14.2 upgrades directly from 0.10.0 or later. **It is one way**: rolling back needs a restore of the control-plane database backup taken before the upgrade, because an older manager reads every staff user as a superuser, with full data access. Liquibase changeset `0061-platform-roles` raises the release gate's schema floor, so an older release with the gate refuses to boot on the upgraded control plane. Coming from 0.13.x, apply the 0.14.0 checklist above first.
+
+### Checklist
+
+The queries below run against the control-plane database (`qod` by default).
+
+**Before upgrading**
+
+1. **Back up the control-plane database.** It is the only way back once staff users exist.
+2. **Check `QOD_ADMIN_KIND`.** Unset it (and `quack-on-demand.admin.kind`) or set it to `admin`: any other value now refuses boot, naming the setting. The seeded accounts have no tenant, and only kind `admin` makes a tenant-less account a superuser.
+3. **Find tenant-less accounts that are not `admin`.** Such an account (one seeded with `QOD_ADMIN_KIND=user`, one created with `qod user create --superuser` on an earlier release, which sent kind `user`, or a superuser demoted earlier) loses data access with this release, and its refusal reads like an unknown user. Set the kind of each one that should stay a superuser back to `admin`:
+
+   ```sql
+   SELECT username, kind FROM qodstate_user WHERE tenant IS NULL AND lower(kind) <> 'admin';
+   ```
+
+4. **Check that no tenant user has the kind `staff`**, which changeset `0061` refuses (a kind was free text before 0.11.0). This must return nothing; change the kind of any row it lists first (`qod user update --kind user`):
+
+   ```sql
+   SELECT tenant, username, kind FROM qodstate_user WHERE tenant IS NOT NULL AND lower(kind) = 'staff';
+   ```
+
+5. **Check grants and policies whose names hold a non-ASCII letter.** Names now match as DuckDB binds them (see [Names with non-ASCII letters](#names-with-non-ascii-letters)). From the first boot, a column policy or row policy spelled with another case of such a letter than its object (`"CLÉS"` for the table `"Clés"`) no longer masks, denies or filters: it fails open. A grant so spelled no longer grants: it fails closed. This query lists every row whose names hold a non-ASCII character, correctly spelled ones too; respell each one that does not name its object exactly as stored, ASCII case aside:
+
+   ```sql
+   SELECT kind, tenant_id, role, catalog_name, schema_name, table_name, column_name FROM (
+     SELECT 'grant' AS kind, r.tenant_id, r.name AS role, p.catalog_name, p.schema_name, p.table_name,
+            NULL AS column_name
+       FROM qodstate_role_permission p JOIN qodstate_role r ON r.id = p.role_id
+     UNION ALL
+     SELECT 'column policy', r.tenant_id, r.name, c.catalog_name, c.schema_name, c.table_name,
+            c.column_name
+       FROM qodstate_role_column_policy c JOIN qodstate_role r ON r.id = c.role_id
+     UNION ALL
+     SELECT 'row policy', r.tenant_id, r.name, w.catalog_name, w.schema_name, w.table_name, NULL
+       FROM qodstate_role_row_policy w JOIN qodstate_role r ON r.id = w.role_id
+   ) AS rows
+   WHERE octet_length(concat(catalog_name, schema_name, table_name, column_name))
+      <> char_length(concat(catalog_name, schema_name, table_name, column_name))
+   ORDER BY tenant_id, role, kind;
+   ```
+
+6. **Update OPA policies that compare such names.** An OPA tenant's input now carries catalog, schema, table, column and secure view names folded as DuckDB folds them (`"SECRET_ÉTÉ"` arrives as `secret_ÉtÉ`, formerly `secret_été`). A deny rule written against the old lowercased form stops matching, and so allows.
+7. **Local runtime: review pools that set `cpu` or `memory`.** Their nodes now get them as DuckDB `threads` and `memory_limit`, from each node's next start, instead of every core and DuckDB's default of 80% of the host's memory, so they can become much smaller. Clear the ones that should keep the host's size (`qod pool set-resources --cpu '' --memory ''`) or set the size they should have. A `SET threads` or `SET memory_limit` in the database's or pool's `initSql` still wins. See [Pools and cohorts](./pools-cohorts.md#node-sizing-cpu-and-memory).
+
+   ```sql
+   SELECT tenant_db_id, name, cpu, memory FROM qodstate_pool WHERE cpu <> '' OR memory <> '';
+   ```
+
+8. **Check third-party manager modules.** A module whose public path prefix is empty or not absolute, holds an empty, `.` or `..` segment or one outside `[A-Za-z0-9._-]`, is `/api` itself or one segment under it, lies under a core API segment or another module's name, or, outside `/api`, under none of its own static mounts, now refuses boot, naming the module.
+
+**While upgrading**
+
+9. **Under HA, finish the rollout before creating staff users.** A replica still on an older release reads every staff user as a superuser.
+10. **Fleet: upgrade the servers with the manager**, and give every HA replica the same `QOD_S3_*`. A server on an earlier release does not read the storage keys the manager now sends, and a server of this release takes none from an earlier manager. Set `QOD_FLEET_NODE_S3_ENDPOINT` on the manager where servers reach the store at another address than the manager. See [Fleet servers hold no storage keys](#fleet-servers-hold-no-storage-keys).
+
+**After upgrading**
+
+11. **Remove `QOD_S3_*`, `QOD_AZURE_*` and `QOD_GCS_*` from every fleet server.** `qod fleet join` now ignores them and prints one WARN at start naming any it still holds, never their values.
+12. **Restart every node**, so the proxy credential fix and the local pool sizes apply.
+
+### Names with non-ASCII letters
+
+DuckDB folds identifier case for the ASCII letters `A` to `Z` only, so `"Clés"` and `"clÉs"` are two tables one schema can hold. The manager folded every cased letter, so a name holding a non-ASCII letter could be matched to the wrong object: a holder of column or row policies could read a masked column unmasked, and a grant could cover a second table spelled with another case. Grants, column and row policies, CTE scoping and the metadata filter now compare names as DuckDB does. ASCII names behave exactly as before. After the upgrade, boot prints one stderr line per stored row whose names hold a non-ASCII letter with another case: `WARN: tenant '...' role '...': the grant | column policy | row policy on ... names a non-ASCII letter that has another case`. See [Access control model](./rbac-model.md#wildcards).
+
+### Fleet servers hold no storage keys
+
+A node whose database has no store of its own reads the manager's default data path with the manager's own keys, which the manager now sends in the node's assignment, as a Kubernetes pod gets them in its Secret. Before, every fleet server needed the manager's `QOD_S3_*` in its own environment, or the first Parquet read failed with HTTP 403 while `count(*)` still answered from catalog statistics. The keys are not stored in the control plane: every HA replica answers from its own environment. A rotated key reaches a node when it next starts. See [Fleet deployment](./deploy-fleet.md#object-store-keys-come-from-the-manager).
+
+### What changes for operators and clients
+
+- **A superuser is a tenant-less account of kind `admin`.** The data plane (FlightSQL, the native front door, MCP, the REST endpoints that run SQL) refuses any other tenant-less account as an unknown user, logging the reason at WARN. A superuser's open session is refused on its next statement once its row is demoted, disabled or deleted. `qod user create --superuser` now creates kind `admin`.
+- **Several column policies on one column.** A deny wins, then a policy naming the table wins over a wildcard one, and a column two different masks still cover is refused with `conflicting column policies on <table>.<column>`. Before, the policy applied depended on the order of roles and tables. Give such a column one mask, or a deny. See [Access control model](./rbac-model.md#several-policies-on-one-column).
+- **Pool names are unique per tenant.** `pool/create` with a name another database of the tenant already uses answers `409 pool_name_taken`, naming the pool, instead of `500 start_failed`.
+- **A node lost mid-statement.** A node that dies while it runs a statement (an OOM kill, a crash) no longer answers `INVALID_ARGUMENT ... header parser received no bytes`: a lone read is retried on another node of the pool, or answers a retryable `UNAVAILABLE`, and any other statement answers that its outcome is unknown.
+- **Proxy credentials.** A proxy URL holding a user and password (`HTTPS_PROXY=http://user:password@proxy:3128`) is now split on nodes and in the manager's DuckLake initializer into `http_proxy` and `http_proxy_username` / `http_proxy_password`. Before, DuckDB refused the whole URL at the first HTTP request with an error quoting it, so the password reached whoever ran the statement and every request through the proxy failed.
+- **A failed DuckLake pre-init is a boot problem.** When the manager cannot initialize a database's catalog (its Postgres unreachable, an extension that cannot load), boot lists it under PROBLEMS (`catalog NOT initialized by the manager`) and retries every 1 to 15 minutes until it succeeds.
+- **Paths of module routes.** Public path prefixes, the core's public paths and the allowlists of non-admin and staff sessions are matched on whole path segments, so an encoded `/` (`%2F`) inside a segment no longer reads as a separator.
+
+### New in 0.14.2
+
+- [Platform staff](./platform-staff.md): tenant-less staff users holding platform roles, bundles of the permissions manager modules declare, and module pages in the admin console.
+- One host as containers: `deploy/host/container/` installs the manager and its fleet workers from the one image under systemd. See [Single-server production deployment](./deploy-single-server.md#9-one-host-as-containers).
+- One Docker image for every role, signed keyless with cosign, with an SBOM and SLSA provenance. See [Docker deployment](./deploy-docker.md#signed-images).
+- `qod healthcheck manager|worker` and `qod fleet join --spill-dir`. See [Fleet deployment](./deploy-fleet.md).

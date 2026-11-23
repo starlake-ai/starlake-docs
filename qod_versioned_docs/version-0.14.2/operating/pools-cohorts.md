@@ -34,7 +34,7 @@ qod pool create --tenant acme --db acme_sales --pool bi --size 3 \
 |---|---|---|
 | `tenant` | required | Owning tenant. |
 | `tenantDb` | required | The database this pool binds to (the `name` suffix used at database creation, e.g. `sales`). |
-| `pool` | required | Pool name, unique within the database. |
+| `pool` | required | Pool name, unique within the tenant: a name another database of the tenant already uses answers `409 pool_name_taken`, naming the pool, and nothing is written. |
 | `size` | required | Total node count. Must equal the sum of `roleDistribution`. |
 | `roleDistribution` | required | `{writeonly, readonly, dual}` node counts. |
 | `idleTimeoutSec` | `-1` | Per-pool idle-timeout setting, persisted on the pool. `-1` means unset. It is recorded on `qodstate_pool` and surfaced back on reads; no automatic idle-shutdown loop acts on it today. |
@@ -92,9 +92,17 @@ On the [fleet runtime](/qod/operating/deploy-fleet) a pool can ask for more node
 
 Each fleet node also carries `serverName` and `serverState` (`reachable` / `unreachable` / `dead`).
 
-## Node pod sizing (Kubernetes)
+## Node sizing (cpu and memory)
 
-On the Kubernetes backend a pool carries optional `cpu` and `memory` quantities. Each is applied as both the request and the limit on the `quack` container of every node pod, so setting both yields Guaranteed QoS. The local backend ignores them. On the [fleet runtime](/qod/operating/deploy-fleet#resource-limits-per-node) the same two values become DuckDB `SET threads` / `SET memory_limit` on each node (engine-enforced; an explicit `SET` in init SQL wins), and `memory` also filters which servers can receive the pool.
+A pool carries optional `cpu` and `memory` quantities (Kubernetes quantity syntax: `500m`, `2`, `8Gi`). What they become depends on the runtime:
+
+| Runtime | `cpu` | `memory` |
+|---|---|---|
+| Kubernetes | Request and limit on the `quack` container of every node pod (setting both yields Guaranteed QoS) | Request and limit on the same container |
+| Local | DuckDB `SET threads = <cpu rounded up>`, at least 1 | DuckDB `SET memory_limit = '<MiB rounded down>MiB'`, at least 64 MiB |
+| [Fleet](/qod/operating/deploy-fleet#resource-limits-per-node) | Same as local | Same as local, and a filter on which servers can receive the pool |
+
+On the local and fleet runtimes the two `SET`s are engine limits, not kernel limits: DuckDB caps its worker threads and buffer manager, and allocations outside the buffer manager can still overshoot `memory_limit`. They run before the database's and the pool's `initSql`, so an explicit `SET threads` or `SET memory_limit` there wins. A pool that sets neither keeps the node's defaults: DuckDB's own (every core and 80% of the host's memory), or limits derived from the container's cgroup when the node runs in one. On one host, size every pool that shares it: without values, each pool's nodes may use the whole machine. A pool moved between the local and fleet runtimes keeps its size.
 
 ```bash
 qod pool set-resources --tenant acme --db acme_sales --pool bi --cpu 2 --memory 8Gi
@@ -102,8 +110,8 @@ qod pool set-resources --tenant acme --db acme_sales --pool bi --cpu 2 --memory 
 
 - Values take effect on the next node spawn (idle-timeout replacement, scale-up, manual restart). Restart the pool's nodes to apply immediately. An empty string clears a value.
 - The API accepts any valid Kubernetes quantity. The admin UI exposes the same setting as sliders on the pool create form and the pool detail page, covering 0.5 to 128 CPU cores and 1 to 1024 Gi of memory; values outside the slider range set through the API are shown as raw text.
-- Size the DuckDB engine below the pod: set `SET memory_limit = '...'` (about 80% of pod memory) in the database or pool `initSql` so the engine spills to disk before the kernel OOM-kills the pod.
-- The Helm chart's `resources` value sizes the manager container, not node pods; node pods are sized per pool with this endpoint.
+- On Kubernetes, size the DuckDB engine below the pod: set `SET memory_limit = '...'` (about 80% of pod memory) in the database or pool `initSql` so the engine spills to disk before the kernel OOM-kills the pod.
+- On Kubernetes, the Helm chart's `resources` value sizes the manager container, not node pods; node pods are sized per pool with this endpoint.
 
 When requests-and-limits are not enough (sidecars, volumes, affinity), a pool can carry a full Pod-manifest template via `qod pool set-pod-template` (`POST /api/pool/setPodTemplate`; CLI/API-only, superuser-only, gated behind `QOD_POD_TEMPLATE_ENABLED`, default off). The template must contain a container named `quack`; the manager overlays the pod name, its identity labels, and the quack container's env contract and resources.
 
@@ -123,7 +131,7 @@ If that folder cannot be created, the node uses a `tmp` folder in its private di
 
 **To spill on another disk**, put that disk behind the default path, which keeps the per-node folders and their cleanup:
 
-- **Kubernetes:** in a [pod template](#node-pod-sizing-kubernetes), declare a volume named `duckdb-tmp` and mount it at `/duckdb-tmp`; the manager then adds neither. It must be writable by the node's user (uid 1000 by default).
+- **Kubernetes:** in a [pod template](#node-sizing-cpu-and-memory), declare a volume named `duckdb-tmp` and mount it at `/duckdb-tmp`; the manager then adds neither. It must be writable by the node's user (uid 1000 by default).
 - **Single Docker container:** add a bind mount to the `quack` service's `volumes` (`- /fastdisk/qod-tmp:/app/.tmp`), on a host folder the container's user can write to.
 - **Local, single server, fleet:** make `.tmp` a mount or a symbolic link to the fast disk.
 

@@ -30,7 +30,7 @@ The RBAC graph is stored in the control-plane Postgres database (default `qod`) 
 
 | Table | What it holds |
 |---|---|
-| `qodstate_user` | One row per principal. `tenant IS NULL` marks a superuser. Tenant-scoped users carry a non-null `tenant` value. The `kind` column (`admin` or `user`) is the management-rights flag (admin console and REST administration); it is not an RBAC role and grants no table or pool access. |
+| `qodstate_user` | One row per principal. Tenant-scoped users carry a non-null `tenant` value; a row with `tenant IS NULL` and kind `admin` is a superuser, and one with `tenant IS NULL` and kind `staff` is a [platform staff user](./platform-staff.md). On a tenant row the `kind` column (`admin` or `user`) is the management-rights flag (admin console and REST administration); it is not an RBAC role and grants no table or pool access. |
 | `qodstate_role` | Named, per-tenant bundles of table permissions. |
 | `qodstate_group` | Named, per-tenant containers that collect roles and pool grants. |
 | `qodstate_role_permission` | Table-level grants attached to a role: a verb on a `catalog.schema.table` triple. |
@@ -96,14 +96,14 @@ Every tenant carries a policy version (`qodstate_tenant.policy_version`), bumped
 
 ## Superusers
 
-A user with `tenant IS NULL` in `qodstate_user` is a superuser. Superusers bypass both gates:
+A user with `tenant IS NULL` and kind `admin` in `qodstate_user` is a superuser. Superusers bypass both gates:
 
 - The pool-access gate at handshake (they may connect to any pool in any tenant).
 - The per-statement gate: the node still describes their statements (the audit log gets the real objects) but allows them without checking `effective_perms`.
 
 A few mechanism rules still bind superusers: writes, DDL, `ATTACH` and `DETACH` against a [read-only federated catalog](./federation.md) are refused to every principal, and so is changing the optimizer and Quack authorization settings (`QoD: <name> cannot be changed`).
 
-The superuser flag is purely the absence of a tenant value. The bootstrap admin seeded at startup is a superuser. Only superusers can create other superusers; the API enforces this constraint at the application layer.
+A superuser is a row with no tenant whose kind is `admin`. Every door to data binds a tenant-less row only when its kind is `admin`, and refuses any other (a superuser demoted to `user`, a [staff user](./platform-staff.md)) as an unknown user, logging the reason at WARN. A superuser session already open when its row is demoted, disabled or deleted is refused on its next statement. The bootstrap admins seeded at startup are superusers: their kind is `QOD_ADMIN_KIND`, which must be `admin` (boot refuses any other value). `qod user create --superuser` creates kind `admin`. Only superusers can create other superusers; the API enforces this constraint at the application layer.
 
 User names confer nothing. A tenant user may be called `superuser` and is still an ordinary tenant user: statements the manager runs on a caller's behalf (the catalog preview, data diff, undrop and restore endpoints, and the MCP tools that run SQL) bypass the grant check, column masking and row policies only for a real superuser (`tenant IS NULL`, through a superuser session or a PAT a superuser owns) and the manager's own internal steps, never because of a name. Everyone else, including a PAT, runs as their own principal with these gates applied, after the same handshake gates as FlightSQL (tenant and pool kill switches, user registered and enabled, pool access); see [Relationship to the REST session](/qod/connecting/authenticating#relationship-to-the-rest-session).
 
@@ -130,7 +130,7 @@ The node describes every object a statement touches with the access DuckDB resol
 
 Each of the three name parts (catalog, schema, table) may be the literal string `*`, which matches any value in that position. For example, a permission with `catalogName=*`, `schemaName=*`, `tableName=*`, `verb=RO` grants read access to every table the user can name.
 
-Matching is case-insensitive for literal values and exact for `*`.
+Literal values compare as DuckDB binds names: ASCII letters fold case (`Orders` matches `orders`), other letters do not, so `"Clés"` and `"clÉs"` are two tables and a grant on one never covers the other. Column and row policies match the same way. Boot prints one stderr `WARN:` line for each stored grant, column policy or row policy whose names hold a non-ASCII letter with another case, as such a row matches only an object spelled with exactly those letters. `*` matches exactly.
 
 The catalog `*` wildcard is scoped to the session's tenant: it matches the tenant's own databases and the catalog the pool's node attaches its database as (`memory` on a memory database's own pool, or a custom alias such as a `qod serve` `.duckdb` file's stem). A tenant admin holding `*.*.* ALL` therefore cannot reach a sibling tenant's catalog. **A wildcard catalog never covers a federated catalog**: grant a [federated source](./federation.md) by its alias (`pgsrc.public.* RO`). A literal catalog name always matches through the literal path.
 
@@ -280,6 +280,10 @@ exposure on `pass`.
 
 A future release will hook DDL classification into cache invalidation so the window closes to
 under one statement; until then this is operator-visible.
+
+### Several policies on one column
+
+When several of a principal's column policies cover the same column, a `deny` wins, then a policy naming the table wins over a wildcard one. Two different masks left covering the column refuse the statement with `conflicting column policies on <table>.<column>`: give the column one mask, or a deny. A column covered by both a wildcard mask and a named mask can also be refused when it is read through a derived table or a CTE, or by a correlated subquery whose unqualified column binds to the outer table.
 
 ### Action: deny
 
