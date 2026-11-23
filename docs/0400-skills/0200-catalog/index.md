@@ -23,7 +23,7 @@ Starlake Skills are organized into categories covering every Starlake CLI comman
 | [Operations](./operations.md) | Validation, metrics, freshness, migrations |
 | [Security](./security.md) | IAM policies, RLS, CLS, privacy |
 | [Orchestration](./orchestration.md) | Airflow and Dagster DAG management |
-| [Utilities](./utilities.md) | Format conversion, comparison, testing, site generation |
+| [Utilities](./utilities.md) | Format conversion, comparison, change impact, testing, site generation |
 | [Configuration](./configuration.md) | Configuration reference and database connections |
 
 ## How Skills Work

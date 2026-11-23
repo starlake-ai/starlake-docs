@@ -1,5 +1,5 @@
 ---
-sidebar_position: 400
+sidebar_position: 410
 title: table-dependencies
 description: "Generate table dependency diagrams from domain and schema YAML files, as DOT or JSON."
 keywords: [starlake table-dependencies, schema dependencies, DOT, entity relationship, data modeling]
