@@ -1,5 +1,5 @@
 ---
-sidebar_position: 240
+sidebar_position: 250
 title: job
 description: "Execute a named Spark or BigQuery job with configurable options, parameters, and interactive output formats."
 keywords: [starlake job, job execution, Spark job, BigQuery job]
@@ -23,6 +23,7 @@ Parameter|Cardinality|Description
 --compile `<value>`|*Optional*|Return final query only
 --sync-apply `<value>`|*Optional*|Update YAML attributes to match SQL query
 --sync-preview `<value>`|*Optional*|Preview YAML attributes to match SQL query
+--refresh-inherited-descriptions `<value>`|*Optional*|With --sync-apply or --sync-preview, replace the description of every column that copies a described column with the current one, even a description written in the task
 --query `<value>`|*Optional*|if action is 'create', this is the query used to initialize th SQL file. If action is set to 'run', run this query instead of the one in the task
 --dry-run `<value>`|*Optional*|Dry run only. Refused on engines other than BigQuery, which would really write
 --tags `<value>`|*Optional*|Run in one JVM, upstream tasks first, the tasks that have at least one of these tags

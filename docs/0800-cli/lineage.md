@@ -1,5 +1,5 @@
 ---
-sidebar_position: 260
+sidebar_position: 270
 title: lineage
 description: "Generate task dependency graphs as DOT or JSON to visualize data lineage across your Starflow project."
 keywords: [starlake lineage, data lineage, dependency graph, task dependencies, DAG visualization]
