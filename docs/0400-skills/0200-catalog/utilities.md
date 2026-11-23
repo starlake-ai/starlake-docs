@@ -6,7 +6,7 @@ description: Utility skills for format conversion, comparison, and documentation
 
 # Utilities
 
-6 skills for format conversion, data comparison, documentation generation, and testing.
+7 skills for format conversion, data comparison, change impact, documentation generation, and testing.
 
 ## Skills
 
@@ -33,6 +33,21 @@ You: /compare Compare the customers table between dev and prod environments
 - Migration validation
 - Regression testing after pipeline changes
 - Data reconciliation
+
+---
+
+### impact
+
+**Change impact before running.** Report which load tables and transforms a change touches (`BREAKING`, `NON_BREAKING`, `ADDED`, `METADATA`) and which downstream tasks it impacts through column-level lineage, offline and without executing anything. See [Check change impact in CI](../../0300-guides/600-deploy/200-change-impact.mdx).
+
+```
+You: /impact What does my branch break compared to main?
+```
+
+**Use cases:**
+- Pull request review: comment the Markdown report on the PR
+- CI gate with `--fail-on breaking`
+- Checking a schema or SQL refactoring before deploying
 
 ---
 
