@@ -30,6 +30,8 @@ import Head from '@docusaurus/Head';
 starlake site --outputDir site --clean
 ```
 
+`--clean` deletes the output folder before generating, so do not point `--outputDir` at a folder that holds other content.
+
 The `site` folder holds:
 
 | File | Content |
@@ -46,11 +48,11 @@ To browse it through a local web server instead:
 starlake site --serve --port 8080
 ```
 
-The site is generated first, then served on `http://127.0.0.1:8080/` until you press Ctrl-C. The server binds to the loopback address only, so it is not reachable from other machines. The default port is 8080.
+The site is generated first, then served on `http://127.0.0.1:8080/` until you press Ctrl-C. The server binds to the loopback address only, so it is not reachable from other machines. The default port is 8080. `--port` only applies with `--serve`. The server answers GET and HEAD requests only and does not list directories. If the port is already in use, the command fails.
 
 ## What the site shows
 
-- **Overview**: the project description, node counts per kind and engine, and a health panel listing nodes with warnings and unresolved table references.
+- **Overview**: the project description, node counts per kind and engine, the Domains, Jobs and DAGs sections, and a health panel. The panel lists nodes with warnings and the undeclared tables that your SQL references. With `--stats`, it also lists column type mismatches and tables missing in the warehouse.
 - **Project and Database trees**: browse by load domain, transform job and DAG, or by database and schema.
 - **Search** (Cmd-K or Ctrl-K): tables, tasks, columns, tags and SQL.
 - **Node pages**: description, details (write strategy, format, schedule, freshness, sink), columns with types and keys, expectations, ACL and row level security, raw and compiled SQL, upstream and downstream nodes.
@@ -64,20 +66,21 @@ The graph accepts selectors in the style of dbt:
 
 | Selector | Selects |
 |---|---|
-| `orders` | the node named `orders` (also `sales.orders`, or the full id `load:sales.orders`) |
+| `orders` | every node with a table or task named `orders`, in any domain |
+| `sales.orders` | the node `orders` of the domain `sales` (the full id `load:sales.orders` also works) |
 | `+orders` | `orders` and everything upstream |
 | `orders+` | `orders` and everything downstream |
 | `2+orders+1` | two levels upstream, one level downstream |
 | `@orders` | `orders`, its descendants, and all the ancestors of those descendants |
 | `tag:pii` | nodes tagged `pii` |
-| `domain:sales`, `job:kpi`, `dag:daily` | nodes of a domain, a transform job or a DAG |
-| `kind:load`, `engine:bigquery` | nodes of a kind or an engine |
+| `domain:sales`, `job:kpi`, `dag:daily` | nodes of a domain, a transform job or a DAG (`job:` matches the transform job) |
+| `kind:load`, `engine:bigquery` | nodes of a kind (`load`, `transform` or `external`) or an engine |
 
-A space between two selectors means union, a comma means intersection: `tag:pii,domain:sales`. The **Exclude** field takes the same syntax.
+A space between two selectors means union, a comma means intersection: `tag:pii,domain:sales`. The **Exclude** field takes the same syntax. A bare name selects every node with that table or task name across domains: qualify it (`sales.orders`) to select one. An invalid selector, or one that matches nothing, shows an error in the graph bar.
 
 ## Write descriptions in Markdown
 
-Every `comment` in your YAML files is rendered as Markdown. To reuse a description, define a doc block in any `.md` file under `metadata/docs/`:
+Every `comment` in your YAML files is rendered as Markdown. To reuse a description, define a doc block in a `.md` file under `metadata/docs/`. Starflow reads the folder recursively, and a file can hold several blocks:
 
 ```markdown title="metadata/docs/sales.md"
 {% docs customer_id %}
@@ -98,6 +101,8 @@ table:
 
 A reference is kept as a marker when the project is loaded, and the site replaces it with the doc block text. A reference to a block that does not exist is shown as written, `{{ doc("customer_id") }}`, and the node shows a warning.
 
+A block name is made of letters, digits and underscores. The reference accepts single or double quotes: `{{ doc('customer_id') }}` works too. A block defined twice is ignored after its first definition, with a warning. A block that references itself, directly or through other blocks, keeps the reference as written, with a warning.
+
 A doc block named `__overview__` becomes the overview page of the site.
 
 Descriptions are sanitized before they are shown. They cannot load remote content: remote images, SVG and style elements are removed. Links to external sites open in a new tab.
@@ -115,7 +120,20 @@ With `--stats`, Starflow connects to each connection the project uses and reads,
 
 Starflow never reads table data and never runs `count(*)`. Row counts on PostgreSQL, Redshift and DuckDB are estimates from the catalog and are shown with `~`.
 
-Supported engines: BigQuery, Snowflake, PostgreSQL, Redshift, DuckDB, and Spark with Delta Lake or Iceberg. Other JDBC databases report column types only.
+Statistics are collected for BigQuery connections, Spark (file system) connections, and JDBC connections that have a `url` option. A Snowflake connection must use the JDBC `url` form: one that only sets `sfUrl` is not collected. Any other connection shows "stats not supported for this engine". What is collected depends on the engine:
+
+| Engine | Row count | Size | Last modified |
+|---|---|---|---|
+| BigQuery | exact | yes | yes |
+| Snowflake | exact | yes | yes |
+| PostgreSQL | estimated | yes | no |
+| Redshift | estimated | yes | no |
+| DuckDB | estimated | no | no |
+| Delta Lake (Spark) | no | yes | yes |
+| Iceberg (Spark) | from the snapshot or files metadata, estimated when the table has deletes | yes | yes |
+| Other JDBC databases | no | no | no |
+
+Other JDBC databases report column types only. Column types are read for every collected engine.
 
 Each connection has a time limit of 120 seconds. Change it with `--statsTimeout`:
 
@@ -123,11 +141,11 @@ Each connection has a time limit of 120 seconds. Change it with `--statsTimeout`
 starlake site --stats --statsTimeout 300
 ```
 
-A connection that fails does not stop the generation. Its tables show `stats unavailable` with the reason, which is the first failure followed by `(+k more)` when there are others. The message is shortened and local paths are replaced by `<path>`. When only one schema fails, the connection stays available: the tables of that schema have no statistics and the others keep theirs.
+A connection that fails does not stop the generation. Its tables show `stats unavailable` with the reason, which is the first failure followed by `(+k more)` when there are others. The message is shortened, local paths are replaced by `<path>`, and secrets (passwords, tokens, keys and the user info of URLs) are replaced by `<redacted>`. When only one schema fails, the connection stays available: the tables of that schema have no statistics and the others keep theirs.
 
 ## Publish the site
 
-The output folder is static. Publish it as is on GitHub Pages, an S3 or GCS bucket, or any web server. The Starflow UI also offers it as a zip download.
+The output folder is static. Publish it as is on GitHub Pages, an S3 or GCS bucket, or any web server. The starlake-api returns the same folder as a zip from its site endpoint: its `SiteService` builds it with the same `SiteHandler`.
 
 ## Command reference
 
