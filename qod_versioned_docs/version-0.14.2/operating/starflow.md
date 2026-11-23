@@ -114,7 +114,7 @@ Fleet servers need nothing: they run nodes, and Starflow never connects to them.
 - **Manager in a container:** add the profile to the [fleet Compose files](./deploy-docker.md#fleet-mode-manager-and-workers-as-containers), with `STARFLOW_ENABLED=true`, `COMPOSE_PROFILES=starflow` and `SESSION_JWT_SECRET` in `.env`:
 
   ```bash
-  docker compose -f docker-compose.yml -f docker-compose.fleet.yml --profile seaweedfs --profile starflow up -d --build
+  docker compose --project-directory . -f deploy/docker/docker-compose.yml -f deploy/docker/docker-compose.fleet.yml --profile seaweedfs --profile starflow up -d --build
   ```
 
 With several managers, run one Starflow, give every manager the same four [manager variables](#on-the-manager), and point `QOD_URL` and `QOD_FLIGHT_URL` at the address that fronts them.
@@ -123,10 +123,10 @@ With several managers, run one Starflow, give every manager the same four [manag
 
 The Helm chart does not deploy Starflow. Run it as a Deployment of your own, in the release's namespace, and turn the pairing on through the chart's values. The examples use a release named `qod`, whose Services are `qod-quack-on-demand` (REST) and `qod-quack-on-demand-flightsql` (FlightSQL).
 
-**1. Build the image and push it to your registry.** The published `starlakeai/starlake-*-api` images carry the API without the UI, so build `docker/starflow` from the [QoD repository](https://github.com/starlake-ai/qod):
+**1. Build the image and push it to your registry.** The published `starlakeai/starlake-*-api` images carry the API without the UI, so build `deploy/docker/starflow` from the [QoD repository](https://github.com/starlake-ai/qod):
 
 ```bash
-docker build --build-arg STARFLOW_VERSION=1.8.8 -t registry.example.com/qod-starflow:1.8.8 docker/starflow
+docker build --build-arg STARFLOW_VERSION=1.8.8 -t registry.example.com/qod-starflow:1.8.8 deploy/docker/starflow
 docker push registry.example.com/qod-starflow:1.8.8
 ```
 

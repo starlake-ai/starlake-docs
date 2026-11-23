@@ -21,7 +21,7 @@ NUKE=1 LOAD_TPCH=1 LOAD_SSB=1 qod start
 QOD_VERSION=BUILD NUKE=1 LOAD_TPCDS=10 ./scripts/docker/run-docker-compose.sh
 
 # kubernetes (local stack), both TPC benchmarks at independent scale factors
-NUKE=1 LOAD_TPCH=1 LOAD_TPCDS=10 ./charts/quack-on-demand/local-stack-k8s/run-local-stack-k8s.sh
+NUKE=1 LOAD_TPCH=1 LOAD_TPCDS=10 ./deploy/charts/quack-on-demand/local-stack-k8s/run-local-stack-k8s.sh
 ```
 
 Each `N` is that benchmark's scale factor. SF=1 is the fast path (~10 s of TPC-H + ~30 s of TPC-DS); SF=10 is ~5-10 minutes; SF=100+ takes hours and spills to disk. The legacy `LOAD_TPC=N` env var still works as a shortcut for setting `LOAD_TPCH=N`, `LOAD_TPCDS=N`, and `LOAD_SSB=N` at the same SF; explicit per-benchmark vars override it.
