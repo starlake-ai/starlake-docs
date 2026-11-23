@@ -1,8 +1,8 @@
 ---
 id: starlake-site-builder
-title: Starlake Site Builder
-sidebar_label: Site Builder
-description: "Generate a documentation portal for your Starlake data pipelines. Browse load domains, table schemas, transform tasks with interactive ERD and lineage visualizations. Built with Next.js. Open source."
+title: Documentation site
+sidebar_label: Documentation site
+description: "Generate a documentation site for your Starflow project: tables, tasks, columns, doc blocks, project-wide table and column lineage, and optional warehouse statistics. Static, offline, open source."
 ---
 
 import Head from '@docusaurus/Head';
@@ -12,240 +12,123 @@ import Head from '@docusaurus/Head';
     {JSON.stringify({
       "@context": "https://schema.org",
       "@type": "HowTo",
-      "name": "How to generate a documentation site with Starlake Site Builder",
-      "description": "Generate and deploy a documentation portal for your Starlake data pipelines with ERD and lineage visualizations.",
+      "name": "How to generate a documentation site for a Starflow project",
       "step": [
-        {
-          "@type": "HowToStep",
-          "name": "Generate JSON metadata",
-          "text": "Run 'starlake site --outputDir /path/to/json_data --format json' to produce the JSON files needed by the portal.",
-          "position": 1
-        },
-        {
-          "@type": "HowToStep",
-          "name": "Clone the Site Builder repository",
-          "text": "Run 'git clone https://github.com/starlake-ai/starlake-site-builder.git' and cd into the project directory.",
-          "position": 2
-        },
-        {
-          "@type": "HowToStep",
-          "name": "Configure the data path",
-          "text": "Set the SITE_BASE_PATH environment variable or create a .env.local file pointing to your generated JSON data directory.",
-          "position": 3
-        },
-        {
-          "@type": "HowToStep",
-          "name": "Install dependencies and run",
-          "text": "Run 'npm install' then 'SITE_BASE_PATH=/path/to/json_data npm run dev' for development or 'npm run build && npm run start' for production.",
-          "position": 4
-        }
+        { "@type": "HowToStep", "position": 1, "name": "Generate the site", "text": "Run 'starlake site --outputDir site --clean'." },
+        { "@type": "HowToStep", "position": 2, "name": "Open or serve it", "text": "Open site/index.html, or run 'starlake site --serve'." },
+        { "@type": "HowToStep", "position": 3, "name": "Add warehouse statistics", "text": "Add '--stats' to read row counts, sizes and actual column types from your connections." }
       ]
     })}
   </script>
 </Head>
 
-<Head>
-  <script type="application/ld+json">
-    {JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "What is Starlake Site Builder?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "A documentation portal built with Next.js that automatically generates a navigable interface for load domains, table definitions, and transformation tasks from Starlake metadata."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How to generate data for the Site Builder?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Run 'starlake site --outputDir /path/to/json_data --format json'. This command produces the JSON files needed by the portal."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What visualizations are available?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "The Site Builder provides ERD views (foreign key relationships between tables) and interactive lineage diagrams (upstream dependencies for transformation tasks)."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What technologies are used?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Next.js 16, TypeScript, Tailwind CSS 4, React Flow (lineage diagrams), CodeMirror (SQL highlighting), and shadcn/ui (UI components)."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Does the Site Builder include search?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes. A global search is accessible via Cmd+K / Ctrl+K."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What directory structure is expected?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "The SITE_BASE_PATH must contain a tables/ folder (with domains.json and per-table files) and a tasks/ folder (with tasks.json and per-task files)."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Can the Site Builder be deployed to production?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes. Build with 'npm run build' then launch with 'SITE_BASE_PATH=/path/to/data npm run start'."
-          }
-        }
-      ]
-    })}
-  </script>
-</Head>
+`starlake site` turns your project into a documentation site: every load table and transform task, their columns, descriptions, expectations, access policies, SQL, and a lineage graph of the whole project, down to the column.
 
-# Starlake Site Builder
-
-Starlake Site Builder generates a documentation portal from your pipeline metadata. It provides navigable views of load domains, table schemas, and transform tasks with interactive ERD and lineage visualizations. Built with Next.js 16, it supports dark/light mode and global search, and can be deployed as a static or server-rendered site.
-
-## Quick start
-
-1. **Generate JSON metadata** -- Run `starlake site --outputDir /path/to/json_data --format json`.
-2. **Clone the repository** -- `git clone https://github.com/starlake-ai/starlake-site-builder.git`.
-3. **Configure the data path** -- Set `SITE_BASE_PATH` in `.env.local` or as an environment variable.
-4. **Install and run** -- `npm install`, then `npm run dev` (development) or `npm run build && npm run start` (production).
-
-## Features
-
-- **Load documentation**: Browse domains and tables from your Starlake metadata.
-- **Transform documentation**: Explore task domains and transformation logic.
-- **ERD views**: Visualize foreign key relationships between tables.
-- **Data lineage**: Interactive diagrams showing upstream dependencies for tasks.
-- **Dark/Light mode**: Built-in theme toggling.
-- **Global search**: Fast documentation search accessible via `Cmd+K` / `Ctrl+K`.
-
-## Getting Started
-
-### Prerequisites
-
-Generate the JSON site map using the Starlake CLI:
+## Generate the site
 
 ```bash
-starlake site --outputDir /path/to/json_data --format json
+starlake site --outputDir site --clean
 ```
 
-### Installation
+The `site` folder holds:
 
-Clone the repository:
+| File | Content |
+|---|---|
+| `index.html` | The documentation app, with the project model inlined. Opens straight from the file system, no server and no internet access needed. |
+| `sl-model.json` | The declared project: nodes, columns, lineage edges, groups and doc blocks. Use it from your own tools. |
+| `sl-stats.json` | Warehouse statistics, only with `--stats`. |
+
+Without `--stats`, the site is built from your project files alone. Starflow never connects to a warehouse, and column lineage uses the tables declared in the project only.
+
+To browse it through a local web server instead:
 
 ```bash
-git clone https://github.com/starlake-ai/starlake-site-builder.git
-cd starlake-site-builder
+starlake site --serve --port 8080
 ```
 
-### Configuration
+The site is generated first, then served on `http://127.0.0.1:8080/` until you press Ctrl-C. The server binds to the loopback address only, so it is not reachable from other machines. The default port is 8080.
 
-Tell the application where to find your generated JSON metadata. Create a `.env.local` file in the project root:
+## What the site shows
 
-```env title=".env.local"
-SITE_BASE_PATH=/path/to/json_data
+- **Overview**: the project description, node counts per kind and engine, and a health panel listing nodes with warnings and unresolved table references.
+- **Project and Database trees**: browse by load domain, transform job and DAG, or by database and schema.
+- **Search** (Cmd-K or Ctrl-K): tables, tasks, columns, tags and SQL.
+- **Node pages**: description, details (write strategy, format, schedule, freshness, sink), columns with types and keys, expectations, ACL and row level security, raw and compiled SQL, upstream and downstream nodes.
+- **Lineage graph**: the whole project, or a selection. Click a node to highlight what feeds it and what it feeds; switch on **Columns** to see column lineage.
+
+Tables that your SQL reads but that the project does not declare appear as `external` nodes.
+
+## Select part of the graph
+
+The graph accepts selectors in the style of dbt:
+
+| Selector | Selects |
+|---|---|
+| `orders` | the node named `orders` (also `sales.orders`, or the full id `load:sales.orders`) |
+| `+orders` | `orders` and everything upstream |
+| `orders+` | `orders` and everything downstream |
+| `2+orders+1` | two levels upstream, one level downstream |
+| `@orders` | `orders`, its descendants, and all the ancestors of those descendants |
+| `tag:pii` | nodes tagged `pii` |
+| `domain:sales`, `job:kpi`, `dag:daily` | nodes of a domain, a transform job or a DAG |
+| `kind:load`, `engine:bigquery` | nodes of a kind or an engine |
+
+A space between two selectors means union, a comma means intersection: `tag:pii,domain:sales`. The **Exclude** field takes the same syntax.
+
+## Write descriptions in Markdown
+
+Every `comment` in your YAML files is rendered as Markdown. To reuse a description, define a doc block in any `.md` file under `metadata/docs/`:
+
+```markdown title="metadata/docs/sales.md"
+{% docs customer_id %}
+Unique identifier of the customer, assigned by the CRM.
+{% enddocs %}
 ```
 
-:::tip Directory structure
-The application expects the following structure inside your `SITE_BASE_PATH`:
-- `tables/` -- Contains `domains.json` and individual `{domain}.{table}.json` files.
-- `tasks/` -- Contains `tasks.json` and individual `{domain}.{task}.json` files.
-:::
+and reference it from a comment:
 
-### Running the project
+```yaml title="metadata/load/sales/orders.sl.yml"
+table:
+  name: "orders"
+  attributes:
+    - name: "customer_id"
+      type: "long"
+      comment: '{{ doc("customer_id") }}'
+```
 
-Install dependencies:
+A reference is kept as a marker when the project is loaded, and the site replaces it with the doc block text. A reference to a block that does not exist is shown as written, `{{ doc("customer_id") }}`, and the node shows a warning.
+
+A doc block named `__overview__` becomes the overview page of the site.
+
+Descriptions are sanitized before they are shown. They cannot load remote content: remote images, SVG and style elements are removed. Links to external sites open in a new tab.
+
+## Add warehouse statistics
 
 ```bash
-npm install
+starlake site --stats
 ```
 
-Run the development server with `SITE_BASE_PATH` pointing to your JSON data:
+With `--stats`, Starflow connects to each connection the project uses and reads, from metadata only:
+
+- the row count, size and last modification time of each table;
+- the actual column types, compared with the declared ones. A difference shows as a marker on the column.
+
+Starflow never reads table data and never runs `count(*)`. Row counts on PostgreSQL, Redshift and DuckDB are estimates from the catalog and are shown with `~`.
+
+Supported engines: BigQuery, Snowflake, PostgreSQL, Redshift, DuckDB, and Spark with Delta Lake or Iceberg. Other JDBC databases report column types only.
+
+Each connection has a time limit of 120 seconds. Change it with `--statsTimeout`:
 
 ```bash
-SITE_BASE_PATH=/path/to/json_data npm run dev
+starlake site --stats --statsTimeout 300
 ```
 
-Or build and run for production:
+A connection that fails does not stop the generation. Its tables show `stats unavailable` with the reason, which is the first failure followed by `(+k more)` when there are others. The message is shortened and local paths are replaced by `<path>`. When only one schema fails, the connection stays available: the tables of that schema have no statistics and the others keep theirs.
 
-```bash
-npm run build
-SITE_BASE_PATH=/path/to/json_data npm run start
-```
+## Publish the site
 
-If you configured `.env.local`, run `npm run dev` or `npm run build && npm run start` directly.
+The output folder is static. Publish it as is on GitHub Pages, an S3 or GCS bucket, or any web server. The Starflow UI also offers it as a zip download.
 
-Open [http://localhost:3000](http://localhost:3000) to view the documentation portal.
+## Command reference
 
-## Project structure
-
-The project follows a standard Next.js App Router structure:
-
-```text
-starlake-site-builder/
-├── src/
-│   ├── app/              # Next.js App Router pages
-│   ├── components/       # React components (UI, Diagrams, Layouts)
-│   └── lib/              # Metadata loading, SEO config, utilities
-├── docs/
-│   └── screenshots/      # Documentation images
-└── public/               # Static assets
-```
-
-## Tech stack
-
-| Technology | Purpose |
-|------------|---------|
-| [Next.js 16](https://nextjs.org/) | App framework and routing |
-| [TypeScript](https://www.typescriptlang.org/) | Type safety |
-| [Tailwind CSS 4](https://tailwindcss.com/) | Styling |
-| [React Flow](https://reactflow.dev/) | Interactive lineage diagrams |
-| [CodeMirror](https://codemirror.net/) | SQL syntax highlighting |
-| [shadcn/ui](https://ui.shadcn.com/) | Accessible UI components |
-
-## Related pages
-
-- [Starlake vs dbt](../../comparisons/starlake-vs-dbt) -- Starlake includes free lineage and documentation generation.
-- [Deploy Starlake Pipelines](../deploy/tutorial) -- Deploy your project and documentation portal.
-
-## Frequently Asked Questions
-
-### What is Starlake Site Builder?
-
-A documentation portal built with Next.js that automatically generates a navigable interface for load domains, table definitions, and transformation tasks from Starlake metadata.
-
-### How to generate data for the Site Builder?
-
-Run `starlake site --outputDir /path/to/json_data --format json`. This command produces the JSON files needed by the portal.
-
-### What visualizations are available?
-
-The Site Builder provides ERD views (foreign key relationships between tables) and interactive lineage diagrams (upstream dependencies for transformation tasks).
-
-### What technologies are used?
-
-Next.js 16, TypeScript, Tailwind CSS 4, React Flow (lineage diagrams), CodeMirror (SQL highlighting), and shadcn/ui (UI components).
-
-### Does the Site Builder include search?
-
-Yes. A global search is accessible via `Cmd+K` / `Ctrl+K`.
-
-### What directory structure is expected?
-
-The `SITE_BASE_PATH` must contain a `tables/` folder (with `domains.json` and per-table files) and a `tasks/` folder (with `tasks.json` and per-task files).
-
-### Can the Site Builder be deployed to production?
-
-Yes. Build with `npm run build` then launch with `SITE_BASE_PATH=/path/to/data npm run start`.
+See [site](../../cli/site).
