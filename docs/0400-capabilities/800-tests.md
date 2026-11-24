@@ -161,7 +161,7 @@ In addition to test-level assertions, data quality expectations defined in the t
 
 ## 16. Tests on Production Data (Data Branches)
 
-When fixtures are not enough, set `SL_DATA_BRANCH` to run a load or transform against production data on BigQuery or Snowflake. Every write lands in a sandbox built from zero-copy clones of the production tables, cloned on first use, and production is never modified. See [Testing on production data with data branches](../0300-guides/0400-unit-tests/300-data-branches.mdx).
+When fixtures are not enough, set `SL_DATA_BRANCH` to run a load or transform against production data on BigQuery or Snowflake, or from 1.9.2 a transform on DuckDB, DuckLake or QoD. Every write lands in a sandbox built from copies of the production tables, made on first use (zero-copy clones on BigQuery and Snowflake), and production is never modified. See [Testing on production data with data branches](../0300-guides/0400-unit-tests/300-data-branches.mdx).
 
 ---
 
@@ -185,4 +185,4 @@ When fixtures are not enough, set `SL_DATA_BRANCH` to run a load or transform ag
 | JUnit XML reports (CI/CD integration) | Reporting |
 | HTML report website (`--site`) | Reporting |
 | DuckDB artifact databases | Reporting |
-| Data branches on production data (BigQuery, Snowflake) | Runtime |
+| Data branches on production data (BigQuery, Snowflake, DuckDB, DuckLake, QoD) | Runtime |
