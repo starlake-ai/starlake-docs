@@ -28,7 +28,7 @@ This is where the two tools differ most. SQLMesh builds **virtual data environme
 | **Mechanism** | Zero-copy `CLONE` of production tables into a branch dataset or schema, then SQL rewriting so the job reads and writes the clones | Every model version gets its own physical table, named by a fingerprint of its code and its upstream models. An environment is a set of views pointing at physical tables |
 | **What a new branch or environment costs** | Nothing is copied upfront: each table is cloned the first time a job on the branch uses it | Nothing is built for unchanged models: their views point at the production tables. Changed models are computed |
 | **Granularity** | One namespace per branch; tables cloned one by one, on first use | One schema per model schema, suffixed with the environment name (`db__dev.model`) |
-| **Change impact** | None automatic: you choose which tasks to run on the branch | Automatic: directly and indirectly modified models are found from the project, and each change is categorized as breaking (downstream rebuilt) or non-breaking (only the changed model rebuilt) |
+| **Change impact** | Not in 1.8: you choose which tasks to run on the branch. From 1.9.2, [`starlake impact`](/starflow/next/cli/impact) diffs the project against a Git ref, classifies each direct change as `BREAKING`, `NON_BREAKING`, `ADDED` or `METADATA`, and lists the downstream tasks it impacts through column-level lineage. It runs nothing: you still choose which tasks to run | Automatic: directly and indirectly modified models are found from the project, and each change is categorized as breaking (downstream rebuilt) or non-breaking (only the changed model rebuilt) |
 | **Promotion** | Recompute: run the job again in production. On Snowflake, `BRANCH APPLY` replays the branch's SQL on production | Usually a view swap: production points at the tables built in dev, with no recompute. Forward-only changes, `dev_only` mode and dev backfills on a limited date range are recomputed in production |
 | **Freshness of production data** | BigQuery: sources frozen when first cloned. Snowflake: tables the branch never modified are read live | Unchanged models read the production tables; changed models are computed over the date range you choose |
 | **Cleanup** | Manual: drop the branch dataset or schema | Janitor: expired environments (1 week by default) and orphaned snapshots are removed by `sqlmesh run` or `sqlmesh janitor` |
@@ -100,5 +100,5 @@ How Starlake branches work in detail, with an end-to-end walkthrough: [Testing o
 **Choose SQLMesh when:**
 - You only need a transformation layer, and loading is handled by another tool
 - Avoiding recomputation at promotion matters more to you than keeping tables free of a view layer
-- You want automatic breaking and non-breaking change detection across the DAG
+- You want the categorization of a change to decide what is rebuilt, with no manual step
 - Your warehouse is one Starlake branches do not cover, such as Databricks or Redshift, and you need environments there

@@ -21,7 +21,7 @@ A data branch is a named sandbox in the warehouse. The branch name becomes a Big
 | **Mechanism** | Zero-copy `CREATE TABLE ... CLONE` into the branch namespace, then SQL rewriting so the job reads and writes the clones. There is no view layer. |
 | **Granularity** | One namespace per branch (a dataset on BigQuery, a schema on Snowflake). Tables are cloned individually, on first use. A branch is not tied to a domain: it holds whatever tables the jobs you run on it touch. |
 | **Promotion** | Production never reuses the tables built on the branch. You promote by running the job again without `SL_DATA_BRANCH`. On Snowflake, `BRANCH APPLY` can instead replay the SQL statements recorded on the branch against production: the transform is recomputed either way. |
-| **Change impact** | None automatic. Starlake runs the tasks you ask for, on the branch, and does not compute which downstream tables a change affects. To test downstream impact, run the downstream tasks, or the whole DAG, on the same branch. |
+| **Change impact** | Not in 1.8. Starlake runs the tasks you ask for, on the branch, and does not compute which downstream tables a change affects: run the downstream tasks, or the whole DAG, on the same branch. From 1.9.2, [`starlake impact`](/starflow/next/cli/impact) reports the impacted downstream tasks before you run. |
 | **Engines** | BigQuery and Snowflake. Every other engine ignores the setting and writes to production. |
 | **Lifecycle** | A branch is created on first use and lives until you drop it. There is no `starlake` command to list, refresh or drop branches: you do it on the warehouse, as shown in [Lifecycle and cost](#lifecycle-and-cost). |
 
@@ -239,7 +239,7 @@ For anything but a single clean run, re-running the job in production is the saf
 
 - Only BigQuery and Snowflake are supported. Every other engine ignores the setting.
 - Promotion recomputes: production never reuses the tables built on the branch.
-- Starlake does not detect which downstream tables a change affects.
+- Starlake 1.8 does not detect which downstream tables a change affects. From 1.9.2, [`starlake impact`](/starflow/next/cli/impact) reports them.
 - On BigQuery, branch tables live in a single dataset, so table names must be unique across the domains you run on the branch, and sources are frozen at their first clone.
 - On Snowflake, the account must support hybrid tables, and statements the proxy driver cannot parse run against production.
 - The connection-level `sl_data_branch` option is read on BigQuery only.
