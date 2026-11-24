@@ -144,6 +144,8 @@ SL_DATA_BRANCH=feature_x starlake transform --impacted --base origin/main   # on
 
 An incremental task (`APPEND`, `UPSERT_BY_KEY`, `OVERWRITE_BY_PARTITION`, `SCD2`...) only rewrites its current slice: rows written with the old logic stay, and the plan says "history not rebuilt".
 
+Python tasks have no traced inputs: they run when a task change is breaking, and wait for the reload (`blocked`) when only load tables changed.
+
 ## Getting precise results
 
 - Declare the `attributes` of tables and tasks read with `SELECT *`, or of external tables: the analysis is offline, so it only knows the columns your YAML declares, plus the ones it can derive from the SQL of upstream tasks.
