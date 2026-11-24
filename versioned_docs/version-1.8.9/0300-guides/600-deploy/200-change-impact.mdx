@@ -1,10 +1,10 @@
 ---
-title: "Check Change Impact in CI"
+title: "Check Change Impact"
 description: "Use starlake impact to see, before anything runs, which load tables and transforms a change touches, whether it is breaking, and which downstream tasks it impacts through column-level lineage. Gate pull requests with --fail-on and post the report as a PR comment."
 keywords: [starlake, impact, change impact, breaking change, column lineage, CI, pull request, GitHub Actions, data pipeline review]
 ---
 
-# Check change impact in CI
+# Check change impact
 
 `starlake impact` compares two versions of your project and tells you, before anything runs, what a change touches:
 
@@ -124,6 +124,27 @@ jobs:
 ```
 
 The comment step runs even when the impact step exits 1, so reviewers see why the check failed.
+
+## Rebuilding what a change impacts
+
+`transform --impacted` runs the tasks of the report, upstream tasks first:
+
+```bash
+starlake impact --base origin/main --format plan     # see what would run
+starlake transform --impacted --base origin/main     # run it
+SL_DATA_BRANCH=feature_x starlake transform --impacted --base origin/main   # on a data branch
+```
+
+| Entry | Meaning |
+|---|---|
+| `run` | Changed task (`ADDED`, `NON_BREAKING`, `BREAKING`) or task it impacts. Runs once, as scheduled |
+| `blocked` | Reached only through a changed load table: load the table again, then run it |
+| `reload required` | Changed load table: only a new load changes it |
+| `not run` | Metadata-only change, or deleted task or table (drop its table by hand) |
+
+An incremental task (`APPEND`, `UPSERT_BY_KEY`, `OVERWRITE_BY_PARTITION`, `SCD2`...) only rewrites its current slice: rows written with the old logic stay, and the plan says "history not rebuilt".
+
+A task whose SQL is not analyzed runs when a task change may reach it. Python tasks have no traced inputs: they run when a task change is breaking; when only load table changes are breaking, they wait for the reload of those load tables (`blocked`).
 
 ## Getting precise results
 

@@ -25,7 +25,7 @@ Parameter|Cardinality|Description
 --path1 `<value>`|*Optional*|old project directory, instead of --base
 --path2 `<value>`|*Optional*|new project directory, instead of --head
 --env `<value>`|*Optional*|env used to render SQL variables
---format `<value>`|*Optional*|text (default), json, markdown or html
+--format `<value>`|*Optional*|text (default), json, markdown, html, or plan (what transform --impacted runs)
 --output `<value>`|*Optional*|write the report to this local file instead of stdout; recommended in CI, where the launcher may print to stdout too
 --template `<value>`|*Optional*|Jinja template for the html format; the values it receives are already HTML-escaped
 --fail-on `<value>`|*Optional*|exit 1 when the report has a breaking change (breaking) or anything but metadata (non-breaking)
