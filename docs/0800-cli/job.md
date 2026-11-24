@@ -18,7 +18,7 @@ Execute a SQL or Python transformation task. Starflow resolves dependencies, com
 Parameter|Cardinality|Description
 ---|---|---
 --action `<value>`|*Optional*|May take one of run (default) or create. When action is set to 'create', only parameters 'name' and 'query' are meaningful
---name `<value>`|*Optional*|Task name in the form domain.task. Several names separated by commas run in one JVM, upstream tasks first. Either --name or --tags is required
+--name `<value>`|*Optional*|Task name in the form domain.task. Several names separated by commas run in one JVM, upstream tasks first. Either --name, --tags or --impacted is required
 --parallelism `<value>`|*Optional*|How many tasks may run at the same time with several names, --tags or --recursive, on DuckDB, JDBC and BigQuery connections only. A task still waits for the tasks it reads. Default is maxParTask (SL_MAX_PAR_TASK), which is 1
 --compile `<value>`|*Optional*|Return final query only
 --sync-apply `<value>`|*Optional*|Update YAML attributes to match SQL query
@@ -34,9 +34,10 @@ Parameter|Cardinality|Description
 --pageSize `<value>`|*Optional*|Force table to be truncated before insert. Default value is false
 --pageNumber `<value>`|*Optional*|Force table to be truncated before insert. Default value is false
 --recursive `<value>`|*Optional*|Execute all dependencies recursively. Default value is false
+--impacted `<value>`|*Optional*|Run the tasks that the changes since --base impact, found as `starlake impact` finds them, upstream tasks first. A task runs once, as scheduled: an incremental task only rewrites its current slice. Tasks reached only through a changed load table are not run: load the table again first
+--base `<value>`|*Optional*|With --impacted: git ref of the old side. Its merge-base with HEAD is compared with the project as it is, uncommitted edits included
 --test `<value>`|*Optional*|Should we run this transform as a test ? Default value is false
 --accessToken `<value>`|*Optional*|Access token to use for authentication
 --options `k1=v1,k2=v2...`|*Optional, Unbounded*|Job arguments to be used as substitutions
 --scheduledDate `<value>`|*Optional*|Scheduled date for the job, in format yyyy-MM-dd'T'HH:mm:ss.SSSZ
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
--- `<value>`|*Optional*|
