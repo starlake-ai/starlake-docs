@@ -56,7 +56,7 @@ How Starlake branches work in detail, with an end-to-end walkthrough: [Testing o
 |---|---|---|
 | **SQL** | Standard SQL with variable substitution | SQL with SQLMesh macros (`@`) or Jinja |
 | **Python** | PySpark scripts | Python models returning a Pandas or Spark DataFrame |
-| **Dialects** | Transpilation between BigQuery, Snowflake, Databricks, Redshift, DuckDB and others | Transpilation with SQLGlot |
+| **Dialects** | Transpilation with JSqlTranspiler | Transpilation with SQLGlot |
 | **Write strategies** | APPEND, OVERWRITE, UPSERT_BY_KEY, UPSERT_BY_KEY_AND_TIMESTAMP, OVERWRITE_BY_PARTITION, DELETE_THEN_INSERT, SCD2, ADAPTATIVE | Model kinds: FULL, INCREMENTAL_BY_TIME_RANGE, INCREMENTAL_BY_UNIQUE_KEY, INCREMENTAL_BY_PARTITION, SCD_TYPE_2, VIEW and others |
 | **Dependencies** | Parsed from the SQL | Parsed from the SQL |
 | **Column-level lineage** | `starlake col-lineage` | In the UI |
