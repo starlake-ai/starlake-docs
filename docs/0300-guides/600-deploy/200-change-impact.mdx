@@ -125,6 +125,25 @@ jobs:
 
 The comment step runs even when the impact step exits 1, so reviewers see why the check failed.
 
+## Rebuilding what a change impacts
+
+`transform --impacted` runs the tasks of the report, upstream tasks first:
+
+```bash
+starlake impact --base origin/main --format plan     # see what would run
+starlake transform --impacted --base origin/main     # run it
+SL_DATA_BRANCH=feature_x starlake transform --impacted --base origin/main   # on a data branch
+```
+
+| Entry | Meaning |
+|---|---|
+| `run` | Changed task (`ADDED`, `NON_BREAKING`, `BREAKING`) or task it impacts. Runs once, as scheduled |
+| `blocked` | Reached only through a changed load table: load the table again, then run it |
+| `reload required` | Changed load table: only a new load changes it |
+| `not run` | Metadata-only change, or deleted task or table (drop its table by hand) |
+
+An incremental task (`APPEND`, `UPSERT_BY_KEY`, `OVERWRITE_BY_PARTITION`, `SCD2`...) only rewrites its current slice: rows written with the old logic stay, and the plan says "history not rebuilt".
+
 ## Getting precise results
 
 - Declare the `attributes` of tables and tasks read with `SELECT *`, or of external tables: the analysis is offline, so it only knows the columns your YAML declares, plus the ones it can derive from the SQL of upstream tasks.
