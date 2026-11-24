@@ -46,6 +46,14 @@ import Head from '@docusaurus/Head';
         },
         {
           "@type": "Question",
+          "name": "How do you run only the transforms a change affects?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run starlake transform --impacted --base origin/main. It compares the project with the Git ref, finds the changed tasks and the downstream tasks reading the changed columns, and runs them once, upstream tasks first. starlake impact --base origin/main --format plan shows the list without running anything."
+          }
+        },
+        {
+          "@type": "Question",
           "name": "Where are transform results stored?",
           "acceptedAnswer": {
             "@type": "Answer",
@@ -243,6 +251,17 @@ starlake transform --recursive --name kpi.order_summary
 
 Without `--recursive`, only the named transform runs. Use this when dependencies are already up to date.
 
+## Run Only What a Change Impacts
+
+After you edit a SQL file, `--impacted` runs the tasks your change affects, upstream tasks first, instead of a list you pick by hand. `--base` is the Git ref to compare with:
+
+```bash
+starlake impact --base origin/main --format plan   # see what would run
+starlake transform --impacted --base origin/main
+```
+
+If you change how `kpi.revenue_summary` computes `total_revenue`, this runs `kpi.revenue_summary`, then `kpi.order_summary`, which reads that column. `kpi.product_summary` is not run. Each task runs once, as scheduled. `--impacted` replaces `--name`, `--tags` and `--recursive`. See [Check change impact](../600-deploy/200-change-impact.mdx#rebuilding-what-a-change-impacts) for how incremental tasks and changed load tables are handled.
+
 ## Verify the Results
 
 Open DuckDB and inspect the KPI tables:
@@ -302,6 +321,9 @@ Starlake analyzes the `FROM` and `JOIN` clauses in each SQL file to build a depe
 
 ### Can you run a single transform without its dependencies?
 Yes. Without the `--recursive` flag, only the named transform runs. The `--recursive` flag forces execution of all upstream dependencies first.
+
+### How do you run only the transforms a change affects?
+Run `starlake transform --impacted --base origin/main`. It compares the project with the Git ref, finds the changed tasks and the downstream tasks reading the changed columns, and runs them once, upstream tasks first. `starlake impact --base origin/main --format plan` shows the list without running anything.
 
 ### Where are transform results stored?
 The subdirectory name inside `metadata/transform/` determines the target schema. For example, files in `metadata/transform/kpi/` write to the `kpi` schema.

@@ -38,7 +38,7 @@ You: /compare Compare the customers table between dev and prod environments
 
 ### impact
 
-**Change impact before running.** Report which load tables and transforms a change touches (`BREAKING`, `NON_BREAKING`, `ADDED`, `METADATA`) and which downstream tasks it impacts through column-level lineage, offline and without executing anything. See [Check change impact in CI](../../0300-guides/600-deploy/200-change-impact.mdx).
+**Change impact before running.** Report which load tables and transforms a change touches (`BREAKING`, `NON_BREAKING`, `ADDED`, `METADATA`) and which downstream tasks it impacts through column-level lineage, offline and without executing anything. See [Check change impact](../../0300-guides/600-deploy/200-change-impact.mdx).
 
 ```
 You: /impact What does my branch break compared to main?
