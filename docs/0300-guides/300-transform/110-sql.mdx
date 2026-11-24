@@ -1,7 +1,7 @@
 ---
 title: "SQL Transform Syntax: SELECT, Incremental Models, and Custom SQL in Starlake"
 description: "Write SQL transforms in Starlake using standard SELECT statements. Configure incremental models with sl_start_date/sl_end_date, document calculated columns, and use custom MERGE/INSERT with parseSQL: false."
-keywords: [starlake, sql transforms, select statement, materialization, incremental model, data pipeline, parseSQL, sl_start_date, sl_end_date]
+keywords: [starlake, sql transforms, select statement, materialization, incremental model, sl_incremental, data pipeline, parseSQL, sl_start_date, sl_end_date]
 ---
 
 import Head from '@docusaurus/Head';
@@ -57,7 +57,7 @@ import Head from '@docusaurus/Head';
           "name": "Does Starlake support Jinja templating in SQL files?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "No. Starlake SQL files use standard SQL. Environment variables are injected directly without a Jinja layer."
+            "text": "SQL files are standard SQL with variables such as {{sl_start_date}}, resolved by Starlake before the SQL runs. There is no Jinja layer to learn, but a Jinja {% if %} block is supported for SQL that depends on the run, such as the sl_incremental condition."
           }
         },
         {
@@ -112,10 +112,10 @@ import Head from '@docusaurus/Head';
 
 # SQL Transforms
 
-Starlake SQL transforms let you materialize any SELECT statement into a target table using a configurable write strategy. This page covers SELECT syntax, column documentation with `attributesDesc`, custom MERGE/INSERT via `parseSQL: false`, and incremental modelling with the `sl_start_date` / `sl_end_date` environment variables. All SQL is standard -- no Jinja templating is involved.
+Starlake SQL transforms let you materialize any SELECT statement into a target table using a configurable write strategy. This page covers SELECT syntax, column documentation with `attributesDesc`, custom MERGE/INSERT via `parseSQL: false`, and incremental modelling with the `sl_start_date` / `sl_end_date` environment variables and `sl_incremental`. SQL files are standard SQL: there is no Jinja layer to learn. A task can still use a Jinja `{% if %}` block when part of its SQL depends on the run, as with `sl_incremental`.
 
 :::info Variable substitution syntax
-The `{{variable}}` syntax used in SQL files (e.g. `{{sl_start_date}}`) is Starlake's environment variable substitution, not Jinja templating. These variables are resolved at runtime before the SQL is sent to the database engine. You can use any environment variable with this syntax.
+The `{{variable}}` syntax used in SQL files (e.g. `{{sl_start_date}}`) is Starlake's environment variable substitution. These variables are resolved by Starlake before the SQL is sent to the database engine, and a `{% if %}` block is evaluated by Starlake when the task runs. You can use any environment variable with this syntax.
 :::
 
 ## SELECT Statement Materialization
@@ -184,6 +184,44 @@ The orchestrator (Airflow, Dagster, or Snowflake Tasks) passes the correct value
 
 If an incremental job fails for a specific day, Starlake integrates with Airflow's **Catchup** mechanism. Add the `catchup` flag to your YAML DAG definition, and the orchestrator replays missed intervals with the correct `sl_start_date` and `sl_end_date` values.
 
+## Incremental SQL
+
+A task often loads everything on its first run and only the new rows afterwards. The `sl_incremental` variable tells the two apart: it is `true` when the target table already exists and the run is not `--truncate`.
+
+```sql
+SELECT id, amount, updated_at
+FROM sales.orders
+{% if sl_incremental %}
+WHERE updated_at > (SELECT max(updated_at) FROM mart.orders)
+{% endif %}
+```
+
+On the first run, `mart.orders` does not exist: the whole table is read. On the next runs, only the rows newer than the latest one already loaded are read, and the write strategy of the task (`APPEND`, `UPSERT_BY_KEY`...) writes them.
+
+- `sl_incremental` is available in the task's `.sql` file (the main SQL and its `presql` / `postsql` sections) and in the task YAML: `presql`, `postsql` and an inline `sql:`.
+- `starlake transform --name mart.orders --truncate` empties the table and reloads the full SELECT: `sl_incremental` is `false`.
+- `starlake transform --compile` prints both versions, table missing and table existing, of the main SQL and of `presql` / `postsql`. Each version renders `sl_incremental` from its own table state, without checking the target.
+- DAGs generated for the Snowflake and Databricks orchestrators carry both versions of the main SQL. Their `presql` / `postsql` are rendered with `sl_incremental` false, with a warning naming the task.
+- With `transform --impacted`, a task that uses `sl_incremental` only reads its new rows, so its history is not rebuilt. Reload it in full with `starlake transform --name <task> --truncate` (not `--impacted --truncate`, which truncates every impacted task).
+- Starlake computes the variable: a value passed with `--options` or set as an environment variable is ignored, with a warning.
+
+In the task YAML, keep the tags inside a double-quoted or block (`|`) scalar:
+
+```yaml
+task:
+  presql:
+    - |
+      {% if sl_incremental %}
+      DELETE FROM mart.orders WHERE updated_at >= current_date - 1
+      {% endif %}
+```
+
+A Jinja loop or `{% set %}` at YAML level that depends on `sl_incremental` makes the task fail to load, with an error that names the file and `sl_incremental`.
+
+A use of `sl_incremental` reached only through `{% include %}` or a project macro is not detected: it renders as false, so the task always loads in full. Write the variable in the task's own SQL or YAML.
+
+The SQL shown for such a task (in the site or a loaded project) keeps its `{% if sl_incremental %}` blocks, normalized by Starlake (for example `not x` is shown as `!x`).
+
 ## Next Steps
 
 - [SQL Transform Tutorial](./tutorial) -- end-to-end walkthrough with DuckDB
@@ -208,7 +246,7 @@ They are reserved environment variables representing the current time interval. 
 Starlake integrates with Airflow's Catchup mechanism. Missed intervals are automatically replayed with the correct `sl_start_date` and `sl_end_date` values.
 
 ### Does Starlake support Jinja templating in SQL files?
-No. Starlake SQL files use standard SQL. Environment variables are injected directly without a Jinja layer.
+SQL files are standard SQL with variables such as `{{sl_start_date}}`, resolved by Starlake before the SQL runs. There is no Jinja layer to learn, but a Jinja `{% if %}` block is supported for SQL that depends on the run, such as the `sl_incremental` condition.
 
 ### How does schema inference work when the target table does not exist?
 Starlake executes the SELECT and infers the schema (types, column names) from the result. Source column documentation is automatically propagated.
