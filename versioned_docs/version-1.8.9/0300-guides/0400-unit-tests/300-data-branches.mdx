@@ -21,7 +21,7 @@ A data branch is a named sandbox in the warehouse. The branch name becomes a Big
 | **Mechanism** | Zero-copy `CREATE TABLE ... CLONE` into the branch namespace, then SQL rewriting so the job reads and writes the clones. There is no view layer. |
 | **Granularity** | One namespace per branch (a dataset on BigQuery, a schema on Snowflake). Tables are cloned individually, on first use. A branch is not tied to a domain: it holds whatever tables the jobs you run on it touch. |
 | **Promotion** | Production never reuses the tables built on the branch. You promote by running the job again without `SL_DATA_BRANCH`. On Snowflake, `BRANCH APPLY` can instead replay the SQL statements recorded on the branch against production: the transform is recomputed either way. |
-| **Change impact** | None automatic. Starlake runs the tasks you ask for, on the branch, and does not compute which downstream tables a change affects. To test downstream impact, run the downstream tasks, or the whole DAG, on the same branch. |
+| **Change impact** | Reported before you run, not acted on. [`starlake impact`](../../0800-cli/impact.md) compares your change with a Git ref and lists the load tables and transforms it touches, classified `BREAKING`, `NON_BREAKING`, `ADDED` or `METADATA`, then the downstream tasks it impacts, through column-level lineage. The branch runs only the tasks you ask for: run the reported ones, or the whole DAG, on the same branch. |
 | **Engines** | BigQuery and Snowflake. Every other engine ignores the setting and writes to production. |
 | **Lifecycle** | A branch is created on first use and lives until you drop it. There is no `starlake` command to list, refresh or drop branches: you do it on the warehouse, as shown in [Lifecycle and cost](#lifecycle-and-cost). |
 
@@ -79,6 +79,8 @@ When a native BigQuery transform runs on a branch, Starlake:
 
 A native load on a branch clones the target table and loads the files into `<branch>.<table>`.
 
+[Expectations](../200-load/210-expectations.mdx) of a branched transform or native load check the branch copy, the table the job actually wrote. Their reports record the branch name as the domain, so the expectations audit table tells branch runs apart from production runs.
+
 ```yaml
 # metadata/application.sl.yml
 application:
@@ -133,7 +135,7 @@ export SL_DATA_BRANCH=feat_order_summary
 
 **2. Change the transform** in `metadata/transform/kpi/order_summary.sql`, on a Git branch of your project as usual.
 
-**3. Run it on the data branch.** The first run creates dataset `feat_order_summary`, clones the sources and the current `kpi.order_summary`, and writes the new result to `feat_order_summary.order_summary`.
+**3. Run it on the data branch.** The first run creates dataset `feat_order_summary`, clones the sources and the current `kpi.order_summary`, and writes the new result to `feat_order_summary.order_summary`. Expectations run against that copy.
 
 ```bash
 starlake transform --name kpi.order_summary
@@ -145,7 +147,13 @@ Then run the tasks that read `kpi.order_summary`. They find the branch copy and 
 starlake transform --name kpi.revenue_by_country
 ```
 
-Starlake does not work out which tasks are downstream of your change: list them yourself, select them with `--tags`, or run the whole DAG with `SL_DATA_BRANCH` set.
+To find the tasks downstream of your change, run [`starlake impact`](../../0800-cli/impact.md) before step 3. It compares the working tree with a Git ref, offline, and lists the impacted downstream tasks, column by column, with those likely to fail:
+
+```bash
+starlake impact --base origin/main
+```
+
+Starlake does not run them for you: run each reported task, select them with `--tags`, or run the whole DAG with `SL_DATA_BRANCH` set. To run the same check on every pull request, see [Check change impact in CI](../600-deploy/200-change-impact.mdx).
 
 **4. Validate.** Compare the branch output with production:
 
@@ -239,10 +247,9 @@ For anything but a single clean run, re-running the job in production is the saf
 
 - Only BigQuery and Snowflake are supported. Every other engine ignores the setting.
 - Promotion recomputes: production never reuses the tables built on the branch.
-- Starlake does not detect which downstream tables a change affects.
+- A branch does not pick the tasks to run: [`starlake impact`](../../0800-cli/impact.md) reports the impacted downstream tasks, and you run them.
 - On BigQuery, branch tables live in a single dataset, so table names must be unique across the domains you run on the branch, and sources are frozen at their first clone.
 - On Snowflake, the account must support hybrid tables, and statements the proxy driver cannot parse run against production.
 - The connection-level `sl_data_branch` option is read on BigQuery only.
-- On BigQuery, [expectations](../200-load/210-expectations.mdx) of a branched transform or native load query the production table, not the branch copy. Check the branch output with your own queries. Fixed in 1.8.14, where expectations check the branch copy.
 
 How this compares with SQLMesh virtual data environments: see [Starlake vs SQLMesh](../../0700-comparisons/500-starlake-vs-sqlmesh.md).
