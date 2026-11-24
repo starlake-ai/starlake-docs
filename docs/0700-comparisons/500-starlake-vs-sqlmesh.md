@@ -25,14 +25,14 @@ This is where the two tools differ most. SQLMesh builds **virtual data environme
 
 | | Starlake data branches | SQLMesh virtual data environments |
 |---|---|---|
-| **Mechanism** | Zero-copy `CLONE` of production tables into a branch dataset or schema, then SQL rewriting so the job reads and writes the clones | Every model version gets its own physical table, named by a fingerprint of its code and its upstream models. An environment is a set of views pointing at physical tables |
-| **What a new branch or environment costs** | Nothing is copied upfront: each table is cloned the first time a job on the branch uses it | Nothing is built for unchanged models: their views point at the production tables. Changed models are computed |
+| **Mechanism** | A copy of each production table into a branch dataset or schema, then SQL rewriting so the job reads and writes the copies: a zero-copy `CLONE` on BigQuery and Snowflake, a full `CREATE TABLE ... AS SELECT` on DuckDB, DuckLake and QoD | Every model version gets its own physical table, named by a fingerprint of its code and its upstream models. An environment is a set of views pointing at physical tables |
+| **What a new branch or environment costs** | Nothing is copied upfront: each table is copied the first time a job on the branch uses it (BigQuery) or writes to it (the other engines) | Nothing is built for unchanged models: their views point at the production tables. Changed models are computed |
 | **Granularity** | One namespace per branch; tables cloned one by one, on first use | One schema per model schema, suffixed with the environment name (`db__dev.model`) |
 | **Change impact** | Reported: `starlake impact` diffs the project against a Git ref, classifies each direct change as `BREAKING`, `NON_BREAKING`, `ADDED` or `METADATA`, and lists the downstream tasks it impacts through column-level lineage. Nothing is run: you choose which tasks to run on the branch | Automatic: directly and indirectly modified models are found from the project, and each change is categorized as breaking (downstream rebuilt) or non-breaking (only the changed model rebuilt) |
-| **Promotion** | Recompute: run the job again in production. On Snowflake, `BRANCH APPLY` replays the branch's SQL on production | Usually a view swap: production points at the tables built in dev, with no recompute. Forward-only changes, `dev_only` mode and dev backfills on a limited date range are recomputed in production |
-| **Freshness of production data** | BigQuery: sources frozen when first cloned. Snowflake: tables the branch never modified are read live | Unchanged models read the production tables; changed models are computed over the date range you choose |
+| **Promotion** | Recompute: run the job again in production. On Snowflake, DuckDB, DuckLake and QoD, `BRANCH APPLY` replays the branch's SQL on production | Usually a view swap: production points at the tables built in dev, with no recompute. Forward-only changes, `dev_only` mode and dev backfills on a limited date range are recomputed in production |
+| **Freshness of production data** | BigQuery: sources frozen when first cloned. Snowflake, DuckDB, DuckLake and QoD: tables the branch never modified are read live | Unchanged models read the production tables; changed models are computed over the date range you choose |
 | **Cleanup** | Manual: drop the branch dataset or schema | Janitor: expired environments (1 week by default) and orphaned snapshots are removed by `sqlmesh run` or `sqlmesh janitor` |
-| **Engines** | BigQuery, Snowflake | 19 engines, including BigQuery, Snowflake, Databricks, Redshift, PostgreSQL, DuckDB, Spark and Trino. Zero-copy clones, used for forward-only previews, only on BigQuery, Databricks and Snowflake |
+| **Engines** | BigQuery, Snowflake, and from 1.9.2 DuckDB, DuckLake and QoD (transforms; full copies, no zero-copy clone) | 19 engines, including BigQuery, Snowflake, Databricks, Redshift, PostgreSQL, DuckDB, Spark and Trino. Zero-copy clones, used for forward-only previews, only on BigQuery, Databricks and Snowflake |
 
 In short:
 
@@ -68,7 +68,7 @@ How Starlake branches work in detail, with an end-to-end walkthrough: [Testing o
 |---|---|---|
 | **Unit tests** | Load and transform tests on DuckDB with CSV or JSON fixtures, SQL transpiled automatically | YAML tests with inputs and expected outputs, run on `plan` |
 | **Assertions on real data** | 53 built-in expectation macros, on loads and transforms | Audits, blocking by default, with built-in audits |
-| **Testing on production data** | Data branches (BigQuery, Snowflake) | Virtual data environments |
+| **Testing on production data** | Data branches (BigQuery, Snowflake, DuckDB, DuckLake, QoD) | Virtual data environments |
 | **Comparing outputs** | SQL over the branch and production tables | `sqlmesh table_diff` between environments |
 | **Load validation** | Type checks per value, rejected rows to `audit.rejected` | Not covered |
 
