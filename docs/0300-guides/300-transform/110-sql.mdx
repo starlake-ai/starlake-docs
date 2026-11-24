@@ -200,9 +200,9 @@ On the first run, `mart.orders` does not exist: the whole table is read. On the 
 
 - `sl_incremental` is available in the task's `.sql` file (the main SQL and its `presql` / `postsql` sections) and in the task YAML: `presql`, `postsql` and an inline `sql:`.
 - `starlake transform --name mart.orders --truncate` empties the table and reloads the full SELECT: `sl_incremental` is `false`.
-- `starlake transform --compile` prints both versions, table missing and table existing, of the main SQL and of `presql` / `postsql`, without querying the warehouse.
+- `starlake transform --compile` prints both versions, table missing and table existing, of the main SQL and of `presql` / `postsql`. Each version renders `sl_incremental` from its own table state, without checking the target.
 - DAGs generated for the Snowflake and Databricks orchestrators carry both versions of the main SQL. Their `presql` / `postsql` are rendered with `sl_incremental` false, with a warning naming the task.
-- With `transform --impacted`, a task that uses `sl_incremental` only reads its new rows, like an incremental write strategy, so its history is not rebuilt. Run it with `--truncate` to reload it in full.
+- With `transform --impacted`, a task that uses `sl_incremental` only reads its new rows, so its history is not rebuilt. Reload it in full with `starlake transform --name <task> --truncate` (not `--impacted --truncate`, which truncates every impacted task).
 - Starlake computes the variable: a value passed with `--options` or set as an environment variable is ignored, with a warning.
 
 In the task YAML, keep the tags inside a double-quoted or block (`|`) scalar:
@@ -216,7 +216,7 @@ task:
       {% endif %}
 ```
 
-Do not use Jinja loops or `{% set %}` at YAML level in a file that mentions `sl_incremental`: loading fails with an error that names the file and `sl_incremental`.
+A Jinja loop or `{% set %}` at YAML level that depends on `sl_incremental` makes the task fail to load, with an error that names the file and `sl_incremental`.
 
 A use of `sl_incremental` reached only through `{% include %}` or a project macro is not detected: it renders as false, so the task always loads in full. Write the variable in the task's own SQL or YAML.
 

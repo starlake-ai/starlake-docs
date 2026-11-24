@@ -142,7 +142,7 @@ SL_DATA_BRANCH=feature_x starlake transform --impacted --base origin/main   # on
 | `reload required` | Changed load table: only a new load changes it |
 | `not run` | Metadata-only change, or deleted task or table (drop its table by hand) |
 
-An incremental task (`APPEND`, `UPSERT_BY_KEY`, `OVERWRITE_BY_PARTITION`, `SCD2`...) only rewrites its current slice: rows written with the old logic stay, and the plan says "history not rebuilt". The same goes for a task whose SQL reads only its new rows with [`sl_incremental`](../300-transform/110-sql.mdx#incremental-sql): run it with `--truncate` to reload it in full.
+An incremental task (`APPEND`, `UPSERT_BY_KEY`, `OVERWRITE_BY_PARTITION`, `SCD2`...) only rewrites its current slice: rows written with the old logic stay, and the plan says "history not rebuilt". The same goes for a task whose SQL reads only its new rows with [`sl_incremental`](../300-transform/110-sql.mdx#incremental-sql): reload it in full with `starlake transform --name <task> --truncate`.
 
 A task whose SQL is not analyzed runs when a task change may reach it. Python tasks have no traced inputs: they run when a task change is breaking; when only load table changes are breaking, they wait for the reload of those load tables (`blocked`).
 
