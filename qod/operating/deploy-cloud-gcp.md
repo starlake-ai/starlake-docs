@@ -334,7 +334,7 @@ sudo docker exec -it qod-manager qod pool create --tenant acme --db acme_lake --
 | Storage | Data path |
 |---|---|
 | `ducklake_storage = "local"` | `/srv/qod-data/ducklake/acme_lake` (no path to name) |
-| `ducklake_storage = "s3"`, and the fleet | Under `QOD_DUCKLAKE_DATA_PATH=gs://<bucket>/qod`. The per-database layout under that prefix has not been checked on GCS yet. |
+| `ducklake_storage = "s3"`, and the fleet | `gs://<bucket>/acme_lake/`, at the bucket root next to the `qod/` prefix of `QOD_DUCKLAKE_DATA_PATH`, not under it (checked on GCS with QoD 0.14.2). |
 
 Then query from your workstation over FlightSQL. `qod login` needs the REST port, and it stores the FlightSQL host it will use for `qod sql`. When the manager does not advertise one, that host is the one in `--url`.
 
