@@ -2,13 +2,13 @@
 id: architecture
 title: "Architecture of a multi-tenant DuckDB gateway"
 sidebar_label: "Architecture"
-description: "How QoD puts an authenticated, access-controlled, horizontally scaled SQL surface in front of DuckDB: planes, object model, request flow."
-keywords: ["duckdb architecture", "duckdb gateway", "control plane", "data plane", "flight sql", "ducklake"]
+description: "How QoD works: one secure endpoint in front of DuckDB, made of the manager, DuckDB nodes and your storage, with tenants, databases and pools, and the path every query takes."
+keywords: ["duckdb architecture", "duckdb gateway", "duckdb server", "flight sql", "ducklake", "multi-tenant duckdb"]
 ---
 
-QoD is a gateway that puts a multi-tenant, access-controlled, horizontally-scaled SQL surface in front of DuckDB. Clients reach it over Arrow Flight SQL or DuckDB's native Quack protocol; either way the gateway authenticates them, authorizes each statement, and routes it to one of many DuckDB Quack nodes backed by shared DuckLake catalogs. This page is the conceptual overview; the pages it links to go deeper, and the [Architecture map](/qod/contributing/architecture-map) covers the codebase for contributors.
+QoD puts DuckDB behind one secure endpoint that a whole team can share. Your BI tools, notebooks and applications connect to QoD as they would to a database server. QoD signs each user in, applies the access rules you set, and runs the query on one of several DuckDB nodes, all reading the same tables. This page explains how the parts fit together. If you work on QoD's code, the [Architecture map](/qod/contributing/architecture-map) has the component-level view.
 
-## The planes
+## How it fits together
 
 ```diagram
 title: QoD at a glance, your tools connect to QoD, which runs each query on a DuckDB node
@@ -33,39 +33,31 @@ edges:
   - "pool -> s3: data"
 ```
 
-The system separates a control plane from a data plane:
+QoD has three parts:
 
-- **Control plane** - the manager process: a REST API and React admin UI for managing tenants, databases, pools, users, and access control, plus the supervisor that spawns and tracks nodes. Its state lives in the control-plane store (see [State storage](/qod/concepts/state-storage)).
-- **Data plane** - the FlightSQL edge, the native Quack front door, and the Quack nodes behind them. This is where queries flow. The edge is stateless per request beyond the session it tracks; the nodes hold the DuckDB engines. Each node runs `qod-node`, QoD's own executable on the official DuckDB release library, which authorizes every statement before it runs.
+- **The QoD manager** is the one address your tools connect to. It signs users in, checks every query against your access rules, and sends it to a node. It also serves the admin UI and the REST API you use to create tenants, databases, pools and users.
+- **DuckDB nodes** run the queries. A pool holds one or more nodes, and you add nodes when you need more capacity. Every node of a pool reads the same tables, so any node can answer any query.
+- **Storage that you provide:** a PostgreSQL database for QoD's settings and the catalog of your tables, and an object store (S3, GCS, Azure Blob Storage, or a local disk) for the data itself, as Parquet files.
 
-Both run in a single uber-jar exposing four sockets: the manager REST + UI (`:20900`), the node verdict listener (`:20901`, the REST port plus one), the FlightSQL edge (`:31338`), and the native Quack front door (`:9494`, what a DuckDB client `ATTACH`es to). The Quack nodes listen on their own ports: child processes of the manager on the local runtime, pods on Kubernetes, and one node per joined server in a [fleet](/qod/operating/deploy-fleet).
+The manager listens on three ports that your tools reach:
 
-## The object model
+| Port | What connects to it |
+|---|---|
+| 31338 | SQL tools over Arrow Flight SQL with TLS: JDBC, ADBC, BI tools, Python |
+| 9494 | DuckDB clients that `ATTACH` a QoD database over DuckDB's own protocol |
+| 20900 | The admin UI and the REST API |
 
-Three nested levels organize everything (see [Tenancy model](/qod/concepts/tenancy)):
+Your tools never connect to the nodes. On a single server the nodes are processes next to the manager, on Kubernetes they are pods, and in a [fleet](/qod/operating/deploy-fleet) each server runs one node; there, the nodes also call the manager on port 20901, so keep that port open between your servers.
 
-- A **tenant** is the isolation boundary and selects its users' auth provider.
-- A **tenant-db** is a database: a separate Postgres database holding a DuckLake catalog and a data path (see [DuckLake catalogs](/qod/concepts/catalogs)).
-- A **pool** is a set of Quack nodes bound to one tenant-db, and is what clients connect to.
+## Tenants, databases and pools
 
-## The request lifecycle
+QoD organizes what you host in three levels (see [Tenancy model](/qod/concepts/tenancy)):
 
-When a client runs a statement, it passes through a fixed sequence:
+- A **tenant** is an organization or a team, isolated from the others. It has its own users and its own way of signing them in: passwords, or your identity provider.
+- A **database** belongs to a tenant and holds your tables: a DuckLake catalog in PostgreSQL, and data files in object storage (see [DuckLake catalogs](/qod/concepts/catalogs)).
+- A **pool** is a group of DuckDB nodes serving one database. Your tools connect to a pool, and you size each pool for its workload, for example one pool for dashboards and another for batch jobs.
 
-1. **Authenticate.** The edge validates the connection's credential (database password, JWT, or OIDC) and resolves the target `(tenant, pool)`; the owning tenant-db is resolved server-side. See [Authenticating](/qod/connecting/authenticating).
-2. **Rewrite.** For a principal holding row or column policies, the gateway rewrites the statement to filter rows and mask columns. See the [Access control model](/qod/operating/rbac-model).
-3. **Classify and route.** The statement is classified read / write / DDL and dispatched to the least-loaded node whose role can serve it (on object-store pools, biased toward a node that already has its tables cached); an open transaction pins to its node. See [Routing](/qod/concepts/routing) and [Sessions and transactions](/qod/concepts/sessions-transactions).
-4. **Authorize on the node.** The manager first installs a signed session handle naming the principal on the node connection. The node binds the statement, describes the plan (tables, views and columns, functions, settings, files) and, for a principal who is not a superuser, asks the manager replica that minted the handle for a verdict, cached on the node for 60 seconds. A refused statement never executes.
-5. **Execute and stream.** The node runs the SQL against its DuckLake catalog and streams Arrow batches back through the edge to the client.
-
-## Why this shape
-
-- **DuckDB for compute, DuckLake for state.** Each node is a fast embedded engine; the durable catalog and Parquet data live in shared Postgres + object storage, so nodes are interchangeable and a pool can scale horizontally over one consistent view.
-- **One endpoint, many nodes.** Clients see a single gateway, whichever wire they speak; it hides node placement, load balancing, transaction pinning, and failover-with-retry.
-- **Two wires, one policy.** The FlightSQL edge and the native Quack front door share the same authentication, the same node-side authorization, the same router and the same audit log. The wire a client picks changes the driver, not the governance.
-- **Access control on what DuckDB resolved.** Authentication happens once, at the edge; authorization happens in the node, on the bound plan, against grants the manager holds. Nothing a statement hides behind a view, a macro or a `query()` string escapes the check, and the same RBAC model covers native and federated tables alike.
-
-## The pipeline in detail
+## What happens to a query
 
 Every query takes the same path, whichever protocol your tool speaks. A query your access rules do not allow never reaches a node.
 
@@ -86,10 +78,25 @@ edges:
   - "rules -.-> refused: denied"
 ```
 
+1. **Sign-in.** QoD checks the user's credential: a password, a token, or a sign-in through your identity provider (OIDC). See [Authenticating](/qod/connecting/authenticating).
+2. **Access rules.** QoD applies what you granted: the tables the user may read or change, the rows they see, and the columns that are masked. A query that reaches beyond the user's rights is refused and recorded in the audit log. See the [Access control model](/qod/operating/rbac-model).
+3. **Routing.** QoD sends the query to the least busy node of the pool that can run it, preferring a node that already has the tables in its cache. All the statements of a transaction go to the same node. See [Routing](/qod/concepts/routing) and [Sessions and transactions](/qod/concepts/sessions-transactions).
+4. **Execution.** The node runs the query on your data and streams the results back to your tool.
+
+The rules are checked against what the query actually reads, once DuckDB has resolved its views, macros and functions. A view or a `query()` call cannot reach a table the user is not allowed to see.
+
 **Where your data lives.** QoD keeps two kinds of state in PostgreSQL, in separate databases that can share one cluster: its own settings (tenants, pools, users and grants), and for each of your databases the DuckLake catalog that lists your tables. The table data itself is Parquet files in your object storage. See [State storage](/qod/concepts/state-storage) and [DuckLake catalogs](/qod/concepts/catalogs).
+
+## Why it is built this way
+
+- **Fast queries on shared tables.** Each node is a full DuckDB engine. Your tables live in shared storage, not inside a node, so every node sees the same data and you scale a pool by adding nodes.
+- **One address for your tools.** Your tools only know QoD. It spreads the queries over the nodes, keeps each transaction on one node, and retries a query on another node when one fails, so nodes can come and go without any change on the client side.
+- **The same rules however you connect.** Flight SQL and DuckDB's own protocol go through the same sign-in, the same access rules and the same audit log. The protocol a tool uses changes its driver, not what its user can see.
+- **One set of rules for all your tables.** The same grants cover the tables QoD hosts and the external tables you attach through [federation](/qod/operating/federation).
 
 ## Where to go next
 
-- Operators: start with [Deployment](/qod/operating/deploy-local) and [Tenants and databases](/qod/operating/tenants-databases).
-- Client developers: [Connecting clients](/qod/connecting/clients).
-- Contributors: the [Architecture map](/qod/contributing/architecture-map) and [Extending the manager](/qod/contributing/extending).
+- Try QoD: [Local deployment](/qod/operating/deploy-local), then [Single-server deployment](/qod/operating/deploy-single-server) to run it in production on one machine.
+- Set up your tenants and databases: [Tenants and databases](/qod/operating/tenants-databases).
+- Connect your tools: [Connecting clients](/qod/connecting/clients).
+- Work on QoD's code: the [Architecture map](/qod/contributing/architecture-map) and [Extending the manager](/qod/contributing/extending).
