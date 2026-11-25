@@ -115,12 +115,15 @@ The first time, this creates schema `<branch>` in the connection's database, wit
 From then on:
 
 - **Copy on write.** The first statement that modifies a table (`INSERT`, `UPDATE`, `DELETE`, `MERGE`, `TRUNCATE`, `ALTER`, `DROP`, `CREATE TABLE`) clones it into schema `<branch>`. That statement and all the later ones are rewritten to use the copy. A table created on the branch is created in `<branch>` directly, with no clone.
+- **Only changes are recorded.** A statement is added to the history once it has run on the branch, and only if it changes data: queries, and statements that failed, are not recorded. Prepared statements and batches are redirected and recorded like any other statement, a prepared statement with the values of its parameters.
 - **Reads of untouched tables hit production.** A table the branch never modified is not copied, so reads see live production data, not a frozen snapshot.
 - **The branch outlives the job.** `PERSIST` keeps the history of the statements and the table map, and `KEEP` keeps the copies after the connection closes. A later run with the same branch name reloads both and picks up where the previous one stopped.
 - **Name clashes get a suffix.** If `<branch>.orders` is already taken by the copy of another schema's `orders`, the next copy is named `orders_1`. The table map records which copy belongs to which table.
 
-:::warning
-The proxy driver can only redirect statements its SQL parser understands. A statement it cannot parse is recorded in the history but sent to Snowflake unchanged, and runs against production. Run a new transform on a branch once and check the job log for `Statement can not be parsed` before you rely on the branch.
+:::note
+The proxy driver can only redirect statements its SQL parser understands. While a branch is open, it refuses a statement it cannot parse, so that statement never reaches production: the job fails with SQLState `0A000`. Statements that touch no table data still run as is: `SHOW`, `DESCRIBE`, `EXPLAIN`, `LIST`, `USE`, `SET`, `UNSET`, `ALTER SESSION` and transaction control.
+
+It also refuses what it cannot redirect or record: stored procedure calls, and prepared statement parameters bound to a stream, a LOB, an array or bytes.
 :::
 
 Copies are created in schema `<branch>` of each table's own database. Starlake creates that schema only in the connection's database, so keep the tables a branched job modifies in that database.
@@ -137,7 +140,7 @@ The differences:
 - **Transforms are covered.** `APPEND`, `OVERWRITE` and `UPSERT_BY_KEY` transforms, and transforms that create their table, write to the branch. Native DuckDB loads on a branch have not been validated yet: run one on a throwaway branch and check where it wrote before you rely on it.
 - **`UPSERT_BY_KEY` does not run on QoD**, with or without a branch. QoD runs each statement in a session of its own, so the temporary view of the incoming rows is gone by the statement that reads it.
 
-The [proxy driver warning](#snowflake) applies here too: a statement the driver cannot parse runs against production.
+The [proxy driver rules](#snowflake) apply here too: a statement the driver cannot parse is refused, and only the statements that change data are recorded.
 
 ```yaml
 # metadata/application.sl.yml: a DuckLake catalog on a local DuckDB
@@ -250,7 +253,7 @@ BRANCH DESCRIBE feat_order_summary;  -- statements recorded on the branch, with 
 BRANCH SHOW feat_order_summary;      -- status, start time and options
 ```
 
-While a branch is open in your client, every statement you run there is recorded in its history and rewritten to the copies, your inspection queries included. Close the connection when you are done.
+While a branch is open in your client, every statement you run there is rewritten to the copies, and the ones that change data are recorded in its history. Close the connection when you are done.
 
 ### Refreshing against production
 
@@ -263,11 +266,10 @@ There is no refresh command. On BigQuery, drop the clones you want refreshed (or
 | BigQuery | Delete the dataset: `bq rm -r -f -d my-project:feat_order_summary` | No apply step: run the job again without `SL_DATA_BRANCH` |
 | Snowflake, DuckDB, DuckLake, QoD | `BRANCH DROP feat_order_summary WITH PERSIST = TRUE` through the Starlake driver: drops the copies, the history and the schema. On DuckDB, DuckLake and QoD, `DROP SCHEMA feat_order_summary CASCADE` from a plain connection does the same | Run the job again without `SL_DATA_BRANCH`, or `BRANCH START ... WITH PERSIST = TRUE, KEEP = TRUE` then `BRANCH APPLY feat_order_summary` |
 
-`BRANCH APPLY` replays every statement in the branch history, in order, against production, then drops the branch. Before you use it, run `BRANCH DESCRIBE` and check what it will replay:
+`BRANCH APPLY` replays the statements in the branch history, in order, against production, then drops the branch. The history holds the statements that ran on the branch and changed data: queries and failed statements are left out. Before you use it, run `BRANCH DESCRIBE` and check what it will replay:
 
-- The history holds every statement run on the branch, across all runs. If you ran a transform three times while iterating, its statements are replayed three times. With an append strategy, that inserts the rows three times.
-- Statements that failed on the branch are in the history too.
-- A statement that fails during the replay is logged and skipped. The replay goes on, and nothing is rolled back.
+- The history covers every run on the branch. If you ran a transform three times while iterating, its statements are replayed three times. With an append strategy, that inserts the rows three times.
+- A statement that fails during the replay stops it, with an error that says which statement failed. The statements before it stay applied, since nothing is rolled back, and the branch is kept. Fix the cause and run `BRANCH APPLY` again: it resumes at the failed statement, also from a new connection.
 
 For anything but a single clean run, re-running the job in production is the safer promotion.
 
@@ -284,7 +286,8 @@ For anything but a single clean run, re-running the job in production is the saf
 - Promotion recomputes: production never reuses the tables built on the branch.
 - A branch does not pick the tasks to run: [`starlake impact`](../../0800-cli/impact.md) reports the impacted downstream tasks, and you run them.
 - On BigQuery, branch tables live in a single dataset, so table names must be unique across the domains you run on the branch, and sources are frozen at their first clone.
-- On Snowflake, the account must support hybrid tables. On Snowflake, DuckDB, DuckLake and QoD, statements the proxy driver cannot parse run against production.
+- On Snowflake, the account must support hybrid tables. On Snowflake, DuckDB, DuckLake and QoD, the proxy driver refuses the statements it cannot parse, stored procedure calls, and prepared statement parameters it cannot record.
+- `BRANCH APPLY` replays every recorded run and has no rollback: it stops at the first failing statement, and the next `BRANCH APPLY` resumes there.
 - On DuckDB, DuckLake and QoD, copies are full copies, native loads on a branch are not validated, and `UPSERT_BY_KEY` does not run on QoD.
 - The connection-level `sl_data_branch` option is read on BigQuery only.
 
