@@ -1,5 +1,5 @@
 ---
-sidebar_position: 210
+sidebar_position: 220
 title: impact
 description: "Report which load tables and transforms a change touches, how (breaking, non-breaking, metadata), and which downstream tasks it impacts, using column-level lineage. Runs offline."
 keywords: [starlake impact, change impact, breaking change, column lineage, CI]
