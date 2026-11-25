@@ -1,5 +1,5 @@
 ---
-sidebar_position: 170
+sidebar_position: 180
 title: extract-schema
 description: "Extract database table schemas and output them as YAML definition files with optional snake_case naming and parallelism control."
 keywords: [starlake extract-schema, schema extraction, database schema, YAML generation]
