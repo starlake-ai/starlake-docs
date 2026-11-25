@@ -60,6 +60,16 @@ const sidebars = {
             'operating/deploy-docker',
             'operating/deploy-fleet',
             'operating/deploy-kubernetes',
+            {
+              type: 'category',
+              label: 'Public cloud (Terraform)',
+              items: [
+                'operating/deploy-cloud-aws',
+                'operating/deploy-cloud-ovhcloud',
+                'operating/deploy-cloud-azure',
+                'operating/deploy-cloud-gcp',
+              ],
+            },
             'operating/starflow',
             'operating/tls',
             'operating/encryption',

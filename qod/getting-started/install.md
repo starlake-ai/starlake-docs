@@ -213,7 +213,7 @@ Every scalar in `application.conf` accepts a matching `QOD_*` environment variab
 | Admin password | `QOD_ADMIN_PASSWORD` | none for the jar (no admin is seeded until you set it on the first boot); `admin` under the Docker launchers |
 | Postgres password | `QOD_PG_PASSWORD` | `azizam` |
 
-There is no static REST API key: every REST, MCP and SCIM caller is a `qod login` session or a personal access token (`qod auth pat create`), and a manager with a non-empty `QOD_API_KEY` refuses to boot. The session signing secret needs no pinning either: when `QOD_SESSION_JWT_SECRET` is unset, the first boot generates one and stores it in the control-plane database, so sessions survive restarts and every HA replica shares it (boot logs `session secret: ...` naming the source, never the value). Pin it from an external secret store when control-plane backups or replicas are less trusted than the manager, since a read of that database otherwise yields a key that forges sessions.
+There is no static REST API key: every REST, MCP and SCIM caller is a `qod login` session or a personal access token (`qod auth pat create`), and a `QOD_API_KEY` still set is ignored, with a warning at boot. The session signing secret needs no pinning either: when `QOD_SESSION_JWT_SECRET` is unset, the first boot generates one and stores it in the control-plane database, so sessions survive restarts and every HA replica shares it (boot logs `session secret: ...` naming the source, never the value). Pin it from an external secret store when control-plane backups or replicas are less trusted than the manager, since a read of that database otherwise yields a key that forges sessions.
 
 Other commonly used variables:
 
