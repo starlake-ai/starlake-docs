@@ -43,7 +43,7 @@ You: /connection Configure a Snowflake connection with OAuth authentication
 | Snowflake | JDBC, OAuth, Spark connector |
 | DuckDB | Basic, S3, MotherDuck, DuckLake |
 | PostgreSQL | Native, Spark |
-| MySQL/MariaDB | JDBC |
+| MySQL | JDBC |
 | Amazon Redshift | Native, Spark |
 | Databricks | JDBC |
 | Apache Spark | Local/file system |
