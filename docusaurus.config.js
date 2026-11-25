@@ -5,6 +5,8 @@ const lightCodeTheme = require("prism-react-renderer").themes.github;
 const darkCodeTheme = require("prism-react-renderer").themes.vsDark;
 const {GlobExcludeDefault} = require('@docusaurus/utils');
 const isBlog = process.env.IS_BLOG === 'true';
+// ```diagram code blocks, laid out at build time (src/remark/diagram)
+const remarkDiagram = require("./src/remark/diagram");
 
 // Newest released snapshot of each docs instance (first entry of its
 // versions file). The LLM files index only these, never the Next tree.
@@ -67,11 +69,13 @@ const config = {
           routeBasePath: '/docs',
           // versions.json belongs to the Starflow docs; ignore it here.
           disableVersioning: true,
+          beforeDefaultRemarkPlugins: [remarkDiagram],
         } : {
           path: 'docs',  // Regular docs directory
           sidebarPath: require.resolve("./sidebars.js"),
           routeBasePath: 'starflow',
           exclude: ['superpowers/**'],
+          beforeDefaultRemarkPlugins: [remarkDiagram],
           // Released snapshots live in versioned_docs/ (see versions.json);
           // docs/ is the unreleased tree, served under /starflow/next.
           versions: {
@@ -82,6 +86,7 @@ const config = {
           blogSidebarCount: 0,
           showReadingTime: true,
           routeBasePath: '/',
+          beforeDefaultRemarkPlugins: [remarkDiagram],
         } : {
           showReadingTime: true,
           routeBasePath: '/blog',
@@ -300,6 +305,7 @@ const config = {
         path: "qod",
         routeBasePath: "qod",
         sidebarPath: require.resolve("./sidebars-qod.js"),
+        beforeDefaultRemarkPlugins: [remarkDiagram],
         editUrl: "https://github.com/starlake-ai/starlake-docs/tree/main/",
         // Released snapshots live in qod_versioned_docs/ (see
         // qod_versions.json); qod/ is the unreleased tree, under /qod/next.
@@ -378,12 +384,10 @@ const config = {
     ],
   ].filter(Boolean),
   markdown: {
-    mermaid: true,
     hooks: {
       onBrokenMarkdownLinks: "warn",
     },
   },
-  themes: ["@docusaurus/theme-mermaid"],
   // Per-section GA4 properties, in addition to the site-wide gtag above.
   // Read at build time; an unset variable disables that section's tag.
   customFields: {

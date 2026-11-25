@@ -24,21 +24,22 @@ Both run the pinned `starlakeai/quack-on-demand` Docker image under systemd, on 
 
 The default setup is `ducklake_storage = "s3"`, `postgres_mode = "managed"`, `network_mode = "public"`:
 
-```mermaid
-graph TD
-  clients["SQL clients<br/>(flightsql_allowed_cidrs)"]
-  operator["Operator<br/>(operator_cidr)"]
-  subgraph project["Google Cloud project"]
-    subgraph vpc["VPC qod-vpc, subnet 10.42.0.0/24"]
-      vm["<b>qod-manager VM</b><br/>e2-standard-4, Ubuntu 24.04<br/>static external IP, no service account<br/>quack-on-demand.service (Docker)<br/>:31338 FlightSQL TLS<br/>:20900 REST/UI (closed by default)"]
-    end
-    sql[("Cloud SQL for PostgreSQL 16<br/>private IP only, TLS required<br/>control plane + DuckLake catalogs")]
-    gcs[("GCS bucket qod-ducklake-xxxx<br/>S3-compatible XML API<br/>HMAC key of a bucket-scoped service account")]
-  end
-  clients -->|":31338"| vm
-  operator -->|":22 SSH<br/>tunnel to :20900"| vm
-  vm -->|":5432 over Private Service Access"| sql
-  vm -->|"https://storage.googleapis.com"| gcs
+```diagram
+title: QoD on a single Google Cloud VM, with Cloud SQL and a GCS bucket
+zones:
+  project: {label: Google Cloud project}
+  vpc: {label: VPC qod-vpc, detail: subnet 10.42.0.0/24, in: project}
+nodes:
+  clients: {label: SQL clients, kind: client, detail: flightsql_allowed_cidrs}
+  operator: {label: Operator, kind: person, detail: operator_cidr}
+  vm: {label: qod-manager VM, kind: server, accent: true, in: vpc, detail: ["e2-standard-4, Ubuntu 24.04", "static external IP, no service account", "quack-on-demand.service (Docker)", ":31338 FlightSQL, TLS", ":20900 REST and UI, closed by default"]}
+  sql: {label: Cloud SQL for PostgreSQL 16, kind: database, in: project, detail: ["private IP only, TLS required", control plane and DuckLake catalogs]}
+  gcs: {label: GCS bucket, kind: bucket, in: project, detail: [qod-ducklake-xxxx, S3-compatible XML API, HMAC key of a bucket-scoped account]}
+edges:
+  - "clients -> vm: 31338"
+  - "operator -> vm: 22 SSH, tunnel to 20900"
+  - "vm -> sql: 5432 Private Service Access"
+  - "vm -> gcs: HTTPS storage.googleapis.com"
 ```
 
 In this setup the VM holds no durable state: the catalog is in Cloud SQL and the data is in the bucket. Only scratch (DuckDB spill) lives on the VM.
@@ -73,41 +74,32 @@ What the stack creates:
 
 ### Fleet
 
-```mermaid
-graph TD
-  clients["SQL clients<br/>(flightsql_allowed_cidrs)"]
-  operator["Operator<br/>IAP 35.235.240.0/20"]
-  lb["<b>Passthrough Network Load Balancer</b><br/>regional external IP (public) or internal IP .5 (private)<br/>:31338 FlightSQL, :9494 DuckDB<br/>(+ :20900 if rest_ui_public)<br/>health check GET /health on :20900"]
-  subgraph subnet["subnet 10.42.0.0/24, no external IPs"]
-    subgraph vm0["VM 0: qod-w0, 10.42.0.10"]
-      m0["qod-manager"]
-      h0["qod-haproxy<br/>127.0.0.1:20990"]
-      w0["qod-worker<br/>node :21900"]
-    end
-    subgraph vm1["VM 1: qod-w1, 10.42.0.11"]
-      m1["qod-manager"]
-      h1["qod-haproxy<br/>127.0.0.1:20990"]
-      w1["qod-worker<br/>node :21900"]
-    end
-    subgraph vm2["VM 2 ... worker_count-1: qod-w2, 10.42.0.12"]
-      h2["qod-haproxy<br/>127.0.0.1:20990"]
-      w2["qod-worker<br/>node :21900"]
-    end
-  end
-  nat["Cloud NAT<br/>(egress)"]
-  sql[("Cloud SQL for PostgreSQL 16<br/>private IP, TLS required")]
-  gcs[("GCS bucket<br/>HMAC key, bucket-scoped")]
-  clients --> lb
-  lb --> m0
-  lb --> m1
-  operator -->|":22 IAP"| m0
-  w0 --> h0
-  w1 --> h1
-  w2 --> h2
-  h0 & h1 & h2 -->|"heartbeats to :20900<br/>health-checked"| m0 & m1
-  m0 & m1 --> sql
-  m0 & m1 --> gcs
-  w0 & w1 & w2 -.->|"egress"| nat
+```diagram
+title: QoD fleet on Google Cloud, VMs behind a passthrough load balancer
+zones:
+  subnet: {label: Subnet, detail: "10.42.0.0/24, no external IPs"}
+nodes:
+  clients: {label: SQL clients, kind: client, detail: flightsql_allowed_cidrs}
+  operator: {label: Operator, kind: person, detail: IAP 35.235.240.0/20}
+  lb: {label: Passthrough Network Load Balancer, kind: balancer, detail: ["external IP (public) or internal .5 (private)", ":31338 FlightSQL, :9494 DuckDB", ":20900 when rest_ui_public", "health check GET /health on :20900"]}
+  vm0: {label: VM 0, kind: server, accent: true, in: subnet, detail: ["qod-w0, 10.42.0.10", qod-manager, "qod-worker, node :21900", "qod-haproxy 127.0.0.1:20990"]}
+  vm1: {label: VM 1, kind: server, accent: true, in: subnet, detail: ["qod-w1, 10.42.0.11", qod-manager, "qod-worker, node :21900", "qod-haproxy 127.0.0.1:20990"]}
+  vm2: {label: VM 2 and up, kind: server, accent: true, in: subnet, detail: ["qod-w2, 10.42.0.12", "qod-worker, node :21900", "qod-haproxy 127.0.0.1:20990"]}
+  nat: {label: Cloud NAT, kind: gateway, detail: egress}
+  sql: {label: Cloud SQL for PostgreSQL 16, kind: database, detail: "private IP, TLS required"}
+  gcs: {label: GCS bucket, kind: bucket, detail: "HMAC key, bucket-scoped"}
+edges:
+  - clients -> lb
+  - "lb -> vm0: client ports"
+  - "lb -> vm1: client ports"
+  - "operator -> vm0: 22 IAP"
+  - "vm2 -> vm0: 20900 heartbeats"
+  - vm2 -> vm1
+  - vm0 -> sql
+  - vm1 -> sql
+  - vm0 -> gcs
+  - vm1 -> gcs
+  - "vm2 -.-> nat: egress, every VM"
 ```
 
 - **qod-manager** runs on VMs `0 .. manager_count-1` with `QOD_RUNTIME_TYPE=fleet` and `QOD_HA_ENABLED=true`. Every replica serves clients. The leader, elected through PostgreSQL, runs reconciliation and maintenance. Each replica advertises its own `QOD_INTERNAL_URL` (`http://<its IP>:20901`) for node verdict calls. See [High availability](./deploy-fleet.md#high-availability).

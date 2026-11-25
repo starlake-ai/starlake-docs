@@ -27,31 +27,29 @@ The two external dependencies QoD needs (Postgres and an S3-compatible store) ar
 | Data files | Existing rustfs, via its S3 API (`s3://...`) | Parquet data written by DuckLake |
 | Grafana | Anywhere with network access to the server | Dashboards (see sections 7 and 8) |
 
-```mermaid
-graph TD
-  clients["SQL clients<br/>JDBC/ADBC, BI tools"]
-  browser["Browser<br/>admin UI"]
-  subgraph server["the server"]
-    direction TB
-    manager["<b>QoD manager, one JVM</b><br/>edge: auth, routing, verdicts<br/>control plane, admin UI"]
-    subgraph pool["pool, local subprocesses"]
-      direction LR
-      n1["node 1<br/>qod-node"]
-      n2["node 2<br/>qod-node"]
-      n3["node 3<br/>qod-node"]
-    end
-    manager -->|"routes each statement"| n1
-    manager --> n2
-    manager --> n3
-  end
-  pg[("PostgreSQL, existing<br/>qod = control<br/>acme_sales = metastore")]
-  s3[("rustfs, existing, S3 API<br/>s3://ducklake/...<br/>parquet data files")]
-  clients -->|":31338 FlightSQL, TLS"| manager
-  clients -->|":9494 native Quack (DuckDB)"| manager
-  browser -->|":20900 REST + UI"| manager
-  pool -->|"DuckLake catalog, SQL"| pg
-  pool -->|"parquet read/write"| s3
-  style manager fill:#2e7d32,stroke:#1b5e20,color:#fff
+```diagram
+title: QoD on one server, with an existing PostgreSQL and S3-compatible store
+zones:
+  server: {label: The server}
+  pool: {label: Pool, detail: local subprocesses, in: server}
+nodes:
+  clients: {label: SQL clients, kind: client, detail: "JDBC, ADBC, BI tools"}
+  browser: {label: Browser, kind: browser, detail: admin UI}
+  manager: {label: QoD manager, kind: server, accent: true, in: server, detail: [one JVM, "edge: auth, routing, verdicts", "control plane, admin UI"]}
+  n1: {label: node 1, kind: server, accent: true, in: pool, detail: qod-node}
+  n2: {label: node 2, kind: server, accent: true, in: pool, detail: qod-node}
+  n3: {label: node 3, kind: server, accent: true, in: pool, detail: qod-node}
+  pg: {label: PostgreSQL, kind: database, detail: [existing, qod = control, acme_sales = metastore]}
+  s3: {label: rustfs, kind: bucket, detail: ["existing, S3 API", "s3://ducklake/...", parquet data files]}
+edges:
+  - "clients -> manager: 31338 FlightSQL, TLS"
+  - "clients -> manager: 9494 native Quack"
+  - "browser -> manager: 20900 REST and UI"
+  - "manager -> n1: routes each statement"
+  - manager -> n2
+  - manager -> n3
+  - "pool -> pg: DuckLake catalog"
+  - "pool -> s3: parquet read and write"
 ```
 
 Key decisions:
@@ -238,24 +236,26 @@ QoD is a multi-tenant SQL gateway built exactly for this:
 - The manager routes each statement to a node (DuckDB process) in the target pool using least-loaded routing (cache-aware placement on object-store pools), so concurrent statements spread across nodes.
 - A single node also executes multiple statements simultaneously: sessions share the node's `threads` and `memory_limit` budgets, and the per-pool `maxConcurrentPerNode` cap (default unbounded) bounds how many stack up on one node.
 
-```mermaid
-graph LR
-  alice["alice"]
-  bob["bob"]
-  carol["carol"]
-  edge["edge :31338<br/>auth"]
-  router["router<br/>least-loaded,<br/>cache-aware"]
-  n1["node 1<br/>inFlight 2"]
-  n2["node 2<br/>inFlight 1 &#8592; next"]
-  n3["node 3<br/>inFlight 2"]
-  alice --> edge
-  bob --> edge
-  carol --> edge
-  edge --> router
-  router --> n1
-  router --> n2
-  router --> n3
-  style n2 fill:#2e7d32,stroke:#1b5e20,color:#fff
+```diagram
+title: The router sends each statement to the least-loaded node
+direction: right
+nodes:
+  alice: {label: alice, kind: person}
+  bob: {label: bob, kind: person}
+  carol: {label: carol, kind: person}
+  edge: {label: Edge, kind: server, accent: true, detail: [":31338", auth]}
+  router: {label: Router, kind: service, accent: true, detail: [least-loaded, cache-aware]}
+  n1: {label: node 1, kind: server, detail: inFlight 2}
+  n2: {label: node 2, kind: server, accent: true, detail: "inFlight 1, next"}
+  n3: {label: node 3, kind: server, detail: inFlight 2}
+edges:
+  - alice -> edge
+  - bob -> edge
+  - carol -> edge
+  - edge -> router
+  - router -> n1
+  - router -> n2
+  - router -> n3
 ```
 
 ---
@@ -317,17 +317,19 @@ Rules:
 | Pool `etl`: 2 dual nodes, each `threads=10`, `memory_limit='40GB'` | 20 | 80 GiB budget |
 | Headroom (page cache, spill, bursts) | | 30 GiB |
 
-```mermaid
-graph TD
-  subgraph budget["RAM 256 GiB &#183; CPU 64 cores"]
-    direction TB
-    jvm["manager JVM<br/><b>2 GiB</b> &#183; 2 cores"]
-    bi["pool bi &#183; 6 nodes x 24 GiB<br/><b>144 GiB</b> &#183; 36 cores, 6 x 6 threads"]
-    etl["pool etl &#183; 2 nodes x 40 GiB<br/><b>80 GiB</b> &#183; 20 cores, 2 x 10 threads"]
-    head["headroom &#183; page cache, spill, bursts<br/><b>30 GiB</b>"]
-    jvm ~~~ bi ~~~ etl ~~~ head
-  end
-  style head fill:#f5f5f5,stroke:#9e9e9e,color:#333,stroke-dasharray: 5 4
+```diagram
+title: "Sizing a 256 GiB, 64-core server"
+zones:
+  budget: {label: "RAM 256 GiB, CPU 64 cores"}
+nodes:
+  jvm: {label: manager JVM, kind: server, accent: true, in: budget, detail: "2 GiB, 2 cores"}
+  bi: {label: "pool bi: 6 nodes x 24 GiB", kind: cluster, in: budget, detail: "144 GiB, 36 cores, 6 x 6 threads"}
+  etl: {label: "pool etl: 2 nodes x 40 GiB", kind: cluster, in: budget, detail: "80 GiB, 20 cores, 2 x 10 threads"}
+  head: {label: headroom, kind: service, dashed: true, in: budget, detail: ["30 GiB", "page cache, spill, bursts"]}
+edges:
+  - jvm ~~~ bi
+  - bi ~~~ etl
+  - etl ~~~ head
 ```
 
 Interactive pools can be modestly oversubscribed on CPU (not every node is busy at once); keep the sum of `memory_limit` under total RAM minus headroom.
@@ -356,29 +358,34 @@ Interactive pools can be modestly oversubscribed on CPU (not every node is busy 
 
 The objects nest as follows; sections 4.1 to 4.4 create one level each:
 
-```mermaid
-graph TD
-  subgraph objects["object nesting"]
-    direction TB
-    t["tenant <b>acme</b>"]
-    d["database <b>acme_sales</b><br/>kind ducklake<br/>dataPath s3://ducklake/acme_sales"]
-    p["pool <b>bi</b><br/>1 writeonly + 2 readonly<br/>autoscale band 3..6"]
-    n1["node bi-1 &#183; WRITEONLY"]
-    n2["node bi-2 &#183; READONLY"]
-    n3["node bi-3 &#183; READONLY"]
-    t --> d
-    d --> p
-    p --> n1
-    p --> n2
-    p --> n3
-  end
-  subgraph access["access"]
-    direction LR
-    u["user"] --> g["group"] --> r["role"] --> tg["table grants"]
-    cp["GRANT CONNECT ON POOL"]
-  end
-  classDef proc fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20;
-  class n1,n2,n3 proc;
+```diagram
+title: How QoD objects nest, and how access is granted
+order: keep
+direction: right
+zones:
+  objects: {label: Object nesting}
+  access: {label: Access}
+nodes:
+  t: {label: tenant acme, kind: cluster, in: objects}
+  d: {label: database acme_sales, kind: database, in: objects, detail: [kind ducklake, "dataPath s3://ducklake/acme_sales"]}
+  p: {label: pool bi, kind: cluster, in: objects, detail: ["1 writeonly, 2 readonly", autoscale band 3..6]}
+  n1: {label: node bi-1, kind: server, accent: true, in: objects, detail: WRITEONLY}
+  n2: {label: node bi-2, kind: server, accent: true, in: objects, detail: READONLY}
+  n3: {label: node bi-3, kind: server, accent: true, in: objects, detail: READONLY}
+  u: {label: user, kind: person, in: access}
+  g: {label: group, kind: cluster, in: access}
+  r: {label: role, kind: service, in: access}
+  tg: {label: table grants, kind: service, in: access}
+  cp: {label: GRANT CONNECT ON POOL, kind: service, in: access}
+edges:
+  - t -> d
+  - d -> p
+  - p -> n1
+  - p -> n2
+  - p -> n3
+  - u -> g
+  - g -> r
+  - r -> tg
 ```
 
 All control-plane commands need an authenticated session; `qod auth login` mints one, prompts for the password, and stores it in the CLI profile:
@@ -519,20 +526,22 @@ QoD has **two independent auth planes**, configured separately:
 
 A common production posture: admin UI on corporate SSO, SQL clients on database passwords or bearer JWTs, with database auth kept as break-glass.
 
-```mermaid
-graph LR
-  browser["Browser<br/>SSO, OIDC, or password"]
-  sqlclient["SQL client<br/>password or bearer token"]
-  mgmt[":20900 management plane<br/>QOD_MGMT_* / tenant authProvider"]
-  data[":31338 FlightSQL data plane<br/>QOD_AUTH_DB_* /<br/>QOD_AUTH_&lt;PROVIDER&gt;_*"]
-  state["<b>qodstate_user</b><br/>roles &#183; groups &#183; grants<br/><b>authorization is ALWAYS local</b>"]
-  idp["IdP<br/>Keycloak / Entra / Google / Cognito"]
-  browser --> mgmt
-  sqlclient --> data
-  mgmt --> state
-  data --> state
-  idp -->|"SCIM connector provisions<br/>users + groups"| state
-  style state fill:#2e7d32,stroke:#1b5e20,color:#fff
+```diagram
+title: Two authentication entry points, one local authorization store
+direction: right
+nodes:
+  browser: {label: Browser, kind: browser, detail: "SSO, OIDC or password"}
+  sqlclient: {label: SQL client, kind: client, detail: password or bearer token}
+  idp: {label: IdP, kind: service, detail: ["Keycloak, Entra", "Google, Cognito"]}
+  mgmt: {label: Management plane, kind: server, accent: true, detail: [":20900", "QOD_MGMT_*, tenant authProvider"]}
+  data: {label: FlightSQL data plane, kind: server, accent: true, detail: [":31338", "QOD_AUTH_DB_*", "QOD_AUTH_<PROVIDER>_*"]}
+  state: {label: qodstate_user, kind: database, detail: ["roles, groups, grants", authorization is always local]}
+edges:
+  - browser -> mgmt
+  - sqlclient -> data
+  - mgmt -> state
+  - data -> state
+  - "idp -> state: SCIM provisions users and groups"
 ```
 
 ### 6.1 Database auth (built-in, default on)
@@ -646,13 +655,16 @@ with `Authorization: Bearer <a tenant-admin PAT>` (`qod auth pat create`, pinned
 
 Grafana never talks to QoD directly. The chain is: **QoD manager exposes Prometheus metrics, Prometheus scrapes them, Grafana reads Prometheus.**
 
-```mermaid
-graph RL
-  qod["QoD manager<br/>:20900/metrics<br/>Prometheus text format<br/><b>NO auth: firewall it</b>"]
-  prom["Prometheus<br/>retention, rules"]
-  graf["Grafana<br/>QoD - Single Node dashboard"]
-  prom -->|"scrape"| qod
-  graf -->|"query"| prom
+```diagram
+title: Prometheus scrapes the manager, Grafana queries Prometheus
+direction: right
+nodes:
+  graf: {label: Grafana, kind: metrics, detail: QoD - Single Node dashboard}
+  prom: {label: Prometheus, kind: metrics, detail: "retention, rules"}
+  qod: {label: QoD manager, kind: server, accent: true, detail: [":20900/metrics", Prometheus text format, "no auth: firewall it"]}
+edges:
+  - "graf -> prom: query"
+  - "prom -> qod: 20900 scrape"
 ```
 
 ### 7.1 The metrics endpoint

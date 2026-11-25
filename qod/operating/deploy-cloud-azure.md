@@ -27,18 +27,23 @@ For what the fleet runtime does inside QoD (joining, approval, scheduling), see 
 
 The default setup is `ducklake_storage = "s3"`, `postgres_mode = "managed"`, `network_mode = "public"`:
 
-```mermaid
-graph TD
-  C["Clients<br/>(flightsql_allowed_cidrs)"] -->|"FlightSQL 31338, TLS"| NSG
-  O["Operator<br/>(operator_cidr)"] -->|"SSH 22"| NSG
-  NSG["NSG on the VM subnet<br/>10.42.1.0/24"] --> VM
-  subgraph RG["Resource group PREFIX-rg, VNet 10.42.0.0/16"]
-    VM["VM PREFIX-manager, Standard_D4s_v5<br/>static public IP<br/>quack-on-demand.service: container qod-manager<br/>REST/UI 20900: SSH tunnel only"]
-    PG["Azure Database for PostgreSQL<br/>Flexible Server, private access<br/>delegated subnet 10.42.2.0/24, private DNS"]
-    SA["Storage account (this deployment only)<br/>Blob container ducklake"]
-  end
-  VM -->|"5432: control plane + DuckLake catalogs"| PG
-  VM -->|"az://ducklake/..., connection string"| SA
+```diagram
+title: QoD on a single Azure VM, with a Flexible Server and a storage account
+zones:
+  RG: {label: Resource group PREFIX-rg, detail: VNet 10.42.0.0/16}
+nodes:
+  C: {label: Clients, kind: client, detail: flightsql_allowed_cidrs}
+  O: {label: Operator, kind: person, detail: operator_cidr}
+  NSG: {label: NSG on the VM subnet, kind: gateway, in: RG, detail: 10.42.1.0/24}
+  VM: {label: VM PREFIX-manager, kind: server, accent: true, in: RG, detail: [Standard_D4s_v5, static public IP, "quack-on-demand.service", container qod-manager, "REST and UI 20900: SSH tunnel only"]}
+  PG: {label: Azure Database for PostgreSQL, kind: database, in: RG, detail: ["Flexible Server, private access", delegated subnet 10.42.2.0/24, private DNS]}
+  SA: {label: Storage account, kind: bucket, in: RG, detail: [this deployment only, Blob container ducklake]}
+edges:
+  - "C -> NSG: 31338 FlightSQL, TLS"
+  - "O -> NSG: 22 SSH"
+  - NSG -> VM
+  - "VM -> PG: 5432 control plane and catalogs"
+  - "VM -> SA: az://ducklake/..."
 ```
 
 With the default setup the VM holds no durable state: the catalog is in Flexible Server and the data is in the Blob container. Local NVMe or the temp disk on the VM is DuckDB spill only.
@@ -75,25 +80,32 @@ QoD connects to Flexible Server as the administrator `qodadmin`, a member of `az
 
 ### Fleet
 
-```mermaid
-graph TD
-  C["Clients<br/>(flightsql_allowed_cidrs)"] --> LB
-  O["Operator<br/>(operator_cidr)"] -->|"SSH 22"| LB
-  LB["Azure Standard load balancer PREFIX-lb<br/>public IP, or private frontend .6<br/>31338, 9494 (and 20900 if rest_ui_public): every manager<br/>22 NAT rule: manager 0 only<br/>probe: HTTP GET /health on 20900"]
-  subgraph SUB["VM subnet 10.42.1.0/24: no public IPs, NSG"]
-    VM0["vm0 10.42.1.10<br/>qod-manager + qod-worker + qod-haproxy"]
-    VM1["vm1 10.42.1.11<br/>qod-manager + qod-worker + qod-haproxy"]
-    VM2["vm2 10.42.1.12<br/>qod-worker + qod-haproxy"]
-  end
-  LB --> VM0
-  LB --> VM1
-  VM2 -.->|"heartbeats via 127.0.0.1:20990<br/>HAProxy health-checks every manager on 20900"| VM0
-  VM2 -.-> VM1
-  VM0 --> PG["Flexible Server<br/>delegated subnet, private DNS"]
-  VM1 --> PG
-  VM0 --> SA["Blob Storage<br/>az://ducklake/qod"]
-  VM1 --> SA
-  SUB -->|"egress"| NAT["NAT gateway"]
+```diagram
+title: QoD fleet on Azure, three VMs behind a Standard load balancer
+zones:
+  SUB: {label: VM subnet, detail: "10.42.1.0/24, no public IPs, NSG"}
+nodes:
+  C: {label: Clients, kind: client, detail: flightsql_allowed_cidrs}
+  O: {label: Operator, kind: person, detail: operator_cidr}
+  LB: {label: Azure Standard load balancer, kind: balancer, detail: [PREFIX-lb, "public IP, or private frontend .6", "31338, 9494, 20900 if rest_ui_public: every manager", "22 NAT rule: manager 0 only", "probe: HTTP GET /health on 20900"]}
+  VM0: {label: vm0, kind: server, accent: true, in: SUB, detail: [10.42.1.10, "qod-manager, qod-worker", qod-haproxy]}
+  VM1: {label: vm1, kind: server, accent: true, in: SUB, detail: [10.42.1.11, "qod-manager, qod-worker", qod-haproxy]}
+  VM2: {label: vm2, kind: server, accent: true, in: SUB, detail: [10.42.1.12, qod-worker, qod-haproxy]}
+  PG: {label: Flexible Server, kind: database, detail: ["delegated subnet, private DNS"]}
+  SA: {label: Blob Storage, kind: bucket, detail: az://ducklake/qod}
+  NAT: {label: NAT gateway, kind: gateway}
+edges:
+  - C -> LB
+  - "O -> LB: 22 SSH"
+  - LB -> VM0
+  - LB -> VM1
+  - "VM2 -.-> VM0: 20900 heartbeats via local HAProxy"
+  - VM2 -.-> VM1
+  - VM0 -> PG
+  - VM1 -> PG
+  - VM0 -> SA
+  - VM1 -> SA
+  - "SUB -> NAT: egress"
 ```
 
 The fleet stack creates `worker_count` VMs. Every VM runs a QoD fleet worker (one quack node) and a local HAProxy. The first `manager_count` VMs also run a QoD manager. The managers are active-active, with a leader elected through PostgreSQL (`QOD_HA_ENABLED=true`, `QOD_RUNTIME_TYPE=fleet`). The fleet always uses Flexible Server and Blob Storage: it has no `ducklake_storage` or `postgres_mode` variable.

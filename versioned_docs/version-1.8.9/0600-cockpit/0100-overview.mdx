@@ -42,24 +42,28 @@ The Starlake Cockpit is a web-based interface for managing your data projects en
 
 Users interact with Starlake through two entry points: the **Cockpit Web UI** or the **VS Code Extension**. Both connect to the Starlake REST API, which orchestrates the underlying data engine and manages project metadata.
 
-```mermaid
-graph LR
-    User((User))
-
-    User --> WebUI["Cockpit Web UI<br/>(Browser)"]
-    User --> VSCode["VS Code Extension"]
-
-    WebUI --> API["Starlake REST API<br/>(starlake serve)"]
-    VSCode --> API
-
-    API --> Core["Starlake Core Engine"]
-    API --> DB["PostgreSQL<br/>(User & Project metadata)"]
-
-    Core --> Orchestrator["Orchestrator<br/>(Airflow / Dagster / Snowflake)"]
-    Core --> AI["AI Service<br/>(OpenAI / Gemini / Claude)"]
-    Core --> DataWarehouse["Data Warehouse<br/>(BigQuery / Snowflake / DuckDB / Redshift)"]
-
-    style API fill:#2e7d32,stroke:#1b5e20,color:#fff
+```diagram
+title: Cockpit architecture, from the web UI and VS Code to the Starlake engine
+nodes:
+  User: {label: User, kind: person}
+  WebUI: {label: Cockpit Web UI, kind: browser, detail: in the browser}
+  VSCode: {label: VS Code extension, kind: client}
+  API: {label: Starlake REST API, kind: server, accent: true, detail: starlake serve}
+  DB: {label: PostgreSQL, kind: database, detail: user and project metadata}
+  Core: {label: Starlake core engine, kind: service, accent: true}
+  Orchestrator: {label: Orchestrator, kind: cluster, detail: "Airflow, Dagster, Snowflake"}
+  AI: {label: AI service, kind: service, detail: "OpenAI, Gemini, Claude"}
+  DataWarehouse: {label: Data warehouse, kind: database, detail: ["BigQuery, Snowflake", "DuckDB, Redshift"]}
+edges:
+  - User -> WebUI
+  - User -> VSCode
+  - WebUI -> API
+  - VSCode -> API
+  - API -> Core
+  - API -> DB
+  - Core -> Orchestrator
+  - Core -> AI
+  - Core -> DataWarehouse
 ```
 
 ## Setup

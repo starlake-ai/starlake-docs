@@ -1,0 +1,150 @@
+/* Diagrams drawn from the site tokens (src/css/tokens.css). The accent is the
+   section's lane color: teal in Starflow, orange in QoD. */
+.root {
+  --dg-accent: var(--color-accent);
+  --dg-accent-text: var(--color-accent-text);
+  --dg-accent-soft: var(--color-accent-soft);
+  margin: var(--space-lg) 0 var(--space-xl);
+}
+
+:global(.plugin-id-qod) .root {
+  --dg-accent: var(--color-qod);
+  --dg-accent-text: var(--color-qod-text);
+  --dg-accent-soft: var(--color-qod-soft);
+}
+
+.scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 auto;
+  font-family: var(--font-body);
+}
+
+/* zones: network boundaries, layered paper */
+.zone {
+  fill: var(--color-paper-2);
+  stroke: var(--color-rule-strong);
+  stroke-width: 1;
+  stroke-opacity: 0.55;
+}
+
+.zone[data-depth='1'] {
+  fill: var(--color-paper);
+}
+
+.zoneDashed {
+  stroke-dasharray: 5 4;
+}
+
+.zoneHeader rect {
+  fill: var(--color-paper-2);
+}
+
+.zoneHeader[data-depth='1'] rect {
+  fill: var(--color-paper);
+}
+
+.zoneLabel {
+  fill: var(--color-ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.zoneDetail {
+  fill: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+/* nodes */
+.node rect {
+  fill: var(--color-paper);
+  stroke: var(--color-rule-strong);
+  stroke-width: 1;
+}
+
+.glyph {
+  fill: none;
+  stroke: var(--color-muted);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nodeLabel {
+  fill: var(--color-ink);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.nodeDetail {
+  fill: var(--color-muted);
+  font-size: 11.5px;
+}
+
+.dashedNode rect {
+  fill: none;
+  stroke-dasharray: 5 4;
+}
+
+.accent rect {
+  fill: var(--dg-accent-soft);
+  stroke: var(--dg-accent);
+  stroke-width: 1.5;
+}
+
+.accent .glyph {
+  stroke: var(--dg-accent-text);
+}
+
+.accent .nodeDetail {
+  fill: var(--color-ink-2);
+}
+
+/* edges */
+.edge {
+  fill: none;
+  stroke: var(--color-rule-strong);
+  stroke-width: 1.3;
+}
+
+.edgeDashed {
+  stroke-dasharray: 5 4;
+}
+
+.arrow {
+  fill: var(--color-rule-strong);
+}
+
+/* port tags: the cable labels on the lines */
+.tag rect {
+  fill: var(--color-paper);
+  stroke: var(--color-rule-strong);
+  stroke-width: 1;
+}
+
+.tagPort {
+  fill: var(--dg-accent-text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tagText {
+  fill: var(--color-ink-2);
+  font-size: 11.5px;
+}
+
+.caption {
+  margin-top: var(--space-xs);
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}

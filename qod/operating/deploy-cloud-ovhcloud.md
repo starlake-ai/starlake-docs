@@ -22,25 +22,25 @@ Both run the pinned `starlakeai/quack-on-demand` Docker image under systemd, on 
 
 The default setup is `ducklake_storage = "s3"`, `postgres_mode = "managed"`, `network_mode = "public"`:
 
-```mermaid
-graph TD
-  clients["SQL clients<br/>from flightsql_allowed_cidrs"]
-  operator["Operator<br/>from operator_cidr"]
-  subgraph ovh["OVHcloud Public Cloud project"]
-    subgraph vm["VM qod-manager (b3-16, Ubuntu 24.04)"]
-      unit["quack-on-demand.service<br/>container qod-manager<br/>FlightSQL :31338 TLS<br/>REST/UI :20900 (closed)"]
-      scratch["scratch: local NVMe (i1-*)<br/>or root disk (DuckDB spill)"]
-    end
-    sg["Security group qod-edge"]
-    pg[("Public Cloud Databases<br/>for PostgreSQL<br/>essential, db1-4, private network only")]
-    s3[("Object Storage bucket<br/>qod-ducklake-xxxxxxxx<br/>bucket-scoped S3 credential")]
-  end
-  clients -->|":31338"| sg
-  operator -->|":22 SSH, tunnel to :20900"| sg
-  sg -->|"Ext-Net public IP"| unit
-  unit -->|"catalog, private network<br/>10.42.0.0/24"| pg
-  unit -->|"parquet over HTTPS<br/>s3.gra.io.cloud.ovh.net"| s3
-  style unit fill:#2e7d32,stroke:#1b5e20,color:#fff
+```diagram
+title: QoD on a single OVHcloud VM, with managed PostgreSQL and Object Storage
+zones:
+  ovh: {label: OVHcloud Public Cloud project}
+  vm: {label: VM qod-manager, detail: "b3-16, Ubuntu 24.04", in: ovh}
+nodes:
+  clients: {label: SQL clients, kind: client, detail: flightsql_allowed_cidrs}
+  operator: {label: Operator, kind: person, detail: operator_cidr}
+  sg: {label: Security group qod-edge, kind: gateway, in: ovh}
+  unit: {label: quack-on-demand.service, kind: server, accent: true, in: vm, detail: [container qod-manager, ":31338 FlightSQL, TLS", ":20900 REST and UI, closed"]}
+  scratch: {label: Scratch disk, kind: database, in: vm, detail: ["local NVMe (i1-*) or root disk", DuckDB spill]}
+  pg: {label: Public Cloud Databases for PostgreSQL, kind: database, in: ovh, detail: ["essential, db1-4", private network only]}
+  s3: {label: Object Storage bucket, kind: bucket, in: ovh, detail: [qod-ducklake-xxxxxxxx, bucket-scoped S3 credential]}
+edges:
+  - "clients -> sg: 31338"
+  - "operator -> sg: 22 SSH, tunnel to 20900"
+  - "sg -> unit: Ext-Net public IP"
+  - "unit -> pg: catalog, private network"
+  - "unit -> s3: parquet over HTTPS"
 ```
 
 With the default setup the VM holds no durable state. The DuckLake catalogs and the control plane live in the managed PostgreSQL cluster, which has no public endpoint. The parquet data lives in the bucket. Local NVMe, when the flavor has it, is spill space only.
@@ -75,52 +75,33 @@ The default `b3-16` flavor puts DuckDB spill on the root disk, which is fine for
 
 ### Fleet
 
-```mermaid
-graph TD
-  clients["SQL clients<br/>from flightsql_allowed_cidrs"]
-  operator["Operator<br/>from operator_cidr"]
-  subgraph ovh["OVHcloud Public Cloud project"]
-    lb["Public Cloud Load Balancer (Octavia), flavor small<br/>VIP .5, floating IP from Ext-Net in public mode<br/>:31338 FlightSQL, :9494 DuckDB, :20900 REST (optional), :22 SSH to manager 0"]
-    subgraph net["private network 10.43.0.0/24, no public IPs"]
-      subgraph vm0["VM 0 .10 (qodfleet-w0)"]
-        m0["qod-manager"]
-        w0["qod-worker"]
-        h0["qod-haproxy<br/>127.0.0.1:20990"]
-      end
-      subgraph vm1["VM 1 .11 (qodfleet-w1)"]
-        m1["qod-manager"]
-        w1["qod-worker"]
-        h1["qod-haproxy<br/>127.0.0.1:20990"]
-      end
-      subgraph vm2["VM 2 .12 ... (qodfleet-w2)"]
-        w2["qod-worker"]
-        h2["qod-haproxy<br/>127.0.0.1:20990"]
-      end
-    end
-    pg[("Managed PostgreSQL<br/>essential, db1-15<br/>catalog, HA leader election")]
-    s3[("Object Storage bucket<br/>DuckLake data")]
-    gw["Public Cloud Gateway<br/>the only egress"]
-  end
-  clients --> lb
-  operator --> lb
-  lb -->|"31338, 9494, 20900"| m0
-  lb --> m1
-  w0 --> h0
-  w1 --> h1
-  w2 --> h2
-  h0 -->|"heartbeats to :20900<br/>health check GET /health"| m0
-  h0 --> m1
-  h1 --> m0
-  h1 --> m1
-  h2 --> m0
-  h2 --> m1
-  m0 --> pg
-  m1 --> pg
-  m0 --> s3
-  m1 --> s3
-  w2 -.->|"image pulls, packages<br/>(every VM)"| gw
-  style m0 fill:#2e7d32,stroke:#1b5e20,color:#fff
-  style m1 fill:#2e7d32,stroke:#1b5e20,color:#fff
+```diagram
+title: QoD fleet on OVHcloud, VMs on a private network behind an Octavia load balancer
+zones:
+  ovh: {label: OVHcloud Public Cloud project}
+  net: {label: Private network, detail: "10.43.0.0/24, no public IPs", in: ovh}
+nodes:
+  clients: {label: SQL clients, kind: client, detail: flightsql_allowed_cidrs}
+  operator: {label: Operator, kind: person, detail: operator_cidr}
+  lb: {label: Public Cloud Load Balancer, kind: balancer, in: ovh, detail: ["Octavia, flavor small", "VIP .5, floating IP from Ext-Net (public)", ":31338 FlightSQL, :9494 DuckDB", ":20900 REST (optional), :22 SSH to manager 0"]}
+  vm0: {label: VM 0, kind: server, accent: true, in: net, detail: [".10 qodfleet-w0", "qod-manager, qod-worker", "qod-haproxy 127.0.0.1:20990"]}
+  vm1: {label: VM 1, kind: server, accent: true, in: net, detail: [".11 qodfleet-w1", "qod-manager, qod-worker", "qod-haproxy 127.0.0.1:20990"]}
+  vm2: {label: VM 2 and up, kind: server, accent: true, in: net, detail: [".12 qodfleet-w2", qod-worker, "qod-haproxy 127.0.0.1:20990"]}
+  pg: {label: Managed PostgreSQL, kind: database, in: ovh, detail: ["essential, db1-15", "catalog, HA leader election"]}
+  s3: {label: Object Storage bucket, kind: bucket, in: ovh, detail: DuckLake data}
+  gw: {label: Public Cloud Gateway, kind: gateway, in: ovh, detail: the only egress}
+edges:
+  - clients -> lb
+  - operator -> lb
+  - "lb -> vm0: 31338, 9494, 20900"
+  - lb -> vm1
+  - "vm2 -> vm0: 20900 heartbeats, GET /health"
+  - vm2 -> vm1
+  - vm0 -> pg
+  - vm1 -> pg
+  - vm0 -> s3
+  - vm1 -> s3
+  - "vm2 -.-> gw: image pulls and packages, every VM"
 ```
 
 Every VM runs three containers under systemd:
