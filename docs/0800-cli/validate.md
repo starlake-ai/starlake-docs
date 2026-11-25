@@ -17,5 +17,5 @@ Validate the Starflow project configuration files and optionally test database c
 
 Parameter|Cardinality|Description
 ---|---|---
---reload `<value>`|*Optional*|Reload all files from disk before starting validation. Always true regardless of the value set here.
+--reload|*Optional*|Reload all files from disk before starting validation. Always true regardless of the value set here.
 --reportFormat `<value>`|*Optional*|Report format: console, json, html

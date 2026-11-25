@@ -18,9 +18,9 @@ Actions: serve, start, stop, list, stop-all
 
 Parameter|Cardinality|Description
 ---|---|---
---action `<value>`|*Required*|Action to perform: serve, start, stop, list, stop-all
---connection `<value>`|*Optional*|Connection name (required for serve, start, stop)
+`<action>`|*Required, Positional*|Action to perform: serve, start, stop, list, stop-all
 --bind `<value>`|*Optional*|Bind address (default: 127.0.0.1; overrides quackBind connection option)
+--connection `<value>`|*Optional*|Connection name (required for serve, start, stop)
 --port `<value>`|*Optional*|Port (default: 9494; overrides quackPort connection option)
---token `<value>`|*Optional*|Server token (overrides quackServerToken connection option)
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--token `<value>`|*Optional*|Server token (overrides quackServerToken connection option)

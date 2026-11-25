@@ -19,7 +19,7 @@ Build lineage
 
 Parameter|Cardinality|Description
 ---|---|---
---output `<value>`|*Optional*|Where to save the generated JSON file ? Output to the console by default
---task `<value>`|*Required*|task name to buidl lineage for
 --accessToken `<value>`|*Optional*|Access token to use for authentication
+--output `<value>`|*Optional*|Where to save the generated JSON file ? Output to the console by default
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--task `<value>`|*Required*|task name to buidl lineage for

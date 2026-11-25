@@ -17,12 +17,12 @@ Generate SQL DDL statements (CREATE TABLE, etc.) from Starflow YAML table defini
 
 Parameter|Cardinality|Description
 ---|---|---
---datawarehouse `<value>`|*Required*|target datawarehouse name (ddl mapping key in types.yml
---connection `<value>`|*Optional*|JDBC connection name with at least read write on database schema
---output `<value>`|*Optional*|Where to output the generated files. ./$datawarehouse/ by default
+--apply|*Optional*|Does the file contain a header (For CSV files only)
 --catalog `<value>`|*Optional*|Database Catalog if any
+--connection `<value>`|*Optional*|JDBC connection name with at least read write on database schema
+--datawarehouse `<value>`|*Required*|target datawarehouse name (ddl mapping key in types.yml
 --domain `<value>`|*Optional*|Domain to create DDL for. All by default
---schemas `<value>`|*Optional*|List of schemas to generate DDL for. All by default
---apply `<value>`|*Optional*|Does the file contain a header (For CSV files only)
+--output `<value>`|*Optional*|Where to output the generated files. ./$datawarehouse/ by default
 --parallelism `<value>`|*Optional*|parallelism level. By default equals to the available cores: 16
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--schemas `<value>`|*Optional*|List of schemas to generate DDL for. All by default

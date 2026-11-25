@@ -29,6 +29,6 @@ Examples
 Parameter|Cardinality|Description
 ---|---|---
 --config `<value>`|*Required*|REST API extraction config file (in metadata/extract/)
---outputDir `<value>`|*Optional*|Where to output YAML files
 --connectionRef `<value>`|*Optional*|Connection reference name
+--outputDir `<value>`|*Optional*|Where to output YAML files
 --reportFormat `<value>`|*Optional*|Report format: console, json, html

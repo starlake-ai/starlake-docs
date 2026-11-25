@@ -23,10 +23,10 @@ starlake dbt import --manifest ../shop/target/manifest.json --profiles ~/.dbt/pr
 
 Parameter|Cardinality|Description
 ---|---|---
---action `<value>`|*Required*|import
+`<action>`|*Required, Positional*|import
+--connection `<value>`|*Optional*|existing Starlake connection the imported objects run on
+--force|*Optional*|overwrite the files the import writes; nothing is deleted
 --manifest `<value>`|*Required*|dbt's target/manifest.json
 --profiles `<value>`|*Optional*|dbt profiles.yml: the target renders target.*, and a DuckDB target becomes a connection
 --target `<value>`|*Optional*|dbt target: target.name, and the output of --profiles (default: the profile's target, else dev)
---connection `<value>`|*Optional*|existing Starlake connection the imported objects run on
 --vars `<value>`|*Optional*|dbt --vars, a YAML or JSON map, over the vars of dbt_project.yml
---force `<value>`|*Optional*|overwrite the files the import writes; nothing is deleted

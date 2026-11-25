@@ -17,12 +17,12 @@ Extract table schemas from a JDBC database and generate Starflow YAML configurat
 
 Parameter|Cardinality|Description
 ---|---|---
+--all|*Optional*|Should we extract all schemas and tables to external folder ?
 --config `<value>`|*Optional*|Database tables & connection info
---all `<value>`|*Optional*|Should we extract all schemas and tables to external folder ?
---tables `<value>`|*Optional*|Database tables info
 --connectionRef `<value>`|*Optional*|Database connection to use
+--external|*Optional*|Should we output YML files in the external folder
 --outputDir `<value>`|*Optional*|Where to output YML files
---external `<value>`|*Optional*|Should we output YML files in the external folder
 --parallelism `<value>`|*Optional*|parallelism level of the extraction process. By default equals to the available cores
---snakecase `<value>`|*Optional*|Apply snake case when name sanitization is done
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--snakecase|*Optional*|Apply snake case when name sanitization is done
+--tables `<value>`|*Optional*|Database tables info

@@ -17,7 +17,7 @@ Display a summary of table schemas including column names, types, and descriptio
 
 Parameter|Cardinality|Description
 ---|---|---
---domain `domain1`|*Required*|Domain Name
---table `table`|*Required*|Tables Name
 --accessToken `<value>`|*Optional*|Access token to use for authentication
+--domain `domain1`|*Required*|Domain Name
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--table `table`|*Required*|Tables Name

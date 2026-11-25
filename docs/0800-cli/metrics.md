@@ -17,7 +17,7 @@ Compute data quality metrics (continuous, discrete, and frequency metrics) on lo
 
 Parameter|Cardinality|Description
 ---|---|---
---domain `<value>`|*Required*|Domain Name
---schema `<value>`|*Required*|Schema Name
 --authInfo `<value>`|*Optional*|Auth Info.  Google Cloud use: gcpProjectId and gcpSAJsonKey
+--domain `<value>`|*Required*|Domain Name
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--schema `<value>`|*Required*|Schema Name

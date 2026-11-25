@@ -21,7 +21,7 @@ Create a new project optionally based on a specific template eq. quickstart / us
 
 Parameter|Cardinality|Description
 ---|---|---
---no-exit `<value>`|*Optional*|Should we exit after project creation ?
---template `<value>`|*Optional*|Template to use to bootstrap project
+--no-exit|*Optional*|Should we exit after project creation ?
 --project-location `<value>`|*Optional*|Absolute path where the project should be created
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--template `<value>`|*Optional*|Template to use to bootstrap project

@@ -19,10 +19,10 @@ Generate DOT or JSON files from Domain / Schema YAML files
 
 Parameter|Cardinality|Description
 ---|---|---
---output `<value>`|*Optional*|Where to save the generated dot file ? Output to the console by default
+--all|*Optional*|Include all ACL in the dot file ? None by default
 --grantees `<value>`|*Optional*|Which users should we include in the dot file ? All by default
---reload `<value>`|*Optional*|Should we reload the domains first ?
---json `<value>`|*Optional*|Should we generate JSON files ?
---tables `<value>`|*Optional*|Which tables should we include in the dot file ? All by default
---all `<value>`|*Optional*|Include all ACL in the dot file ? None by default
+--json|*Optional*|Should we generate JSON files ?
+--output `<value>`|*Optional*|Where to save the generated dot file ? Output to the console by default
+--reload|*Optional*|Should we reload the domains first ?
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--tables `<value>`|*Optional*|Which tables should we include in the dot file ? All by default

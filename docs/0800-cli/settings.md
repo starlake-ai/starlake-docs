@@ -17,5 +17,5 @@ Print the resolved Starflow settings or test a database connection.
 
 Parameter|Cardinality|Description
 ---|---|---
---test-connection `<value>`|*Optional*|Test this connection
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--test-connection `<value>`|*Optional*|Test this connection

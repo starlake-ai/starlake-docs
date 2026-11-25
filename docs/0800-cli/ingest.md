@@ -17,9 +17,9 @@ Generic data ingestion command that loads a single file into a table using an ex
 
 Parameter|Cardinality|Description
 ---|---|---
---domain `<value>`|*Optional*|Domain name
---schema `<value>`|*Optional*|Schema name
---paths `<value>`|*Optional*|list of comma separated paths
---options `<value>`|*Optional*|arguments to be used as substitutions
---scheduledDate `<value>`|*Optional*|Scheduled date for the job, in format yyyy-MM-dd'T'HH:mm:ss.SSSZ
+`<domain>`|*Optional, Positional*|Domain name
+`<schema>`|*Optional, Positional*|Schema name
+`<paths>`|*Optional, Positional*|list of comma separated paths
+`<options>`|*Optional, Positional*|arguments to be used as substitutions
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--scheduledDate `<value>`|*Optional*|Scheduled date for the job, in format yyyy-MM-dd'T'HH:mm:ss.SSSZ

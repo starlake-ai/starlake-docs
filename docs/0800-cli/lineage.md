@@ -19,13 +19,13 @@ Generate Task dependencies graph
 
 Parameter|Cardinality|Description
 ---|---|---
---output `<value>`|*Optional*|Where to save the generated dot file ? Output to the console by default
---task `<value>`|*Optional*|Compute dependencies of these tasks only. If not specified, compute all jobs.
---reload `<value>`|*Optional*|Should we reload the domains first ?
---viz `<value>`|*Optional*|Should we generate a dot file ?
---json `<value>`|*Optional*|Should we generate JSON files ?
---print `<value>`|*Optional*|Print dependencies as text
+--all|*Optional*|Include all tasks  in the dot file ? None by default
+--json|*Optional*|Should we generate JSON files ?
 --objects `<value>`|*Optional*|comma separated list of objects to display: task, table, view, unknown
---all `<value>`|*Optional*|Include all tasks  in the dot file ? None by default
---verbose `<value>`|*Optional*|Add extra table properties
+--output `<value>`|*Optional*|Where to save the generated dot file ? Output to the console by default
+--print|*Optional*|Print dependencies as text
+--reload|*Optional*|Should we reload the domains first ?
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--task `<value>`|*Optional*|Compute dependencies of these tasks only. If not specified, compute all jobs.
+--verbose|*Optional*|Add extra table properties
+--viz|*Optional*|Should we generate a dot file ?
