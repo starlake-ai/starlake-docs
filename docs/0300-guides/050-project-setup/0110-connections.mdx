@@ -598,7 +598,7 @@ application:
 
 Everything after `host:port` is passed to the Arrow driver untouched: `useEncryption` and `disableCertificateVerification` are TLS flags consumed by the driver itself, while parameters such as `tenant`, `pool` and `superuser` are forwarded to the server (QoD uses them for routing). Connections with different query strings get distinct connection pools.
 
-**The `dialect` option.** Flight SQL is a transport, not a dialect: the endpoint fronts a real engine whose SQL Starlake must generate. The `dialect` option selects the engine profile used for DDL, merge strategies, audit tables and identifier quoting. It defaults to `duckdb`, which is what QoD and GizmoSQL front; set `dialect: postgresql`, `dialect: snowflake`, etc. for other backends. `mariadb` normalizes to the `mysql` profile and `databricks` to `spark`, following Starlake's usual engine aliasing.
+**The `dialect` option.** Flight SQL is a transport, not a dialect: the endpoint fronts a real engine whose SQL Starlake must generate. The `dialect` option selects the engine profile used for DDL, merge strategies, audit tables and identifier quoting. It defaults to `duckdb`, which is what QoD and GizmoSQL front; set `dialect: postgresql`, `dialect: snowflake`, etc. for other backends. `databricks` normalizes to `spark`, following Starlake's usual engine aliasing.
 
 **Driver installation.** The Arrow Flight SQL JDBC driver is not bundled in the Starlake assembly. The setup tool downloads it into `bin/deps` when `ENABLE_FLIGHTSQL` is on (the default); pin another driver version with `FLIGHT_SQL_JDBC_VERSION`. The driver class defaults to `org.apache.arrow.driver.jdbc.ArrowFlightJdbcDriver`.
 
