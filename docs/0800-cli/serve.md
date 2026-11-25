@@ -1,5 +1,5 @@
 ---
-sidebar_position: 360
+sidebar_position: 370
 title: serve
 description: "Start a local Starflow HTTP server on a configurable host and port to serve API requests for your data project."
 keywords: [starlake serve, local server, HTTP API, development server]

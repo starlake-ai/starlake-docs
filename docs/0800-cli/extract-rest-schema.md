@@ -1,5 +1,5 @@
 ---
-sidebar_position: 160
+sidebar_position: 170
 title: extract-rest-schema
 description: "Extract schemas from REST API endpoints by fetching sample data and inferring the structure."
 keywords: [starlake extract-rest-schema, REST API, schema extraction, API schema]

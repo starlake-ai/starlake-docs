@@ -22,7 +22,7 @@ A data branch is a named sandbox in the warehouse. The branch name becomes a Big
 | **Granularity** | One namespace per branch (a dataset on BigQuery, a schema elsewhere). Tables are cloned individually, on first use. A branch is not tied to a domain: it holds whatever tables the jobs you run on it touch. |
 | **Promotion** | Production never reuses the tables built on the branch. You promote by running the job again without `SL_DATA_BRANCH`. On Snowflake, DuckDB, DuckLake and QoD, `BRANCH APPLY` can instead replay the SQL statements recorded on the branch against production: the transform is recomputed either way. |
 | **Change impact** | Reported before you run, not acted on. [`starlake impact`](../../0800-cli/impact.md) compares your change with a Git ref and lists the load tables and transforms it touches, classified `BREAKING`, `NON_BREAKING`, `ADDED` or `METADATA`, then the downstream tasks it impacts, through column-level lineage. The branch runs only the tasks you ask for: run the reported ones, or the whole DAG, on the same branch. |
-| **Engines** | BigQuery, Snowflake, and from 1.9.2 DuckDB, DuckLake and QoD. Every other engine ignores the setting and writes to production. |
+| **Engines** | BigQuery, Snowflake, DuckDB, DuckLake and QoD. Every other engine ignores the setting and writes to production. |
 | **Lifecycle** | A branch is created on first use and lives until you drop it. There is no `starlake` command to list, refresh or drop branches: you do it on the warehouse, as shown in [Lifecycle and cost](#lifecycle-and-cost). |
 
 The engines implement the clone step differently:
@@ -37,11 +37,11 @@ The engines implement the clone step differently:
 |---|---|---|
 | BigQuery (native transforms and native loads) | Source and target tables are copied with `CREATE TABLE ... CLONE`, and the task SQL is rewritten to use the copies | Dataset `<branch>` in the target table's project |
 | Snowflake (transforms and native loads) | The Starlake JDBC proxy driver clones each table with `CREATE TABLE ... CLONE` the first time a statement modifies it | Schema `<branch>` |
-| DuckDB, DuckLake attached in `preActions`, and QoD over Flight SQL (transforms, from 1.9.2) | The Starlake JDBC proxy driver copies each table with `CREATE TABLE ... AS SELECT` the first time a statement modifies it | Schema `<branch>` in the catalog the connection uses |
+| DuckDB, DuckLake attached in `preActions`, and QoD over Flight SQL (transforms) | The Starlake JDBC proxy driver copies each table with `CREATE TABLE ... AS SELECT` the first time a statement modifies it | Schema `<branch>` in the catalog the connection uses |
 | Any other engine | Not supported | Production: the setting is ignored |
 
 :::warning
-On Databricks, Redshift, PostgreSQL and every other engine not listed above, `SL_DATA_BRANCH` has no effect and the job writes to production as usual. Do not rely on a branch there. Before 1.9.2, that included DuckDB, DuckLake and QoD.
+On Databricks, Redshift, PostgreSQL and every other engine not listed above, `SL_DATA_BRANCH` has no effect and the job writes to production as usual. Do not rely on a branch there.
 :::
 
 ## Enabling a branch
@@ -127,7 +127,7 @@ Copies are created in schema `<branch>` of each table's own database. Starlake c
 
 ## DuckDB, DuckLake and QoD
 
-From 1.9.2, branches work on DuckDB connections (`jdbc:duckdb:`), on DuckLake catalogs attached in the `preActions` of a DuckDB connection, and on QoD through its Flight SQL url (`jdbc:arrow-flight-sql:`). They work as on [Snowflake](#snowflake): Starlake wraps the connection in the Starlake JDBC proxy driver and opens the branch with `BRANCH START <branch> WITH PERSIST = TRUE, KEEP = TRUE`, the first statement that modifies a table copies it into schema `<branch>`, and the branch outlives the job.
+Branches work on DuckDB connections (`jdbc:duckdb:`), on DuckLake catalogs attached in the `preActions` of a DuckDB connection, and on QoD through its Flight SQL url (`jdbc:arrow-flight-sql:`). They work as on [Snowflake](#snowflake): Starlake wraps the connection in the Starlake JDBC proxy driver and opens the branch with `BRANCH START <branch> WITH PERSIST = TRUE, KEEP = TRUE`, the first statement that modifies a table copies it into schema `<branch>`, and the branch outlives the job.
 
 The differences:
 

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 300
+sidebar_position: 310
 title: migrate
 description: "Migrate your Starflow project to the latest version, with warnings for breaking changes that require manual attention."
 keywords: [starlake migrate, project migration, version upgrade, schema evolution]

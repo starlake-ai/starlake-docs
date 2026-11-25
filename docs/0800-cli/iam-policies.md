@@ -1,5 +1,5 @@
 ---
-sidebar_position: 200
+sidebar_position: 210
 title: iam-policies
 description: "Generate and apply IAM policies for your Starflow project resources, managing access control with authentication tokens."
 keywords: [starlake iam-policies, IAM policies, access control, security]
