@@ -124,6 +124,15 @@ Starlake and Fivetran both move data into cloud warehouses, but they differ in s
 | **Coverage** | Tested vs untested domains/tables tracking | — |
 | **SQL transpilation** | Automatic (BigQuery/Snowflake/etc. → DuckDB) | N/A |
 
+## Documentation
+
+| | Starlake | Fivetran |
+|---|---|---|
+| **Generated docs** | `starlake site`: a static documentation site that opens offline from the file system, with search, the SQL of every task, and optional warehouse statistics | The Schema tab of a connection lists schemas, tables and columns, with an ERD for some connectors |
+| **Descriptions** | `comment` on tables and attributes in YAML, rendered as Markdown, and written to the table and column descriptions on BigQuery | Quickstart data models write model and column descriptions as warehouse comments |
+| **Lineage** | Table and column level, project-wide, in the site | Schema, table and column lineage, synced as tables into the destination by the Fivetran Platform Connector |
+| **Doc blocks** | `{% docs %}` blocks in `metadata/docs/`, referenced with `{{ doc("name") }}` | None |
+
 ## Deployment
 
 | | Starlake | Fivetran |

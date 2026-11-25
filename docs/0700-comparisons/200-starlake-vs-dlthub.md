@@ -115,6 +115,15 @@ Starlake and dlt are both open-source data pipeline tools, but they take fundame
 | **Coverage** | Tested vs untested domains/tables tracking | — |
 | **SQL transpilation** | Automatic (BigQuery/Snowflake/etc. → DuckDB) | N/A (Python, not SQL) |
 
+## Documentation
+
+| | Starlake | dlt |
+|---|---|---|
+| **Generated docs** | `starlake site`: a static documentation site that opens offline from the file system, with search, the SQL of every task, and optional warehouse statistics | `dlt dashboard` / `dlt pipeline show`: a local dashboard with a schema explorer, load history and a dataset browser |
+| **Descriptions** | `comment` on tables and attributes in YAML, rendered as Markdown, and written to the table and column descriptions on BigQuery | `description` on tables and columns of the schema, written as comments on some destinations, such as Snowflake, Databricks and BigQuery |
+| **Lineage** | Table and column level, project-wide, in the site | Row and load lineage through the `_dlt_id`, `_dlt_parent_id` and `_load_id` columns; no lineage graph |
+| **Doc blocks** | `{% docs %}` blocks in `metadata/docs/`, referenced with `{{ doc("name") }}` | None |
+
 ## Deployment
 
 | | Starlake | dlt |
