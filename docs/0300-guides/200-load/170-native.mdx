@@ -1,7 +1,7 @@
 ---
-title: "Native Load Mode — Skip Spark Validation in Starlake"
-description: "Bypass Spark validation and load files directly into BigQuery, Snowflake or Databricks using Starlake native load mode. Configure at table, domain or project level with YAML."
-keywords: [starlake, native load, bypass validation, direct load, Spark, performance, BigQuery, Snowflake, Databricks]
+title: "Native Load Mode — Load Files with BigQuery, Snowflake or DuckDB Instead of Spark"
+description: "Load files with BigQuery load jobs, Snowflake COPY INTO or DuckDB instead of Spark using Starlake native load mode. What each native loader applies, how it differs from Spark, and how to enable it at table, domain, connection or project level."
+keywords: [starlake, native load, BigQuery load job, Snowflake COPY INTO, DuckDB, Spark, rejected rows, performance]
 ---
 
 import Head from '@docusaurus/Head';
@@ -17,7 +17,7 @@ import Head from '@docusaurus/Head';
           "name": "What is native load mode in Starlake?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Native load mode lets you load files directly into the data warehouse without Spark validation. This can improve performance when validation is not needed."
+            "text": "Native load mode loads files with the data warehouse's own loader instead of Spark: BigQuery load jobs, Snowflake COPY INTO or DuckDB's file readers. It is available for BigQuery, Snowflake and DuckDB sinks. Scripts, renames, SQL privacy and filters run as SQL of the warehouse."
           }
         },
         {
@@ -38,10 +38,18 @@ import Head from '@docusaurus/Head';
         },
         {
           "@type": "Question",
+          "name": "Can I enable native load for a connection?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Set loader: native on the connection in application.sl.yml. The tables whose sink is that connection use the native loader unless their domain or table sets another loader."
+          }
+        },
+        {
+          "@type": "Question",
           "name": "How do I enable native load for the whole project?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Set loader: native in application.sl.yml. All tables in the project will use the native loader unless overridden at the domain or table level."
+            "text": "Set loader: native in application.sl.yml. All tables in the project will use the native loader unless overridden at the connection, domain or table level."
           }
         },
         {
@@ -49,7 +57,15 @@ import Head from '@docusaurus/Head';
           "name": "What is the configuration priority order for the loader?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Table > Domain > Project. The most specific configuration wins."
+            "text": "Table > Domain > Connection > Project. The most specific configuration wins."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does native load mode reject invalid rows?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "On BigQuery, yes: the rows of DSV, JSON, JSON_FLAT and POSITION files whose values do not fit their type are rejected and kept in the audit rejected table. In Parquet files, a value that does not fit its column fails the load, and a row without a value for a required attribute is rejected. On DuckDB and Snowflake, a value that does not fit its type fails the load."
           }
         },
         {
@@ -57,7 +73,7 @@ import Head from '@docusaurus/Head';
           "name": "When should I avoid native load mode?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "When you need type validation, on-the-fly transformations (attribute scripts), or rejection of invalid rows. Native load mode skips all Spark-side validation."
+            "text": "When the table relies on features that the native loader of your warehouse does not apply: default values, the patterns of string and number types, type patterns and trim in BigQuery JSON files, or, on DuckDB and Snowflake, row rejection, type patterns and trim. Starlake loads some tables with Spark anyway, with a warning; the other differences are silent."
           }
         }
       ]
@@ -68,12 +84,12 @@ import Head from '@docusaurus/Head';
       "@context": "https://schema.org",
       "@type": "HowTo",
       "name": "How to enable native load mode in Starlake",
-      "description": "Skip Spark validation and load files directly into your data warehouse by enabling native load at table, domain or project level.",
+      "description": "Load files with the data warehouse's own loader instead of Spark by enabling native load at table, domain, connection or project level.",
       "step": [
         {
           "@type": "HowToStep",
           "name": "Choose the scope",
-          "text": "Decide whether to enable native load for a single table, an entire domain, or the whole project."
+          "text": "Decide whether to enable native load for a single table, an entire domain, a connection, or the whole project."
         },
         {
           "@type": "HowToStep",
@@ -87,6 +103,11 @@ import Head from '@docusaurus/Head';
         },
         {
           "@type": "HowToStep",
+          "name": "For a connection",
+          "text": "Add loader: native to the connection in application.sl.yml."
+        },
+        {
+          "@type": "HowToStep",
           "name": "For the whole project",
           "text": "Add loader: native in application.sl.yml."
         }
@@ -97,33 +118,154 @@ import Head from '@docusaurus/Head';
 
 # Native Load Mode
 
-Native load mode bypasses the Spark validation layer and sends files directly to the data warehouse engine (BigQuery, Snowflake, Databricks or DuckDB). This improves ingestion speed when [type validation](/starflow/guides/load/validate) and attribute scripts are not required.
+With `loader: native`, Starlake loads files with the data warehouse's own loader instead of Spark: BigQuery load jobs, Snowflake `COPY INTO`, or DuckDB's file readers. The files do not go through Spark, which is usually faster on large files and needs no Spark runtime.
 
-## How Starlake loads data
+A native load still applies most of the table's YAML, with the rules of the warehouse: its loader reads the values, and scripts, renames, SQL privacy and filters run as its SQL. This page lists what differs from the Spark loader. The settings that it names (`rejectMaxRecords`, `sinkReplayToFile`, `archiveTable`...) are application settings, set in `application.sl.yml`.
 
-By default, Starlake uses Spark for data validation (type checking, regex patterns, attribute scripts) and then delegates the write to the target data warehouse engine. This two-step process guarantees data quality but adds overhead.
+## Engines and formats
 
-Native load mode skips the Spark validation step entirely. The data warehouse's own engine handles the file ingestion directly. Use native mode when:
+| Sink | Formats loaded natively |
+|---|---|
+| BigQuery | `DSV`, `JSON` (newline-delimited), `JSON_FLAT`, `POSITION`, `PARQUET` |
+| Snowflake | `DSV`, `JSON`, `JSON_FLAT`, `XML`, `PARQUET` |
+| DuckDB | `DSV`, `JSON`, `JSON_FLAT` |
 
-- Source data quality is already guaranteed upstream.
-- You need maximum ingestion throughput.
-- You do not rely on computed columns, type validation or row rejection.
+Other sinks, Databricks and Redshift included, and other formats are loaded with Spark. On BigQuery, JSON arrays (`array: true`) are loaded with Spark too: BigQuery load jobs only read newline-delimited JSON.
 
-## Trade-offs: native vs Spark mode
+Spark, DuckDB and Snowflake refuse a table with a decimal attribute whose precision is above 38, with an explicit error. Only the native BigQuery loader loads such decimals, into `BIGNUMERIC` columns.
 
-| Capability | Spark mode | Native mode |
-|---|---|---|
-| Type validation (regex) | Yes | No |
-| Computed columns (`script`) | Yes | No |
-| Row rejection to audit table | Yes | No |
-| Ingestion speed | Standard | Faster |
-| File metadata columns | Yes | No |
+## Tables loaded with Spark anyway
 
-When you need validation features, keep the default Spark mode. See [Type Validation](/starflow/guides/load/validate) for details on what native mode disables.
+Some tables are loaded with Spark even with `loader: native`, with a `WARN` naming their attributes, because their native loader would load them differently:
+
+- An attribute with a privacy that is not SQL. A SQL privacy (`privacy: "SQL: ..."`) runs natively.
+- A `binary` attribute whose encoding the warehouse does not decode: BigQuery decodes `base64` in DSV and JSON files, Snowflake decodes `hex`, DuckDB decodes neither. Parquet files hold the bytes themselves.
+- On BigQuery, a Parquet table with Spark read `options`, array attributes in local files, a rename below the top level, a `default`, a `trim`, or nested or repeated `JSON`, `INTERVAL` or `RANGE` fields.
+- On BigQuery, a DSV or POSITION table with a type that BigQuery SQL cannot read: a date pattern with text fields (`MMM`, `EEE`), two-digit years, zones or optional sections, most predefined formatters, a boolean regular expression that BigQuery may read differently, or a `double` type with a zone.
+
+Their scripts, SQL privacy and filter then run as Spark SQL: expressions written in the dialect of the warehouse may have to be rewritten, and the load needs a Spark runtime that can write to the sink.
+
+The other differences listed on this page are not warned about: the table loads natively, without the feature.
+
+## One step or two steps
+
+A native load writes its table in one step or in two:
+
+- **One step**: the loader writes the files straight into the target table, appending to it or overwriting it.
+- **Two steps**: each file is loaded into a temporary `zztmp_*` table, in the dataset or schema of the target. A SQL statement of the [write strategy](./160-write-strategies.mdx) then reads the temporary tables into the target, and they are dropped.
+
+A BigQuery or Snowflake load takes two steps when the table needs SQL to be written:
+
+- an ignored or scripted attribute, or an attribute with a SQL privacy, the columns of a DSV header that the table does not declare included, since they are ignored;
+- a write strategy other than `APPEND` and `OVERWRITE`;
+- a `filter`;
+- a renamed top-level attribute;
+- `POSITION` files;
+- the `archiveTable` setting;
+- the `audit.detailedLoadAudit` setting with several files.
+
+BigQuery adds its own conditions, listed in [its section](#when-a-bigquery-load-takes-two-steps) below.
+
+DuckDB loads every table in two steps, except a table with a top-level attribute of the built-in `variant` type that has none of the following: an ignored or scripted attribute, or an attribute with a SQL privacy (undeclared DSV header columns included), a write strategy other than `APPEND` and `OVERWRITE`, a `filter`, or the `archiveTable` setting.
+
+In two steps, scripts, SQL privacy and filters run in the SQL dialect of the warehouse, not in Spark SQL. Scripts and SQL privacy can read `sl_input_file_name`, the path of the file of the row; the `_metadata` column of Spark loads is not available. The filter reads the attributes, under their final names, once the scripts are computed.
+
+## What a native load applies, compared with Spark
+
+| Feature | Spark | BigQuery native | Snowflake native | DuckDB native |
+|---|---|---|---|---|
+| Value that does not fit its type | Row rejected | Row rejected; a Parquet value fails the load | Load fails | Load fails |
+| Rejected rows kept in the audit `rejected` table and replay files | Yes | Yes | No rejected row | No rejected row |
+| `rejectMaxRecords`, `rejectAllOnError` | Yes | Yes | No | No |
+| Patterns of `date`, `timestamp`, `datetime`, `time` and `boolean` types | Yes | DSV and POSITION files | No | No |
+| Patterns of string and number types | Yes | No | No | No |
+| `script` | Spark SQL | BigQuery SQL | Snowflake SQL | DuckDB SQL |
+| `rename` | Yes | Top-level attributes | Top-level attributes | Top-level attributes |
+| `ignore`, `filter` | Yes | Yes | Yes | Yes |
+| `privacy` | Yes | SQL privacy; others load with Spark | SQL privacy; others load with Spark | SQL privacy; others load with Spark |
+| `trim` | Yes | DSV files; POSITION values other than strings and bytes | No | No |
+| `default` | Yes | No | No | No |
+| `emptyIsNull` | Yes | Strings of DSV files with `trim`; other empty DSV values are `NULL` unless `nullValue` is set | Yes, except XML files | Empty DSV values are `NULL` unless `nullValue` is set |
+| `presql`, `postsql` | Yes | Yes | Loads in two steps only | Loads in two steps only |
+| Expectations | Yes | Yes | Yes | Yes |
+| Counts in the audit log | Yes | Yes | None | Change in the row count of the table |
+| `acl` | Yes | Yes | Loads in two steps only | No |
+| `rls` | BigQuery sinks | Yes | No | No |
+| Policy tags (column-level security) | BigQuery sinks, except merge strategies | Loads in one step | No | No |
+| `archiveTable` | No | Yes | No | No |
+
+Values that the native loaders read without a pattern follow the rules of the warehouse: a number type whose pattern accepts `1,5`, for example, does not make the warehouse read it.
+
+## BigQuery
+
+### When a BigQuery load takes two steps
+
+Besides the conditions above, a native BigQuery load takes two steps when:
+
+- the table has a non-empty `presql` or `postsql`: the second step runs them around its write;
+- several local files are loaded: each one gets its own load job;
+- a DSV attribute is read as a string, then converted by the second step: its type has a date, time or boolean pattern that the load job does not apply as Spark does (a `date` in `yyyyMMdd`, or a timestamp without offset in a zone other than UTC, for example), or it declares `trim`;
+- a Parquet table has a required attribute, at any level, or a top level attribute of type `variant` or mapped to `JSON`, `INTERVAL` or `RANGE`.
+
+### Rejected rows
+
+- **DSV, JSON and JSON_FLAT files**: a load job skips its bad records and only counts them. When a job succeeds with bad records, and `audit.maxErrors` is above 0 or `sinkReplayToFile` is set, Starlake loads the files again into diagnostic tables to find the rejected rows, and writes up to `audit.maxErrors` of them to the audit `rejected` table.
+- **Values converted by the second step** (POSITION files, and the DSV attributes read as strings): a row is rejected when a value does not convert to its type, or when a required attribute has no value. Values are read with the pattern of their type, in the zone of a timestamp type.
+- **Scripts of DSV and POSITION files**: a row on which a strict conversion of a script would fail (`CAST`, `PARSE_DATE`, `PARSE_TIMESTAMP`...) is rejected, instead of failing the load. Their safe forms (`SAFE_CAST`, `SAFE.PARSE_DATE`...) still give `NULL`.
+- **Parquet files**: BigQuery cannot skip the bad rows of a Parquet file, so a value that does not fit its column fails the load. The Parquet columns must have the type of their attribute: BigQuery does not parse a date from a string column, for example. A row without a value for a required attribute is rejected and kept like the others. A null record with required fields, or a null required array, is accepted, as BigQuery does.
+
+The value of an attribute is written with its error when `rejectWithValue` is set, except for an attribute with a privacy. With `sinkReplayToFile`, the rejected rows are also written to a replay file in the replay area of the domain, which can be loaded again once corrected. BigQuery exports the replay files of Parquet loads: the replay area must then be on Cloud Storage, or a temporary Cloud Storage bucket must be set, such as the `temporaryGcsBucket` of the connection. Otherwise no replay file is written, with a warning.
+
+When a load job fails, under `rejectAllOnError` or above `rejectMaxRecords`, only the messages of BigQuery are written, a few per job, and no replay file. When the rows found do not match the count of BigQuery, they are written with the messages of BigQuery for that job, and no replay file is written. These messages may contain the values, whatever `rejectWithValue`.
+
+`rejectMaxRecords` and `rejectAllOnError` apply to all the rejected rows of a load, over its files: the bad records of its load jobs plus the rows that its second step rejects. Above `rejectMaxRecords`, or on the first rejected row with `rejectAllOnError`, no row is loaded and the load fails.
+
+For POSITION files, the lines that the `filter` of the table drops are neither rejected nor counted. For the other formats, as with Spark, the rows are checked before the filter: an invalid row is rejected even when the filter would drop it, and the rows that the filter drops are counted as accepted.
+
+### Files
+
+Load jobs read the files on Cloud Storage (`gs://`) directly. Local files are uploaded to BigQuery, and several local files take two steps, with one load job per file. Files on other storage, such as S3 or HDFS, cannot be loaded natively.
+
+### Column types
+
+The columns that a native load creates take the BigQuery type of their attribute type, from its `ddlMapping`: a type mapped to `DATETIME`, `JSON`, `GEOGRAPHY` or `STRING(n)`, for example, creates a column of that type. Set `bigqueryNativeSchemaFromDdlMapping` to `false` to create the new columns with the types derived from the primitive types instead.
+
+A Parquet load job cannot add or relax columns. Before a one-step `APPEND` into an existing table, Starlake adds the new columns of the YAML to the table, and makes nullable the columns that the YAML makes nullable.
+
+### Temporary and archive tables
+
+The temporary tables of a load in two steps are created in the dataset of the target and dropped after the load. They are neither partitioned nor clustered, and have neither partition expiration nor keys. The second step reads all their rows, and their columns have the names of the source, before renames: they may lack the columns that the partitioning, clustering or keys of the target name.
+
+With the `archiveTable` setting, once the load has written its target, the rows of its temporary tables, including those that the second step rejects, are appended to an archive table, named by `archiveTablePattern` (`{{domain}}_archive.{{table}}_archive` by default). The archive table is partitioned and clustered as the target only when it has the columns of that partitioning or clustering. Its task writes its own row to the audit log.
+
+### Access policies, labels and keys
+
+Unless `accessPolicies.apply` is `false`, a native BigQuery load applies the `acl` and `rls` of its table. As with the other loaders, a table without `acl` loses its table-level grants. A load in one step also applies the policy tags of the table. A load in two steps, like a Spark load with a merge strategy, leaves them to [`secure`](../../0800-cli/secure.md).
+
+The load sets the labels of the table from its `tags`, and the primary and foreign keys of a table that it creates.
+
+## Snowflake
+
+- **Bad values fail the load**: `COPY INTO` does not skip a row whose value does not fit its type, so no row is rejected and `rejectMaxRecords` does not apply. The audit log has no counts.
+- **Formats of the engine**: the values are read with Snowflake's own formats. The patterns of the types, `trim` and `default` are not applied. Under `emptyIsNull`, empty values are `NULL` (`NULL_IF = ('')`), except in XML files.
+- **Files**: when the incoming directory of the domain starts with `/` or has a URI scheme, its files must be local: they are uploaded (`PUT`) to a temporary stage, then loaded with `COPY INTO`. Otherwise, the directory is the name of a Snowflake stage (`my_stage` or `@my_stage`), and `COPY INTO` loads every file of the stage that matches the pattern of the table. Use an external stage for files on cloud storage.
+- **Access**: a load in two steps grants the `acl` of the table. `rls` and policy tags are not applied.
+- **`archiveTable`** makes the loads take two steps, but archives nothing.
+
+## DuckDB
+
+- **Bad values fail the load**: DuckDB does not skip a row whose value does not fit its type, so no row is rejected and `rejectMaxRecords` does not apply. The audit log counts the change in the row count of the table as accepted rows: 0 for an `OVERWRITE` of a table of the same size, negative for a smaller one, and the rows that a merge strategy updates are not counted.
+- **Formats of the engine**: the values are read with DuckDB's own formats. The patterns of the types, `trim` and `default` are not applied. Empty DSV values are `NULL`, unless `nullValue` is set; empty JSON strings are kept.
+- **Access**: `acl`, `rls` and policy tags are not applied.
+- **`archiveTable`** makes the loads take two steps, but archives nothing.
+
+:::warning Loads in one step on Snowflake and DuckDB
+A Snowflake or DuckDB load in one step does not run the `presql` and `postsql` of its table, and a Snowflake load in one step does not grant its `acl`. No warning is logged.
+:::
 
 ## Configuration priority
 
-The loader setting follows a **Table > Domain > Project** priority. The most specific configuration wins.
+The loader setting follows a **Table > Domain > Connection > Project** priority. The most specific configuration wins.
 
 ## Table level
 
@@ -155,6 +297,21 @@ load:
 
 Tables within the domain can override this setting individually.
 
+## Connection level
+
+Set `loader: native` on a connection to enable native load for the tables whose sink is that connection:
+
+```yaml title="metadata/application.sl.yml"
+application:
+  connections:
+    bigquery:
+      type: bigquery
+      loader: native
+      ...
+```
+
+Domains or tables can override this setting.
+
 ## Project level
 
 Set `loader: native` in `application.sl.yml` to enable native load for the entire project:
@@ -166,12 +323,12 @@ application:
   ...
 ```
 
-Individual domains or tables can override this setting.
+Individual connections, domains or tables can override this setting.
 
 ## Frequently Asked Questions
 
 ### What is native load mode in Starlake?
-Native load mode lets you load files directly into the data warehouse without Spark validation. This can improve performance when validation is not needed.
+Native load mode loads files with the data warehouse's own loader instead of Spark: BigQuery load jobs, Snowflake `COPY INTO` or DuckDB's file readers. It is available for BigQuery, Snowflake and DuckDB sinks. Scripts, renames, SQL privacy and filters run as SQL of the warehouse.
 
 ### How do I enable native load for a single table?
 Add `loader: native` in the `metadata` section of the table YAML file (`metadata/load/<domain>/<table>.sl.yml`).
@@ -179,11 +336,17 @@ Add `loader: native` in the `metadata` section of the table YAML file (`metadata
 ### Can I enable native load mode for an entire domain?
 Yes. Set `loader: native` in the `_config.sl.yml` file of the domain. All tables in the domain will use the native loader unless overridden at the table level.
 
+### Can I enable native load for a connection?
+Yes. Set `loader: native` on the connection in `application.sl.yml`. The tables whose sink is that connection use the native loader unless their domain or table sets another loader.
+
 ### How do I enable native load for the whole project?
-Set `loader: native` in `application.sl.yml`. All tables in the project will use the native loader unless overridden at the domain or table level.
+Set `loader: native` in `application.sl.yml`. All tables in the project will use the native loader unless overridden at the connection, domain or table level.
 
 ### What is the configuration priority order for the loader?
-Table > Domain > Project. The most specific configuration wins.
+Table > Domain > Connection > Project. The most specific configuration wins.
+
+### Does native load mode reject invalid rows?
+On BigQuery, yes: the rows of DSV, JSON, JSON_FLAT and POSITION files whose values do not fit their type are rejected and kept in the audit `rejected` table. In Parquet files, a value that does not fit its column fails the load, and a row without a value for a required attribute is rejected. On DuckDB and Snowflake, a value that does not fit its type fails the load.
 
 ### When should I avoid native load mode?
-When you need type validation, on-the-fly transformations (attribute scripts), or rejection of invalid rows. Native load mode skips all Spark-side validation.
+When the table relies on features that the native loader of your warehouse does not apply: `default` values, the patterns of string and number types, type patterns and `trim` in BigQuery JSON files, or, on DuckDB and Snowflake, row rejection, type patterns and `trim`. Starlake loads some tables with Spark anyway, with a warning; the other differences are silent.
