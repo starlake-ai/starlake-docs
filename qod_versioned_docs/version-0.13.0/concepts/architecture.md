@@ -44,72 +44,61 @@ When a client runs a statement, it passes through a fixed sequence:
 
 ## The pipeline in detail
 
-```mermaid
-%%{init: {"flowchart": {"subGraphTitleMargin": {"top": 0, "bottom": 34}}}}%%
-flowchart TD
-    C1["JDBC / ADBC client"]
-    C2["Browser · admin UI"]
-    C3["DuckDB · quack extension"]
-
-    EDGE["FlightEdgeServer · :31338 TLS<br/>Arrow FlightSQL"]
-    QUACK["QuackFrontDoorServer · :9494<br/>native Quack protocol · byte relay"]
-    REST["ManagerServer REST · :20900<br/>Tapir + http4s Ember · Prometheus /metrics"]
-
-    C1 --> EDGE
-    C3 --> QUACK
-    C2 --> REST
-    QUACK --> AUTH
-
-    %% --- edge data-plane pipeline (native only) ---
-    AUTH["AuthenticationService<br/>Database · JWT · OIDC · ROPC<br/>GoogleGroupsLookup · RoleExtractor"]
-    FSR["FlightSqlRouter + FlightProducerImpl<br/>SessionRegistry"]
-    POL["Row / column policy rewriters<br/>session handle minting"]
-    ROUTE["StatementClassifier → RoleMatcher → Router<br/>NodeLoadTracker · read / write / dual"]
-    WIRE["QuackHttpAdapter → QuackHttpClient<br/>QuackProtocol (JNI) · queryNative<br/>application/vnd.duckdb"]
-
-    EDGE --> AUTH --> FSR --> POL --> ROUTE --> WIRE
-
-    %% --- manager control plane ---
-    API["api handlers · Tapir Endpoints<br/>tenant · pool · node · user · role · group<br/>catalog · config · session · history · rbac"]
-    SUP["PoolSupervisor<br/>HealthProbe · drain · restart"]
-    BK["QuackBackend · selected by runtimeType<br/>LocalQuackBackend | KubernetesQuackBackend | FleetQuackBackend"]
-    VERDICT["Node verdict listener · :20901<br/>POST /api/internal/authz/decide"]
-
-    REST --> API --> SUP --> BK
-
-    %% --- node pool ---
-    subgraph POOL["Quack node pool · per tenant: qod-node (DuckDB + quack_serve) · /quack"]
-        direction LR
-        WO["WRITEONLY<br/>:21900 / pod / server"]
-        RO["READONLY<br/>:21901 / pod / server"]
-        DU["DUAL<br/>:21902 / pod / server"]
-    end
-
-    WIRE -->|"vnd.duckdb wire"| POOL
-    POOL -->|"verdict request"| VERDICT
-    BK -->|"local, Kubernetes: spawn · scale · quarantine"| POOL
-
-    %% --- persistence ---
-    PG[("PostgreSQL<br/>control plane: qodstate_*<br/>Liquibase · RBAC<br/>per-tenant DuckLake catalogs")]
-    OBJ[("Object storage<br/>S3 · GCS · local FS")]
-
-    API -.->|control-plane state| PG
-    SUP -.->|pool / node state| PG
-    BK -.->|"fleet: claim a server"| PG
-    POOL -->|catalog| PG
-    POOL -->|data read/write| OBJ
-
-    %% --- observability ---
-    MET["MetricsRegistry · StatementInstruments"]
-    SINK[("Metrics sink<br/>Prometheus · CloudWatch · Azure · GCP")]
-    EDGE -.-> MET
-    SUP -.-> MET
-    MET --> SINK
-
-    %% --- fleet runtime: one join process per server, outside the manager ---
-    JOIN["qod fleet join · one per fleet server<br/>runs the node the manager assigns"]
-    REST <-->|"heartbeat from join · assignment in the reply"| JOIN
-    JOIN -->|"fleet: start · stop"| POOL
+```diagram
+title: QoD architecture, from the client ports to the node pools, storage and metrics
+zones:
+  manager: {label: QoD manager}
+  data: {label: Data plane, detail: native only, in: manager}
+  control: {label: Control plane, in: manager}
+  POOL: {label: Quack node pool, detail: per tenant}
+nodes:
+  C1: {label: JDBC / ADBC client, kind: client}
+  C3: {label: DuckDB, kind: client, detail: quack extension}
+  C2: {label: Browser, kind: browser, detail: admin UI}
+  EDGE: {label: FlightEdgeServer, kind: server, accent: true, in: data, detail: [":31338 TLS, Arrow FlightSQL"]}
+  QUACK: {label: QuackFrontDoorServer, kind: server, accent: true, in: data, detail: [":9494 native Quack protocol", byte relay]}
+  AUTH: {label: AuthenticationService, kind: service, in: data, detail: ["Database, JWT, OIDC, ROPC", GoogleGroupsLookup, RoleExtractor]}
+  FSR: {label: FlightSqlRouter, kind: service, in: data, detail: [FlightProducerImpl, SessionRegistry]}
+  POL: {label: Row and column policy rewriters, kind: service, in: data, detail: [session handle minting]}
+  ROUTE: {label: Router, kind: service, in: data, detail: ["StatementClassifier, RoleMatcher", "NodeLoadTracker: read, write, dual"]}
+  WIRE: {label: QuackHttpClient, kind: service, in: data, detail: ["QuackHttpAdapter, QuackProtocol (JNI)", application/vnd.duckdb]}
+  REST: {label: ManagerServer REST, kind: server, accent: true, in: control, detail: [":20900, Tapir and http4s Ember", Prometheus /metrics]}
+  API: {label: API handlers, kind: service, in: control, detail: ["tenant, pool, node, user, role", "group, catalog, config, session", "history, rbac"]}
+  SUP: {label: PoolSupervisor, kind: service, in: control, detail: ["HealthProbe, drain, restart"]}
+  BK: {label: QuackBackend, kind: service, in: control, detail: [selected by runtimeType, "Local, Kubernetes or Fleet"]}
+  VERDICT: {label: Node verdict listener, kind: service, in: control, detail: [":20901", POST /api/internal/authz/decide]}
+  MET: {label: MetricsRegistry, kind: metrics, in: manager, detail: [StatementInstruments]}
+  WO: {label: WRITEONLY, kind: server, accent: true, in: POOL, detail: [":21900"]}
+  RO: {label: READONLY, kind: server, accent: true, in: POOL, detail: [":21901"]}
+  DU: {label: DUAL, kind: server, accent: true, in: POOL, detail: [":21902"]}
+  JOIN: {label: qod fleet join, kind: server, detail: [one per fleet server, runs the node it is assigned]}
+  PG: {label: PostgreSQL, kind: database, detail: ["control plane: qodstate_*", "Liquibase, RBAC", per-tenant DuckLake catalogs]}
+  OBJ: {label: Object storage, kind: bucket, detail: ["S3, GCS, local FS"]}
+  SINK: {label: Metrics sink, kind: metrics, detail: ["Prometheus, CloudWatch", "Azure, GCP"]}
+edges:
+  - C1 -> EDGE
+  - C3 -> QUACK
+  - C2 -> REST
+  - EDGE -> AUTH
+  - QUACK -> AUTH
+  - AUTH -> FSR
+  - FSR -> POL
+  - POL -> ROUTE
+  - ROUTE -> WIRE
+  - REST -> API
+  - API -> SUP
+  - SUP -> BK
+  - "WIRE -> POOL: vnd.duckdb wire"
+  - "VERDICT <-> POOL: verdict requests"
+  - "BK -> POOL: spawn, scale, quarantine"
+  - "control -.-> PG: control-plane, pool and node state"
+  - "POOL -> PG: catalog"
+  - "POOL -> OBJ: data read and write"
+  - EDGE -.-> MET
+  - SUP -.-> MET
+  - MET -> SINK
+  - "REST <-> JOIN: heartbeat, assignment in the reply"
+  - "JOIN -> POOL: fleet: start, stop"
 ```
 
 **Two paths into Postgres.** The **manager** owns the control plane: it writes `qodstate_tenant` / `qodstate_tenant_db` / `qodstate_pool` / `qodstate_node` on tenant + pool CRUD, resolves the cached `EffectiveSet` for each authenticated session at handshake, and answers the nodes' verdict requests from it. Each **Quack node** owns the data plane against its tenant-db, reading and writing that DB's DuckLake `__ducklake_*` catalog tables directly. Two databases per tenant-db deployment (control-plane `qod` + tenant-db `${tenant}_${tenantDb}`) keep the control plane and DuckLake catalog cleanly separated while sharing one Postgres cluster.

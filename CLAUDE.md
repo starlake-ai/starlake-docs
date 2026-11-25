@@ -76,4 +76,4 @@ QoD and Starflow are separate docs instances, versioned independently with their
 
 - `@easyops-cn/docusaurus-search-local` — local search (no external API needed)
 - `docusaurus-plugin-image-zoom` — click-to-zoom images
-- `@docusaurus/theme-mermaid` — Mermaid diagram support in markdown
+- `src/remark/diagram` + `src/components/Diagram` — ```diagram code blocks (YAML: zones, nodes, edges), laid out with ELK at build time and drawn as SVG with the site tokens; see the comments in `src/remark/diagram/layout.js` for the format

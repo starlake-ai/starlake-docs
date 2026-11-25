@@ -68,6 +68,12 @@ const GLYPHS = {
       <path d="M9 7v6.5M6.5 11L9 13.5l2.5-2.5" />
     </>
   ),
+  file: (
+    <>
+      <path d="M4 1.75h6.5L14 5.25V16.25H4z" />
+      <path d="M10.5 1.75v3.5H14M6.5 9.5h5M6.5 12.5h5" />
+    </>
+  ),
   metrics: (
     <>
       <path d="M2.5 15.5h13" />
@@ -136,7 +142,10 @@ function Node({node}) {
   const padX = 14;
   const padY = 11;
   return (
-    <g className={node.accent ? `${styles.node} ${styles.accent}` : styles.node}>
+    <g
+      className={[styles.node, node.accent && styles.accent, node.dashed && styles.dashedNode]
+        .filter(Boolean)
+        .join(' ')}>
       <rect x={node.x} y={node.y} width={node.width} height={node.height} rx="8" />
       <g className={styles.glyph} transform={`translate(${node.x + padX} ${node.y + padY - 1})`}>
         {GLYPHS[node.kind] || GLYPHS.service}
@@ -199,7 +208,8 @@ export default function Diagram({layout}) {
           className={styles.svg}
           viewBox={`0 0 ${width} ${height}`}
           width={width}
-          style={{maxWidth: `${width}px`, minWidth: `min(${width}px, 520px)`}}
+          // never shrunk below 80%, so the text stays legible: wider ones scroll
+          style={{maxWidth: `${width}px`, minWidth: `${Math.round(Math.max(Math.min(width, 520), width * 0.8))}px`}}
           role="img"
           aria-labelledby={title ? titleId : undefined}>
           {title && <title id={titleId}>{title}</title>}

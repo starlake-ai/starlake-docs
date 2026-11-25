@@ -384,12 +384,10 @@ const config = {
     ],
   ].filter(Boolean),
   markdown: {
-    mermaid: true,
     hooks: {
       onBrokenMarkdownLinks: "warn",
     },
   },
-  themes: ["@docusaurus/theme-mermaid"],
   // Per-section GA4 properties, in addition to the site-wide gtag above.
   // Read at build time; an unset variable disables that section's tag.
   customFields: {

@@ -53,13 +53,20 @@ The contract above is per-process, and teams are not processes. The moment a sec
 | Export to CSV for the analyst | The data leaves the database, loses types, and forks |
 | Give everyone SSH to the box | One OS user, no per-person identity, no policy, full file access for all |
 
-```mermaid
-flowchart LR
-  F[(sales.duckdb)] -->|copy| C1[laptop copy v1]
-  F -->|copy| C2[laptop copy v2]
-  F -->|export| X[sales.csv]
-  C1 -. drifts .-> C2
-  X -. forks .-> F
+```diagram
+title: Copies of a DuckDB file drift apart
+order: keep
+nodes:
+  F: {label: sales.duckdb, kind: file}
+  C1: {label: laptop copy v1, kind: client}
+  C2: {label: laptop copy v2, kind: client}
+  X: {label: sales.csv, kind: file}
+edges:
+  - "F -> C1: copy"
+  - "F -> C2: copy"
+  - "F -> X: export"
+  - "C1 -.-> C2: drifts"
+  - "X -.-> F: forks"
 ```
 
 None of these failures is a DuckDB defect. An in-process library has no place to hang a user account, an access policy or an audit trail: there is no server to enforce them. That layer has to live in a process that sits between the users and the file. This is exactly the pattern the Quack protocol anticipates: front the engine with a proxy that owns the shared concerns.
@@ -75,23 +82,26 @@ One command provisions a tenant, a database of kind `duckdb-file`, and a pool ar
 The secure posture is on from the first run: TLS on the FlightSQL edge, database authentication on, table ACLs on, and a random admin password generated once and printed once.
 
 
-```mermaid
-flowchart LR
-  subgraph clients["Clients"]
-    bi[Power BI / Tableau]
-    py[Python ADBC]
-    jdbc[JDBC / ODBC tools]
-  end
-  subgraph qod["QoD · your machine or server"]
-    edge["FlightSQL edge<br/>TLS · authn · ACL · rewrites · audit"]
-    node["One DuckDB node<br/>ATTACH 'sales.duckdb' (read-write)"]
-    pg[("Embedded Postgres<br/>control plane")]
-    edge --> node
-  end
-  bi --> edge
-  py --> edge
-  jdbc --> edge
-  node --> F[(sales.duckdb)]
+```diagram
+title: QoD in front of one DuckDB file
+order: keep
+zones:
+  clients: {label: Clients}
+  qod: {label: QoD, detail: your machine or server}
+nodes:
+  bi: {label: Power BI or Tableau, kind: client, in: clients}
+  py: {label: Python ADBC, kind: client, in: clients}
+  jdbc: {label: JDBC and ODBC tools, kind: client, in: clients}
+  edge: {label: FlightSQL edge, kind: server, accent: true, in: qod, detail: ["TLS, authn, ACL", "rewrites, audit"]}
+  node: {label: One DuckDB node, kind: server, accent: true, in: qod, detail: ["ATTACH 'sales.duckdb'", read-write]}
+  pg: {label: Embedded Postgres, kind: database, in: qod, detail: control plane}
+  F: {label: sales.duckdb, kind: file}
+edges:
+  - bi -> edge
+  - py -> edge
+  - jdbc -> edge
+  - edge -> node
+  - node -> F
 ```
 
 The engine inside the node is stock DuckDB. Every statement still runs on one DuckDB instance against your file; QoD adds no query execution of its own.
@@ -147,15 +157,25 @@ Account hygiene ships with it: opt-in lockout after repeated failures, self-serv
 
 This is the widest gap. A file has one permission: readable or not. A served database enforces policy per statement, at the edge, before the SQL reaches the node, in a fixed order: table ACL check first (the gate that also denies unparseable SQL), then the protected-write guard, column masking, row filtering, and metadata filtering. Every decision is recorded.
 
-```mermaid
-flowchart LR
-  q[Incoming statement] --> acl[Table ACL check]
-  acl --> wg[Write guard]
-  wg --> cls[Column masking]
-  cls --> rls[Row filters]
-  rls --> meta[Metadata filtering]
-  meta --> node[DuckDB node]
-  acl -. deny .-> out[Refused + audited]
+```diagram
+title: The checks every statement passes before it reaches the DuckDB node
+nodes:
+  q: {label: Incoming statement, kind: client}
+  acl: {label: Table ACL check, kind: service}
+  wg: {label: Write guard, kind: service}
+  cls: {label: Column masking, kind: service}
+  rls: {label: Row filters, kind: service}
+  meta: {label: Metadata filtering, kind: service}
+  node: {label: DuckDB node, kind: server, accent: true}
+  out: {label: Refused and audited, kind: service, dashed: true}
+edges:
+  - q -> acl
+  - acl -> wg
+  - wg -> cls
+  - cls -> rls
+  - rls -> meta
+  - meta -> node
+  - "acl -.-> out: deny"
 ```
 
 Two handshake gates run even earlier (user scope and pool access), then per-statement checks resolve against a cached effective-permission set. Column policies either deny a column or mask it through a SQL transform; row policies append predicate filters. Both are on by default, with `QOD_CLS_ENABLED` / `QOD_RLS_ENABLED` as kill switches.
