@@ -29,13 +29,19 @@ starlake dbt import --manifest ../my_dbt_project/target/manifest.json \
 |---|---|
 | `--manifest` | dbt's `target/manifest.json` (manifest v10 to v12, written by dbt 1.6 and later). The dbt project is the parent of `target/`. |
 | `--profiles`, `--target` | the dbt target: `target.name`, `target.schema` and `target.database` render with its values, and a DuckDB target with a file becomes a Starlake connection in `application.sl.yml`. Without `--target`, the target is the one of the profile, else `dev`. |
-| `--connection` | an existing Starlake connection to run the imported objects on. Needed for every warehouse but DuckDB. |
+| `--connection` | an existing Starlake connection to run the imported objects on. Needed for every target that does not become a connection: any warehouse but DuckDB, and a DuckDB target without a file. |
 | `--vars` | as dbt's `--vars`, a YAML or JSON map, over the `vars` of `dbt_project.yml`. |
 | `--force` | overwrite the files that the import writes. Without it, the import writes nothing when one of them exists, and lists them. Nothing is ever deleted. |
 
 The command exits with 0 when the import ran, even if some objects were skipped, and with 1 on a usage error, a manifest it cannot read, or existing files without `--force`. The [command reference](../../0800-cli/dbt.md) lists every option.
 
-Then load the seeds and run the transforms. The report ends with the task list to pass to `--name`:
+Before loading, check the connection the imported objects run on: the one the import added or the one given with `--connection`, else the default `connectionRef` of `application.sl.yml`:
+
+```bash
+starlake settings --test-connection <connection name>
+```
+
+Then load the seeds and run the transforms. The Notes section at the top of `dbt-import-report.md` gives the task list to pass to `--name`; copy it from there (the names below are an example):
 
 ```bash
 starlake stage
