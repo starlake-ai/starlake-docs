@@ -17,10 +17,10 @@ Automatically infer schemas from files in the incoming directory and load them i
 
 Parameter|Cardinality|Description
 ---|---|---
---domains `domain1,domain2...`|*Optional*|Domains to watch
---tables `table1,table2,table3 ...`|*Optional*|Tables to watch
---clean `<value>`|*Optional*|Overwrite existing mapping files before starting
 --accessToken `<value>`|*Optional*|Access token to use for authentication
---scheduledDate `<value>`|*Optional*|Scheduled date for the job, in format yyyy-MM-dd'T'HH:mm:ss.SSSZ
+--clean|*Optional*|Overwrite existing mapping files before starting
+--domains `domain1,domain2...`|*Optional*|Domains to watch
 --options `k1=v1,k2=v2...`|*Optional*|Watch arguments to be used as substitutions
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--scheduledDate `<value>`|*Optional*|Scheduled date for the job, in format yyyy-MM-dd'T'HH:mm:ss.SSSZ
+--tables `table1,table2,table3 ...`|*Optional*|Tables to watch

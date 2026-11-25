@@ -17,12 +17,12 @@ keywords: [starlake extract-bq-schema, BigQuery schema, schema extraction, metad
 
 Parameter|Cardinality|Description
 ---|---|---
---write `<value>`|*Optional*|One of Set(OVERWRITE, APPEND)
+--accessToken `<value>`|*Optional*|Access token to use for authentication
 --connection `<value>`|*Optional*|Connection to use
 --database `<value>`|*Optional*|database / project id
---external `<value>`|*Optional*|Include external datasets defined in _config.sl.yml instead of using other parameters of this command ? Defaults to false
---tables `<value>`|*Optional*|List of datasetName.tableName1,datasetName.tableName2 ...
---accessToken `<value>`|*Optional*|Access token to use for authentication
+--external|*Optional*|Include external datasets defined in _config.sl.yml instead of using other parameters of this command ? Defaults to false
 --persist `<value>`|*Optional*|Persist results ?
---table-types `<value>`|*Optional*|Types of the objects to extract, among EXTERNAL, MATERIALIZED_VIEW, SNAPSHOT, TABLE, VIEW. Defaults to TABLE. The types of a standard SQL VIEW are read with a dry run query, which needs bigquery.jobs.create, or from its stored schema, which may be stale
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--table-types `<value>`|*Optional*|Types of the objects to extract, among EXTERNAL, MATERIALIZED_VIEW, SNAPSHOT, TABLE, VIEW. Defaults to TABLE. The types of a standard SQL VIEW are read with a dry run query, which needs bigquery.jobs.create, or from its stored schema, which may be stale
+--tables `<value>`|*Optional*|List of datasetName.tableName1,datasetName.tableName2 ...
+--write `<value>`|*Optional*|One of Set(OVERWRITE, APPEND)

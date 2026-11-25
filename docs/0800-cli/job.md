@@ -17,27 +17,27 @@ Execute a SQL or Python transformation task. Starflow resolves dependencies, com
 
 Parameter|Cardinality|Description
 ---|---|---
---action `<value>`|*Optional*|May take one of run (default) or create. When action is set to 'create', only parameters 'name' and 'query' are meaningful
---name `<value>`|*Optional*|Task name in the form domain.task. Several names separated by commas run in one JVM, upstream tasks first. Either --name, --tags or --impacted is required
---parallelism `<value>`|*Optional*|How many tasks may run at the same time with several names, --tags or --recursive, on DuckDB, JDBC and BigQuery connections only. A task still waits for the tasks it reads. Default is maxParTask (SL_MAX_PAR_TASK), which is 1
---compile `<value>`|*Optional*|Return final query only
---sync-apply `<value>`|*Optional*|Update YAML attributes to match SQL query
---sync-preview `<value>`|*Optional*|Preview YAML attributes to match SQL query
---refresh-inherited-descriptions `<value>`|*Optional*|With --sync-apply or --sync-preview, replace the description of every column that copies a described column with the current one, even a description written in the task
---query `<value>`|*Optional*|if action is 'create', this is the query used to initialize th SQL file. If action is set to 'run', run this query instead of the one in the task
---dry-run `<value>`|*Optional*|Dry run only. Refused on engines other than BigQuery, which would really write
---tags `<value>`|*Optional*|Run in one JVM, upstream tasks first, the tasks that have at least one of these tags
---format `<value>`|*Optional*|pretty print the final query and update sql file
---interactive `<value>`|*Optional*|Run query without sinking the result. Valid parameters are: `csv`, `json`, `table`, `json-array`
---reload `<value>`|*Optional*|Reload YAML  files. Used in server mode
---truncate `<value>`|*Optional*|Force table to be truncated before insert. Default value is false
---pageSize `<value>`|*Optional*|Force table to be truncated before insert. Default value is false
---pageNumber `<value>`|*Optional*|Force table to be truncated before insert. Default value is false
---recursive `<value>`|*Optional*|Execute all dependencies recursively. Default value is false
---impacted `<value>`|*Optional*|Run the tasks that the changes since --base impact, found as `starlake impact` finds them, upstream tasks first. A task runs once, as scheduled: an incremental task only rewrites its current slice. Tasks reached only through a changed load table are not run: load the table again first
---base `<value>`|*Optional*|With --impacted: git ref of the old side. Its merge-base with HEAD is compared with the project as it is, uncommitted edits included
---test `<value>`|*Optional*|Should we run this transform as a test ? Default value is false
 --accessToken `<value>`|*Optional*|Access token to use for authentication
+--action `<value>`|*Optional*|May take one of run (default) or create. When action is set to 'create', only parameters 'name' and 'query' are meaningful
+--base `<value>`|*Optional*|With --impacted: git ref of the old side. Its merge-base with HEAD is compared with the project as it is, uncommitted edits included
+--compile|*Optional*|Return final query only
+--dry-run|*Optional*|Dry run only. Refused on engines other than BigQuery, which would really write
+--format|*Optional*|pretty print the final query and update sql file
+--impacted|*Optional*|Run the tasks that the changes since --base impact, found as `starlake impact` finds them, upstream tasks first. A task runs once, as scheduled: an incremental task only rewrites its current slice. Tasks reached only through a changed load table are not run: load the table again first
+--interactive `<value>`|*Optional*|Run query without sinking the result. Valid parameters are: `csv`, `json`, `table`, `json-array`
+--name `<value>`|*Optional*|Task name in the form domain.task. Several names separated by commas run in one JVM, upstream tasks first. Either --name, --tags or --impacted is required
 --options `k1=v1,k2=v2...`|*Optional, Unbounded*|Job arguments to be used as substitutions
---scheduledDate `<value>`|*Optional*|Scheduled date for the job, in format yyyy-MM-dd'T'HH:mm:ss.SSSZ
+--pageNumber `<value>`|*Optional*|Force table to be truncated before insert. Default value is false
+--pageSize `<value>`|*Optional*|Force table to be truncated before insert. Default value is false
+--parallelism `<value>`|*Optional*|How many tasks may run at the same time with several names, --tags or --recursive, on DuckDB, JDBC and BigQuery connections only. A task still waits for the tasks it reads. Default is maxParTask (SL_MAX_PAR_TASK), which is 1
+--query `<value>`|*Optional*|if action is 'create', this is the query used to initialize th SQL file. If action is set to 'run', run this query instead of the one in the task
+--recursive|*Optional*|Execute all dependencies recursively. Default value is false
+--refresh-inherited-descriptions|*Optional*|With --sync-apply or --sync-preview, replace the description of every column that copies a described column with the current one, even a description written in the task
+--reload|*Optional*|Reload YAML  files. Used in server mode
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--scheduledDate `<value>`|*Optional*|Scheduled date for the job, in format yyyy-MM-dd'T'HH:mm:ss.SSSZ
+--sync-apply|*Optional*|Update YAML attributes to match SQL query
+--sync-preview|*Optional*|Preview YAML attributes to match SQL query
+--tags `<value>`|*Optional*|Run in one JVM, upstream tasks first, the tasks that have at least one of these tags
+--test|*Optional*|Should we run this transform as a test ? Default value is false
+--truncate `<value>`|*Optional*|Force table to be truncated before insert. Default value is false

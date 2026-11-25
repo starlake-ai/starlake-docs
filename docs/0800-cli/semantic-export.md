@@ -41,8 +41,8 @@ starlake semantic-export
 
 Parameter|Cardinality|Description
 ---|---|---
+--connection `<value>`|*Optional*|lookml: Looker connection name written to the model file; tmdl: Starflow connection used to derive the Power Query source. Defaults to the project's connectionRef
 --format `<value>`|*Optional*|Target format: ossie (default), lookml or tmdl
 --model `<value>`|*Optional*|Name of a single semantic model to export (model 'name' field or file basename). All models by default
 --output `<value>`|*Optional*|Output directory. Defaults to metadata/semantic/export/ with one subfolder per format
---connection `<value>`|*Optional*|lookml: Looker connection name written to the model file; tmdl: Starflow connection used to derive the Power Query source. Defaults to the project's connectionRef
 --reportFormat `<value>`|*Optional*|Report format: console, json, html

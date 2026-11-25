@@ -17,6 +17,6 @@ Export all ACL and Row Level Security entries from domain and task definitions t
 
 Parameter|Cardinality|Description
 ---|---|---
---export `<value>`|*Required*|Export ACL and RLS entries to a file
+--export|*Required*|Export ACL and RLS entries to a file
 --outputPath `<value>`|*Required*|Path to output file (local or cloud filesystem, e.g. /path/to/acl.md or gs://bucket/acl.md)
 --reportFormat `<value>`|*Optional*|Report format: console, json, html

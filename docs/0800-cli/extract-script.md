@@ -47,9 +47,9 @@ In that template you can use the following parameters:
 
 Parameter|Cardinality|Description
 ---|---|---
---extract-script `<value>`|*Optional*|
---domain `domain1,domain2 ...`|*Optional*|The domain list for which to generate extract scripts
---template `<value>`|*Required*|Script template dir
 --audit-schema `<value>`|*Required*|Audit DB that will contain the audit export table
 --delta-column `<value>`|*Optional*|The default date column used to determine new rows to export. Overrides config database-extractor.default-column value.
+--domain `domain1,domain2 ...`|*Optional*|The domain list for which to generate extract scripts
+--extract-script|*Optional*|
 --reportFormat `<value>`|*Optional*|Report format: console, json, html
+--template `<value>`|*Required*|Script template dir

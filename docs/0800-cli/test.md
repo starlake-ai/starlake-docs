@@ -17,12 +17,12 @@ Run unit tests for load and transform tasks using sample data and expected resul
 
 Parameter|Cardinality|Description
 ---|---|---
---load `<value>`|*Optional*|Test load tasks only
---transform `<value>`|*Optional*|Test transform tasks only
+--accessToken `<value>`|*Optional*|Access token to use for authentication
 --domain `<value>`|*Optional*|Test this domain only
+--load|*Optional*|Test load tasks only
+--outputDir `<value>`|*Optional*|Where to output the tests
+--reportFormat `<value>`|*Optional*|Report format: console, json, html
+--site|*Optional*|Generate the results of the tests as a website
 --table `<value>`|*Optional*|Test this table or task only in the selected domain
 --test `<value>`|*Optional*|Test this test only in the domain and table/task selected
---site `<value>`|*Optional*|Generate the results of the tests as a website
---outputDir `<value>`|*Optional*|Where to output the tests
---accessToken `<value>`|*Optional*|Access token to use for authentication
---reportFormat `<value>`|*Optional*|Report format: console, json, html
+--transform|*Optional*|Test transform tasks only
