@@ -120,6 +120,15 @@ Starlake and Airbyte are both open-source data integration tools, but they serve
 | **Coverage** | Tested vs untested domains/tables tracking | — |
 | **SQL transpilation** | Automatic (BigQuery/Snowflake/etc. → DuckDB) | N/A |
 
+## Documentation
+
+| | Starlake | Airbyte |
+|---|---|---|
+| **Generated docs** | `starlake site`: a static documentation site that opens offline from the file system, with search, the SQL of every task, and optional warehouse statistics | The Schema tab of a connection lists its streams and fields; no documentation export |
+| **Descriptions** | `comment` on tables and attributes in YAML, rendered as Markdown, and written to the table and column descriptions on BigQuery | Not covered |
+| **Lineage** | Table and column level, project-wide, in the site | None: metadata columns only (`_airbyte_raw_id`, extraction and load timestamps) |
+| **Doc blocks** | `{% docs %}` blocks in `metadata/docs/`, referenced with `{{ doc("name") }}` | None |
+
 ## Deployment
 
 | | Starlake | Airbyte |

@@ -89,6 +89,15 @@ How Starlake branches work in detail, with an end-to-end walkthrough: [Testing o
 | **Dagster** | Generated assets | Offered by Tobiko Cloud |
 | **Snowflake Tasks** | Generated native tasks | Not covered |
 
+## Documentation
+
+| | Starlake | SQLMesh |
+|---|---|---|
+| **Generated docs** | `starlake site`: a static documentation site that opens offline from the file system, with search, the SQL of every task, and optional warehouse statistics | No documentation site: model documentation is in the browser UI, deprecated in favour of the VS Code extension. The hosted data catalog is part of Tobiko Cloud |
+| **Descriptions** | `comment` on tables and attributes in YAML, rendered as Markdown, and written to the table and column descriptions on BigQuery | `description`, `column_descriptions` or inline SQL comments, registered as warehouse comments by default (`register_comments`) |
+| **Lineage** | Table and column level, project-wide, in the site | Table and column level in the deprecated browser UI; model level in the VS Code extension |
+| **Doc blocks** | `{% docs %}` blocks in `metadata/docs/`, referenced with `{{ doc("name") }}` | None |
+
 ## When to choose
 
 **Choose Starlake when:**
