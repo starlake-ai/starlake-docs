@@ -7,7 +7,7 @@ keywords: ["duckdb federation", "federated query", "iceberg", "postgres", "attac
 
 Federation attaches external catalogs (Postgres, MySQL, S3/Iceberg, or anything a DuckDB extension can `ATTACH`) to a database under an alias, so clients query remote data through the same FlightSQL session and the same access-control model as native DuckLake tables. Sources are scoped to a tenant-db: each `qodstate_tenant_db` carries its own set of federated sources.
 
-A source is one of two types. A **`sql`** source is the free-form kind this page describes: you write the `ATTACH` yourself. An **`iceberg_rest`** source is typed, declared as fields rather than SQL, and has its own page: see [External Iceberg catalogs](iceberg.md). Everything below about secrets, grants, lifecycle and manifests applies to both.
+A source has a type, its `sourceType`. A **`sql`** source is the free-form kind this page describes: you write the `ATTACH` yourself. The other types are typed: declared as fields rather than SQL, with the `ATTACH` rendered by QoD. They are `postgres`, `mysql` and `iceberg_rest`, which has its own page (see [External Iceberg catalogs](iceberg.md)), plus any type a loaded manager module provides (see [Source types from manager modules](#source-types-from-manager-modules)). Everything below about secrets, grants, lifecycle and manifests applies to every type.
 
 Provision the tenant and database first (see "Tenants and databases"). The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_TOKEN` holds a personal access token for CI scripts.
 
@@ -53,6 +53,22 @@ qod federation list acme acme_fed
 qod federation get acme acme_fed fedpg
 qod federation delete acme acme_fed fedpg
 ```
+
+## Source types from manager modules
+
+A [manager module](../contributing/extending.md#federated-source-types) can provide source types of its own, for a connector its nodes link. Each has a wire name the module declares (lowercase letters, digits and `_`), accepted as a `sourceType` once the module is loaded, and a config that is the module's own JSON object:
+
+```bash
+qod federation create acme acme_fed --alias docs --type <wire> \
+  --plugin-config '{"endpoint": "https://search.example.com", "token": "{{secret.SEARCH_TOKEN}}"}'
+```
+
+The fields of `--plugin-config` are the module's; the example only shows their shape. Over REST the config goes in the `pluginConfig` field (a JSON object), and `config`, `connection` and `setupSql` are refused for such a type; the CLI requires `--plugin-config` with any `--type` that is not built in, refuses it with a built-in one, and refuses `--setup-sql` and `--config` beside it. The MCP tool `upsert_federated_source` and the admin UI offer the built-in types only.
+
+- **Credentials are `{{secret.NAME}}` placeholders**, set with `qod federation secret set` like any other source's. Reads echo `pluginConfig` as stored, and a manifest export writes it verbatim: never put a credential's value in it.
+- **Tenant admins may create them.** Only `sql` sources are superuser-only; refusing a config that would reach the nodes' own credentials (their environment, instance role or local files) is the module's job.
+- **Read-only by default**, like the other typed sources: the `readOnly` flag is on unless the request sets it.
+- **Without its module, a plugin source does nothing.** A `sourceType` that names no built-in type is a plugin type: a write naming one no loaded module provides is refused (`400 invalid_federated_source`, `unknown sourceType '<value>' (expected one of: ...)`), and a stored source of such a type is left out of every node's setup with a WARN naming its alias and type, while its database's other sources still attach. It is never read as `sql`. A stored `sourceType` that is NULL or blank still reads as `sql`.
 
 ## Secrets
 
@@ -121,6 +137,9 @@ Federated sources and their secrets are included in the whole-control-plane conf
 | Client sees `QoD: catalog fedpg is read-only` | The source is read-only | Clear the source's `readOnly` flag (or `READ_ONLY` in its `ATTACH`, then recycle the pool) if writes are intended |
 | Tenant admin gets `403 superuser_required` | Creating or changing a `sql` source | A superuser saves it, or use a typed source |
 | `400 invalid_federated_source` naming a `{{secret.NAME}}` | The placeholder sits outside a single-quoted literal | Write it as `'{{secret.NAME}}'` |
+| `400 invalid_federated_source`: `unknown sourceType '<value>' (expected one of: ...)` | The type is misspelled, or the module that provides it is not loaded on this manager | Use a type the message lists, or load the module |
+| WARN `federated source '<alias>' has type '<wire>', whose module is not loaded; the source is left out of the node's init` | A stored plugin source whose module is absent | Load the module again and recycle the pool, or delete the source |
+| WARN `... whose rendered template holds a secret placeholder outside a single-quoted literal` | The module rendered a `{{secret.NAME}}` unquoted | A fix in the module; the source stays out of the node's setup until then |
 
 ## Secure in production
 

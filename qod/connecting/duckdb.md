@@ -7,9 +7,9 @@ keywords: ["duckdb attach", "quack protocol", "duckdb client server", "duckdb re
 ---
 
 Besides Arrow Flight SQL, the manager serves DuckDB's own **Quack** protocol on a dedicated
-listener (default port `9494`). Any DuckDB 2.0 that carries the `quack` extension, the CLI, the
-Python package, an embedded DuckDB, attaches the gateway as a database with no driver in
-between, and can join the attached catalog with its local tables in one query.
+listener (default port `9494`). Any DuckDB 2.0 (2.0.0 or 2.0.1) that carries the `quack`
+extension, the CLI, the Python package, an embedded DuckDB, attaches the gateway as a database
+with no driver in between, and can join the attached catalog with its local tables in one query.
 
 ```sql
 ATTACH 'quack:qod.example.com:9494' AS qod
@@ -60,6 +60,15 @@ ATTACH 'quack:host:9494' AS qod (TYPE quack);
 
 A malformed token or a bad password answers `Authentication failed: ...` at `ATTACH` time; a
 valid principal with no grant on the pool answers `permission denied: ...`.
+
+## ATTACH options
+
+Besides `TYPE quack`, the `quack` extension of a DuckDB 2.0.1 client takes only `TOKEN`,
+`SECRET`, `DISABLE_SSL`, `SSL_FINGERPRINT`, `CLIENT_ID` and `HEARTBEAT_TIMEOUT`. Any other option
+fails on the client, before it connects, with `Unrecognized option for attach "<name>"`, and
+`READ_ONLY` with `READ_ONLY is not currently supported for Quack databases`. So attach without
+`READ_ONLY`, and make the access read-only through the user's grants instead: a user holding only
+`RO` grants can read and never write (see the [Access control model](../operating/rbac-model.md)).
 
 ## TLS and remote hosts
 
@@ -114,9 +123,14 @@ options (`disable_ssl := true` on `quack_query`). See [TLS](/qod/operating/tls) 
   replica gets `Invalid connection id` and must re-attach.
 - **The boot banner, `qod serve` and the pool page** print the ready-to-paste `ATTACH` string.
 
-## Known client limitation
+## Client versions
 
-The DuckDB 1.5.4 `quack` extension (`40de7ba`) fails on a multi-column result larger than its
-inline batch (about 24k rows) with `Attempted to access index 1 within vector of size 1`. This
-happens against a raw `quack_serve` node too, so the gateway cannot mask it. Single-column
-results of any size, and multi-column results that fit inline, work.
+The front door speaks Quack protocol 3, the protocol of DuckDB 2.0: DuckDB 2.0.0 and 2.0.1
+clients both reach it. A DuckDB 1.x client is refused at `ATTACH` with
+`quack-on-demand requires a DuckDB 2.0 client (Quack protocol 3); this client (<version>) speaks
+<min>..<max>`: upgrade it to DuckDB 2.0.
+
+Clients that send each statement as `<alias>.query('<sql>')` on the attached catalog, such as
+Columnar's `quack` ADBC driver, work like any other: the filtered `duckdb_schemas()` always
+lists the session catalog's `main` schema, through which the DuckDB client binds that `query`
+macro, even for a user holding no grant in it; the tables in it stay filtered.

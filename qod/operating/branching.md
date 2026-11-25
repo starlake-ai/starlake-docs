@@ -23,7 +23,7 @@ The fork snapshot is recorded per branch and pinned: [managed maintenance](/qod/
 |---|---|---|
 | create | anyone who can connect to a pool of the database | Clone at head, start the branch pool, start the TTL |
 | write | the same principal, targeting the branch | Ordinary SQL through FlightSQL or MCP; the node judges it against the principal's grants, and RLS and CLS apply |
-| changes and diff | anyone with access | Touched tables classified as created, dropped, recreated, modified or altered, with row counts counted as the requester; conflicts against main; row-level diff per table |
+| changes and diff | anyone with access | Touched tables classified as created, dropped, recreated, modified or altered, with change counts counted as the requester; conflicts against main, with the open proposal's row conflicts while they are current; row-level diff per table |
 | propose | the branch owner or a tenant admin (anyone else gets 403 `not_owner`) | Records a merge request: the change set, the conflicts found against main's head, the conflict policy and keys, and the branch head; proposing again replaces the open request |
 | merge | a tenant admin **other than the proposer**, not through a branch-only token | [Three-way merge](#three-way-merge) onto main in one snapshot, tagged, branch torn down |
 | discard | the owner or a tenant admin | Pool, catalog and branch-only files freed; the row stays as history |
@@ -96,6 +96,15 @@ qod auth pat create --name agent --branch-only --database acme_tpch
 `INSERT`, `UPDATE`, `DELETE` and DDL on the live database are then refused with `write_requires_branch`; reads are unchanged, writes on any branch work, and every child token inherits the flag. A branch-only token cannot merge either, not even over REST where the merge endpoint exists: it gets 403 `branch_only_token`. Combined with the absence of a merge tool on MCP, the agent can only ever propose. This gate applies to MCP and REST callers; the raw FlightSQL wire has no token concept.
 
 The branch endpoints (create, changes, propose, merge, discard) act as the caller's own principal. A credential that resolves to no live session or PAT, such as a session that expired mid-request, is refused with 401 before the branch service runs, and a token whose `databases` axis does not name the branch's parent database is refused with 403 `token_scope`.
+
+### Reading the change set
+
+The change set (REST `GET .../changes`, MCP `branch_changes`, `qod branch changes`) says what its numbers are:
+
+- **`countsAre: change_events`.** A table's `inserted`, `deleted` and `updated` count change events since the fork, one per snapshot a row changed in: a row updated twice counts twice, and a row set back to its fork value still counts. A proposal's own counts (`toInsert`, `toUpdate`, `toDelete`) are net changes.
+- **`rowConflictsStatus`.** Only a proposal computes row conflicts, on the merge node; reading the change set never does. `current`: the tables' `rowConflicts` are the open proposal's, and main and the branch are where the proposal read them (always so on a propose or merge reply). `stale`: main or the branch moved since the open proposal, so its numbers are left out, since a merge would now refuse with `conflicts_changed`: propose again. `not_computed`: no proposal is open.
+
+The admin console shows both on a branch's change set: under the table it says "Row conflicts are out of date: main or the branch moved since the proposal. Propose again to recompute them." (`stale`) or "Row conflicts are computed when the merge is proposed." (`not_computed`), and the **Inserted**, **Deleted** and **Updated** headers carry a tooltip saying they count change events, one per snapshot a row changed in, where a proposal counts net changes.
 
 Change counts run as the requester too (REST `changes`, MCP `branch_changes`), so the node counts only the tables they may read. DuckLake's change feed is what counts them, and it is refused to a user with any column or row policy. A table whose count the node refuses, or whose count fails, carries `countsUnavailable: true`: its zeros are no counts, and the admin UI shows a dash. A proposal's reply counts as the proposer. The summary stored on the merge request is counted by the manager itself, so `show`, propose and merge replies show its per-table counts to superusers only; everyone else, tenant admins included, gets them zeroed and flagged `countsUnavailable`, and asks `changes` for the counts they may read.
 

@@ -242,7 +242,7 @@ are then strings, `describe` is current-only (no `--as-of*`), `preview` refuses 
 |---|---|
 | `qod federation list` | List federated sources. |
 | `qod federation get` | Show one federated source. |
-| `qod federation create` | Create a federated source. |
+| `qod federation create` | Create a federated source, or change it (every field left out is reset). `--type sql\|iceberg-rest\|postgres\|mysql` (default `sql`), or the wire name of a type a manager module provides, whose config goes in `--plugin-config '<json object>'` (required with such a type, refused with a built-in one, and never beside `--setup-sql` or `--config`); credentials in it are `{{secret.NAME}}` placeholders. See [Source types from manager modules](../operating/federation.md#source-types-from-manager-modules). |
 | `qod federation delete` | Delete a federated source. |
 | `qod federation secret list` | List secrets referenced by a federated source's setup SQL. |
 | `qod federation secret set` | Set a secret (inline value or external reference). |

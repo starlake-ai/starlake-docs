@@ -1,11 +1,11 @@
 ---
 id: extending
 title: Extending the manager
-description: "Extend QoD with a new runtime backend or a new authentication provider through the two seams designed for it."
-keywords: ["extending", "runtime backend", "authentication provider", "plugin", "manager module", "platform permissions", "console pages"]
+description: "Extend QoD with a new runtime backend, a new authentication provider, a manager module, or a data connector linked into qod-node."
+keywords: ["extending", "runtime backend", "authentication provider", "plugin", "manager module", "platform permissions", "console pages", "connector", "federated source type", "ProtectedScan"]
 ---
 
-Two seams are designed to be extended: the runtime backend (where Quack nodes run) and the authentication providers (how clients prove who they are). Both follow the same shape, a small interface with one implementation per strategy, selected from configuration at boot (`Main.scala` and `boot/`). See the [Architecture map](/qod/contributing/architecture-map) for where these sit. A third seam, the manager module, adds routes, permissions and console pages from a jar on the classpath; see [Manager modules](#manager-modules-platform-permissions-and-console-pages).
+Two seams are designed to be extended: the runtime backend (where Quack nodes run) and the authentication providers (how clients prove who they are). Both follow the same shape, a small interface with one implementation per strategy, selected from configuration at boot (`Main.scala` and `boot/`). See the [Architecture map](./architecture-map.md) for where these sit. A third seam, the manager module, adds routes, permissions and console pages from a jar on the classpath; see [Manager modules](#manager-modules-platform-permissions-and-console-pages). A data connector built outside QoD pairs a module with an extension linked into qod-node, and honors row and column policies through the seams of [Connector extension points](#connector-extension-points).
 
 ## Adding a runtime backend
 
@@ -172,6 +172,88 @@ Styling: the CSS custom properties of the console's `ui/src/styles.css` are the 
 
 A bundle that fails to import, exports no `qodConsoleContract` or another value ("this page needs console contract N"), exports no `mount` function, throws in `mount` or resolves to something other than an unmount function is shown as an error panel naming the module, inside the console's layout; the rest of the console keeps working.
 
+## Connector extension points
+
+A data connector built outside this repository has two halves: a DuckDB extension linked into `qod-node`, which speaks the connector's remote protocol, and a manager module, which declares the federated source type tenants create and how its `ATTACH` is rendered. Core keeps row and column policy enforcement and knows nothing of the connector; the seams below let the connector honor the same policies.
+
+### Linking an extension into qod-node
+
+Link extra static extensions when building qod-node, with the CMake cache variable `QOD_EXTRA_EXTENSIONS`:
+
+```bash
+cmake -S native/qod-node -B build/qod-node \
+  -DQOD_EXTRA_EXTENSIONS="name=/path/libname.a;other=/path/libother.a" ...
+```
+
+Each entry is `name=path`, `name` over `[a-z0-9_]+`. The archive must export `int32_t duckdb_extension_<name>_describe(duckdb_extension_descriptor *)`. qod-node loads every linked extension after each database open, before any SQL runs.
+
+A linked build's `--build-info` line ends with `;extra=<names>`; a build with no extras prints the usual marker. The suffix is appended at run time, so the marker literal inside the binary is the same in both builds and `scripts/release/qod-node-build-info.sh`, which reads the binary's bytes, never sees it. A parser of the `--build-info` output anchored at the end of the line rejects the suffix, so tooling that runs a linked binary must accept it.
+
+### Classifying the linked functions
+
+Nodes refuse an unclassified function to non-superusers ("function `<name>` is not classified"), and a linked extension's functions start unclassified. Classify each one on both sides:
+
+- **On the node**, from code compiled into qod-node: `RegisterLinkedFunctionClass(lower_name, type, class)` (`linked_function_classes.hpp`), where `type` is `scalar`, `aggregate` or `table`. Registration works only before `FreezeLinkedFunctionClasses()`, which `Serve` calls before it installs authorization. After the freeze, for a name the compiled table already classifies, for any other type, or for a superuser or file class, it throws `std::logic_error`.
+- **In the manager**: `ManagerModule.functionClasses` returns `(name, type, class)` rows, `type` being `scalar`, `aggregate` or `table` and `class` being `allowed` or `listing`. The manager reads them right after constructing the module, before `start()`, and refuses to boot (`module function classes refused: ...`) on an unknown class, another type, a `superuser` or `file` class, or a name QoD already classifies.
+
+A function classed `allowed` this way is usable in row policy predicates, like a built-in allowed function.
+
+### The policy obligation: `ProtectedScan`
+
+A connector table function whose `get_table_entry` returns a registered table implements `qod::ProtectedScan` (`protected_scan.hpp`) on its bind data (`FunctionData`). At `post_bind`, after column and row policies are applied, core runs the obligation for every scan, privileged principals included:
+
+1. It refuses the statement when a field the scan uses in its remote request (`FieldUses()`, kinds `Filter` and `VectorLineage`) has a column policy. `Projection` uses are ordinary projected columns, covered by the usual column policies. Field uses are also reported to the plan describer as column reads, so `FieldUse.column` must spell the column as the table entry does: policies and reads are matched on that name.
+2. It calls `AcceptRowPolicies` with the scan's bound row policies and their predicates.
+3. It refuses a bounded scan whose `LoweringResult.exact` is false.
+4. It seals the scan with a digest of the policies (`PolicyDigest`: SHA-256 over the policy ids and SQL, in order).
+
+`VerifyProtectedScans` runs again before optimization and checks every seal against the policies of the boundary above the scan.
+
+Bind runs before core hands the scan its policies, so the table function's bind must perform no remote I/O. Core runs the obligation only for quack sessions: a connector scan on an internal connection is never sealed, and so always refuses.
+
+**Predicates.** `predicates` are the expressions of the row policy boundary filter, to be ANDed. Each one is the OR of the matched policies, each policy wrapped as `TRY(CAST(<policy> AS BOOLEAN))`. Column references bind to `get.table_index`, and their `column_index` indexes `get.GetColumnIds()`. The list is empty when no policy applies, privileged principals included; the scan is still sealed, with an empty policy list, and the connector still enforces its own mandatory scope.
+
+**Exactness.** `exact = true` means the connector returns exactly the rows for which the predicates are TRUE, decided before any candidate limit it applies. A row where a policy is NULL or fails to evaluate must not be returned, and virtual columns such as scores or ranks must not depend on rows the policy excludes: a rank computed over the whole remote set reveals that hidden rows exist. When the connector cannot guarantee that, it returns `exact = false` with a `refusal_code` over `[a-z_]+`, such as `policy_unsupported` (anything else is reported as that one code).
+
+**Bounded scans.** `IsBounded()` is true when the connector applies a candidate limit (top-k) remotely. A local filter above such a scan would change the answer, so exact lowering is mandatory and an inexact result is refused. An unbounded scan may answer `exact = false`: core keeps its own row filter above the scan. Register every table function that applies a remote candidate limit with `RegisterBoundedFunction(name)` before the database serves statements, whether or not its bind data is a `ProtectedScan`: a plan of a registered bounded function without a `ProtectedScan` is refused, which is what stops a later `post_bind` from swapping in other bind data. Core also registers the function of every bounded `ProtectedScan` it handles, but a function first planned through swapped bind data is covered only by your registration.
+
+**Sealing.** Call `RequireSealed()` before any remote I/O; it throws a permission error when core never sealed the scan. In `FunctionData::Copy`, call `CopySealFrom(other)`, so a copy of a sealed scan stays sealed under the same digest.
+
+The obligation's refusals start with `QoD: ` and carry no policy SQL, literal, identity value or backend text:
+
+- `QoD: <refusal_code>: a row policy cannot be enforced before the connector's candidate limit`
+- `QoD: a bounded connector scan without a policy obligation is not supported`
+- `QoD: a connector scan without a table entry is not supported`
+- `QoD: connector scan ran without a sealed policy obligation`
+- `QoD: connector scan policy obligation could not be verified`
+- `QoD: field_denied: a connector scan uses a column that has a column policy`
+
+### Federated source types
+
+A module contributes a source type by returning an `ai.starlake.quack.spi.FederatedSourceProvider` from `ManagerModule.federatedSourceProviders`. The manager reads the providers right after constructing the module, before `start()`, because restoring the pools renders sources before modules start.
+
+```scala
+trait FederatedSourceProvider:
+  def wire: String                          // the sourceType value
+  def extensionName: String                 // the DuckDB extension the node must have linked
+  def reservedSecretPrefixes: List[String]  // secret names its SQL creates; sql sources may not use them
+  def errors(source: FederatedSource, reserved: Set[String]): List[String]  // empty: may be stored
+  def normalizedConfig(raw: String): Either[String, String]  // for equality, key order and spacing ignored
+  def renderTemplate(source: FederatedSource, reserved: Set[String]): Either[List[String], String]
+```
+
+`wire` is lowercase `[a-z0-9_]+`, at most 32 characters, distinct from the built-in types (`sql`, `iceberg_rest`, `postgres`, `mysql`) and from every other provider's; otherwise the boot is refused (`module source types refused: ...`). `extensionName` is informational: core neither loads nor checks it. `reserved` holds the aliases the source may not take (the database's own catalog alias and its other sources'). Every method is pure and total.
+
+A source of a plugin type stores the provider's config as raw JSON, sent in the `pluginConfig` field of the REST create (`config` stays for `iceberg_rest`, `connection` for `postgres` and `mysql`, and `setupSql` is refused), and created from the CLI with `qod federation create <tenant> <db> --alias <alias> --type <wire> --plugin-config '<json object>'`. A new plugin source is read-only unless the request says otherwise, like the other typed sources. Operators see the same sources as any other; see [Source types from manager modules](../operating/federation.md#source-types-from-manager-modules).
+
+What the provider must do, since core cannot do it for it:
+
+- **Hold no secret in the config.** The REST API echoes `pluginConfig` as stored, so credentials go in `{{secret.NAME}}` placeholders, and `errors()` should refuse a literal credential.
+- **Refuse ambient credentials.** There is no superuser-only hook for plugin types: any tenant admin who may write sources can create one. `errors()` must refuse any config whose `ATTACH` would use the node's own credentials (environment, instance role, credential chain, local files) instead of the source's own secrets.
+- **Quote what it renders.** The rendered SQL may contain `{{alias}}` and `{{secret.NAME}}`; core substitutes both, the provider never does. Core quotes only the secret values it substitutes, so the provider quotes and escapes (doubling every `'`) every `pluginConfig` value it renders: tenant admins control that config, and the node's init SQL runs with full privileges. A rendered `{{secret.NAME}}` outside a single-quoted literal leaves the source out of the node's setup (`PluginSecretUnquoted`, logged as a WARN), with no plain-token fallback as for `sql` sources; the database's other sources still attach.
+
+A stored plugin source whose provider is not loaded (the module is absent at boot) is left out of the node's setup with a `SourceProviderMissing` WARN; its siblings are unaffected.
+
 ## Tests
 
-The routing core and classifier have focused specs (`RouterSpec`, `StatementClassifierSpec`, `FlightSqlRouterSpec`) that run without a live Flight connection, so a new backend or provider can be unit-tested against the same seams. Run the suite with `sbt test`; see the [Development loop](/qod/contributing/dev-loop).
+The routing core and classifier have focused specs (`RouterSpec`, `StatementClassifierSpec`, `FlightSqlRouterSpec`) that run without a live Flight connection, so a new backend or provider can be unit-tested against the same seams. Run the suite with `sbt test`; see the [Development loop](./dev-loop.md).

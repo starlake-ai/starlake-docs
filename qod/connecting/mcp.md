@@ -79,8 +79,8 @@ Claude Desktop or any client that takes a JSON server entry:
 | Tool | Arguments | Returns |
 |---|---|---|
 | `run_sql` | `sql`, `database`, `pool?`, `branch?`, `max_rows?` | Columns and rows as JSON, a `truncated` flag, rows affected for writes |
-| `list_databases` | superuser: `tenant?` | Tenant databases with kind and pools |
-| `list_tables` | `database`, `schema?`, `branch?` | Schemas and tables |
+| `list_databases` | superuser: `tenant?` | Tenant databases with kind and pools; a plain member gets those with a pool they may connect to (see [Discovery for a plain member](#discovery-for-a-plain-member)) |
+| `list_tables` | `database`, `schema?`, `branch?` | Schemas and tables; a plain member gets those their grants cover for reading |
 | `describe_table` | `database`, `schema`, `table`, `branch?`, `iceberg?` | Columns and types plus a few sample rows |
 | `table_history` | `database`, `schema`, `table`, `limit?`, `iceberg?` | Snapshot history with change verbs |
 | `list_snapshots` | `database`, `limit?` | Snapshots and tags, for time-travel queries (`AT (VERSION => n)`) |
@@ -89,7 +89,7 @@ Claude Desktop or any client that takes a JSON server entry:
 | `remove_my_s3_credential` | `id` | Removes one of your S3 credentials; your statements stop reaching its scope at once |
 | `create_branch` | `database`, `name`, `ttl_hours?` | A writable zero-copy branch of the database (see [Branching](/qod/operating/branching)) |
 | `list_branches` | `database`, `include_terminal?` | Live branches, or every branch with `include_terminal` |
-| `branch_changes` | `database`, `branch`, `counts?` | Touched tables with kind and row counts, conflicts against main, merge verdict. The counts run as the PAT's owner: a table the owner may not read (or whose count fails) carries `countsUnavailable: true` and its zeros are no counts |
+| `branch_changes` | `database`, `branch`, `counts?` | Touched tables with kind and change counts (`countsAre: change_events`, one per snapshot a row changed in), conflicts against main, the open proposal's row conflicts with `rowConflictsStatus` (`current`, `stale` or `not_computed`, see [Reading the change set](../operating/branching.md#reading-the-change-set)), merge verdict. The counts run as the PAT's owner: a table the owner may not read (or whose count fails) carries `countsUnavailable: true` and its zeros are no counts |
 | `diff` | `database`, `branch`, `schema`, `table`, `limit?`, `cursor?`, `change_type?` | Row-level diff of one table between the branch's fork and head |
 | `propose_merge` | `database`, `branch` | Records a merge request with the change set as of now; the reply's counts run as the PAT's owner, and the stored summary's per-table counts are shown to superusers only (zeroed and flagged `countsUnavailable` for everyone else) |
 | `discard` | `database`, `branch` | Discards a branch the caller owns (or any branch, as an admin) |
@@ -97,6 +97,19 @@ Claude Desktop or any client that takes a JSON server entry:
 | `undrop_table` | `database`, `schema`, `table`, `as_name?`, admins: `from_snapshot?`, superuser: `tenant?` | Recovers a dropped table as the PAT's owner: a read grant on its last name and DDL in the schema. A regular user recovers in their own tenant, from the last live version only |
 
 The `branch` argument on `run_sql`, `list_tables` and `describe_table` routes the call to that branch's own pool and catalog; `database` stays the parent name so token scopes keep applying. The `iceberg` argument on `describe_table` and `table_history` names an attached [Iceberg source](/qod/operating/iceberg#browsing-a-catalog); the schema and table are then read inside that catalog. It goes through the same admin-only gate as the REST views, so it needs an admin principal, and Iceberg snapshot ids come back as strings (time travel with `run_sql` and `AT (VERSION => <id>)`). `describe_table` returns the current table detail and files, plus a sample run as the caller that is dropped rather than failing the call when it cannot run. There is deliberately no merge tool: merging is a human action through the admin console, the CLI or REST, by a principal other than the proposer. A token minted with `branch_only` is refused any write on the live database (`write_requires_branch`) while reads and branch writes work as granted.
+
+### Discovery for a plain member
+
+`list_databases`, `list_tables`, `describe_table`, `table_history` and `list_snapshots` answer every member of the tenant, not only its admins. A tenant admin or a superuser gets the full catalog; anyone else gets what their grants let them see:
+
+- **Databases**: those of their own tenant with a pool they may connect to (the FlightSQL handshake's decision, within the token's `databases` and `pools` axes), each with its name, kind and those pools. A database with no such pool answers `no_pool_access`.
+- **Tables**: the schemas and tables their grants cover for reading (`RO`, `RW` or `ALL`), what their `SHOW TABLES` lists. Any other table answers `not_found`, like one that does not exist.
+- **No storage paths**: a table's `folder` and its data files are left out.
+- **Counts under a row policy are withheld**: a member holding any row policy gets `-1` for every row and file count (`rowCount`, `dataFileCount`, and a commit's `rowsAdded`, `rowsRemoved`, `filesAdded` and `filesRemoved`), as the catalog counts the whole table and the numbers would tell how many rows the policy hides. Count the rows you may read with `run_sql`.
+- **Snapshots**: `list_snapshots` shows only the snapshots that touched a table they can read (a write, inlined included, or a flush or maintenance on it; a schema-only DDL snapshot does not count), each naming only those tables, with `changes` empty. A table is judged by the name it has now: a snapshot of a dropped table is hidden, and while they hold a column or row policy, so is a snapshot of a table whose name has been another table's or whose columns were renamed. When a snapshot also touched a table they cannot read, or holds a change that names no table, its `commitMessage` is null and its counts are `-1`. Tags are shown on every snapshot they can see. `limit` applies after the filtering, over at most the newest 50 times `limit` snapshots (1000 at most), so a member may get fewer than `limit`. Gaps in snapshot ids and jumps in `schemaVersion` still show that a write or DDL they cannot see took place, not where.
+- **`iceberg` arguments stay admin-only.**
+
+A decision that cannot be made (the tenant's OPA unreachable) answers `authz_unavailable`, never a shorter list.
 
 There is deliberately no tool that adds an S3 credential: a secret must not pass through an agent's context. Users add their keys with `qod profile s3 add` or the profile page.
 

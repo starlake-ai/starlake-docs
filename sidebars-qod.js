@@ -113,7 +113,7 @@ const sidebars = {
     {
       type: 'category',
       label: 'Upgrading',
-      items: ['upgrading/to-0-14', 'upgrading/to-0-13', 'upgrading/to-0-12', 'upgrading/to-0-11'],
+      items: ['upgrading/to-0-15', 'upgrading/to-0-14', 'upgrading/to-0-13', 'upgrading/to-0-12', 'upgrading/to-0-11'],
     },
     {
       type: 'category',

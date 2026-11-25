@@ -78,7 +78,15 @@ qod manifest import manifest.yaml
 Import validates the whole document before writing anything. On failure it returns `400` and changes nothing:
 
 - `invalid-yaml` - the body did not parse as YAML.
-- `invalid-manifest` - validation failed: a wrong `apiVersion` (must be `quack-on-demand/v1`), duplicate keys (tenant name, `(tenant, role)`, `(tenant, group)`, `(tenant, user)`, or a nested duplicate), a user/role/group that references a tenant not present in the manifest or already in the database, a user still carrying the old `role` key, a role or group named with the reserved `qod_` prefix (only a built-in in its exact built-in shape is accepted, as a no-op), or a `platformRoles` entry or staff user that breaks the rules of [Platform roles and staff users](#platform-roles-and-staff-users).
+- `invalid-manifest` - validation failed: a wrong `apiVersion` (must be `quack-on-demand/v1`), duplicate keys (tenant name, `(tenant, role)`, `(tenant, group)`, `(tenant, user)`, or a nested duplicate), a user/role/group that references a tenant not present in the manifest or already in the database, a user still carrying the old `role` key, a role or group named with the reserved `qod_` prefix (only a built-in in its exact built-in shape is accepted, as a no-op), or a `platformRoles` entry or staff user that breaks the rules of [Platform roles and staff users](#platform-roles-and-staff-users). A federated source is held to the same rules as a REST create, in the same transaction: one the rules refuse fails the whole import, naming the database and the alias.
+
+A federated source's `sourceType` is read as written. A value that names no built-in type (`sql`, `iceberg_rest`, `postgres`, `mysql`) is a [type a manager module provides](./federation.md#source-types-from-manager-modules), and a source of a type no loaded module provides is refused, a misspelled `sourceType` included:
+
+```
+tenant-db 'acme_fed' source 'docs': unknown sourceType 'icebrg_rest' (expected one of: sql, iceberg_rest, postgres, mysql), or its module is not loaded
+```
+
+The list names the loaded modules' types after the built-in ones. A `sourceType` left out reads as `sql`. A plugin source's `config` holds its module's config object as stored, exported verbatim like a typed source's.
 
 ### One tenant's roles and groups
 

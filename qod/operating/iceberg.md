@@ -163,7 +163,7 @@ user then reads the catalog's tables with the S3 keys they registered themselves
 bucket are not data folders QoD knows: a user holding keys for it can read them directly.
 
 :::caution Iceberg tables on S3 read with users' own keys are read-only through QoD
-DuckDB's Iceberg extension (v2.0.0) commits its manifest files without connection secrets, while the
+DuckDB's Iceberg extension (DuckDB 2.0.1) commits its manifest files without connection secrets, while the
 nodes hold users' S3 keys as connection secrets of each user's connection. On a catalog that neither
 vends credentials nor has AWS credentials of its own, a write to an Iceberg table on S3 therefore
 fails with HTTP 403 at commit, for every principal, superusers included, until upstream
@@ -270,6 +270,13 @@ ATTACH '123456789012' AS "glue_lake" (
 ```
 
 The secret is named `qod_ice_<alias>` inside the node's DuckDB session.
+
+The block loads no `avro`, though DuckDB 2.0.1's `iceberg` extension needs it loaded first: every
+node installs `avro` when it starts, before any database or pool `initSql` and any source's setup
+SQL, and DuckDB's autoloading loads it when `iceberg` asks for it. A node that could not install
+`avro` (no access to the extension repository, say) fails every `LOAD iceberg`, its sources' and
+an `initSql`'s alike. A database's or pool's `initSql` that loads `iceberg` can load `avro` itself
+first: `INSTALL avro; LOAD avro;` are on the [tenant initSql allowlist](./tenants-databases.md#init-sql-trust).
 
 ## Read-only
 
