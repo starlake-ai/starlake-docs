@@ -43,7 +43,7 @@ starlake dbt import --manifest ../my_dbt_project/target/manifest.json \
 | `--introspect-max-rows` | with `--introspect`, the most rows a query may return (default 10000, must be positive). A model whose query returns more is skipped. |
 | `--force` | overwrite the files that the import writes. Without it, the import writes nothing when one of them exists, and lists them. Nothing is ever deleted. |
 
-The command exits with 0 when the import ran, even if some objects were skipped, and with 1 on a usage error, a manifest it cannot read, or existing files without `--force`. The [command reference](../../0800-cli/dbt.md) lists every option.
+The command exits with 0 when the import ran, even if some objects were skipped, and with 1 on a usage error, a manifest it cannot read, existing files without `--force`, or, with `--introspect`, no connection, a connection that cannot open, or a connection that is neither JDBC nor BigQuery. The [command reference](../../0800-cli/dbt.md) lists every option.
 
 Before loading, check the connection the imported objects run on: the one the import added or the one given with `--connection`, else the default `connectionRef` of `application.sl.yml`:
 
@@ -118,7 +118,7 @@ starlake dbt import --manifest ../my_dbt_project/target/manifest.json \
   --profiles ~/.dbt/profiles.yml --target dev --introspect
 ```
 
-The connection must hold the dbt tables the macros read, so run `dbt build` or `starlake load` first. If the connection cannot be opened, the import stops with exit 1 before it writes anything.
+The connection must hold the dbt tables the macros read, so run `dbt build` or `starlake load` first. If the connection cannot be opened, the import stops with exit 1 before it writes anything. A connection of another type, a file system connection for example, is refused.
 
 - Only read-only statements run: `SELECT`, `WITH`, `SHOW`, `DESCRIBE` and `EXPLAIN` of a read. A statement that writes, or that the SQL parser cannot read, skips its model with `statement is not read-only: ...`.
 - A query that returns more than `--introspect-max-rows` rows skips its model.
@@ -126,10 +126,6 @@ The connection must hold the dbt tables the macros read, so run `dbt build` or `
 - `graph` is answered from the manifest, with or without `--introspect`.
 
 The jaffle-shop project imports with its 19 tables, `metricflow_time_spine` included.
-
-### Reserved CTE names
-
-A CTE named like a word that Starlake's SQL parser reserves (`final`, `window`, `output`, `pivot`, `unpivot`, `lateral`, `natural`) is renamed `sl_<name>` at import, and the model gets a note. The `final` CTE of the dbt style guide is the common case. If the SQL still cannot be read, it is kept as it is and the model gets a note.
 
 ## Read the report
 
@@ -140,9 +136,13 @@ The import prints a summary and writes `dbt-import-report.md` at the root of the
 - **Skipped**, with the reason. A model whose macros need the warehouse at import (`run_query`, `statement`, `adapter.get_columns_in_relation`...) is skipped without `--introspect`; with it, a statement that writes is skipped. A model whose `var()` or `env_var()` has no value, that reads a `DBT_ENV_SECRET` env var (dbt allows them only in `profiles.yml` and `packages.yml`), or that calls `exceptions.raise_compiler_error` is skipped too, and so is a test of a skipped model.
 - **Not imported**: the objects disabled with `enabled: false`.
 - **Downstream of skipped objects**: every task that depends on a skipped or disabled object, directly or through other tasks (views and ephemeral models included) or through the source of a skipped seed, with the skipped objects it reaches. They are converted, but they cannot run until you write the missing tables, and the task list of the Notes leaves them out.
-- **Warehouse answers**, with `--introspect`: for each task, the statements it ran and the relations it read, with the number of rows or columns of each answer.
+- **Warehouse answers**, with `--introspect`: each statement run or relation read, with its answer (a number of rows or columns, `found` or `missing`) and the tasks that used it.
 - **Baked vars** and **Baked env vars**: the values written into the SQL. Change them in the SQL, or replace them with Starlake variables.
 - **Reported only**: the dbt objects that have no Starlake equivalent.
+
+## Reserved CTE names
+
+A CTE named like a word that Starlake's SQL parser reserves (`final`, `window`, `output`, `pivot`, `unpivot`, `lateral`, `natural`) is renamed `sl_<name>` at import, and the model gets a note. The `final` CTE of the dbt style guide is the common case. If the SQL still cannot be read, it is kept as it is and the model gets a note.
 
 ## Limitations
 
