@@ -331,7 +331,7 @@ sudo journalctl -u quack-on-demand
 
 On a local-PostgreSQL single node, `sudo journalctl CONTAINER_NAME=qod-postgres`. On fleet VMs, the same pattern for `CONTAINER_NAME=qod-worker` and `CONTAINER_NAME=qod-haproxy`, and `journalctl -u qod-worker` and `journalctl -u qod-haproxy` for the units.
 
-**Upgrade in place (single node).** Set `QOD_VERSION=<new>` in `/etc/quack-on-demand.env`, then `sudo systemctl restart quack-on-demand`; the unit pulls the new tag once. Set the same `qod_version` in `terraform.tfvars` too: a later rebuild runs whatever tag Terraform renders into cloud-init. Changing `qod_version` there changes the user data and replaces the VM on the next `terraform apply`. Read [Upgrading](./upgrading.md) before a version jump.
+**Upgrade in place (single node).** Set `QOD_VERSION=<new>` in `/etc/quack-on-demand.env`, then `sudo systemctl restart quack-on-demand`; the unit pulls the new tag once. Set the same `qod_version` in `terraform.tfvars` too: a later rebuild runs whatever tag Terraform renders into cloud-init. Changing `qod_version` there changes the user data and replaces the VM on the next `terraform apply`. Read [Upgrading](../upgrading/to-0-11.md) before a version jump.
 
 **Rolling upgrade (fleet).** Managers one at a time first, then the other VMs: set `QOD_VERSION=<new>` in `/etc/quack-on-demand.env` (managers) and in `/etc/qod/worker.env` (every VM), then `sudo systemctl restart quack-on-demand` and `sudo systemctl restart qod-worker`. Set the same `qod_version` in `terraform.tfvars`, or a later replacement brings back the old tag. Changing it there changes every VM's cloud-init: the next `terraform apply` replaces all VMs, managers included, in one go.
 

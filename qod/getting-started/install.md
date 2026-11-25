@@ -231,7 +231,7 @@ Other commonly used variables:
 | Folder under which tenants authorize local file folders | `QOD_TENANT_FILES_ROOT` | unset (no local folder can be authorized) |
 | S3 endpoints users' own keys may target | `QOD_USER_S3_ALLOWED_ENDPOINTS` | unset (AWS only) |
 
-Per-statement authorization is always on: every node judges each tenant statement against the user's grants (or the tenant's OPA policy), and the former `QOD_ACL_ENABLED`, `QOD_ACL_FILTERED_METADATA`, `QOD_ACL_DIALECT` and `QOD_NODE_LOCKDOWN` switches make the manager refuse to boot. See [Upgrading to 0.11.0](../operating/upgrading.md).
+Per-statement authorization is always on: every node judges each tenant statement against the user's grants (or the tenant's OPA policy), and the former `QOD_ACL_ENABLED`, `QOD_ACL_FILTERED_METADATA`, `QOD_ACL_DIALECT` and `QOD_NODE_LOCKDOWN` switches make the manager refuse to boot. See [Upgrading to 0.11.0](../upgrading/to-0-11.md).
 
 Extension settings are fixed when a node starts: `allow_community_extensions`, `allow_unsigned_extensions` and `autoinstall_known_extensions` are false on every node, before its database opens, so no init SQL or session can turn them on. Set `QOD_NODE_ALLOW_COMMUNITY_EXTENSIONS`, `QOD_NODE_ALLOW_UNSIGNED_EXTENSIONS` or `QOD_NODE_AUTOINSTALL_KNOWN_EXTENSIONS` to `true` on the manager to allow one (it applies at each node's next start), and install an extension a statement needs at node start with `INSTALL <name>;` in a database or pool `initSql` rather than relying on DuckDB downloading it.
 

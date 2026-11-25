@@ -98,7 +98,7 @@ Nodes authorize every tenant statement by asking the manager replica that minted
 
 The `qod_node_authz_*` per-node counters are exported by the HA leader only, so they are not multiplied by the replica count. The bundled Grafana dashboards have no authorization row yet: chart these series in your own panels.
 
-The health probe also checks that each node enforces: it sends a statement with no session handle, and a node that runs it is marked unhealthy and never routed to. A node started by a release before 0.11.0 refuses every session handle and stays unhealthy until it is restarted (see [Upgrading to 0.11.0](./upgrading.md)).
+The health probe also checks that each node enforces: it sends a statement with no session handle, and a node that runs it is marked unhealthy and never routed to. A node started by a release before 0.11.0 refuses every session handle and stays unhealthy until it is restarted (see [Upgrading to 0.11.0](../upgrading/to-0-11.md)).
 
 ### Why a node is unhealthy
 

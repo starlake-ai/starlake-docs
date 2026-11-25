@@ -6,7 +6,7 @@ description: "Grant a team read access to DuckDB tables, add row filters and col
 keywords: ["duckdb access control", "duckdb acl", "grant", "revoke", "row-level security", "column masking", "rbac"]
 ---
 
-Access control is **always on**. Every statement, through any door, is decided by the node that runs it against the caller's effective permission set before it executes; since 0.11.0 there is no switch to turn this off (see [Upgrading to 0.11.0](../operating/upgrading.md)). The model - roles, groups, verbs, and wildcards - is described in [Access control model](/qod/operating/rbac-model).
+Access control is **always on**. Every statement, through any door, is decided by the node that runs it against the caller's effective permission set before it executes; since 0.11.0 there is no switch to turn this off (see [Upgrading to 0.11.0](../upgrading/to-0-11.md)). The model - roles, groups, verbs, and wildcards - is described in [Access control model](/qod/operating/rbac-model).
 
 Everything on this page, plus user management, can also be done with plain SQL from any connected client (`CREATE ROLE`, `GRANT SELECT ON ... TO ROLE ...`, row and column policies, pool grants, `CREATE USER` / `ALTER USER ... PASSWORD` / `DROP USER`): see [Administer with SQL](/qod/administration/sql-administration).
 

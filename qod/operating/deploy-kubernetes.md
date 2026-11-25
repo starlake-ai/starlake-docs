@@ -150,7 +150,7 @@ Per-pool node placement using cohorts (nodeSelector and tolerations) is supporte
 
 ## Upgrading
 
-Pods created by an earlier manager are not migrated in place, and a 0.11.0 manager never routes to them. After upgrading, pull this release's node image and restart every node, for example by scaling each pool down and back up. Under HA, upgrade every replica together (scale to one replica, or use a `Recreate` rollout): the 0.11.0 schema migration drops a column the previous release reads. See [Upgrading to 0.11.0](./upgrading.md).
+Pods created by an earlier manager are not migrated in place, and a 0.11.0 manager never routes to them. After upgrading, pull this release's node image and restart every node, for example by scaling each pool down and back up. Under HA, upgrade every replica together (scale to one replica, or use a `Recreate` rollout): the 0.11.0 schema migration drops a column the previous release reads. See [Upgrading to 0.11.0](../upgrading/to-0-11.md).
 
 ## Secure in production
 

@@ -110,7 +110,7 @@ A [manifest export](./manifest.md#platform-roles-and-staff-users) carries a top-
 
 ## Upgrading and HA
 
-The release that adds staff users (0.14.2) is one way: an older manager reads every staff user as a superuser, with full data access. Rolling back needs the control-plane backup taken before the upgrade, and in an HA deployment the rollout must finish before anyone creates a staff user. See [From 0.14.1 to 0.14.2](./upgrading-0-14.md#from-0141-to-0142).
+The release that adds staff users (0.14.2) is one way: an older manager reads every staff user as a superuser, with full data access. Rolling back needs the control-plane backup taken before the upgrade, and in an HA deployment the rollout must finish before anyone creates a staff user. See [From 0.14.1 to 0.14.2](../upgrading/to-0-14.md#from-0141-to-0142).
 
 ## Secure in production
 

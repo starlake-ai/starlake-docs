@@ -365,7 +365,7 @@ sudo systemctl restart quack-on-demand
 
 **Upgrade in place, fleet.** One VM at a time, managers one after the other so one always stays up: set `QOD_VERSION=<new>` in `/etc/qod/worker.env` and, on managers, in `/etc/quack-on-demand.env`, then `sudo systemctl restart qod-worker` (and `sudo systemctl restart quack-on-demand` on managers).
 
-In both stacks, set the same `qod_version` in `terraform.tfvars` afterwards. Changing `qod_version` in Terraform changes the user data, and any user data change replaces the instance (`user_data_replace_on_change`): on the fleet, every VM at once. Read the [upgrade notes](./upgrading.md) before a version jump.
+In both stacks, set the same `qod_version` in `terraform.tfvars` afterwards. Changing `qod_version` in Terraform changes the user data, and any user data change replaces the instance (`user_data_replace_on_change`): on the fleet, every VM at once. Read the [upgrade notes](../upgrading/to-0-11.md) before a version jump.
 
 **Rebuild.** Changing `qod_version`, `ssh_public_key` or the cloud-init template replaces the instance on the next `apply`. To rebuild on purpose:
 

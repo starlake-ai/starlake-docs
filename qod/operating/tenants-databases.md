@@ -159,7 +159,7 @@ qod database update --tenant acme --name acme_tpch --init-sql "SET memory_limit 
 qod pool set-init-sql --tenant acme --db acme_tpch --pool bi --init-sql "SET threads = 4;"
 ```
 
-Upgrading to 0.11.0 marks every non-empty initSql not written by `qod serve` untrusted, and boot WARNs once per database or pool that would lose statements; see [Upgrading to 0.11.0](./upgrading.md).
+Upgrading to 0.11.0 marks every non-empty initSql not written by `qod serve` untrusted, and boot WARNs once per database or pool that would lose statements; see [Upgrading to 0.11.0](../upgrading/to-0-11.md).
 
 ### List and delete
 

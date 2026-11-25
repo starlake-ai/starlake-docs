@@ -75,10 +75,6 @@ const sidebars = {
             'operating/encryption',
             'operating/hardening',
             'operating/resilience',
-            'operating/upgrading-0-14',
-            'operating/upgrading-0-13',
-            'operating/upgrading-0-12',
-            'operating/upgrading',
           ],
         },
         {
@@ -113,6 +109,11 @@ const sidebars = {
         'operating/manifest',
         'operating/admin-ui',
       ],
+    },
+    {
+      type: 'category',
+      label: 'Upgrading',
+      items: ['upgrading/to-0-14', 'upgrading/to-0-13', 'upgrading/to-0-12', 'upgrading/to-0-11'],
     },
     {
       type: 'category',
