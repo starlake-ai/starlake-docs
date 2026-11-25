@@ -176,12 +176,12 @@ A missing object and one the caller may not read answer the same `404`, so a tok
 
 ## Policies
 
-Row and column policies apply unchanged: rows are filtered, masked columns look like ordinary columns. Two consequences are specific to the edge:
+Row and column policies apply unchanged, on the node: rows are filtered, masked columns look like ordinary columns of their own type, under their own names. Two consequences are specific to the edge:
 
 - **A column under a deny policy hides its whole table.** The probe's `SELECT *` is refused when any column is denied, so `/tables/{t}` and `/rows` answer 404 for that table while `/tables` still lists it. Grant a view that leaves the denied column out instead; a mask, unlike a deny, keeps the table readable.
-- **Column names with a dot, an `@`, a bracket or a quote.** A `select` naming such a column is refused (403) to a principal under a column or row policy: read the whole row instead. A column policy on a table holding such a column hides the table (404), on every door, since the column rewriter cannot expand a star over that name.
+- **Column names with a dot, an `@`, a bracket or a quote.** A `select` naming such a column is refused (`403 acl_denied`) to a principal holding a column policy, since the gateway cannot read such a quoted name as DuckDB does: read the whole row instead, which the edge writes as `*`.
 
-Time travel under a policy: a principal with a column or row policy reads a table at a snapshot only when the table, under that name, has always been the same table with the same column names in every snapshot the catalog holds. A table renamed, dropped or recreated since, or with a column renamed or dropped, answers 404 on `asOf*` until those snapshots expire. Reads at the current state are not affected. See [Earlier snapshots and the change feed](../operating/rbac-model.md#earlier-snapshots-and-the-change-feed).
+Time travel under a policy: a principal with a column or row policy reads a table at a snapshot only when the table, under that name, has always been the same table with the same column names in every snapshot the catalog holds. A table renamed, dropped or recreated since, or with a column renamed or dropped, answers `400 invalid_selector` on `asOf*` until those snapshots expire. Reads at the current state are not affected. See [Earlier snapshots and the change feed](../operating/rbac-model.md#earlier-snapshots-and-the-change-feed).
 
 ## Exposing the data edge
 

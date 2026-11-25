@@ -1,0 +1,165 @@
+---
+id: history-trends
+title: Statement history and trends
+description: "Every Flight SQL statement recorded for recent search and rolled up into trend charts: latency, routing and volume per tenant and pool."
+keywords: ["statement history", "query history", "trends", "duckdb monitoring"]
+---
+
+The manager records every FlightSQL statement in a two-tier store. When `QOD_TELEMETRY_STORE=postgres` (the default), raw statement rows land in `qodstate_stmt_history` for recent search, and a background rollup job aggregates them into `qodstate_stmt_rollup` for trend charts. When `QOD_TELEMETRY_STORE=none`, nothing is recorded and the History page is hidden from the navigation.
+
+Statement history captures **every** statement, including reads. This is different from the [audit log](/qod/administration/audit-log), which records only mutations, auth events, denials, and data-plane writes, and never captures `SELECT`.
+
+## What is recorded
+
+Every statement that completes the FlightSQL execute path is recorded:
+
+| Field | Notes |
+|---|---|
+| `ts` | Statement completion time (UTC) |
+| `tenant` | Tenant id |
+| `pool` | Pool key |
+| `username` | The authenticated user |
+| `status` | `ok`, `denied` (the node refused it: `QoD: ...`), `transient`, `permanent`, `no-node`, `no-pool`, `pin-lost` |
+| `sql` | SQL text, capped at 500 characters. A statement the manager runs as its own system caller is recorded with its literal values masked, and its error scrubbed of them, since tenant admins see history |
+| `durationMs` | Wall-clock duration from receive to completion |
+| `nodeId` | The node that executed the statement |
+
+**What is excluded:** `PREPARE` probe statements (the `LIMIT-0` schema-probe emitted by the ADBC prepare path) do not create a separate row. The matching `EXECUTE` carries a `prepareMs` field instead.
+
+## Two-tier storage model
+
+Raw rows are kept for `QOD_STMT_HISTORY_RETENTION_DAYS` (default `7`) days and support exact search. The rollup job runs every `QOD_ROLLUP_INTERVAL_SEC` (default `300`) seconds and writes two sets of aggregates into `qodstate_stmt_rollup`:
+
+**Hourly rollups** -- one row per `(tenant, pool, UTC hour)`, retained for `QOD_HOURLY_ROLLUP_RETENTION_DAYS` (default `90`) days. Each row holds the total statement count, error count, and p50/p95/p99 latency percentiles computed via `percentile_cont` over the raw rows in that bucket.
+
+**Daily rollups** -- one row per `(tenant, pool, username, UTC day)`. Daily rollups are the backing store for the [usage and accounting](/qod/administration/usage-accounting) feature. They are retained for `QOD_USAGE_RETENTION_DAYS` (default 400) and purged by the same hourly duty that purges raw rows and hourly rollups.
+
+## Watermark semantics
+
+The rollup job uses a per-table watermark stored in Postgres to track the last processed timestamp. On each tick it recomputes all hourly and daily buckets that are newer than the watermark minus a 60-second skew buffer, then advances the watermark to `now() - 60s`. Recomputing overlapping buckets is always safe because the rollup replaces, rather than appends to, each bucket row.
+
+Practical consequences:
+
+- **Short outage (shorter than the raw retention window):** when the manager restarts, the rollup job sees the full backlog in `qodstate_stmt_history` and recomputes the missing buckets on the first tick. The trend chart catches up automatically.
+- **Long outage (longer than the raw retention window):** rows older than `QOD_STMT_HISTORY_RETENTION_DAYS` have been purged before the rollup job runs. Those buckets are permanently undercounted in the hourly aggregates. The chart will show a gap or low values for the affected range.
+- **Raw retention floor:** do not set `QOD_STMT_HISTORY_RETENTION_DAYS` below `2`. The daily recompute rebuilds the watermark's whole day, which may reach back up to 24 hours. A raw retention of fewer than 2 days can cause the daily bucket to be partially recomputed from an already-purged range. The manager enforces this: `QOD_STMT_HISTORY_RETENTION_DAYS` must be `0` (keep forever) or at least `2`; any other positive value is refused at startup.
+
+The rollup job runs only on the singleton leader in HA mode (the replica holding the `HaCoordinator` Postgres advisory lock). Failover hands the duty to the next leader on its next tick; no manual intervention is needed.
+
+## UTC bucketing
+
+All timestamps and bucket boundaries are in UTC. The API returns `from` / `to` bounds and bucket timestamps as ISO-8601 UTC instants. Pass `from` and `to` in ISO-8601 format (e.g. `2026-07-01T00:00:00Z`); the server does not interpret client-local time zones.
+
+## Who sees what
+
+Access to both history endpoints follows the same scope rules as the audit log:
+
+- **Superusers** see all rows and all tenants.
+- **Tenant admins** see only their own tenant's rows. Specifying a different `tenant` in the query is silently overridden to their own tenant; no cross-tenant existence is leaked via differential error codes.
+- **Regular users** (non-admin `kind=user` principals) cannot call either endpoint (`403 admin_required`). They see their own recent statements with `qod profile statements` (`GET /api/profile/statements`) and their own usage with `qod profile usage` (`GET /api/profile/usage`). The statements come from the answering manager's in-memory ring of recent executions, not from `qodstate_stmt_history`, so they start empty after a restart; the usage comes from the daily rollups.
+
+## Retention
+
+The manager runs an hourly background purge:
+
+| What is purged | Controlled by | Default |
+|---|---|---|
+| Raw statement rows (`qodstate_stmt_history`) | `QOD_STMT_HISTORY_RETENTION_DAYS` | `7` |
+| Hourly rollup rows (`qodstate_stmt_rollup`, hourly) | `QOD_HOURLY_ROLLUP_RETENTION_DAYS` | `90` |
+| Daily rollup rows (`qodstate_stmt_rollup`, daily) | `QOD_USAGE_RETENTION_DAYS` | `400` |
+
+To keep raw rows for a longer period:
+
+```bash
+QOD_STMT_HISTORY_RETENTION_DAYS=30 qod start
+```
+
+Set `QOD_STMT_HISTORY_RETENTION_DAYS=0` to keep raw rows forever (the purge runs but deletes nothing). Keeping raw rows longer than 90 days will not cause rollup gaps but will increase the `qodstate_stmt_history` table size; make sure your Postgres instance has room.
+
+## The `none` off switch
+
+Set `QOD_TELEMETRY_STORE=none` to disable the history subsystem entirely:
+
+- Every statement recording call is a no-op.
+- Every query to the history and trends endpoints returns empty.
+- The rollup job, the hourly purge, and the watermark updater are not started.
+- The `qod_journal_dropped_total` counter stays at zero (not recording is intentional, not a drop).
+- The **Audit** group (Control Plane, Statements, Usage) is hidden from the admin UI sidebar. A deep link to the Statements page shows an empty state with a "telemetry is disabled" message.
+
+The `postgres` and `none` values are the only accepted values for `QOD_TELEMETRY_STORE`. Any other value is refused at startup.
+
+## Querying statements with the CLI
+
+The examples below use the [qod CLI](/qod/cli/); they assume `qod login` has stored a session, or `QOD_TOKEN` holds a personal access token for CI scripts.
+
+```bash
+# Most recent 50 statements for tenant acme (default limit)
+qod history statements --tenant acme --limit 50
+
+# Page through with the keyset cursor (use nextBefore from the previous response)
+qod history statements --before <nextBefore-from-previous-page>
+
+# Find yesterday's slow statements: fetch the full day, then inspect durationMs locally
+qod --json history statements --tenant acme --pool bi \
+  --from 2026-07-05T00:00:00Z --to 2026-07-06T00:00:00Z --limit 500 \
+  | jq -r '.statements | sort_by(-.durationMs) | .[] | select(.durationMs > 5000) |
+           "\(.durationMs) \(.username) \(.sql[0:80])"'
+
+# Denied statements only
+qod history statements --tenant acme --status denied --limit 100
+
+# Free-text search for a table name
+qod history statements --tenant acme --q lineorder
+```
+
+### Statement filter parameters
+
+| Parameter | Description |
+|---|---|
+| `tenant` | Filter by tenant (superusers can specify any tenant; tenant admins are pinned to their own) |
+| `pool` | Filter by pool key |
+| `user` | Filter by username (exact match) |
+| `status` | Filter by status: `ok`, `denied`, `transient`, `permanent`, `no-node`, `no-pool`, or `pin-lost` |
+| `q` | Substring match on the SQL text |
+| `from` | ISO-8601 instant; return only statements at or after this time |
+| `to` | ISO-8601 instant; return only statements before this time |
+| `limit` | Number of rows to return (default 50, max 500) |
+| `before` | Opaque keyset cursor from `nextBefore` in a prior response; fetches the next page of older results |
+
+Results are returned newest-first. The response includes a `nextBefore` cursor whenever the page is non-empty. There is no duration filter parameter on the endpoint; fetch a time window and filter `durationMs` client-side.
+
+## Querying trends with the CLI
+
+```bash
+# Hourly trend for the last 7 days, tenant acme, pool bi
+qod history trends --granularity hour --tenant acme --pool bi \
+  --from 2026-06-29T00:00:00Z --to 2026-07-06T00:00:00Z
+
+# Daily trend for the last 30 days (all pools for a tenant)
+qod history trends --granularity day --tenant acme \
+  --from 2026-06-06T00:00:00Z --to 2026-07-06T00:00:00Z
+```
+
+### Trend filter parameters
+
+| Parameter | Description |
+|---|---|
+| `granularity` | `hour` or `day` (required) |
+| `tenant` | Filter by tenant (superusers can specify any tenant; tenant admins are pinned to their own) |
+| `pool` | Filter by pool key |
+| `from` | ISO-8601 instant; start of the range (inclusive) |
+| `to` | ISO-8601 instant; end of the range (exclusive) |
+
+Each bucket in the response carries `bucketStart` (UTC bucket start), `tenant`, `pool`, `username`, `stmtCount`, `errorCount`, `deniedCount`, `engineMsSum`, and `p50Ms`/`p95Ms`/`p99Ms`. Percentile fields are present on hourly buckets only; daily buckets carry `null` for percentiles (daily rollups are per-user and are not yet surfaced as latency charts).
+
+Buckets that had zero statements are not returned; gaps in the response represent idle periods.
+
+## Secure in production
+
+- [ ] Keep credentials out of SQL text. A client statement is stored as sent (its first 500 characters) and shown to the admins of the pool's tenant, a superuser's statement on that tenant's pool included. Only the SQL admin dialect's statements (`CREATE USER ... PASSWORD`, `GRANT`, ...) are replaced by a placeholder, and only the manager's own statements have their literals masked. Register S3 keys with `qod profile s3 add` rather than in a `CREATE SECRET`.
+- [ ] Set `QOD_STMT_HISTORY_RETENTION_DAYS` (default `7`) to your retention policy for query text, and avoid `0` (keep forever) unless that policy asks for it: raw rows hold every statement's text and literals. Daily rollups keep per-user counts for `QOD_USAGE_RETENTION_DAYS` (default `400`).
+- [ ] Keep `QOD_TELEMETRY_STORE=postgres` (the default): `none` records nothing anywhere, so the audit log stops along with the statement history.
+- [ ] To ship statements to a log pipeline, use `QOD_AUDIT_SINK=stdout` (one JSON line per audit or statement event; it needs `QOD_TELEMETRY_STORE=postgres`): it masks every quoted literal on the way out.
+- [ ] Protect control-plane backups and read replicas as holders of query text: `qodstate_stmt_history` lives in the control-plane database.
+
+See [Security hardening](./hardening.md) for protecting the control-plane database and its backups.

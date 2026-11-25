@@ -140,7 +140,7 @@ sudo apt-get install lsof procps     # or your distribution's equivalent
 sudo useradd --system --create-home --home-dir /var/lib/qod --shell /usr/sbin/nologin qod
 
 sudo python3 -m venv /opt/qod
-sudo /opt/qod/bin/pip install qod==0.14.2
+sudo /opt/qod/bin/pip install qod==0.15.0
 sudo ln -s /opt/qod/bin/qod /usr/local/bin/qod
 ```
 
@@ -181,7 +181,7 @@ StartLimitIntervalSec=0
 [Service]
 User=qod
 EnvironmentFile=/etc/qod/qod.env
-ExecStart=/usr/local/bin/qod start --version 0.14.2
+ExecStart=/usr/local/bin/qod start --version 0.15.0
 Restart=always
 RestartSec=5
 KillMode=mixed
@@ -210,7 +210,7 @@ curl -fsS http://localhost:20900/ready
 
 | Setting | Why |
 |---|---|
-| `--version 0.14.2` | Without a pin, every start asks GitHub for the latest release, so a reboot or a crash restart can upgrade the manager with nobody watching, and an upgrade can require [steps of its own](../upgrading/to-0-13.md). From 0.13.2, once `qod start --version <release> --download-only` has run as the `qod` user, a start of that release needs no network at all: the jar, the JRE, DuckDB and the node extensions are all in the cache, and a pinned start no longer asks PyPI about a newer CLI. |
+| `--version 0.15.0` | Without a pin, every start asks GitHub for the latest release, so a reboot or a crash restart can upgrade the manager with nobody watching, and an upgrade can require [steps of its own](../upgrading/to-0-13.md). From 0.13.2, once `qod start --version <release> --download-only` has run as the `qod` user, a start of that release needs no network at all: the jar, the JRE, DuckDB and the node extensions are all in the cache, and a pinned start no longer asks PyPI about a newer CLI. |
 | `Restart=always`, `RestartSec=5`, `StartLimitIntervalSec=0` | Restarts the manager after any exit and keeps retrying, for example while Postgres is down. `systemctl stop` is not restarted. |
 | `KillMode=mixed` | Sends SIGTERM to `qod start` alone, which runs the same stop sequence as `qod stop`. Anything still alive at the end gets SIGKILL, so no node stays behind holding a port in the `21900+` range, even if the CLI itself is killed. |
 | `TimeoutStopSec=150` | Leaves room for that sequence. From 0.14.0 it lets running statements finish first: it waits for the manager's drain and exit (`QOD_DRAIN_TIMEOUT_SEC`, 60 s by default, plus 20 s), then gives leftover nodes `FORCE_AFTER` seconds (default 10) before SIGKILL, and waits up to `FORCE_AFTER` again for the JVM to exit, about 102 s at worst. A shorter timeout makes systemd kill the unit during the drain, which cuts the statements it waits for. If you raise `QOD_DRAIN_TIMEOUT_SEC` or `FORCE_AFTER`, raise this value with them. On 0.13.1 and earlier the sequence takes seconds and 60 is enough. |
@@ -761,7 +761,7 @@ Every container runs with host networking (Docker publishes no port and writes n
 As root, from `deploy/host/container/` of a checkout at the release tag you install:
 
 ```bash
-./install.sh --version 0.14.2 --settings /root/qod-settings.env
+./install.sh --version 0.15.0 --settings /root/qod-settings.env
 ```
 
 `--settings` holds the manager's own settings, one `KEY=VALUE` per line: `QOD_PG_*` for an external PostgreSQL, `QOD_DUCKLAKE_DATA_PATH` and `QOD_S3_*` for object storage, and any other `QOD_*` or `PROXY_*` setting. For an external PostgreSQL and S3:

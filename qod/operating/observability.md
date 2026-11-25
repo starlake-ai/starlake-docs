@@ -90,10 +90,11 @@ The counter stays at zero when `QOD_TELEMETRY_STORE=none` because not recording 
 
 ## Authorization health
 
-Nodes authorize every tenant statement by asking the manager replica that minted the session for a verdict (see [Access control model](./rbac-model.md)). Three signals show whether that path is healthy; the series are listed under [Authorization metrics](../reference/metrics.md#authorization-metrics):
+Nodes authorize every tenant statement by asking the manager replica that minted the session for a verdict (see [Access control model](./rbac-model.md)). These signals show whether that path is healthy; the series are listed under [Authorization metrics](../reference/metrics.md#authorization-metrics):
 
 - `qod_authz_decisions_total{outcome="unavailable"}` and `qod_node_authz_decide_unavailable_total`: nodes could not get a verdict in time, and users read `QoD: authorization unavailable, retry`. Check that nodes reach the replica's `QOD_INTERNAL_URL` (boot prints it as `node decide URL: <url>`), and, on an OPA tenant, that its OPA server answers. The OPA error itself is only in the manager log, on the WARN line `OPA <connect|statement> error for tenant=<id>: ...`.
 - `qod_authz_decide_duration_ms`: decision latency per `kind`. Grant decisions take well under a millisecond; a high tail usually comes from OPA tenants.
+- `qod_node_authz_row_policy_refusals_total`: statements nodes refused because a row policy could not be applied, among others a predicate naming a column its table no longer has, or a session that changed a setting such as `TimeZone`. The node's log names the policy and the cause; the boot output lists stored policies that cannot apply ([Boot report of stored policies](./rbac-model.md#boot-report-of-stored-policies)).
 - `cache_evictions_total{cache="qod_minted_handles"}`: the replica mints more session handles than `QOD_AUTHZ_HANDLE_CONTEXTS_MAX` keeps (each is kept 360 s, so the default 200000 caps a replica at about 555 tenant statements per second; past it a statement can be refused with `authorization context expired; retry`). Raise it when this rises.
 
 The `qod_node_authz_*` per-node counters are exported by the HA leader only, so they are not multiplied by the replica count. The bundled Grafana dashboards have no authorization row yet: chart these series in your own panels.
@@ -148,7 +149,7 @@ Rows common to both, top to bottom:
 | By Tenant | Stacked QPS per tenant, outcomes by status |
 | DuckDB Engine | Memory used, spill bytes, spill files, temp storage per node |
 | DuckLake Maintenance | Runs by result, duration percentiles, files compacted, bytes reclaimed, snapshots expired |
-| Security Rewrites | Column- / row-policy rewrites by outcome, rewrite duration means, catalog lookups by result |
+| Security Rewrites | No panels: the row is empty (column and row policies are enforced on the nodes; chart `qod_node_authz_row_policy_refusals_total` and `protected_write_checks_total` in your own panels) |
 | Runtime | Heap used, GC pause rate, live threads, process uptime |
 
 Kubernetes-only rows (in `grafana-dashboard-k8s.json`):

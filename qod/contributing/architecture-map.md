@@ -27,16 +27,18 @@ client
   → FlightProducerImpl        (Arrow Flight wire surface)
   → AuthenticationService     (Basic / JWT / OIDC)
   → FlightSqlRouter.execute   (the routing core; policy holders' guard,
-                                CLS / RLS rewriters, metadata filter)
+                                metadata filter)
   → StatementClassifier       (READ / WRITE / DDL bucket)
   → Router.pick               (least-loaded node for the kind)
   → QuackHttpAdapter          (session handle, then the statement, to the node's /quack)
-  → qod-node                  (parse screen, plan description, verdict
-                                from the minting replica's DecideRoute / AuthzDecider)
+  → qod-node                  (parse screen, column masks and row filters
+                                placed on the bound plan, plan description,
+                                verdict from the minting replica's
+                                DecideRoute / AuthzDecider)
   → Arrow stream back through Flight
 ```
 
-The node's verdict is the only table, function, setting and file check: the gateway has none of its own since 0.11.0 (the former `StatementValidator`, `PostgresAclValidator` and `OpaValidator` were removed). Grants are matched by `AuthzDecider` (`edge/authz/`) through `GrantMatch` (`edge/sql/`).
+The node's verdict is the only table, function, setting and file check: the gateway has none of its own since 0.11.0 (the former `StatementValidator`, `PostgresAclValidator` and `OpaValidator` were removed). Grants are matched by `AuthzDecider` (`edge/authz/`) through `GrantMatch` (`edge/sql/`). Column and row policies are enforced only on the node, too: the manager validates them (`edge/cls/`, `edge/rls/`), signs them into a policy snapshot the session handle names (`NodeColumnPolicy`, `NodeRowPolicy`, `PolicyBundles`, served to nodes by `PolicyRoute`), and qod-node places the masking projection and the row filter on the scans DuckDB bound (`native/qod-node/src/column_policies.cpp`, `row_policies.cpp`). What the gateway keeps for policy holders is a set of parser screens and write checks (`ProtectedWriteGuard` in `edge/policy/`).
 
 The routing core (`FlightSqlRouter`, `Router`, `StatementClassifier`, `RoleMatcher`) is deliberately separable from the Flight wire, so `RouterSpec`, `StatementClassifierSpec`, and `FlightSqlRouterSpec` exercise it without a live Flight connection.
 
@@ -53,7 +55,9 @@ The routing core (`FlightSqlRouter`, `Router`, `StatementClassifier`, `RoleMatch
 | `ai.starlake.quack.route` | The routing core: `Router`, `RoleMatcher`, `StatementClassifier`. |
 | `ai.starlake.quack.ondemand` | The control plane: `ManagerServer`, `PoolSupervisor`, the REST handlers, state stores, RBAC, manifest, runtime backends. |
 | `ai.starlake.quack.ondemand.runtime` | The `QuackBackend` strategy and its local / Kubernetes / fleet implementations. |
-| `ai.starlake.acl` | The SQL parser the column and row policy rewriters and their guard use. |
+| `ai.starlake.quack.edge.policy` | The gateway's checks for policy holders: `ProtectedWriteGuard` (writes, DDL and batches touching a covered table, time travel, statement shapes the parser cannot read as DuckDB does), `StatementExcerpt`, `StatementTextScreen`. |
+| `ai.starlake.quack.edge.cls` / `edge.rls` | Mask and row-predicate validation (`TransformSqlValidator`, `MaskForms`, `RowPredicateValidator`), identity tokens (`RowPolicyIdentity`), the boot reports of stored policies. |
+| `ai.starlake.acl` | The SQL parser the protected-write guard and the metadata filter use. |
 | `ai.starlake.quack.observability` | Micrometer metrics and the sink selection. |
 
 ## State and storage

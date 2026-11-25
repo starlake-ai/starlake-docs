@@ -55,7 +55,7 @@ QoD ships no ODBC driver; any Arrow Flight SQL ODBC driver connects. The usual o
 
 ## DuckDB
 
-Any DuckDB 2.0 with the `quack` extension attaches the gateway itself, with no driver: the CLI or a client library from [DuckDB's installation page](https://duckdb.org/docs/installation/), or `pip install duckdb` for Python.
+Any DuckDB 2.0 (2.0.0 or 2.0.1) with the `quack` extension attaches the gateway itself, with no driver: the CLI or a client library from [DuckDB's installation page](https://duckdb.org/docs/installation/), or `pip install duckdb` for Python. A client built on DuckDB that sends each statement as `<alias>.query('<sql>')` on the attached catalog, such as Columnar's `quack` ADBC driver, works too, with the same token; see [DuckDB (native Quack)](./duckdb.md#client-versions).
 
 ## The qod CLI
 

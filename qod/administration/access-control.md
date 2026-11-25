@@ -144,13 +144,13 @@ Replace `verb` with `DDL` for schema changes as needed. Omitting `catalog`/`sche
 
 The node judges the plan DuckDB bound, so a name is checked exactly as DuckDB resolved it: `tpch1.customer` is `acme_tpch.tpch1.customer` when the pool's database is `acme_tpch`, and a two-part name whose first part is an attached catalog (`acme_tpch.customer`) is that catalog's default-schema table, judged as such.
 
-One exception holds for a principal who carries [column or row policies](/qod/operating/rbac-model#column-level-policies). The rewriters that enforce those policies read SQL text, schema-first, while DuckDB binds a two-part name catalog-first when the first part matches a possibly-attached catalog (the tenant-db itself, any federation alias, enabled or disabled, or the built-ins `memory` / `system` / `temp`). Rather than guessing, the gateway denies such names as ambiguous for policy holders:
+One exception holds for a principal who carries [column policies](../operating/rbac-model.md#column-level-policies) (on every statement), or row policies (on a write or a multi-statement batch). The gateway screens such a statement with a SQL parser before it reaches the node, and that parser reads a two-part name schema-first, while DuckDB binds it catalog-first when the first part matches a possibly-attached catalog (the tenant-db itself, any federation alias, enabled or disabled, or the built-ins `memory` / `system` / `temp`). Rather than guessing, the gateway denies such names as ambiguous for those principals:
 
 ```
 access denied: ambiguous two-part name 'acme_tpch.customer': 'acme_tpch' is an attached catalog; qualify fully as 'acme_tpch.<schema>.<table>'
 ```
 
-Write the full three-part form (`catalog.schema.table`, e.g. `acme_tpch.tpch1.customer`) to proceed. For a policy holder the same guard also denies a quoted name holding a dot, a `query()` / `query_table()` call, and a batch that moves the schema or search path; no wildcard grant admits them.
+Write the full three-part form (`catalog.schema.table`, e.g. `acme_tpch.tpch1.customer`) to proceed. The same screen also denies a quoted name holding a dot, a `query()` / `query_table()` call, and a batch that moves the schema or search path; no wildcard grant admits them. The full list is in [Statement shapes the gateway refuses](../operating/rbac-model.md#statement-shapes-the-gateway-refuses).
 
 After **deleting** a federated source, recycle the pool: running nodes keep the deleted alias attached until they exit, while the ambiguity guard no longer covers it. See [Federation](/qod/operating/federation).
 

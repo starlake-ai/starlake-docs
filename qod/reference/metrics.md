@@ -65,9 +65,21 @@ Per-node counters, read from each node's `system.main.qod_authz_stats()` by the 
 | `qod_node_authz_decide_refused_total` | counter | `tenant`, `pool`, `node` | Calls answered with a refusal. |
 | `qod_node_authz_local_refusals_total` | counter | `tenant`, `pool`, `node` | Statements the node refused on its own while planning them, without a verdict from the manager (for example a statement shape it cannot describe). |
 | `qod_node_authz_screen_calls_total` | counter | `tenant`, `pool`, `node` | Screen checks the node ran for quack's authorization callback. |
+| `qod_node_authz_row_policy_refusals_total` | counter | `tenant`, `pool`, `node` | Statements the node refused because of a row policy: a predicate it could not bind to its table (a missing column, an unusable stored predicate, a changed session setting), a write to or `EXPLAIN` of a row-policy table, a policy scoped to a view. Each is also in `qod_node_authz_local_refusals_total`. The node's log names the policy and the cause. |
 | `qod_node_authz_verdict_cache_evictions_total` | counter | `tenant`, `pool`, `node` | Verdicts evicted from a full cache. Sustained growth means `QOD_AUTHZ_CACHE_ENTRIES` is too small for the working set. |
 | `qod_node_authz_verdict_cache_size` | gauge | `tenant`, `pool`, `node` | Verdicts currently cached on the node. |
 | `qod_node_authz_credential_sets_size` | gauge | `tenant`, `pool`, `node` | Users' own S3 credential sets currently held by the node. |
+
+## Policy check metrics
+
+Recorded by the gateway for every statement of a principal bound to an RBAC set, before it reaches a node. Column masks and row filters themselves are applied on the node, which counts its refusals above.
+
+| Metric | Type | Labels | Meaning |
+|---|---|---|---|
+| `protected_write_checks_total` | counter | `tenant`, `pool`, `outcome` | Statements judged by the policy holders' checks ([Policy holders](../operating/rbac-model.md#policy-holders)), `outcome` = `allow` or `deny`. A principal with no column or row policy is always `allow`. |
+| `protected_write_check_duration_seconds` | timer | `tenant`, `pool` | Time those checks took. |
+| `metadata_filter_rewrites_total` | counter | `tenant`, `pool`, `outcome` | Statements seen by the metadata filter, which narrows catalog listings to the principal's grants: `rewritten` (a listing was narrowed), `passthrough` (nothing to narrow) or `denied`. |
+| `metadata_filter_duration_seconds` | timer | `tenant`, `pool` | Time the metadata filter took. |
 
 ## Cache metrics
 
