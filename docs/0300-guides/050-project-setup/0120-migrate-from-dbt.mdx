@@ -1,0 +1,111 @@
+---
+title: "Migrate from dbt"
+description: "Convert a dbt project into native Starlake YAML and SQL with starlake dbt import: models become transform tasks, seeds load tables, sources external tables, tests expectations. Every macro is expanded; incremental models keep both versions as sl_incremental blocks."
+keywords: [starlake, dbt, dbt migration, migrate from dbt, dbt import, manifest.json, incremental models, dbt tests, expectations]
+sidebar_label: Migrate from dbt
+---
+
+# Migrate from dbt
+
+`starlake dbt import` converts a dbt project into native Starlake YAML and SQL, once. It reads the project as dbt resolved it, from `target/manifest.json`, expands every macro, and writes transform tasks, load tables, external tables, expectations and doc blocks into the current Starlake project. After the import, the project needs nothing of dbt.
+
+## Before you start
+
+In the dbt project, build the manifest. No warehouse connection is needed:
+
+```bash
+dbt deps
+dbt parse
+```
+
+Then, in an existing Starlake project (`starlake bootstrap` creates one), with `SL_ROOT` pointing to it:
+
+```bash
+starlake dbt import --manifest ../my_dbt_project/target/manifest.json \
+  --profiles ~/.dbt/profiles.yml --target dev
+```
+
+| Option | Meaning |
+|---|---|
+| `--manifest` | dbt's `target/manifest.json` (manifest v10 to v12, written by dbt 1.6 and later). The dbt project is the parent of `target/`. |
+| `--profiles`, `--target` | the dbt target: `target.name`, `target.schema` and `target.database` render with its values, and a DuckDB target with a file becomes a Starlake connection in `application.sl.yml`. Without `--target`, the target is the one of the profile, else `dev`. |
+| `--connection` | an existing Starlake connection to run the imported objects on. Needed for every warehouse but DuckDB. |
+| `--vars` | as dbt's `--vars`, a YAML or JSON map, over the `vars` of `dbt_project.yml`. |
+| `--force` | overwrite the files that the import writes. Without it, the import writes nothing when one of them exists, and lists them. Nothing is ever deleted. |
+
+The command exits with 0 when the import ran, even if some objects were skipped, and with 1 on a usage error, a manifest it cannot read, or existing files without `--force`. The [command reference](../../0800-cli/dbt.md) lists every option.
+
+Then load the seeds and run the transforms. The report ends with the task list to pass to `--name`:
+
+```bash
+starlake stage
+starlake load
+starlake transform --name staging.stg_orders,marts.orders
+```
+
+## What the import writes
+
+Names are dbt's, after `generate_schema_name` and aliases: the domain is the dbt `schema`, the table the `alias` (the `identifier` of a source). `ref()` and `source()` render as `domain.table`, so lineage, `starlake impact` and DAG generation work unchanged. An object whose schema, alias or file name cannot be a folder or file name, such as `../x`, is skipped with its reason, and the import never writes outside the `metadata` and `datasets` folders of the project.
+
+### Models: transform tasks
+
+Each model becomes `metadata/transform/<schema>/<alias>.sl.yml` and `<alias>.sql`.
+
+| dbt | Starlake |
+|---|---|
+| `table` | `OVERWRITE` |
+| `view` | `OVERWRITE` with `sink.materializedView: VIEW` |
+| `ephemeral` | the same as `view`: one more object in the warehouse |
+| incremental `append`, or `merge` without `unique_key` | `APPEND` |
+| incremental `merge` with `unique_key` | `UPSERT_BY_KEY` on that key |
+| incremental `delete+insert` with `unique_key` | `DELETE_THEN_INSERT` on that key |
+| incremental `insert_overwrite` with `partition_by` | `OVERWRITE_BY_PARTITION` |
+| incremental without a strategy | `append` without a `unique_key`; with one, `merge` on BigQuery, Snowflake, Databricks and Spark, `delete+insert` elsewhere |
+| `pre_hook`, `post_hook` | `presql`, `postsql` |
+| `partition_by`, `cluster_by` | `sink.partition`, `sink.clustering` |
+| `tags`, descriptions, column `data_type` | `tags`, comments, attribute types |
+
+Microbatch and other incremental strategies, Python models and custom materializations are skipped, with their reason. `on_schema_change`, `full_refresh: false`, `grants` and `contract` have no equivalent: the report lists them.
+
+### Incremental models
+
+The import renders each incremental model twice, with `is_incremental()` false and true, and keeps what differs as [`sl_incremental`](../300-transform/110-sql.mdx) blocks:
+
+```sql
+select event_id, customer_id, event_type, occurred_at
+from staging.stg_events
+{% if sl_incremental %}
+where occurred_at > (select max(occurred_at) from marts.events_append)
+{% endif %}
+```
+
+`sl_incremental` is true when the table exists and the run is not `--truncate`, as `is_incremental()` is in dbt.
+
+### Seeds, sources, tests, docs
+
+- A seed becomes a load table, `metadata/load/<schema>/<alias>.sl.yml`, typed by Starlake's schema inference and the `column_types` of the seed, written in `OVERWRITE`. Its CSV is copied to the incoming area of its domain, where `starlake stage` finds it.
+- A source becomes an external table, `metadata/external/<schema>/<identifier>.sl.yml`, with its columns and its freshness (`{count: 12, period: hour}` is `12 hours`). `starlake freshness` checks load tables and tasks, not external tables, and `loaded_at_field` is not used: the report says so. A source that is the table of a seed is declared by the seed's load table.
+- A test becomes an expectation of the task or table it tests, which passes when it returns 0. `not_null`, `unique`, `accepted_values` and `relationships` call the macros `dbt_not_null`, `dbt_unique`, `dbt_accepted_values` and `dbt_relationships` of `metadata/expectations/dbt.j2`; any other test, from a package or a `.sql` file, gets a macro of its own there, with its SQL. `severity: warn` is `failOnError: false`, and `where` filters the tested rows. A test that reads a table built after the tested one, such as a `relationships` to a downstream model, runs after that table, and the report says so. The tests of a source that is not a seed are skipped: external tables run no expectations.
+- `{% docs %}` blocks go to `metadata/docs/dbt/<package>/<name>.md`, and descriptions refer to them with `{{ doc('name') }}`.
+
+Exposures, metrics, semantic models, saved queries, unit tests, analyses, snapshots and `on-run-start` / `on-run-end` hooks are only listed in the report.
+
+## Read the report
+
+The import prints a summary and writes `dbt-import-report.md` at the root of the project:
+
+- **Notes**: the connection that was added, the hooks that were not imported, and the next commands.
+- **Converted**, and **Converted with notes**: what the import could not carry over exactly, such as a setting with no equivalent or a test that runs on another task.
+- **Skipped**, with the reason. A model whose macros need the warehouse at import (`run_query`, `statement`, `adapter.get_columns_in_relation`, `graph`), whose `var()` or `env_var()` has no value, or that calls `exceptions.raise_compiler_error` is skipped; so is a test of a skipped model.
+- **Not imported**: the objects disabled with `enabled: false`.
+- **Downstream of skipped objects**: the tasks that read a skipped model. They are converted, but they cannot run until you write the missing table.
+- **Baked vars** and **Baked env vars**: the values written into the SQL. Change them in the SQL, or replace them with Starlake variables.
+- **Reported only**: the dbt objects that have no Starlake equivalent.
+
+## Limitations
+
+- Macros are expanded, not kept: the SQL of each task is plain SQL, except its `sl_incremental` blocks.
+- The values of `run_started_at` and `modules.datetime` are those of the import; the report flags the tasks that use them.
+- A string literal that holds `{{`, `{%` or `{#` is split with `CONCAT` so that Starlake's Jinja leaves it alone.
+- Without `--connection`, only a DuckDB target with a file becomes a connection; the report says what to do for another target. `application.sl.yml` is rewritten without its comments when a connection is added.
+- Snapshots, warehouse introspection at import time (`run_query` and the Fivetran packages that need it), microbatch models and `SCD2` with check columns come in later releases.
