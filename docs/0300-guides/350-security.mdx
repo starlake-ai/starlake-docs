@@ -1,7 +1,7 @@
 ---
 title: "Access Control"
-description: "Define table ACL, row-level security (RLS) with SQL predicates, and column-level access policies (PII) in Starlake. YAML configuration for BigQuery and Databricks."
-keywords: [starlake, access control, ACL, row-level security, column-level security, BigQuery, Databricks, RLS, PII, taxonomy, policy tags]
+description: "Define table ACL, row-level security (RLS) with SQL predicates, and column-level access policies (PII) in Starlake. YAML configuration for BigQuery, Snowflake, Databricks, PostgreSQL, Redshift and the other JDBC databases."
+keywords: [starlake, access control, ACL, row-level security, column-level security, BigQuery, Databricks, PostgreSQL, Redshift, Snowflake, GRANT, RLS, PII, taxonomy, policy tags]
 ---
 
 import Head from '@docusaurus/Head';
@@ -57,7 +57,15 @@ import Head from '@docusaurus/Head';
           "name": "What is the ACL syntax for Spark/Databricks in Starlake?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "The role corresponds to a SQL permission (e.g., SELECT). Grants are user or group identifiers without a type prefix."
+            "text": "The role is a SQL privilege (e.g., SELECT). On Databricks, grants are names of principals, and a user:, group: or role: prefix is left out. On Spark outside Databricks, grants are prefixed with user:, granted to USER name, or with group: or role:, granted to ROLE name, and a Spark task runs these statements only when its Spark session accepts a GRANT statement, as with Spark Connect: otherwise it logs a warning and applies nothing."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the ACL syntax for PostgreSQL, Redshift and the other JDBC databases in Starlake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The role is a SQL privilege (e.g., SELECT), and grants are prefixed with user:, group: or role:. PostgreSQL grants to TO name or TO GROUP name, Redshift to TO name, TO GROUP name or TO ROLE name, and the other JDBC databases get the statements of Hive. Snowflake grants to database roles, written without prefix. DuckDB has no GRANT statement and does not apply the acl. On these databases, a grant that fails fails the load or the transform, and SL_ACCESS_POLICIES_APPLY=false turns the grants off."
           }
         },
         {
@@ -120,7 +128,7 @@ When `accessPolicies.apply` is `false`, all RLS, CLS and ACL definitions are ign
 
 ## Table-level security (ACL)
 
-The `acl` section grants roles to users, groups or service accounts. The syntax differs between BigQuery and Spark/Databricks.
+The `acl` section grants a role or a privilege (`role`) on the table to a list of grantees (`grants`), at each load or transform of the table. The statements and the grantees differ from one engine to another.
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -147,9 +155,38 @@ table:
 
 </TabItem>
 
-<TabItem value="spark" label="Spark / Databricks">
+<TabItem value="postgresql" label="PostgreSQL / Redshift">
 
-Spark/Databricks uses SQL permissions with simple identifiers:
+PostgreSQL and Redshift grant SQL privileges to typed grantees:
+
+```yaml {3-9}
+table:
+    ...
+    acl:
+        - role: SELECT
+          grants:
+            - user:alice
+            - group:analysts
+            - role:readers
+            - user:reader@company.com
+```
+
+| Grantee | PostgreSQL | Redshift |
+|---------|------------|----------|
+| `user:alice` | `TO alice` | `TO alice` |
+| `group:analysts` | `TO GROUP analysts` | `TO GROUP analysts` |
+| `role:readers` | `TO readers` | `TO ROLE readers` |
+| `user:reader@company.com` | `TO "reader@company.com"` | `TO "reader@company.com"` |
+
+- **role**: SQL privilege (e.g., `SELECT`), written as it is.
+- **grants**: Prefixed with `user:`, `group:` or `role:`. A name that is not a plain identifier is quoted, and the spaces around a name are left out. An unquoted name is folded to lower case: `user:Alice` grants to `alice`. PostgreSQL has roles only: `GROUP` is a noise word there.
+- Redshift is recognized by its `jdbc:redshift:` URL: a Redshift database reached through a `jdbc:postgresql:` URL gets the PostgreSQL statements.
+
+</TabItem>
+
+<TabItem value="databricks" label="Databricks">
+
+Databricks grants SQL privileges to principals that have no type:
 
 ```yaml {3-8}
 table:
@@ -157,16 +194,76 @@ table:
     acl:
         - role: SELECT
           grants:
-            - user@company.com
+            - analysts
+            - user:alice@company.com
+            - group:data-engineers
+```
+
+These grants give `TO analysts`, ``TO `alice@company.com` `` and ``TO `data-engineers` ``.
+
+- **role**: SQL privilege (e.g., `SELECT`).
+- **grants**: Names of users, groups or service principals. A `user:`, `group:` or `role:` prefix is left out, and a name that is not a plain identifier is backquoted.
+- This syntax applies when Starlake runs in a Databricks runtime, on a connection whose URL starts with `jdbc:databricks:`, and in the statements that `dag-generate` writes for the `databricks` orchestrator.
+
+</TabItem>
+
+<TabItem value="spark" label="Other JDBC / Spark">
+
+The JDBC databases not listed in the other tabs (MySQL, MariaDB, SQL Server, Oracle, H2...), and Spark outside Databricks, get the statements of Hive:
+
+```yaml {3-8}
+table:
+    ...
+    acl:
+        - role: SELECT
+          grants:
+            - user:alice
+            - group:analysts
+            - role:readers
+```
+
+These grants give `TO USER alice`, `TO ROLE analysts` and `TO ROLE readers`.
+
+- **role**: SQL privilege (e.g., `SELECT`).
+- **grants**: Prefixed with `user:`, granted to `USER name`, or with `group:` or `role:`, granted to `ROLE name`. The names are written as they are.
+- A JDBC database that does not accept these statements fails the load or the transform: turn the grants off in that environment with `SL_ACCESS_POLICIES_APPLY=false`.
+- A Spark task that does not write through JDBC runs these statements only when its Spark session accepts a GRANT statement, as with Spark Connect. Otherwise, as with open-source Spark 3.5, it logs `GRANT are not supported in this version of Spark.` and applies nothing. A statement that fails, or a grantee that it refuses, is logged, and the task goes on.
+
+</TabItem>
+
+<TabItem value="snowflake" label="Snowflake">
+
+Snowflake grants SQL privileges to database roles:
+
+```yaml {3-6}
+table:
+    ...
+    acl:
+        - role: SELECT
+          grants:
             - analysts
 ```
 
-- **role**: SQL permission (e.g., `SELECT`).
-- **grants**: User or group identifiers without a type prefix.
+This grant gives `TO DATABASE ROLE analysts`.
+
+- **role**: SQL privilege (e.g., `SELECT`).
+- **grants**: Names of database roles, without prefix, written as they are.
+
+</TabItem>
+
+<TabItem value="duckdb" label="DuckDB">
+
+DuckDB has no GRANT statement: the `acl` of a DuckDB table is not applied, and the load or the transform logs one line for the table. A project whose tables declare BigQuery grants runs on DuckDB as it is.
 
 </TabItem>
 
 </Tabs>
+
+### Grantees and failures
+
+- On PostgreSQL, Redshift and the other JDBC databases, a grantee without `user:`, `group:` or `role:`, such as the `serviceAccount:` grantee of BigQuery, fails the load or the transform, with an error that names the table and the grantee. A Spark task outside Databricks logs this error and goes on.
+- On a JDBC database, a GRANT that fails fails the load or the transform, after the write: the rows stay written, and the files of a load stay in the ingesting area. A transform still checks and reports its expectations before it fails. A Spark task logs a GRANT that fails, and goes on.
+- When `accessPolicies.apply` is `false` (`SL_ACCESS_POLICIES_APPLY=false`), no GRANT runs: an environment whose database cannot apply the grants of a table can turn them off.
 
 ## Row-level security (RLS)
 
@@ -448,7 +545,7 @@ iamPolicyTags:
 
 | Feature | BigQuery | Snowflake | Spark / Databricks | JDBC |
 |---------|:--------:|:---------:|:------------------:|:----:|
-| Table ACL | Yes (IAM) | Via GRANT | Via GRANT | -- |
+| Table ACL | Yes (IAM) | Via GRANT | Via GRANT | Via GRANT (not on DuckDB) |
 | Row Level Security | Yes | Via views | -- | -- |
 | Column Level Security | Yes (policy tags) | -- | -- | -- |
 | IAM Policy Tags | Yes | -- | -- | -- |
@@ -466,6 +563,9 @@ iamPolicyTags:
 
 ### How do I define access rights on a table in Starlake?
 Use the `acl` section in the table YAML definition. Specify a `role` (permission) and a list of `grants` (users, groups or service accounts).
+
+### What is the ACL syntax for PostgreSQL, Redshift and the other JDBC databases in Starlake?
+The `role` is a SQL privilege (e.g., `SELECT`), and `grants` are prefixed with `user:`, `group:` or `role:`. PostgreSQL grants to `TO name` or `TO GROUP name`, Redshift to `TO name`, `TO GROUP name` or `TO ROLE name`, and the other JDBC databases get the statements of Hive. Snowflake grants to database roles, written without prefix. DuckDB has no GRANT statement and does not apply the `acl`. On these databases, a grant that fails fails the load or the transform, and `SL_ACCESS_POLICIES_APPLY=false` turns the grants off. See [Table-level security (ACL)](#table-level-security-acl).
 
 ### How do I configure Row Level Security (RLS) in Starlake?
 Add an `rls` section in the table definition. Each RLS policy contains a `name`, a `predicate` (SQL expression evaluated for each row) and `grants` defining the beneficiaries.

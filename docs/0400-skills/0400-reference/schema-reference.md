@@ -52,6 +52,7 @@ load:
     withHeader: true
     separator: ","
     encoding: UTF-8
+    archive: true        # Archive (true) or delete (false) the files of a successful load; a table overrides its domain, both override SL_ARCHIVE
     writeStrategy:
       type: APPEND       # APPEND, OVERWRITE, UPSERT_BY_KEY, etc.
     sink:
