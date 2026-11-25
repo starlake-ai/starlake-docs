@@ -1,7 +1,7 @@
 ---
 title: "Migrate from dbt"
-description: "Convert a dbt project into native Starlake YAML and SQL with starlake dbt import: models become transform tasks, seeds load tables, sources external tables, tests expectations. Every macro is expanded; incremental models keep both versions as sl_incremental blocks."
-keywords: [starlake, dbt, dbt migration, migrate from dbt, dbt import, manifest.json, incremental models, dbt tests, expectations]
+description: "Convert a dbt project into native Starlake YAML and SQL with starlake dbt import: models become transform tasks, seeds load tables, sources external tables, tests expectations. Every macro is expanded, with the warehouse answers of --introspect; incremental models keep both versions as sl_incremental blocks."
+keywords: [starlake, dbt, dbt migration, migrate from dbt, dbt import, introspect, run_query, manifest.json, incremental models, dbt tests, expectations]
 sidebar_label: Migrate from dbt
 ---
 
@@ -39,6 +39,8 @@ starlake dbt import --manifest ../my_dbt_project/target/manifest.json \
 | `--profiles`, `--target` | the dbt target: `target.name`, `target.schema` and `target.database` render with its values, and a DuckDB target with a file becomes a Starlake connection in `application.sl.yml`. Without `--target`, the target is the one of the profile, else `dev`. Values such as `"{{ env_var('DBT_DUCKDB_PATH') }}"` are rendered with `env_var()` and `var()`, as dbt does; when one of them cannot be rendered (an env var that is not set and has no default), no connection is written and the report names the field. |
 | `--connection` | an existing Starlake connection to run the imported objects on; the command fails when the project has no connection of that name. Needed for every target that does not become a connection: any warehouse but DuckDB, and a DuckDB target without a file. |
 | `--vars` | as dbt's `--vars`, a YAML or JSON map, over the `vars` of `dbt_project.yml`, whose `env_var()` and `var()` are rendered too. |
+| `--introspect` | answer the macros that read the warehouse at import (`run_query`, `statement` / `load_result`, `load_relation`, `adapter.get_relation`, `adapter.get_columns_in_relation`, `adapter.get_missing_columns`) on the import's connection: `--connection`, or the DuckDB target of `--profiles`. It works on JDBC connections and BigQuery. Without a connection the command exits with 1. See [Introspect the warehouse](#introspect-the-warehouse). |
+| `--introspect-max-rows` | with `--introspect`, the most rows a query may return (default 10000, must be positive). A model whose query returns more is skipped. |
 | `--force` | overwrite the files that the import writes. Without it, the import writes nothing when one of them exists, and lists them. Nothing is ever deleted. |
 
 The command exits with 0 when the import ran, even if some objects were skipped, and with 1 on a usage error, a manifest it cannot read, or existing files without `--force`. The [command reference](../../0800-cli/dbt.md) lists every option.
@@ -107,15 +109,38 @@ where occurred_at > (select max(occurred_at) from marts.events_append)
 
 Exposures, metrics, semantic models, saved queries, unit tests, analyses, snapshots and `on-run-start` / `on-run-end` hooks are only listed in the report.
 
+## Introspect the warehouse
+
+Some macros ask the warehouse a question while they render: `run_query`, `statement` and `load_result`, `load_relation`, `adapter.get_relation`, `adapter.get_columns_in_relation`, `adapter.get_missing_columns`. Without `--introspect`, a model that uses one is skipped. With it, the import runs the question on its connection and writes the answer into the SQL: a column list, a list of values, a date range.
+
+```bash
+starlake dbt import --manifest ../my_dbt_project/target/manifest.json \
+  --profiles ~/.dbt/profiles.yml --target dev --introspect
+```
+
+The connection must hold the dbt tables the macros read, so run `dbt build` or `starlake load` first. If the connection cannot be opened, the import stops with exit 1 before it writes anything.
+
+- Only read-only statements run: `SELECT`, `WITH`, `SHOW`, `DESCRIBE` and `EXPLAIN` of a read. A statement that writes, or that the SQL parser cannot read, skips its model with `statement is not read-only: ...`.
+- A query that returns more than `--introspect-max-rows` rows skips its model.
+- The answers are a snapshot of the warehouse at import time. To refresh them, import again. When a macro orders values with ties (`dbt_utils.get_column_values` orders by count by default), the order that is written can differ between two imports.
+- `graph` is answered from the manifest, with or without `--introspect`.
+
+The jaffle-shop project imports with its 19 tables, `metricflow_time_spine` included.
+
+### Reserved CTE names
+
+A CTE named like a word that Starlake's SQL parser reserves (`final`, `window`, `output`, `pivot`, `unpivot`, `lateral`, `natural`) is renamed `sl_<name>` at import, and the model gets a note. The `final` CTE of the dbt style guide is the common case. If the SQL still cannot be read, it is kept as it is and the model gets a note.
+
 ## Read the report
 
 The import prints a summary and writes `dbt-import-report.md` at the root of the project:
 
-- **Notes**: the connection that was added, the hooks that were not imported, and the next commands.
+- **Notes**: the connection that was added, the connection of the introspection (`introspection on connection <name>`), the hooks that were not imported, and the next commands.
 - **Converted**, and **Converted with notes**: what the import could not carry over exactly, such as a setting with no equivalent or a test that runs on another task.
-- **Skipped**, with the reason. A model whose macros need the warehouse at import (`run_query`, `statement`, `adapter.get_columns_in_relation`, `graph`), whose `var()` or `env_var()` has no value, that reads a `DBT_ENV_SECRET` env var (dbt allows them only in `profiles.yml` and `packages.yml`), or that calls `exceptions.raise_compiler_error` is skipped; so is a test of a skipped model.
+- **Skipped**, with the reason. A model whose macros need the warehouse at import (`run_query`, `statement`, `adapter.get_columns_in_relation`...) is skipped without `--introspect`; with it, a statement that writes is skipped. A model whose `var()` or `env_var()` has no value, that reads a `DBT_ENV_SECRET` env var (dbt allows them only in `profiles.yml` and `packages.yml`), or that calls `exceptions.raise_compiler_error` is skipped too, and so is a test of a skipped model.
 - **Not imported**: the objects disabled with `enabled: false`.
 - **Downstream of skipped objects**: every task that depends on a skipped or disabled object, directly or through other tasks (views and ephemeral models included) or through the source of a skipped seed, with the skipped objects it reaches. They are converted, but they cannot run until you write the missing tables, and the task list of the Notes leaves them out.
+- **Warehouse answers**, with `--introspect`: for each task, the statements it ran and the relations it read, with the number of rows or columns of each answer.
 - **Baked vars** and **Baked env vars**: the values written into the SQL. Change them in the SQL, or replace them with Starlake variables.
 - **Reported only**: the dbt objects that have no Starlake equivalent.
 
@@ -125,4 +150,6 @@ The import prints a summary and writes `dbt-import-report.md` at the root of the
 - The values of `run_started_at` and `modules.datetime` are those of the import; the report flags the tasks that use them.
 - A string literal that holds `{{`, `{%` or `{#` is split with `CONCAT` so that Starlake's Jinja leaves it alone.
 - Without `--connection`, only a DuckDB target with a file becomes a connection; the report says what to do for another target. `application.sl.yml` is rewritten without its comments when a connection is added.
-- Snapshots, warehouse introspection at import time (`run_query` and the Fivetran packages that need it), microbatch models and `SCD2` with check columns come in later releases.
+- With `--introspect`, the values that the warehouse returned are in the SQL: they are those of the import. Import again to refresh them.
+- `graph` is supported, from the manifest.
+- Snapshots, microbatch models and `SCD2` with check columns come in later releases.
