@@ -96,7 +96,7 @@ function HeroSection() {
             <Link className="button--starlake button--starlake-primary" to="/starflow/setup/starlake-core-setup">
               Quickstart
             </Link>
-            <Link className="button--starlake button--starlake-secondary" to="/starflow/guides">
+            <Link className="button--starlake button--starlake-secondary" to="/starflow/guides/project-setup/starlake-project-setup">
               Browse the guides
             </Link>
           </div>
