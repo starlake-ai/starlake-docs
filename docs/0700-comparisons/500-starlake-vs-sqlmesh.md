@@ -32,7 +32,7 @@ This is where the two tools differ most. SQLMesh builds **virtual data environme
 | **Promotion** | Recompute: run the job again in production. On Snowflake, DuckDB, DuckLake and QoD, `BRANCH APPLY` replays the branch's SQL on production | Usually a view swap: production points at the tables built in dev, with no recompute. Forward-only changes, `dev_only` mode and dev backfills on a limited date range are recomputed in production |
 | **Freshness of production data** | BigQuery: sources frozen when first cloned. Snowflake, DuckDB, DuckLake and QoD: tables the branch never modified are read live | Unchanged models read the production tables; changed models are computed over the date range you choose |
 | **Cleanup** | Manual: drop the branch dataset or schema | Janitor: expired environments (1 week by default) and orphaned snapshots are removed by `sqlmesh run` or `sqlmesh janitor` |
-| **Engines** | BigQuery, Snowflake, and from 1.9.2 DuckDB, DuckLake and QoD (transforms; full copies, no zero-copy clone) | 19 engines, including BigQuery, Snowflake, Databricks, Redshift, PostgreSQL, DuckDB, Spark and Trino. Zero-copy clones, used for forward-only previews, only on BigQuery, Databricks and Snowflake |
+| **Engines** | BigQuery, Snowflake, DuckDB, DuckLake and QoD (transforms; full copies, no zero-copy clone) | 19 engines, including BigQuery, Snowflake, Databricks, Redshift, PostgreSQL, DuckDB, Spark and Trino. Zero-copy clones, used for forward-only previews, only on BigQuery, Databricks and Snowflake |
 
 In short:
 

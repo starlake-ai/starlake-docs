@@ -1,34 +1,35 @@
 ---
 title: "Testing on Production Data with Data Branches"
-description: "How Starlake data branches work: lazy zero-copy clones of production tables on BigQuery and Snowflake, branch granularity, promotion, change impact, engine support, lifecycle and cost, with an end-to-end walkthrough. Set SL_DATA_BRANCH and every write lands in a sandbox."
-keywords: [starlake, data branch, data branching, lazy snapshot, zero-copy clone, bigquery clone, snowflake clone, copy on write, SL_DATA_BRANCH, testing on production data, sandbox, virtual data environment]
+description: "How Starlake data branches work: lazy clones of production tables on BigQuery, Snowflake, DuckDB, DuckLake and QoD, branch granularity, promotion, change impact, engine support, lifecycle and cost, with an end-to-end walkthrough. Set SL_DATA_BRANCH and every write lands in a sandbox."
+keywords: [starlake, data branch, data branching, lazy snapshot, zero-copy clone, bigquery clone, snowflake clone, duckdb branch, ducklake branch, qod branch, copy on write, SL_DATA_BRANCH, testing on production data, sandbox, virtual data environment]
 ---
 
 # Testing on production data with data branches
 
-[Unit tests](./050-concepts.mdx) run your pipeline on DuckDB against fixture data. Sometimes you need more: validating a new transform on the real production volume, or checking that a schema change does not break a MERGE on last month's data. A **data branch** does that. Set `SL_DATA_BRANCH` and Starlake redirects every write of the job into a sandbox built from zero-copy clones of your production tables. Production tables are never modified.
+[Unit tests](./050-concepts.mdx) run your pipeline on DuckDB against fixture data. Sometimes you need more: validating a new transform on the real production volume, or checking that a schema change does not break a MERGE on last month's data. A **data branch** does that. Set `SL_DATA_BRANCH` and Starlake redirects every write of the job into a sandbox built from copies of your production tables, zero-copy clones on BigQuery and Snowflake. Production tables are never modified.
 
 :::note
-This page covers branches on BigQuery and Snowflake, driven by `SL_DATA_BRANCH`. DuckLake databases served by QoD have their own branching, with row-level diffs and reviewed merges: see [QoD branching](/qod/operating/branching).
+This page covers branches driven by `SL_DATA_BRANCH`, on BigQuery, Snowflake, DuckDB, DuckLake and QoD. DuckLake databases served by QoD also have their own branching, with zero-copy clones, row-level diffs and reviewed merges: see [QoD branching](/qod/operating/branching).
 :::
 
 ## How branches work
 
-A data branch is a named sandbox in the warehouse. The branch name becomes a BigQuery dataset or a Snowflake schema, and production tables are copied into it with the warehouse's own zero-copy `CLONE`, one table at a time, the first time a job on the branch needs them. That is what "lazy snapshot" means: nothing is copied when you choose a branch name, and a table that no job touches is never copied.
+A data branch is a named sandbox in the warehouse. The branch name becomes a BigQuery dataset or a schema (Snowflake, DuckDB, DuckLake, QoD), and production tables are copied into it one table at a time, the first time a job on the branch needs them: with the warehouse's own zero-copy `CLONE` on BigQuery and Snowflake, with a full copy on DuckDB and DuckLake. That is what "lazy snapshot" means: nothing is copied when you choose a branch name, and a table that no job touches is never copied.
 
 | Question | Answer |
 |---|---|
-| **Mechanism** | Zero-copy `CREATE TABLE ... CLONE` into the branch namespace, then SQL rewriting so the job reads and writes the clones. There is no view layer. |
-| **Granularity** | One namespace per branch (a dataset on BigQuery, a schema on Snowflake). Tables are cloned individually, on first use. A branch is not tied to a domain: it holds whatever tables the jobs you run on it touch. |
-| **Promotion** | Production never reuses the tables built on the branch. You promote by running the job again without `SL_DATA_BRANCH`. On Snowflake, `BRANCH APPLY` can instead replay the SQL statements recorded on the branch against production: the transform is recomputed either way. |
+| **Mechanism** | A copy of the table into the branch namespace (zero-copy `CREATE TABLE ... CLONE` on BigQuery and Snowflake, `CREATE TABLE ... AS SELECT` on DuckDB and DuckLake), then SQL rewriting so the job reads and writes the copies. There is no view layer. |
+| **Granularity** | One namespace per branch (a dataset on BigQuery, a schema elsewhere). Tables are cloned individually, on first use. A branch is not tied to a domain: it holds whatever tables the jobs you run on it touch. |
+| **Promotion** | Production never reuses the tables built on the branch. You promote by running the job again without `SL_DATA_BRANCH`. On Snowflake, DuckDB, DuckLake and QoD, `BRANCH APPLY` can instead replay the SQL statements recorded on the branch against production: the transform is recomputed either way. |
 | **Change impact** | Reported before you run, not acted on. [`starlake impact`](../../0800-cli/impact.md) compares your change with a Git ref and lists the load tables and transforms it touches, classified `BREAKING`, `NON_BREAKING`, `ADDED` or `METADATA`, then the downstream tasks it impacts, through column-level lineage. The branch runs only the tasks you ask for: run the reported ones, or the whole DAG, on the same branch. |
-| **Engines** | BigQuery and Snowflake. Every other engine ignores the setting and writes to production. |
+| **Engines** | BigQuery, Snowflake, DuckDB, DuckLake and QoD. Every other engine ignores the setting and writes to production. |
 | **Lifecycle** | A branch is created on first use and lives until you drop it. There is no `starlake` command to list, refresh or drop branches: you do it on the warehouse, as shown in [Lifecycle and cost](#lifecycle-and-cost). |
 
-The two engines implement the clone step differently:
+The engines implement the clone step differently:
 
 - **BigQuery: clone on read.** Before a native transform runs, Starlake clones every table its SQL references, plus its target table, into the branch dataset. Sources are frozen at the moment they are first cloned.
 - **Snowflake: clone on write.** Starlake routes the connection through the Starlake JDBC proxy driver, which clones a table the first time a statement modifies it. Reads of tables the branch never modified go to production and see live data.
+- **DuckDB, DuckLake and QoD: copy on write.** The same proxy driver, the same behavior as on Snowflake, but the copy is a full `CREATE TABLE ... AS SELECT`: DuckDB and DuckLake have no zero-copy clone.
 
 ## Supported engines
 
@@ -36,10 +37,11 @@ The two engines implement the clone step differently:
 |---|---|---|
 | BigQuery (native transforms and native loads) | Source and target tables are copied with `CREATE TABLE ... CLONE`, and the task SQL is rewritten to use the copies | Dataset `<branch>` in the target table's project |
 | Snowflake (transforms and native loads) | The Starlake JDBC proxy driver clones each table with `CREATE TABLE ... CLONE` the first time a statement modifies it | Schema `<branch>` |
+| DuckDB, DuckLake attached in `preActions`, and QoD over Flight SQL (transforms) | The Starlake JDBC proxy driver copies each table with `CREATE TABLE ... AS SELECT` the first time a statement modifies it | Schema `<branch>` in the catalog the connection uses |
 | Any other engine | Not supported | Production: the setting is ignored |
 
 :::warning
-On Databricks, Redshift, PostgreSQL, DuckDB and every other engine, `SL_DATA_BRANCH` has no effect and the job writes to production as usual. Do not rely on a branch there.
+On Databricks, Redshift, PostgreSQL and every other engine not listed above, `SL_DATA_BRANCH` has no effect and the job writes to production as usual. Do not rely on a branch there.
 :::
 
 ## Enabling a branch
@@ -47,7 +49,7 @@ On Databricks, Redshift, PostgreSQL, DuckDB and every other engine, `SL_DATA_BRA
 The branch name is resolved in this order, first match wins:
 
 1. `SL_DATA_BRANCH` (or `sl_data_branch`) in the active environment: your shell, `metadata/env.sl.yml` or `metadata/env.<ENV>.sl.yml`
-2. `sl_data_branch` (or `SL_DATA_BRANCH`) in the options of the sink connection. BigQuery only: the Snowflake path reads the environment alone.
+2. `sl_data_branch` (or `SL_DATA_BRANCH`) in the options of the sink connection. BigQuery only: the other engines read the environment alone.
 
 An empty value or `None` disables branching.
 
@@ -66,7 +68,7 @@ env:
   SL_DATA_BRANCH: "test_order_summary"
 ```
 
-The branch name becomes a BigQuery dataset or a Snowflake schema, so use letters, digits and underscores only.
+The branch name becomes a BigQuery dataset or a schema, so use letters, digits and underscores only.
 
 ## BigQuery
 
@@ -123,9 +125,40 @@ The proxy driver can only redirect statements its SQL parser understands. A stat
 
 Copies are created in schema `<branch>` of each table's own database. Starlake creates that schema only in the connection's database, so keep the tables a branched job modifies in that database.
 
+## DuckDB, DuckLake and QoD
+
+Branches work on DuckDB connections (`jdbc:duckdb:`), on DuckLake catalogs attached in the `preActions` of a DuckDB connection, and on QoD through its Flight SQL url (`jdbc:arrow-flight-sql:`). They work as on [Snowflake](#snowflake): Starlake wraps the connection in the Starlake JDBC proxy driver and opens the branch with `BRANCH START <branch> WITH PERSIST = TRUE, KEEP = TRUE`, the first statement that modifies a table copies it into schema `<branch>`, and the branch outlives the job.
+
+The differences:
+
+- **Copies are full copies.** DuckDB and DuckLake have no zero-copy clone, so the first write to a table on the branch copies all its rows with `CREATE TABLE ... AS SELECT`. On DuckLake that writes new Parquet files, so the first write to a large table takes time and storage in proportion to its size.
+- **The branch schema lands in the catalog the `preActions` select.** Starlake opens the branch once the connection's `preActions` have run, so with `ATTACH 'ducklake:...' AS lake; USE lake` the branch is schema `lake.<branch>`. On QoD it is a schema of the database the pool serves.
+- **The bookkeeping tables are plain tables.** `sl_table_map` and `sl_session_hst` live in schema `<branch>`, with no primary key, since DuckLake refuses constraints. No hybrid tables are needed.
+- **Transforms are covered.** `APPEND`, `OVERWRITE` and `UPSERT_BY_KEY` transforms, and transforms that create their table, write to the branch. Native DuckDB loads on a branch have not been validated yet: run one on a throwaway branch and check where it wrote before you rely on it.
+- **`UPSERT_BY_KEY` does not run on QoD**, with or without a branch. QoD runs each statement in a session of its own, so the temporary view of the incoming rows is gone by the statement that reads it.
+
+The [proxy driver warning](#snowflake) applies here too: a statement the driver cannot parse runs against production.
+
+```yaml
+# metadata/application.sl.yml: a DuckLake catalog on a local DuckDB
+application:
+  connectionRef: "ducklake"
+  connections:
+    ducklake:
+      type: "jdbc"
+      options:
+        url: "jdbc:duckdb:"
+        driver: "org.duckdb.DuckDBDriver"
+        preActions: "INSTALL ducklake;LOAD ducklake;ATTACH IF NOT EXISTS 'ducklake:/data/lake/meta.ducklake' AS lake (DATA_PATH '/data/lake/files/');USE lake;"
+```
+
+:::tip
+On QoD, `SL_DATA_BRANCH` gives you the same branches as on the other engines, made by Starlake inside your database. QoD's own [branching](/qod/operating/branching) is the alternative when you want zero-copy clones, row-level diffs and merges reviewed by a second admin.
+:::
+
 ## Walkthrough: change a transform on a branch
 
-This example changes `kpi.order_summary` on BigQuery, checks it against production, and ships it. The Snowflake variant differs only in steps 4 and 6.
+This example changes `kpi.order_summary` on BigQuery, checks it against production, and ships it. The Snowflake, DuckDB and QoD variants differ only in steps 4 and 6.
 
 **1. Pick a branch name.** Nothing is created yet.
 
@@ -169,7 +202,7 @@ EXCEPT DISTINCT
 SELECT * FROM `my-project.feat_order_summary.order_summary`;
 ```
 
-On Snowflake, run the same queries on `feat_order_summary.order_summary` from a plain Snowflake connection. Through a connection opened with the Starlake driver on the branch, `kpi.order_summary` would itself be redirected to the copy.
+On Snowflake, DuckDB and QoD, run the same queries on `feat_order_summary.order_summary` from a plain connection, without the Starlake driver. Through a connection opened with the Starlake driver on the branch, `kpi.order_summary` would itself be redirected to the copy.
 
 **5. Iterate.** Edit the SQL and run step 3 again. On BigQuery the sources stay frozen at the first clone, so successive runs compare like with like. On both engines the target is not cloned again: a MERGE or upsert task now merges into the output of the previous branch run. On BigQuery, drop `feat_order_summary.order_summary` before the run to start again from the production rows.
 
@@ -180,7 +213,7 @@ unset SL_DATA_BRANCH
 bq rm -r -f -d my-project:feat_order_summary
 ```
 
-On Snowflake, drop it with `BRANCH DROP feat_order_summary WITH PERSIST = TRUE` from the Starlake driver (see [Lifecycle and cost](#lifecycle-and-cost)). You can also promote with `BRANCH APPLY`, which replays the branch history on production: read the caveats below first.
+On Snowflake, DuckDB and QoD, drop it with `BRANCH DROP feat_order_summary WITH PERSIST = TRUE` from the Starlake driver (see [Lifecycle and cost](#lifecycle-and-cost)). You can also promote with `BRANCH APPLY`, which replays the branch history on production: read the caveats below first.
 
 ## Lifecycle and cost
 
@@ -203,9 +236,11 @@ FROM information_schema.tables
 WHERE table_name = 'SL_SESSION_HST';
 ```
 
+On DuckDB, DuckLake and QoD, the same query with the name in lower case, `'sl_session_hst'`.
+
 ### Inspecting a Snowflake branch
 
-The `BRANCH` commands only work through a connection opened with the Starlake JDBC driver. In a SQL client, set the driver class to `ai.starlake.jdbc.StarlakeDriver` and prefix your usual Snowflake URL: `jdbc:starlake:snowflake://<account>.snowflakecomputing.com/...`.
+The `BRANCH` commands only work through a connection opened with the Starlake JDBC driver. In a SQL client, set the driver class to `ai.starlake.jdbc.StarlakeDriver` and prefix your usual Snowflake URL: `jdbc:starlake:snowflake://<account>.snowflakecomputing.com/...`. The same goes for a QoD url (`jdbc:starlake:arrow-flight-sql://...`) and a DuckDB file (`jdbc:starlake:duckdb:/path/to/file.duckdb`); a DuckLake catalog must be attached in that connection before you open the branch.
 
 A branch must be opened in the connection before `BRANCH DESCRIBE` or `BRANCH APPLY` can see it. Always open it with `PERSIST` and `KEEP`: a branch opened without `KEEP` is dropped, copies included, when the connection closes.
 
@@ -226,7 +261,7 @@ There is no refresh command. On BigQuery, drop the clones you want refreshed (or
 | Engine | Discard | Promote |
 |---|---|---|
 | BigQuery | Delete the dataset: `bq rm -r -f -d my-project:feat_order_summary` | No apply step: run the job again without `SL_DATA_BRANCH` |
-| Snowflake | `BRANCH DROP feat_order_summary WITH PERSIST = TRUE` through the Starlake driver: drops the copies, the history and the schema | Run the job again without `SL_DATA_BRANCH`, or `BRANCH START ... WITH PERSIST = TRUE, KEEP = TRUE` then `BRANCH APPLY feat_order_summary` |
+| Snowflake, DuckDB, DuckLake, QoD | `BRANCH DROP feat_order_summary WITH PERSIST = TRUE` through the Starlake driver: drops the copies, the history and the schema. On DuckDB, DuckLake and QoD, `DROP SCHEMA feat_order_summary CASCADE` from a plain connection does the same | Run the job again without `SL_DATA_BRANCH`, or `BRANCH START ... WITH PERSIST = TRUE, KEEP = TRUE` then `BRANCH APPLY feat_order_summary` |
 
 `BRANCH APPLY` replays every statement in the branch history, in order, against production, then drops the branch. Before you use it, run `BRANCH DESCRIBE` and check what it will replay:
 
@@ -238,18 +273,19 @@ For anything but a single clean run, re-running the job in production is the saf
 
 ### Storage and cost
 
-- **Creating a branch copies no data.** A clone shares the storage of its base table on both warehouses, and only the tables a job touches are cloned.
+- **Creating a branch copies no data.** A clone shares the storage of its base table on BigQuery and Snowflake, and only the tables a job touches are cloned. On DuckDB, DuckLake and QoD, the first write to a table copies it in full.
 - **A clone is billed for the data that differs from its base table.** That covers the rows the branch writes, and also the base table data that production later changes or deletes while the clone still references it. A branch kept for months next to a busy production table grows accordingly.
 - **Queries on a branch cost the same compute as in production.** A full run on a branch processes the full production volume.
 - **Branches are never cleaned up automatically.** Drop them when you are done.
 
 ## Limitations
 
-- Only BigQuery and Snowflake are supported. Every other engine ignores the setting.
+- Only BigQuery, Snowflake, DuckDB, DuckLake and QoD are supported. Every other engine ignores the setting.
 - Promotion recomputes: production never reuses the tables built on the branch.
 - A branch does not pick the tasks to run: [`starlake impact`](../../0800-cli/impact.md) reports the impacted downstream tasks, and you run them.
 - On BigQuery, branch tables live in a single dataset, so table names must be unique across the domains you run on the branch, and sources are frozen at their first clone.
-- On Snowflake, the account must support hybrid tables, and statements the proxy driver cannot parse run against production.
+- On Snowflake, the account must support hybrid tables. On Snowflake, DuckDB, DuckLake and QoD, statements the proxy driver cannot parse run against production.
+- On DuckDB, DuckLake and QoD, copies are full copies, native loads on a branch are not validated, and `UPSERT_BY_KEY` does not run on QoD.
 - The connection-level `sl_data_branch` option is read on BigQuery only.
 
 How this compares with SQLMesh virtual data environments: see [Starlake vs SQLMesh](../../0700-comparisons/500-starlake-vs-sqlmesh.md).
