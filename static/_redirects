@@ -17,5 +17,8 @@
 /configuration/* /starflow/configuration/:splat 301
 /cockpit/* /starflow/cockpit/:splat 301
 /devguide/* /starflow/devguide/:splat 301
-/guides /starflow/guides 301
+/guides /starflow/guides/project-setup/starlake-project-setup 301
 /cli /starflow/cli 301
+
+# The interactive guides page was removed (2026-11-25).
+/starflow/guides /starflow/guides/project-setup/starlake-project-setup 301

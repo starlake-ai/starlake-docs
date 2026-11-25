@@ -12,7 +12,7 @@ Documentation site for [Starlake](https://github.com/starlake-ai/starlake), an o
 # Install dependencies (uses Yarn, requires Node 20+)
 yarn install
 
-# Start dev server (generates guides data, then starts Docusaurus)
+# Start dev server
 yarn start
 
 # Production build
@@ -23,9 +23,6 @@ yarn serve
 
 # Clear Docusaurus cache (useful when builds behave unexpectedly)
 yarn clear
-
-# Regenerate guides data only
-yarn generate-guides-data
 ```
 
 ## Environment Variables
@@ -40,10 +37,6 @@ yarn generate-guides-data
 ### Dual-Site Strategy
 
 A single codebase serves two sites controlled by `IS_BLOG` env var. The `docusaurus.config.js` conditionally configures navbar items, plugins, and content based on this flag.
-
-### Guides System
-
-Interactive guides live in `src/data/guides/` as markdown files with frontmatter (title, description, tags, level, icon). The `scripts/generate-guides-data.js` build step parses these files, extracts `##` headers as tab sections, and writes `src/data/guides-data.json`. The `src/pages/guides.js` component renders this data as a filterable, tabbed UI. **This generation runs automatically before `yarn start` and `yarn build`.**
 
 ### Documentation Numbering Convention
 
@@ -71,7 +64,6 @@ QoD and Starflow are separate docs instances, versioned independently with their
 - `docs/` — main documentation (setup, guides, configuration, CLI reference, dev guides)
 - `blog/` — published blog posts; authors defined in `blog/authors.yml`
 - `blog-coming-articles/` — draft/upcoming blog posts
-- `src/data/guides/` — interactive guide content (parsed at build time)
 - `static/img/` — images and diagrams
 
 ### Custom Components
