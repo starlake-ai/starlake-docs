@@ -39,7 +39,7 @@ the gateway's own statement screens and table check are gone. There is no ACL
 switch and no per-pool lockdown any more: `QOD_ACL_ENABLED`,
 `QOD_ACL_FILTERED_METADATA`, `QOD_ACL_DIALECT` and `QOD_NODE_LOCKDOWN` set to any
 value make the manager refuse to start, naming the variable to unset (see
-[Upgrading to 0.11.0](./upgrading.md)). How grants are matched is in the
+[Upgrading to 0.11.0](../upgrading/to-0-11.md)). How grants are matched is in the
 [access control model](rbac-model.md).
 
 Whatever the tenant's mode and grants (`*.*.* ALL` included), a caller who is not
@@ -205,7 +205,7 @@ which DuckDB sends as the proxy's credentials. The password therefore never
 appears in a statement's error, which DuckDB would otherwise quote back to
 whoever ran a statement reading over HTTPS or S3. Nodes apply this at their next
 start: restart them after an upgrade (see
-[Upgrading from 0.14.1 to 0.14.2](./upgrading-0-14.md#from-0141-to-0142)).
+[Upgrading from 0.14.1 to 0.14.2](../upgrading/to-0-14.md#from-0141-to-0142)).
 Tenant users cannot set or reset any proxy setting (above).
 
 ### Extension settings

@@ -8,7 +8,7 @@ keywords: ["duckdb rbac", "duckdb access control", "row-level security", "column
 
 This page describes the role-based access control (RBAC) model QoD enforces on every statement, whichever door it arrives through (FlightSQL, the native Quack front door, MCP or a REST endpoint that runs SQL). It covers the data model, how effective permissions are computed, what the node checks on each statement, and where superusers fit. For step-by-step instructions on creating users, roles, groups, and grants, see the "Administering access" page, or [Administer with SQL](/qod/administration/sql-administration) to do the same from any connected SQL client.
 
-Enforcement is always on. Since 0.11.0 the node that runs a statement decides it, on the plan DuckDB bound, and there is no switch to turn it off: `QOD_ACL_ENABLED`, `QOD_ACL_FILTERED_METADATA` and `QOD_ACL_DIALECT` were removed, and a manager that still sets one refuses to start (see [Upgrading to 0.11.0](./upgrading.md)).
+Enforcement is always on. Since 0.11.0 the node that runs a statement decides it, on the plan DuckDB bound, and there is no switch to turn it off: `QOD_ACL_ENABLED`, `QOD_ACL_FILTERED_METADATA` and `QOD_ACL_DIALECT` were removed, and a manager that still sets one refuses to start (see [Upgrading to 0.11.0](../upgrading/to-0-11.md)).
 
 ## Pools and databases
 

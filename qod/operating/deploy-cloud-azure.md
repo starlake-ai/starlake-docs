@@ -315,7 +315,7 @@ sudo journalctl CONTAINER_NAME=qod-haproxy        # fleet heartbeat proxy
 sudo journalctl -u qod-worker -u qod-haproxy      # the fleet units
 ```
 
-**Upgrade in place** (no rebuild). Read [Upgrading](./upgrading.md) for the target version first.
+**Upgrade in place** (no rebuild). Read [Upgrading](../upgrading/to-0-11.md) for the target version first.
 
 - Single node: set `QOD_VERSION=<new>` in `/etc/quack-on-demand.env`, then `sudo systemctl restart quack-on-demand`. The unit pulls the new tag once.
 - Fleet, one VM at a time, managers one by one: set `QOD_VERSION=<new>` in `/etc/quack-on-demand.env` (managers) and in `/etc/qod/worker.env` (every VM). Then run `sudo systemctl restart quack-on-demand qod-worker` on a manager VM, and `sudo systemctl restart qod-worker` on a worker-only VM.

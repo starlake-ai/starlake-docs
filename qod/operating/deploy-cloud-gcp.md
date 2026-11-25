@@ -400,7 +400,7 @@ sudo journalctl -u qod-worker
 - Single node: set `QOD_VERSION=<new>` in `/etc/quack-on-demand.env`, then `sudo systemctl restart quack-on-demand`.
 - Fleet, one VM at a time, managers one at a time: set `QOD_VERSION=<new>` in `/etc/qod/worker.env` on every VM and in `/etc/quack-on-demand.env` on manager VMs. Then run `sudo systemctl restart quack-on-demand qod-worker` on a manager VM, and `sudo systemctl restart qod-worker` on a worker-only VM (it has no `quack-on-demand` unit).
 
-Set the same `qod_version` in `terraform.tfvars`. A later rebuild runs whatever tag Terraform renders into cloud-init, and changing `qod_version` there replaces the VM (every VM on a fleet). Read [Upgrading](./upgrading.md) for the release notes.
+Set the same `qod_version` in `terraform.tfvars`. A later rebuild runs whatever tag Terraform renders into cloud-init, and changing `qod_version` there replaces the VM (every VM on a fleet). Read [Upgrading](../upgrading/to-0-11.md) for the release notes.
 
 **Rebuild and replacement.** Google Cloud applies a metadata change to a running VM in place, and cloud-init would not run again. The stacks therefore tie each VM to a hash of its rendered cloud-init script: **any change that alters the script replaces the VM** (for example `qod_version`, `admin_password`, `tls_mode` or the maintenance settings). Run `terraform plan` and read it before every apply.
 

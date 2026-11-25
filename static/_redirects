@@ -22,3 +22,13 @@
 
 # The interactive guides page was removed (2026-11-25).
 /starflow/guides /starflow/guides/project-setup/starlake-project-setup 301
+
+# The QoD upgrade guides moved from operating/ to their own Upgrading section (2026-11-25).
+/qod/operating/upgrading-0-14 /qod/upgrading/to-0-14 301
+/qod/operating/upgrading-0-13 /qod/upgrading/to-0-13 301
+/qod/operating/upgrading-0-12 /qod/upgrading/to-0-12 301
+/qod/operating/upgrading /qod/upgrading/to-0-11 301
+/qod/next/operating/upgrading-0-14 /qod/next/upgrading/to-0-14 301
+/qod/next/operating/upgrading-0-13 /qod/next/upgrading/to-0-13 301
+/qod/next/operating/upgrading-0-12 /qod/next/upgrading/to-0-12 301
+/qod/next/operating/upgrading /qod/next/upgrading/to-0-11 301

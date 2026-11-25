@@ -312,7 +312,7 @@ A node whose database has a store of its own gets neither: it signs with that da
 - **A rotated key reaches a node at its next start.** A server receives the new values on its next heartbeat, but a running node keeps the secret it started with until it restarts, as on Kubernetes. Restart the pools' nodes after rotating.
 - **The keys ride the heartbeat reply**, like the node token and the node key, so the [private network and HTTPS rules](#security) apply to them too.
 
-The server and the manager must run the same release: a server on an earlier release does not read these fields, and a server of this release takes no store keys from an earlier manager. See [Upgrading from 0.14.1 to 0.14.2](./upgrading-0-14.md#from-0141-to-0142).
+The server and the manager must run the same release: a server on an earlier release does not read these fields, and a server of this release takes no store keys from an earlier manager. See [Upgrading from 0.14.1 to 0.14.2](../upgrading/to-0-14.md#from-0141-to-0142).
 
 ## Run servers as Docker containers
 
