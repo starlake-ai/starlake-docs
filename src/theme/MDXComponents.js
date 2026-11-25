@@ -7,6 +7,7 @@ import CardFooter from '@site/src/components/Card/CardFooter';
 import CardHeader from '@site/src/components/Card/CardHeader';
 import CardImage from '@site/src/components/Card/CardImage';
 import QodCapabilityMatrix from '@site/src/components/QodCapabilityMatrix';
+import Diagram from '@site/src/components/Diagram';
 export default {
   // Reusing the default mapping
   ...MDXComponents,
@@ -16,4 +17,6 @@ export default {
   CardFooter, 
   CardImage,
   QodCapabilityMatrix,
+  // ```diagram code blocks (src/remark/diagram)
+  diagram: Diagram,
 };

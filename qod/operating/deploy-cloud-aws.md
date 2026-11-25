@@ -24,23 +24,34 @@ For the runtimes themselves, see [Single-server production deployment](./deploy-
 
 The default setup keeps the DuckLake data on S3, the catalog on RDS, and the instance on a public subnet with an Elastic IP.
 
-```mermaid
-graph TD
-  op["Operator<br/>operator_cidr"]
-  clients["SQL clients<br/>flightsql_allowed_cidrs"]
-  subgraph vpc["VPC 10.42.0.0/16"]
-    subgraph pub["public subnets, 2 AZs"]
-      ec2["EC2 t3.large, Ubuntu 22.04<br/>Elastic IP<br/>systemd unit quack-on-demand<br/>container qod-manager + local nodes"]
-      rds[("RDS PostgreSQL 16<br/>db.t3.medium, not publicly accessible<br/>control plane qod + DuckLake catalogs")]
-    end
-    gw["S3 gateway endpoint"]
-  end
-  s3[("S3 bucket qod-ducklake-xxxxxxxx<br/>DuckLake parquet files")]
-  op -->|"22 SSH"| ec2
-  clients -->|"31338 FlightSQL, TLS"| ec2
-  op -.->|"20900 REST and UI, HTTP<br/>rest_ui_public only"| ec2
-  ec2 -->|"5432"| rds
-  ec2 --> gw --> s3
+```diagram
+title: QoD on a single EC2 instance, with DuckLake data on S3 and the catalog on RDS
+zones:
+  vpc: {label: VPC, detail: 10.42.0.0/16}
+  pub: {label: Public subnets, detail: 2 AZs, in: vpc}
+nodes:
+  op: {label: Operator, detail: operator_cidr, kind: person}
+  clients: {label: SQL clients, detail: flightsql_allowed_cidrs, kind: client}
+  ec2:
+    label: EC2 t3.large
+    kind: server
+    accent: true
+    in: pub
+    detail: [Ubuntu 22.04, Elastic IP, systemd unit quack-on-demand, qod-manager and local nodes]
+  rds:
+    label: RDS PostgreSQL 16
+    kind: database
+    in: pub
+    detail: [db.t3.medium, not publicly accessible, control plane and DuckLake catalogs]
+  gw: {label: S3 gateway endpoint, kind: gateway, in: vpc}
+  s3: {label: S3 bucket, detail: [qod-ducklake-xxxxxxxx, DuckLake Parquet files], kind: bucket}
+edges:
+  - "op -> ec2: 22 SSH"
+  - "clients -> ec2: 31338 FlightSQL, TLS"
+  - "op -.-> ec2: 20900 REST and UI, when rest_ui_public"
+  - "ec2 -> rds: 5432"
+  - ec2 -> gw
+  - gw -> s3
 ```
 
 Three variables pick the rest of the setup:
@@ -70,35 +81,54 @@ The manager reads its settings from `/etc/quack-on-demand.env`. The DuckLake dat
 
 ### Fleet
 
-```mermaid
-graph TD
-  clients["SQL clients<br/>flightsql_allowed_cidrs"]
-  op["Operator<br/>operator_cidr"]
-  nlb["Network Load Balancer<br/>internet-facing, or internal when private<br/>TCP 31338, 9494, 22, and 20900 when rest_ui_public"]
-  subgraph vpc["VPC 10.42.0.0/16"]
-    subgraph priv["private subnets 10.42.2.0/24 and 10.42.3.0/24"]
-      vm0["VM 0, 10.42.2.10<br/>qod-manager<br/>qod-worker, one node<br/>qod-haproxy 127.0.0.1:20990"]
-      vm1["VM 1, 10.42.3.11<br/>qod-manager<br/>qod-worker, one node<br/>qod-haproxy 127.0.0.1:20990"]
-      vm2["VM 2, 10.42.2.12<br/>qod-worker, one node<br/>qod-haproxy 127.0.0.1:20990"]
-    end
-    rds[("RDS PostgreSQL 16<br/>db.t3.medium, private")]
-    gw["S3 gateway endpoint"]
-    nat["NAT gateway<br/>egress: Docker Hub, apt"]
-  end
-  s3[("S3 bucket<br/>DuckLake parquet")]
-  clients -->|"31338, 9494"| nlb
-  op -->|"22"| nlb
-  nlb -->|"client ports"| vm0
-  nlb -->|"client ports"| vm1
-  nlb -->|"22, manager 0 only"| vm0
-  vm2 -->|"heartbeats through local HAProxy<br/>to every manager on 20900"| vm0
-  vm2 -->|"heartbeats"| vm1
-  vm0 -->|"5432"| rds
-  vm1 -->|"5432"| rds
-  vm0 --> gw
-  vm1 --> gw
-  gw --> s3
-  vm2 --> nat
+```diagram
+title: QoD fleet on AWS, three VMs behind a Network Load Balancer
+zones:
+  vpc: {label: VPC, detail: 10.42.0.0/16}
+  priv: {label: Private subnets, detail: 10.42.2.0/24 and 10.42.3.0/24, in: vpc}
+nodes:
+  clients: {label: SQL clients, detail: flightsql_allowed_cidrs, kind: client}
+  op: {label: Operator, detail: operator_cidr, kind: person}
+  nlb:
+    label: Network Load Balancer
+    kind: balancer
+    detail: [internet-facing, or internal when private, "TCP 31338, 9494, 22", and 20900 when rest_ui_public]
+  vm0:
+    label: VM 0
+    kind: server
+    accent: true
+    in: priv
+    detail: [10.42.2.10, qod-manager, "qod-worker, one node", qod-haproxy 127.0.0.1:20990]
+  vm1:
+    label: VM 1
+    kind: server
+    accent: true
+    in: priv
+    detail: [10.42.3.11, qod-manager, "qod-worker, one node", qod-haproxy 127.0.0.1:20990]
+  vm2:
+    label: VM 2
+    kind: server
+    accent: true
+    in: priv
+    detail: [10.42.2.12, "qod-worker, one node", qod-haproxy 127.0.0.1:20990]
+  rds: {label: RDS PostgreSQL 16, detail: "db.t3.medium, private", kind: database, in: vpc}
+  gw: {label: S3 gateway endpoint, kind: gateway, in: vpc}
+  nat: {label: NAT gateway, detail: "egress: Docker Hub, apt", kind: gateway, in: vpc}
+  s3: {label: S3 bucket, detail: DuckLake Parquet files, kind: bucket}
+edges:
+  - "clients -> nlb: 31338, 9494"
+  - "op -> nlb: 22"
+  - "nlb -> vm0: client ports"
+  - "nlb -> vm1: client ports"
+  - "nlb -> vm0: 22 manager 0 only"
+  - "vm2 -> vm0: 20900 heartbeats, through local HAProxy"
+  - "vm2 -> vm1: 20900 heartbeats"
+  - "vm0 -> rds: 5432"
+  - "vm1 -> rds: 5432"
+  - vm0 -> gw
+  - vm1 -> gw
+  - gw -> s3
+  - vm2 -> nat
 ```
 
 How it fits together (`terraform/aws/fleet/`):
