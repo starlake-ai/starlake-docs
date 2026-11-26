@@ -27,7 +27,7 @@ Parameter|Cardinality|Description
 --connection `<value>`|*Optional*|existing Starlake connection the imported objects run on
 --force|*Optional*|overwrite the files the import writes; nothing is deleted
 --introspect|*Optional*|answer the macros that read the warehouse (run_query, statement, adapter.get_columns_in_relation...) on the import's connection; read-only statements only
---introspect-max-rows `<value>`|*Optional*|with --introspect, the most rows a query may return before its model is skipped (default 10000)
+--introspect-max-rows `<value>`|*Optional*|only with --introspect: the most rows a query may return before its model is skipped (default 10000)
 --manifest `<value>`|*Required*|dbt's target/manifest.json
 --profiles `<value>`|*Optional*|dbt profiles.yml: the target renders target.*, and a DuckDB target becomes a connection
 --target `<value>`|*Optional*|dbt target: target.name, and the output of --profiles (default: the profile's target, else dev)
