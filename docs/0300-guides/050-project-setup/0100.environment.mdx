@@ -42,7 +42,7 @@ import Head from '@docusaurus/Head';
           "name": "What predefined variables does Starlake provide?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Starlake provides date/time variables: sl_date (yyyyMMdd), sl_datetime (yyyyMMddHHmmss), sl_year, sl_month, sl_day, sl_hour, sl_minute, sl_second, sl_milli, sl_epoch_second, sl_epoch_milli. These are automatically set to the current date/time."
+            "text": "Starlake provides date/time variables: sl_date (yyyyMMdd), sl_datetime (yyyyMMddHHmmss), sl_year, sl_month, sl_day, sl_hour, sl_minute, sl_second, sl_milli, sl_epoch_second, sl_epoch_milli. These are automatically set to the current date/time, in the time zone of the timezone setting (UTC by default), not the zone of the machine."
           }
         },
         {
@@ -175,6 +175,17 @@ Starlake provides built-in variables set to the current date and time at executi
 | `sl_epoch_second` | Number of seconds since 1/1/1970 |
 | `sl_epoch_milli` | Number of milliseconds since 1/1/1970 |
 
+### Time zone
+
+The date and time variables give the current time in the time zone of the `timezone` setting, UTC by default, whatever the zone of the machine that runs Starlake. `sl_epoch_second` and `sl_epoch_milli` count from 1/1/1970 UTC and do not depend on it. Set the zone in `application.sl.yml`, or with the `SL_TIMEZONE` environment variable:
+
+```yaml title="metadata/application.sl.yml"
+application:
+  timezone: "Europe/Paris"
+```
+
+The same setting is the session time zone of Spark (`spark.sql.session.timeZone`, unless you set that one yourself), so a variable such as `{{sl_datetime}}` compared with a timestamp in Spark SQL means the same time. A load reads a timestamp without a zone in the zone of its type, UTC unless the type sets one. Until 1.9.2, the variables used the zone of the machine: on a machine outside UTC, set `timezone` to that zone to keep the values you had.
+
 ## Complete Variable Substitution Example
 
 This example shows the full flow from variable definition to resolved output.
@@ -218,7 +229,7 @@ Variables can be referenced with `${}` or `{{}}` syntax in domain and job YAML f
 Define global variables in `metadata/env.sl.yml`. These apply across all environments but can be overridden by environment-specific files (`env.DEV.sl.yml`, `env.PROD.sl.yml`).
 
 ### What predefined variables does Starlake provide?
-Starlake provides date/time variables: `sl_date` (yyyyMMdd), `sl_datetime` (yyyyMMddHHmmss), `sl_year`, `sl_month`, `sl_day`, `sl_hour`, `sl_minute`, `sl_second`, `sl_milli`, `sl_epoch_second`, `sl_epoch_milli`. These are automatically set to the current date/time.
+Starlake provides date/time variables: `sl_date` (yyyyMMdd), `sl_datetime` (yyyyMMddHHmmss), `sl_year`, `sl_month`, `sl_day`, `sl_hour`, `sl_minute`, `sl_second`, `sl_milli`, `sl_epoch_second`, `sl_epoch_milli`. These are automatically set to the current date/time, in the time zone of the `timezone` setting (UTC by default), not the zone of the machine.
 
 ### How does environment override priority work in Starlake?
 Environment-specific variables (defined in `env.<ENV>.sl.yml`) override global variables (defined in `env.sl.yml`). The active environment is selected by setting the `SL_ENV` environment variable.
