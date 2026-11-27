@@ -107,8 +107,9 @@ The `writeStrategy.type` property controls how results are written to the target
 Additional write strategy properties:
 
 - `key` — column(s) forming the merge/upsert key.
-- `timestamp` — timestamp column for ordering (required for UPSERT_BY_KEY_AND_TIMESTAMP, optional for SCD2).
+- `timestamp` — timestamp column for ordering (required for UPSERT_BY_KEY_AND_TIMESTAMP; SCD2 needs `timestamp` or `checkColumns`).
 - `startTs` / `endTs` — SCD2 effective date range columns.
+- `checkColumns`: SCD2 only. List of columns compared to detect a new version, instead of `timestamp`. `["*"]` compares every column except the key and the validity columns.
 - `queryFilter` — SQL WHERE clause for merge source selection. Supports `latest` for BigQuery latest partition and `in last(N)` syntax for partition range filtering.
 - `on` — merge condition target: `TARGET` or `SOURCE_AND_TARGET`.
 

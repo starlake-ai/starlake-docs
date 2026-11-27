@@ -99,7 +99,7 @@ import Head from '@docusaurus/Head';
         {
           "@type": "HowToStep",
           "name": "Specify key and timestamp if needed",
-          "text": "For UPSERT_BY_KEY or SCD2, set writeStrategy.key (list of columns). For SCD2, also set writeStrategy.timestamp, startTs and endTs."
+          "text": "For UPSERT_BY_KEY or SCD2, set writeStrategy.key (list of columns). For SCD2, also set writeStrategy.timestamp (or writeStrategy.checkColumns to compare columns instead), startTs and endTs."
         },
         {
           "@type": "HowToStep",
@@ -259,6 +259,24 @@ application:
   scd2StartTimestamp: "sl_start_ts"
   scd2EndTimestamp: "sl_end_ts"
 ```
+
+### Detect changes by comparing columns
+
+Without a timestamp, SCD2 can detect a new version by comparing columns, as dbt `check` snapshots do:
+
+```yaml
+writeStrategy:
+  type: "SCD2"
+  key: ["id"]
+  checkColumns: ["label", "status"]
+```
+
+A new version of a key is opened when one of the `checkColumns` differs from its current row. A null on one side only counts as a difference. `checkColumns: ["*"]` compares every column of the query except the key and the validity columns (`startTs` and `endTs`).
+
+- `timestamp` and `checkColumns` are exclusive: set one of them.
+- `checkColumns` cannot be used with `on: SOURCE_AND_TARGET`, which keeps one incoming row per key by its timestamp.
+- A column whose type has no `<>` operator (BigQuery `ARRAY` and `JSON`, Spark `MAP`, PostgreSQL `json`) cannot be compared: list the other columns instead of `"*"`.
+- `"*"` also compares computed columns, such as a load date set by a `script`: such a column opens a new version on every load, so list the columns instead.
 
 ## ADAPTATIVE write strategy
 
